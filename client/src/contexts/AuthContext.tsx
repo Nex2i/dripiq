@@ -60,9 +60,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }) => {
     try {
       setLoading(true)
-      await authService.register(data)
-      // User will be updated via auth state change listener
+      const result = await authService.register(data)
+
+      // If registration was successful and includes session data,
+      // the auth state change listener will automatically update the user
+      console.log('Registration completed:', result)
+
+      return result
     } catch (error) {
+      console.error('Registration failed:', error)
       throw error
     } finally {
       setLoading(false)

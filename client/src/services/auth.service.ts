@@ -41,7 +41,7 @@ export interface LoginData {
 }
 
 class AuthService {
-  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+  private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
   // Get current Supabase session
   async getCurrentSession(): Promise<Session | null> {
@@ -88,7 +88,17 @@ class AuthService {
       throw new Error(errorData.message || 'Registration failed')
     }
 
-    return response.json()
+    const result = await response.json()
+
+    // If the backend returned a session, set it in Supabase client
+    if (result.session) {
+      const { error } = await supabase.auth.setSession(result.session)
+      if (error) {
+        console.error('Error setting session after registration:', error)
+      }
+    }
+
+    return result
   }
 
   // Get current user from backend using JWT token

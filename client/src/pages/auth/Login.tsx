@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
+import { useRouter, useSearch } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function Login() {
   const router = useRouter()
+  const search = useSearch({ strict: false }) as any
   const { login, loading } = useAuth()
+  const showRegistrationSuccess = search?.registered === 'true'
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -37,7 +39,14 @@ export default function Login() {
       // Redirect will happen automatically via auth state change
       router.navigate({ to: '/' })
     } catch (err: any) {
-      setError(err.message || 'An error occurred during login')
+      // Handle structured error responses with code and message
+      if (err.code && err.message) {
+        setError(err.message)
+      } else if (err.response?.data?.code && err.response?.data?.message) {
+        setError(err.response.data.message)
+      } else {
+        setError(err.message || 'An error occurred during login')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -68,6 +77,37 @@ export default function Login() {
             </button>
           </p>
         </div>
+
+        {showRegistrationSuccess && (
+          <div className="rounded-md bg-green-50 p-4 border border-green-200">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-green-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">
+                  Registration successful!
+                </h3>
+                <div className="mt-2 text-sm text-green-700">
+                  We've sent a confirmation email to your email address. Please
+                  check your email and click the confirmation link to activate
+                  your account before signing in.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>

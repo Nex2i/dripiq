@@ -62,15 +62,21 @@ export default function Register() {
     try {
       setIsSubmitting(true)
       setError('')
-      await register({
+
+      const result = await register({
         email: formData.email,
         password: formData.password,
         name: formData.name,
         tenantName: formData.tenantName,
       })
-      // Redirect will happen automatically via auth state change
-      router.navigate({ to: '/' })
+
+      // Registration was successful
+      console.log('Registration successful:', result)
+
+      // Navigate to login page with confirmation flag
+      router.navigate({ to: '/auth/login', search: { registered: 'true' } })
     } catch (err: any) {
+      console.error('Registration error:', err)
       setError(err.message || 'An error occurred during registration')
     } finally {
       setIsSubmitting(false)
