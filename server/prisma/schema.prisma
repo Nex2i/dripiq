@@ -1,0 +1,59 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+enum ProjectPermission {
+    VIEW
+    EDIT
+    DELETE
+    MANAGE_USERS
+    MANAGE_SETTINGS
+}
+
+model User {
+    id         String   @id @default(cuid())
+    supabaseId String   @unique
+    email      String   @unique
+    name       String?
+    avatar     String?
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    // Relationships
+    tenants UserTenant[]
+
+    @@map("users")
+}
+
+model Tenant {
+    id        String   @id @default(cuid())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relationships
+    users UserTenant[]
+
+    @@map("tenants")
+}
+
+model UserTenant {
+    id          String   @id @default(cuid())
+    isSuperUser Boolean  @default(false)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relationships
+    user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId   String
+    tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    tenantId String
+
+    @@unique([userId, tenantId])
+    @@map("user_tenants")
+}
