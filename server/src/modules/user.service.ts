@@ -1,5 +1,5 @@
-import { User } from '@prisma/client';
-import prisma from '@/libs/prismaClient';
+import { eq } from 'drizzle-orm';
+import { db, users, User, NewUser } from '@/db';
 
 export interface CreateUserData {
   supabaseId: string;
@@ -14,21 +14,28 @@ export class UserService {
    */
   static async createUser(userData: CreateUserData): Promise<User> {
     try {
-      const user = await prisma.user.create({
-        data: {
-          supabaseId: userData.supabaseId,
-          email: userData.email,
-          name: userData.name || null,
-          avatar: userData.avatar || null,
-        },
-      });
-      return user;
+      const newUser: NewUser = {
+        supabaseId: userData.supabaseId,
+        email: userData.email,
+        name: userData.name || null,
+        avatar: userData.avatar || null,
+      };
+
+      const [user] = await db.insert(users).values(newUser).returning();
+      return user!;
     } catch (error: any) {
-      // If user already exists, fetch and return it
-      if (error.code === 'P2002') {
-        const existingUser = await prisma.user.findUniqueOrThrow({
-          where: { supabaseId: userData.supabaseId },
-        });
+      // If user already exists (unique constraint violation), fetch and return it
+      if (error.code === '23505') {
+        const existingUser = await db
+          .select()
+          .from(users)
+          .where(eq(users.supabaseId, userData.supabaseId))
+          .limit(1)
+          .then((result) => result[0]);
+
+        if (!existingUser) {
+          throw new Error('User creation failed and user not found');
+        }
         return existingUser;
       }
       throw error;
@@ -39,36 +46,50 @@ export class UserService {
    * Get user by Supabase ID
    */
   static async getUserBySupabaseId(supabaseId: string): Promise<User | null> {
-    return await prisma.user.findUnique({
-      where: { supabaseId },
-    });
+    const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
+
+    return result[0] || null;
   }
 
   /**
    * Get user by email
    */
   static async getUserByEmail(email: string): Promise<User | null> {
-    return await prisma.user.findUnique({
-      where: { email },
-    });
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+    return result[0] || null;
   }
 
   /**
    * Update user data
    */
   static async updateUser(supabaseId: string, updateData: Partial<CreateUserData>): Promise<User> {
-    return await prisma.user.update({
-      where: { supabaseId },
-      data: updateData,
-    });
+    const [user] = await db
+      .update(users)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.supabaseId, supabaseId))
+      .returning();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
   }
 
   /**
    * Delete user
    */
   static async deleteUser(supabaseId: string): Promise<User> {
-    return await prisma.user.delete({
-      where: { supabaseId },
-    });
+    const [user] = await db.delete(users).where(eq(users.supabaseId, supabaseId)).returning();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
   }
 }
