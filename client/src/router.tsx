@@ -23,22 +23,30 @@ import TanStackQueryDemo from './pages/demo/demo.tanstack-query'
 // Import layout components
 import TanStackQueryLayout from './integrations/tanstack-query/layout'
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider'
+import { AuthDebugMenu } from './components/AuthDebugMenu'
 
 // Root route with header
 const rootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <>
+      <Outlet />
+      <TanStackRouterDevtools />
+      <TanStackQueryLayout />
+      <AuthDebugMenu />
+    </>
+  ),
 })
 
 const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'protected',
   component: () => (
-    <AuthGuard>
-      <Header />
-      <Outlet />
-      <TanStackRouterDevtools />
-      <TanStackQueryLayout />
-    </AuthGuard>
+    <>
+      <AuthGuard>
+        <Header />
+        <Outlet />
+      </AuthGuard>
+    </>
   ),
 })
 

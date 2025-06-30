@@ -1,9 +1,9 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
-import { AuthDebugMenu } from './AuthDebugMenu'
 
 export default function Header() {
-  const { user, logout, loading } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
     try {
@@ -23,34 +23,30 @@ export default function Header() {
                 DripIQ
               </Link>
 
-              {user && (
-                <nav className="flex space-x-4">
-                  <button
-                    onClick={() => (window.location.href = '/demo/form/simple')}
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
-                  >
-                    Form Demo
-                  </button>
-                  <button
-                    onClick={() => (window.location.href = '/demo/table')}
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
-                  >
-                    Table Demo
-                  </button>
-                  <button
-                    onClick={() => (window.location.href = '/demo/store')}
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
-                  >
-                    Store Demo
-                  </button>
-                </nav>
-              )}
+              <nav className="flex space-x-4">
+                <button
+                  onClick={() => navigate({ to: '/demo/form/simple' })}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
+                >
+                  Form Demo
+                </button>
+                <button
+                  onClick={() => navigate({ to: '/demo/table' })}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
+                >
+                  Table Demo
+                </button>
+                <button
+                  onClick={() => navigate({ to: '/demo/store' })}
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
+                >
+                  Store Demo
+                </button>
+              </nav>
             </div>
 
             <div className="flex items-center space-x-4">
-              {loading ? (
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              ) : user ? (
+              {user ? (
                 <div className="flex items-center space-x-4">
                   <div className="text-sm">
                     <span className="text-gray-700">Welcome, </span>
@@ -73,13 +69,13 @@ export default function Header() {
               ) : (
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => (window.location.href = '/auth/login')}
+                    onClick={() => navigate({ to: '/auth/login' })}
                     className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer"
                   >
                     Sign in
                   </button>
                   <button
-                    onClick={() => (window.location.href = '/auth/register')}
+                    onClick={() => navigate({ to: '/auth/register' })}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors border-none cursor-pointer"
                   >
                     Sign up
@@ -90,7 +86,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-      <AuthDebugMenu />
     </>
   )
 }
