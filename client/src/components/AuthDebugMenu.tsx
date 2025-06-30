@@ -67,7 +67,9 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
   }
 
   return (
-    <div className={`fixed top-4 right-4 z-50 ${className}`}>
+    <div
+      className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 ${className}`}
+    >
       <div className="relative">
         {/* Toggle Button */}
         <button
@@ -79,13 +81,13 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
           <span
             className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
           >
-            ▼
+            ▲
           </span>
         </button>
 
         {/* Debug Panel */}
         {isOpen && (
-          <div className="absolute top-12 right-0 bg-gray-900 text-white p-4 rounded-lg shadow-xl min-w-80 max-w-96 font-mono text-xs border border-gray-700">
+          <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white p-4 rounded-lg shadow-xl min-w-80 max-w-96 font-mono text-xs border border-gray-700">
             <div className="space-y-3">
               {/* Auth Status */}
               <div>
