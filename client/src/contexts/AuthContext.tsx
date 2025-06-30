@@ -118,7 +118,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (session) {
         // User signed in, fetch user data from backend
         try {
-          const currentUser = await authService.getCurrentUser()
+          const currentUser = await authService.getCurrentUser(session)
           setUser(currentUser)
         } catch (error) {
           console.error('Error fetching user after auth change:', error)
