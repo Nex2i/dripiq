@@ -7,7 +7,8 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
 // Import components and pages
-import App from './App'
+import LandingPage from './pages/LandingPage'
+import Dashboard from './pages/Dashboard'
 import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
@@ -64,11 +65,18 @@ const authRoute = createRoute({
   ),
 })
 
-// Home route - protected
-const indexRoute = createRoute({
-  getParentRoute: () => protectedRoute,
+// Landing page route - public
+const landingRoute = createRoute({
+  getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <App />,
+  component: () => <LandingPage />,
+})
+
+// Dashboard route - protected
+const dashboardRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/dashboard',
+  component: () => <Dashboard />,
 })
 
 // Auth routes - public only (redirect to home if already logged in)
@@ -116,7 +124,7 @@ const tanStackQueryRoute = createRoute({
 })
 
 const protectedRouteTree = protectedRoute.addChildren([
-  indexRoute,
+  dashboardRoute,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,
@@ -127,7 +135,11 @@ const protectedRouteTree = protectedRoute.addChildren([
 const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
 
 // Build the route tree
-const routeTree = rootRoute.addChildren([protectedRouteTree, authRouteTree])
+const routeTree = rootRoute.addChildren([
+  landingRoute,
+  protectedRouteTree,
+  authRouteTree,
+])
 
 // Create and export the router
 export const router = createRouter({

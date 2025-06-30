@@ -21,7 +21,7 @@ export default function Header() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
               <Link
-                to="/"
+                to="/dashboard"
                 className="flex items-center hover:scale-105 transition-transform duration-200"
               >
                 <Logo size="md" showText={true} />
@@ -32,19 +32,19 @@ export default function Header() {
                   onClick={() => navigate({ to: '/demo/table' })}
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
                 >
-                  Dashboard
+                  DemoTable
                 </button>
                 <button
                   onClick={() => navigate({ to: '/demo/tanstack-query' })}
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
                 >
-                  Campaigns
+                  DemoTanstackQuery
                 </button>
                 <button
                   onClick={() => navigate({ to: '/demo/form/simple' })}
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
                 >
-                  Settings
+                  DemoFormSimple
                 </button>
               </nav>
             </div>

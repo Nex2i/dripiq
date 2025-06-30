@@ -1,8 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
-import { useAuth } from './contexts/AuthContext'
-import Logo from './components/Logo'
+import { useAuth } from '../contexts/AuthContext'
+import Logo from '../components/Logo'
 
-function App() {
+function LandingPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -52,8 +52,56 @@ function App() {
     { number: '500+', label: 'Happy Customers' },
   ]
 
+  const handleContactSales = () => {
+    // For now, open email client - can be enhanced with a modal or contact form later
+    window.location.href =
+      "mailto:sales@dripiq.com?subject=Sales Inquiry&body=Hi, I'm interested in learning more about dripIq."
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Navigation Header */}
+      <nav className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Logo size="sm" showText={true} />
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleContactSales}
+                className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+              >
+                Contact Sales
+              </button>
+              {!user ? (
+                <>
+                  <button
+                    onClick={() => navigate({ to: '/auth/login' })}
+                    className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => navigate({ to: '/auth/register' })}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                  >
+                    Get Started
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => navigate({ to: '/dashboard' })}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  Go to Dashboard
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -85,15 +133,15 @@ function App() {
                     Start Free Trial
                   </button>
                   <button
-                    onClick={() => navigate({ to: '/demo/tanstack-query' })}
+                    onClick={handleContactSales}
                     className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-4 rounded-xl text-lg font-semibold border-2 border-gray-200 hover:border-gray-300 transition-all duration-300"
                   >
-                    View Demo
+                    Contact Sales
                   </button>
                 </>
               ) : (
                 <button
-                  onClick={() => navigate({ to: '/demo/table' })}
+                  onClick={() => navigate({ to: '/dashboard' })}
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   Go to Dashboard
@@ -165,14 +213,31 @@ function App() {
             Join hundreds of sales teams already using dripIq to re-engage
             closed-lost leads
           </p>
-          {!user && (
-            <button
-              onClick={() => navigate({ to: '/auth/register' })}
-              className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-            >
-              Start Your Free Trial
-            </button>
-          )}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {!user ? (
+              <>
+                <button
+                  onClick={() => navigate({ to: '/auth/register' })}
+                  className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                >
+                  Start Your Free Trial
+                </button>
+                <button
+                  onClick={handleContactSales}
+                  className="bg-transparent hover:bg-white/10 text-white px-8 py-4 rounded-xl text-lg font-semibold border-2 border-white hover:border-gray-200 transition-all duration-300"
+                >
+                  Contact Sales
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate({ to: '/dashboard' })}
+                className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              >
+                Go to Dashboard
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -181,6 +246,30 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Logo size="sm" showText={true} />
+          </div>
+          <div className="flex justify-center space-x-6 mb-4">
+            <button
+              onClick={handleContactSales}
+              className="text-gray-400 hover:text-white transition-colors duration-200"
+            >
+              Contact Sales
+            </button>
+            {!user && (
+              <>
+                <button
+                  onClick={() => navigate({ to: '/auth/login' })}
+                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => navigate({ to: '/auth/register' })}
+                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
           <p className="text-center text-gray-400">
             © 2024 dripIq. Built with ❤️ for sales teams.
@@ -191,4 +280,4 @@ function App() {
   )
 }
 
-export default App
+export default LandingPage
