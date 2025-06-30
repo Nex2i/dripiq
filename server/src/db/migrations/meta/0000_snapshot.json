@@ -1,12 +1,12 @@
 {
-  "id": "078612a8-291e-4fdf-b68a-0f7effca6306",
+  "id": "cbdf91d8-28f4-40a1-b0b8-d69d262c6042",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.tenants": {
+    "dripiq_app.tenants": {
       "name": "tenants",
-      "schema": "",
+      "schema": "dripiq_app",
       "columns": {
         "id": {
           "name": "id",
@@ -43,9 +43,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user_tenants": {
+    "dripiq_app.user_tenants": {
       "name": "user_tenants",
-      "schema": "",
+      "schema": "dripiq_app",
       "columns": {
         "id": {
           "name": "id",
@@ -93,6 +93,7 @@
           "name": "user_tenants_user_id_users_id_fk",
           "tableFrom": "user_tenants",
           "tableTo": "users",
+          "schemaTo": "dripiq_app",
           "columnsFrom": [
             "user_id"
           ],
@@ -106,6 +107,7 @@
           "name": "user_tenants_tenant_id_tenants_id_fk",
           "tableFrom": "user_tenants",
           "tableTo": "tenants",
+          "schemaTo": "dripiq_app",
           "columnsFrom": [
             "tenant_id"
           ],
@@ -131,9 +133,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.users": {
+    "dripiq_app.users": {
       "name": "users",
-      "schema": "",
+      "schema": "dripiq_app",
       "columns": {
         "id": {
           "name": "id",
@@ -205,7 +207,9 @@
     }
   },
   "enums": {},
-  "schemas": {},
+  "schemas": {
+    "dripiq_app": "dripiq_app"
+  },
   "sequences": {},
   "roles": {},
   "policies": {},

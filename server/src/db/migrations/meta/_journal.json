@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751232101823,
+      "when": 1751254703842,
       "tag": "0000_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751232101824,
-      "tag": "0001_migrate_to_custom_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751232101825,
-      "tag": "0002_fix_schema_name",
       "breakpoints": true
     }
   ]
