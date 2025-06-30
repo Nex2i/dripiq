@@ -1,10 +1,13 @@
 import { useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
+import ContactSalesModal from '../components/ContactSalesModal'
 
 function LandingPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
 
   const features = [
     {
@@ -53,9 +56,7 @@ function LandingPage() {
   ]
 
   const handleContactSales = () => {
-    // For now, open email client - can be enhanced with a modal or contact form later
-    window.location.href =
-      "mailto:sales@dripiq.com?subject=Sales Inquiry&body=Hi, I'm interested in learning more about dripIq."
+    setIsContactModalOpen(true)
   }
 
   return (
@@ -272,10 +273,16 @@ function LandingPage() {
             )}
           </div>
           <p className="text-center text-gray-400">
-            © 2024 dripIq. Built with ❤️ for sales teams.
+            © 2025 dripIq. Built with ❤️ for sales teams.
           </p>
         </div>
       </div>
+
+      {/* Contact Sales Modal */}
+      <ContactSalesModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
     </div>
   )
 }

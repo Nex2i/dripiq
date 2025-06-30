@@ -68,6 +68,14 @@ export default function Login() {
           <div className="flex justify-center mb-6">
             <Logo size="lg" showText={true} />
           </div>
+          <div className="text-center mb-4">
+            <button
+              onClick={() => router.navigate({ to: '/' } as any)}
+              className="text-sm text-gray-500 hover:text-gray-700 underline bg-transparent border-none cursor-pointer inline-flex items-center"
+            >
+              ← Back to Home
+            </button>
+          </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Welcome back
           </h2>
