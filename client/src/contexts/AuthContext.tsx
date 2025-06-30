@@ -111,14 +111,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = authService.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session)
-      setSession(session)
+    } = authService.onAuthStateChange(async (event, sessionChange) => {
+      console.log('Auth state changed:', event, sessionChange)
+      setSession(sessionChange)
 
-      if (session) {
+      if (sessionChange) {
         // User signed in, fetch user data from backend
         try {
-          const currentUser = await authService.getCurrentUser(session)
+          const currentUser = await authService.getCurrentUser(sessionChange)
           setUser(currentUser)
         } catch (error) {
           console.error('Error fetching user after auth change:', error)
