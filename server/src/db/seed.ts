@@ -5,30 +5,41 @@ async function seed() {
   try {
     console.log('🌱 Starting database seed...');
 
-    // Clear existing data (in reverse order due to foreign key constraints)
-    console.log('🧹 Clearing existing data...');
-    await db.delete(userTenants);
-    await db.delete(users);
-    await db.delete(tenants);
+    // Only clear existing data if CLEAR_DB environment variable is set
+    if (process.env.CLEAR_DB === 'true') {
+      console.log('🧹 Clearing existing data...');
+      await db.delete(userTenants);
+      await db.delete(users);
+      await db.delete(tenants);
+    } else {
+      console.log('⚠️  Skipping data clearing (set CLEAR_DB=true to clear existing data)');
+    }
 
-    // Create sample tenants
-    console.log('🏢 Creating sample tenants...');
-    const sampleTenants = await db
-      .insert(tenants)
-      .values([
-        {
-          name: 'Acme Corporation',
-        },
-        {
-          name: 'Tech Innovations LLC',
-        },
-        {
-          name: 'Global Solutions Inc',
-        },
-      ])
-      .returning();
+    // Check if tenants already exist to avoid duplicates
+    const existingTenants = await db.select().from(tenants).limit(1);
 
-    console.log(`✅ Created ${sampleTenants.length} tenants`);
+    if (existingTenants.length === 0) {
+      // Create sample tenants
+      console.log('🏢 Creating sample tenants...');
+      const sampleTenants = await db
+        .insert(tenants)
+        .values([
+          {
+            name: 'Acme Corporation',
+          },
+          {
+            name: 'Tech Innovations LLC',
+          },
+          {
+            name: 'Global Solutions Inc',
+          },
+        ])
+        .returning();
+
+      console.log(`✅ Created ${sampleTenants.length} tenants`);
+    } else {
+      console.log('ℹ️  Sample data already exists, skipping creation');
+    }
 
     // You can add more seeding logic here as needed
     // For example, creating sample users and user-tenant relationships
