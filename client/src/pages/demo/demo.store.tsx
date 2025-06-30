@@ -1,9 +1,6 @@
-import { createRoute } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 
-import { fullName, store } from '../lib/demo-store'
-
-import type { RootRoute } from '@tanstack/react-router'
+import { fullName, store } from '../../lib/demo-store'
 
 function FirstName() {
   const firstName = useStore(store, (state) => state.firstName)
@@ -61,9 +58,4 @@ function DemoStore() {
   )
 }
 
-export default (parentRoute: RootRoute) =>
-  createRoute({
-    path: '/demo/store',
-    component: DemoStore,
-    getParentRoute: () => parentRoute,
-  })
+export default DemoStore

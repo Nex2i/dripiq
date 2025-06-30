@@ -13,12 +13,12 @@ import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 
-// Import demo route functions
-import FormSimpleDemo from './routes/demo.form.simple'
-import FormAddressDemo from './routes/demo.form.address'
-import StoreDemo from './routes/demo.store'
-import TableDemo from './routes/demo.table'
-import TanStackQueryDemo from './routes/demo.tanstack-query'
+// Import demo components directly
+import FormSimpleDemo from './pages/demo/demo.form.simple'
+import FormAddressDemo from './pages/demo/demo.form.address'
+import StoreDemo from './pages/demo/demo.store'
+import TableDemo from './pages/demo/demo.table'
+import TanStackQueryDemo from './pages/demo/demo.tanstack-query'
 
 // Import layout components
 import TanStackQueryLayout from './integrations/tanstack-query/layout'
@@ -26,10 +26,30 @@ import * as TanStackQueryProvider from './integrations/tanstack-query/root-provi
 
 // Root route with header
 const rootRoute = createRootRoute({
+  component: () => <Outlet />,
+})
+
+const protectedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'protected',
   component: () => (
-    <>
+    <AuthGuard>
       <Header />
       <Outlet />
+      <TanStackRouterDevtools />
+      <TanStackQueryLayout />
+    </AuthGuard>
+  ),
+})
+
+const authRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth',
+  component: () => (
+    <>
+      <PublicOnlyGuard>
+        <Outlet />
+      </PublicOnlyGuard>
       <TanStackRouterDevtools />
       <TanStackQueryLayout />
     </>
@@ -38,70 +58,68 @@ const rootRoute = createRootRoute({
 
 // Home route - protected
 const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => protectedRoute,
   path: '/',
-  component: () => (
-    <AuthGuard>
-      <App />
-    </AuthGuard>
-  ),
+  component: () => <App />,
 })
 
 // Auth routes - public only (redirect to home if already logged in)
 const authLoginRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/auth/login',
-  component: () => (
-    <PublicOnlyGuard>
-      <Login />
-    </PublicOnlyGuard>
-  ),
+  getParentRoute: () => authRoute,
+  path: '/login',
+  component: () => <Login />,
 })
 
 const authRegisterRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/auth/register',
-  component: () => (
-    <PublicOnlyGuard>
-      <Register />
-    </PublicOnlyGuard>
-  ),
+  getParentRoute: () => authRoute,
+  path: '/register',
+  component: () => <Register />,
 })
 
-// Helper function to wrap existing demo routes with AuthGuard
-const wrapWithAuthGuard = (routeCreator: (parentRoute: any) => any) => {
-  const originalRoute = routeCreator(rootRoute)
-  const OriginalComponent = originalRoute.options.component
+// Create all protected demo routes directly
+const formSimpleRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/demo/form/simple',
+  component: () => <FormSimpleDemo />,
+})
 
-  return createRoute({
-    getParentRoute: () => rootRoute,
-    path: originalRoute.options.path,
-    component: () => (
-      <AuthGuard>
-        <OriginalComponent />
-      </AuthGuard>
-    ),
-  })
-}
+const formAddressRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/demo/form/address',
+  component: () => <FormAddressDemo />,
+})
 
-// Create all protected demo routes
-const formSimpleRoute = wrapWithAuthGuard(FormSimpleDemo)
-const formAddressRoute = wrapWithAuthGuard(FormAddressDemo)
-const storeRoute = wrapWithAuthGuard(StoreDemo)
-const tableRoute = wrapWithAuthGuard(TableDemo)
-const tanStackQueryRoute = wrapWithAuthGuard(TanStackQueryDemo)
+const storeRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/demo/store',
+  component: () => <StoreDemo />,
+})
 
-// Build the route tree
-const routeTree = rootRoute.addChildren([
+const tableRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/demo/table',
+  component: () => <TableDemo />,
+})
+
+const tanStackQueryRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/demo/tanstack-query',
+  component: () => <TanStackQueryDemo />,
+})
+
+const protectedRouteTree = protectedRoute.addChildren([
   indexRoute,
-  authLoginRoute,
-  authRegisterRoute,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,
   tableRoute,
   tanStackQueryRoute,
 ])
+
+const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
+
+// Build the route tree
+const routeTree = rootRoute.addChildren([protectedRouteTree, authRouteTree])
 
 // Create and export the router
 export const router = createRouter({

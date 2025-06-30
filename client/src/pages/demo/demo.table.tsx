@@ -1,5 +1,4 @@
 import React from 'react'
-import { createRoute } from '@tanstack/react-router'
 import {
   flexRender,
   getCoreRowModel,
@@ -11,7 +10,7 @@ import {
 } from '@tanstack/react-table'
 import { compareItems, rankItem } from '@tanstack/match-sorter-utils'
 
-import { makeData } from '../data/demo-table-data'
+import { makeData } from '../../data/demo-table-data'
 
 import type {
   Column,
@@ -22,9 +21,7 @@ import type {
 } from '@tanstack/react-table'
 import type { RankingInfo } from '@tanstack/match-sorter-utils'
 
-import type { RootRoute } from '@tanstack/react-router'
-
-import type { Person } from '../data/demo-table-data'
+import type { Person } from '../../data/demo-table-data'
 
 declare module '@tanstack/react-table' {
   interface FilterFns {
@@ -358,9 +355,4 @@ function DebouncedInput({
   )
 }
 
-export default (parentRoute: RootRoute) =>
-  createRoute({
-    path: '/demo/table',
-    component: TableDemo,
-    getParentRoute: () => parentRoute,
-  })
+export default TableDemo

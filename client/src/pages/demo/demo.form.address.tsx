@@ -1,8 +1,4 @@
-import { createRoute } from '@tanstack/react-router'
-
-import { useAppForm } from '../hooks/demo.form'
-
-import type { RootRoute } from '@tanstack/react-router'
+import { useAppForm } from '../../hooks/demo.form'
 
 function AddressForm() {
   const form = useAppForm({
@@ -197,9 +193,4 @@ function AddressForm() {
   )
 }
 
-export default (parentRoute: RootRoute) =>
-  createRoute({
-    path: '/demo/form/address',
-    component: AddressForm,
-    getParentRoute: () => parentRoute,
-  })
+export default AddressForm

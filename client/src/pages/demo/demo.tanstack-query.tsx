@@ -1,7 +1,4 @@
-import { createRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-
-import type { RootRoute } from '@tanstack/react-router'
 
 function TanStackQueryDemo() {
   const { data } = useQuery({
@@ -23,9 +20,4 @@ function TanStackQueryDemo() {
   )
 }
 
-export default (parentRoute: RootRoute) =>
-  createRoute({
-    path: '/demo/tanstack-query',
-    component: TanStackQueryDemo,
-    getParentRoute: () => parentRoute,
-  })
+export default TanStackQueryDemo
