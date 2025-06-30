@@ -1090,8 +1090,4 @@ This documentation should be updated when:
 
 ---
 
-**Documentation Version**: 1.0.0  
-**Last Updated**: January 2024  
-**Maintainer**: Development Team  
-
 For technical questions or clarifications, please review the inline code comments or contact the development team. 
