@@ -1,0 +1,31 @@
+# Redirects all requests to index.html to support SPA routing
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+# Default headers for all files
+[[headers]]
+for = "/*"
+[headers.values]
+  X-Frame-Options = "DENY"
+  X-Content-Type-Options = "nosniff"
+  # Ensure HTML documents are not cached to always serve the latest version
+  Cache-Control = "max-age=3600"
+
+# Caching policy for versioned assets
+[[headers]]
+for = "/static/js/*"
+[headers.values]
+Cache-Control = "max-age=31536000, immutable"
+
+[[headers]]
+for = "/static/css/*"
+[headers.values]
+Cache-Control = "max-age=31536000, immutable"
+
+# Caching for images and other assets - adjust max-age as needed
+[[headers]]
+for = "/assets/*"
+[headers.values]
+Cache-Control = "max-age=86400" # 1 day; adjust based on how often these assets change
