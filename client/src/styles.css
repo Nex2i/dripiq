@@ -33,6 +33,85 @@
   }
 }
 
+@keyframes float-horizontal {
+  0%,
+  100% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(30px) translateY(-15px);
+  }
+  50% {
+    transform: translateX(60px) translateY(0px);
+  }
+  75% {
+    transform: translateX(30px) translateY(15px);
+  }
+}
+
+@keyframes float-diagonal {
+  0%,
+  100% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(40px) translateY(-30px);
+  }
+  50% {
+    transform: translateX(80px) translateY(-60px);
+  }
+  75% {
+    transform: translateX(40px) translateY(-30px);
+  }
+}
+
+@keyframes float-circular {
+  0% {
+    transform: translateX(0px) translateY(0px);
+  }
+  25% {
+    transform: translateX(50px) translateY(-50px);
+  }
+  50% {
+    transform: translateX(0px) translateY(-100px);
+  }
+  75% {
+    transform: translateX(-50px) translateY(-50px);
+  }
+  100% {
+    transform: translateX(0px) translateY(0px);
+  }
+}
+
+@keyframes float-gentle {
+  0%,
+  100% {
+    transform: translateX(0px) translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateX(20px) translateY(-25px) rotate(120deg);
+  }
+  66% {
+    transform: translateX(-15px) translateY(-40px) rotate(240deg);
+  }
+}
+
+@keyframes float-wave {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-20px) translateX(15px);
+  }
+  50% {
+    transform: translateY(0px) translateX(30px);
+  }
+  75% {
+    transform: translateY(20px) translateX(15px);
+  }
+}
+
 /* Global styles */
 * {
   scroll-behavior: smooth;
@@ -65,6 +144,26 @@ code {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-horizontal {
+  animation: float-horizontal 8s ease-in-out infinite;
+}
+
+.animate-float-diagonal {
+  animation: float-diagonal 12s ease-in-out infinite;
+}
+
+.animate-float-circular {
+  animation: float-circular 15s linear infinite;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 10s ease-in-out infinite;
+}
+
+.animate-float-wave {
+  animation: float-wave 6s ease-in-out infinite;
 }
 
 /* Enhanced button hover effects */

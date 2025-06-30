@@ -149,6 +149,39 @@ export class TenantService {
         await db.insert(rolePermissions).values(memberPermissions);
       }
     }
+
+    // Create Viewer role with read-only permissions
+    const viewerRole: NewRole = {
+      name: 'Viewer',
+      description: 'Read-only access to all resources',
+      tenantId,
+      isSystemRole: false,
+    };
+
+    const [viewerRoleCreated] = await db.insert(roles).values(viewerRole).returning();
+
+    if (viewerRoleCreated) {
+      // Assign all read permissions to viewer role
+      const viewerPermissionNames = [
+        'users:read',
+        'roles:read',
+        'tenants:read',
+        'permissions:read',
+      ];
+
+      const viewerPermissionIds = allPermissions
+        .filter((p) => viewerPermissionNames.includes(p.name))
+        .map((p) => p.id);
+
+      const viewerPermissions: NewRolePermission[] = viewerPermissionIds.map((permissionId) => ({
+        roleId: viewerRoleCreated.id,
+        permissionId,
+      }));
+
+      if (viewerPermissions.length > 0) {
+        await db.insert(rolePermissions).values(viewerPermissions);
+      }
+    }
   }
 
   /**

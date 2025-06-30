@@ -148,6 +148,39 @@ async function createSystemRoles() {
       console.log('✅ Platform Manager role created with management permissions');
     }
   }
+
+  // Create Platform Viewer system role (read-only)
+  const [platformViewerRole] = await db
+    .insert(roles)
+    .values({
+      name: 'Platform Viewer',
+      description: 'Platform-level read-only access to all resources',
+      isSystemRole: true,
+      tenantId: null,
+    })
+    .returning();
+
+  // Assign read-only permissions to Platform Viewer
+  if (platformViewerRole) {
+    const platformViewerPermissionNames = [
+      'users:read',
+      'tenants:read',
+      'roles:read',
+      'permissions:read',
+    ];
+
+    const platformViewerPermissions = allPermissions
+      .filter((p) => platformViewerPermissionNames.includes(p.name))
+      .map((permission) => ({
+        roleId: platformViewerRole.id,
+        permissionId: permission.id,
+      }));
+
+    if (platformViewerPermissions.length > 0) {
+      await db.insert(rolePermissions).values(platformViewerPermissions);
+      console.log('✅ Platform Viewer role created with read-only permissions');
+    }
+  }
 }
 
 async function createSeedUser() {

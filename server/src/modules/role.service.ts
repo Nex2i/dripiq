@@ -245,4 +245,69 @@ export class RoleService {
 
     return result.map((r) => r.permission);
   }
+
+  /**
+   * Create a read-only role with specified resources
+   * @param name - Name of the role
+   * @param description - Description of the role
+   * @param tenantId - Tenant ID (null for system roles)
+   * @param resources - Array of resources to grant read access to (defaults to all)
+   * @param isSystemRole - Whether this is a system role
+   */
+  static async createReadOnlyRole(
+    name: string,
+    description: string,
+    tenantId?: string,
+    resources: string[] = ['users', 'roles', 'tenants', 'permissions'],
+    isSystemRole: boolean = false
+  ): Promise<RoleWithPermissions> {
+    // Get all permissions for the specified resources with 'read' action
+    const allPermissions = await db.select().from(permissions);
+    const readPermissions = allPermissions.filter(
+      (p) => resources.includes(p.resource) && p.action === 'read'
+    );
+
+    if (readPermissions.length === 0) {
+      throw new Error('No read permissions found for the specified resources');
+    }
+
+    // Create the role
+    const roleData: CreateRoleData = {
+      name,
+      description,
+      tenantId: tenantId || undefined,
+      permissionIds: readPermissions.map((p) => p.id),
+    };
+
+    const newRole: NewRole = {
+      name: roleData.name,
+      description: roleData.description || null,
+      tenantId: roleData.tenantId || null,
+      isSystemRole,
+    };
+
+    const [role] = await db.insert(roles).values(newRole).returning();
+
+    if (!role) {
+      throw new Error('Failed to create read-only role');
+    }
+
+    // Assign read permissions to the role
+    await this.assignPermissionsToRole(
+      role.id,
+      readPermissions.map((p) => p.id)
+    );
+
+    return this.getRoleWithPermissions(role.id);
+  }
+
+  /**
+   * Get all read permissions for specified resources
+   */
+  static async getReadPermissions(
+    resources: string[] = ['users', 'roles', 'tenants', 'permissions']
+  ): Promise<Permission[]> {
+    const allPermissions = await db.select().from(permissions);
+    return allPermissions.filter((p) => resources.includes(p.resource) && p.action === 'read');
+  }
 }

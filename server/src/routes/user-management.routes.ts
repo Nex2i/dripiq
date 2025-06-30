@@ -33,6 +33,14 @@ const toggleUserStatusBodySchema = Type.Object({
   isActive: Type.Boolean(),
 });
 
+const createReadOnlyRoleBodySchema = Type.Object({
+  name: Type.String(),
+  description: Type.String(),
+  tenantId: Type.Optional(Type.String()),
+  resources: Type.Optional(Type.Array(Type.String())),
+  isSystemRole: Type.Optional(Type.Boolean()),
+});
+
 export default async function UserManagement(fastify: FastifyInstance, _opts: RouteOptions) {
   // Permission check helper
   const checkPermission = async (
@@ -409,6 +417,140 @@ export default async function UserManagement(fastify: FastifyInstance, _opts: Ro
         fastify.log.error(`Error getting user permissions: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to get permissions',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Create read-only role
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/roles/read-only`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      body: createReadOnlyRoleBodySchema,
+      tags: ['User Management'],
+      summary: 'Create Read-Only Role',
+      description: 'Create a new read-only role with specified resources',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Body: {
+          name: string;
+          description: string;
+          tenantId?: string;
+          resources?: string[];
+          isSystemRole?: boolean;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { name, description, tenantId, resources, isSystemRole = false } = request.body;
+
+        // Check permissions based on role type
+        if (isSystemRole) {
+          // For system roles, check if user is super admin
+          const supabaseUser = (request as any).user;
+          const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
+          if (!dbUser) {
+            reply.status(404).send({ message: 'User not found' });
+            return;
+          }
+
+          // For now, we'll require that the user has role creation permissions in at least one tenant
+          // In a more sophisticated system, you might want a specific system admin permission
+          const userTenants = await TenantService.getUserTenants(dbUser.id);
+          let hasPermission = false;
+
+          for (const userTenant of userTenants) {
+            const canCreate = await RoleService.userHasPermission(
+              dbUser.id,
+              userTenant.tenant.id,
+              'roles:create'
+            );
+            if (canCreate) {
+              hasPermission = true;
+              break;
+            }
+          }
+
+          if (!hasPermission) {
+            reply.status(403).send({
+              message: 'Access denied: roles:create permission required',
+            });
+            return;
+          }
+        } else {
+          // For tenant roles, check tenant-specific permissions
+          if (!tenantId) {
+            reply.status(400).send({
+              message: 'tenantId is required for non-system roles',
+            });
+            return;
+          }
+
+          await checkPermission(request, tenantId, 'roles:create');
+        }
+
+        const newRole = await RoleService.createReadOnlyRole(
+          name,
+          description,
+          tenantId,
+          resources,
+          isSystemRole
+        );
+
+        reply.status(201).send({
+          message: 'Read-only role created successfully',
+          role: newRole,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error creating read-only role: ${error.message}`);
+        reply.status(error.message.includes('permission') ? 403 : 400).send({
+          message: error.message.includes('permission')
+            ? 'Access denied'
+            : 'Failed to create read-only role',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Get read permissions for specified resources
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/permissions/read`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      querystring: Type.Object({
+        resources: Type.Optional(Type.String()),
+      }),
+      tags: ['User Management'],
+      summary: 'Get Read Permissions',
+      description: 'Get all available read permissions for specified resources',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Querystring: { resources?: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const resourcesParam = request.query.resources;
+        const resources = resourcesParam ? resourcesParam.split(',') : undefined;
+
+        const readPermissions = await RoleService.getReadPermissions(resources);
+
+        reply.send({
+          message: 'Read permissions retrieved successfully',
+          permissions: readPermissions,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error getting read permissions: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to get read permissions',
           error: error.message,
         });
       }

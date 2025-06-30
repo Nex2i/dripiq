@@ -152,10 +152,15 @@ function LandingPage() {
           </div>
         </div>
 
-        {/* Floating elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-10 w-16 h-16 bg-indigo-200 rounded-full opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-purple-200 rounded-full opacity-20 animate-pulse delay-2000"></div>
+        {/* Floating animated elements */}
+        <div className="absolute top-16 left-8 w-20 h-20 bg-blue-200 rounded-full opacity-20 animate-float-horizontal"></div>
+        <div className="absolute top-32 right-12 w-16 h-16 bg-indigo-200 rounded-full opacity-25 animate-float-diagonal"></div>
+        <div className="absolute bottom-24 left-1/4 w-12 h-12 bg-purple-200 rounded-full opacity-20 animate-float-circular"></div>
+        <div className="absolute top-1/2 right-1/4 w-14 h-14 bg-cyan-200 rounded-full opacity-15 animate-float-gentle"></div>
+        <div className="absolute bottom-1/3 right-8 w-18 h-18 bg-rose-200 rounded-full opacity-20 animate-float-wave"></div>
+        <div className="absolute top-1/3 left-1/3 w-10 h-10 bg-emerald-200 rounded-full opacity-25 animate-float-horizontal delay-[2s]"></div>
+        <div className="absolute bottom-1/2 left-16 w-8 h-8 bg-yellow-200 rounded-full opacity-20 animate-float-gentle delay-[4s]"></div>
+        <div className="absolute top-3/4 right-1/3 w-22 h-22 bg-violet-200 rounded-full opacity-15 animate-float-diagonal delay-[1s]"></div>
       </div>
 
       {/* Stats Section */}
