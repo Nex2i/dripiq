@@ -222,6 +222,11 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           tenants: userTenants.map((ut) => ({
             id: ut.tenant.id,
             name: ut.tenant.name,
+            role: {
+              id: ut.role.id,
+              name: ut.role.name,
+              description: ut.role.description,
+            },
             isSuperUser: ut.isSuperUser,
             createdAt: ut.tenant.createdAt,
             updatedAt: ut.tenant.updatedAt,

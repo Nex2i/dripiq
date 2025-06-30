@@ -45,6 +45,12 @@ export default function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-6">
                 <button
+                  onClick={() => navigate({ to: '/user-management' })}
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                >
+                  User Management
+                </button>
+                <button
                   onClick={() => navigate({ to: '/demo/table' })}
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
                 >
@@ -147,6 +153,12 @@ export default function Header() {
         >
           <div className="px-4 py-6 bg-white/95 backdrop-blur-sm border-t border-gray-200/50">
             <nav className="flex flex-col space-y-4">
+              <button
+                onClick={() => navigateAndClose('/user-management')}
+                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+              >
+                User Management
+              </button>
               <button
                 onClick={() => navigateAndClose('/demo/table')}
                 className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"

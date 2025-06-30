@@ -8,6 +8,13 @@
       "when": 1751254703842,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751303021865,
+      "tag": "0001_mature_miracleman",
+      "breakpoints": true
     }
   ]
 }
