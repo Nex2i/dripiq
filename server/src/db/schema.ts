@@ -1,9 +1,13 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean, unique } from 'drizzle-orm/pg-core';
+import { text, timestamp, boolean, unique, pgSchema } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
+import { DATABASE_SCHEMA } from '../config';
+
+// Define the custom schema
+export const appSchema = pgSchema(DATABASE_SCHEMA);
 
 // Users table
-export const users = pgTable('users', {
+export const users = appSchema.table('users', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => createId()),
@@ -16,7 +20,7 @@ export const users = pgTable('users', {
 });
 
 // Tenants table
-export const tenants = pgTable('tenants', {
+export const tenants = appSchema.table('tenants', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => createId()),
@@ -26,7 +30,7 @@ export const tenants = pgTable('tenants', {
 });
 
 // User-Tenant relationship table
-export const userTenants = pgTable(
+export const userTenants = appSchema.table(
   'user_tenants',
   {
     id: text('id')

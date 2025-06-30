@@ -24,6 +24,10 @@ const client = postgres({
   database: dbConfig.database,
   ssl: dbConfig.ssl,
   prepare: false, // Disable prefetch as it is not supported for "Transaction" pool mode
+  onnotice: () => {}, // Suppress notice logs
+  transform: {
+    ...postgres.toCamel,
+  },
 });
 
 const db = drizzle(client, { schema });

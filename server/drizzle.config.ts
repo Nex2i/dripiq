@@ -16,7 +16,8 @@ if (process.env.DB_DISABLE_SSL === 'true') {
   dbConfig.ssl = false;
 }
 
-console.log('dbConfig', dbConfig);
+// Get schema name from environment or use default
+const schemaName = process.env.DB_SCHEMA!;
 
 export default defineConfig({
   schema: './src/db/schema.ts',
@@ -25,6 +26,7 @@ export default defineConfig({
   dbCredentials: {
     ...dbConfig,
   },
+  schemaFilter: [schemaName],
   verbose: true,
   strict: true,
 });
