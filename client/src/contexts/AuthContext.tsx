@@ -88,50 +88,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   useEffect(() => {
-    // Get initial session
-    const initializeAuth = async () => {
-      try {
-        const currentSession = await authService.getCurrentSession()
-        setSession(currentSession)
+    let isMounted = true
 
-        if (currentSession) {
-          const currentUser = await authService.getCurrentUser()
-          setUser(currentUser)
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    initializeAuth()
-
-    // Listen for auth changes
+    // Listen for auth changes - this will handle both initial session and changes
     const {
       data: { subscription },
     } = authService.onAuthStateChange(async (event, sessionChange) => {
       console.log('Auth state changed:', event, sessionChange)
+
+      if (!isMounted) return
+
       setSession(sessionChange)
 
-      if (sessionChange) {
+      if (sessionChange && event === 'SIGNED_IN') {
         // User signed in, fetch user data from backend
         try {
           const currentUser = await authService.getCurrentUser(sessionChange)
-          setUser(currentUser)
+          if (isMounted) {
+            setUser(currentUser)
+          }
         } catch (error) {
           console.error('Error fetching user after auth change:', error)
+          if (isMounted) {
+            setUser(null)
+          }
+        }
+      } else if (!sessionChange) {
+        // User signed out
+        if (isMounted) {
           setUser(null)
         }
-      } else {
-        // User signed out
-        setUser(null)
       }
 
-      setLoading(false)
+      if (isMounted) {
+        setLoading(false)
+      }
     })
 
     return () => {
+      isMounted = false
       subscription.unsubscribe()
     }
   }, [])
