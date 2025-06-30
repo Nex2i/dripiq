@@ -64,7 +64,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // If registration was successful and includes session data,
       // the auth state change listener will automatically update the user
-      console.log('Registration completed:', result)
 
       return result
     } catch (error) {

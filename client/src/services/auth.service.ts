@@ -103,10 +103,7 @@ class AuthService {
 
   // Get current user from backend using JWT token
   async getCurrentUser(session?: Session | null): Promise<AuthUser | null> {
-    console.log('AuthService: Getting current user')
-
     if (!session) {
-      console.log('AuthService: No session provided, getting current session')
       session = await this.getCurrentSession()
     }
 
