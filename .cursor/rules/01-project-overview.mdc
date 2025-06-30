@@ -1,0 +1,88 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DripIQ - AI-Powered Sales Re-engagement Platform
+
+## 🏗 Architecture Overview
+
+DripIQ is a full-stack TypeScript application with a **React frontend** and **Node.js backend**, designed for intelligent sales re-engagement and lead nurturing.
+
+### Tech Stack
+
+**Frontend (Client)**
+- **React 19** with TypeScript
+- **Vite** for build tooling and development
+- **TailwindCSS v4** for styling
+- **TanStack Router** for file-based routing
+- **TanStack Query** for server state management
+- **TanStack Form** for form handling
+- **TanStack Store** for client state
+- **Supabase** for authentication
+
+**Backend (Server)**
+- **Node.js** with **Fastify** framework
+- **TypeScript** for type safety
+- **Drizzle ORM** with **PostgreSQL** (migrated from Prisma)
+- **JWT** authentication with **Supabase** integration
+- **Swagger/OpenAPI** for API documentation
+
+## 📁 Project Structure
+
+```
+dripiq/
+├── client/                 # React frontend application
+├── server/                 # Node.js backend application
+├── README.md              # Main project documentation
+└── AUTH_SETUP.md          # Authentication setup guide
+```
+
+## 🚀 Entry Points & Key Files
+
+### Client Entry Points
+- [client/src/main.tsx](mdc:client/src/main.tsx) - Application entry point and providers setup
+- [client/src/router.tsx](mdc:client/src/router.tsx) - TanStack Router configuration with auth guards
+- [client/index.html](mdc:client/index.html) - HTML entry point
+- [client/vite.config.ts](mdc:client/vite.config.ts) - Vite configuration with path aliases
+
+### Server Entry Points  
+- [server/src/index.ts](mdc:server/src/index.ts) - Server startup and port configuration
+- [server/src/app.ts](mdc:server/src/app.ts) - Fastify app setup with plugins and routes
+- [server/src/db/index.ts](mdc:server/src/db/index.ts) - Database client and connection
+
+### Configuration Files
+- [client/package.json](mdc:client/package.json) - Frontend dependencies and scripts
+- [server/package.json](mdc:server/package.json) - Backend dependencies and scripts  
+- [server/drizzle.config.ts](mdc:server/drizzle.config.ts) - Drizzle ORM configuration
+- [client/tsconfig.json](mdc:client/tsconfig.json) - Frontend TypeScript config
+- [server/tsconfig.json](mdc:server/tsconfig.json) - Backend TypeScript config with path aliases
+
+## 🔧 Development Commands
+
+### Starting Development Servers
+```bash
+# Start backend (from server directory)
+cd server && npm run dev
+
+# Start frontend (from client directory)  
+cd client && npm run dev
+```
+
+### Database Operations
+```bash
+# Run from server directory
+npm run db:migrate     # Apply migrations
+npm run db:seed        # Seed database
+npm run db:studio      # Open Drizzle Studio
+npm run db:generate    # Generate new migration
+```
+
+## 🔑 Key Concepts
+
+- **Monorepo Structure**: Separate client and server with independent package.json files
+- **TypeScript First**: Strict typing throughout the application
+- **Authentication Flow**: Supabase auth + custom user/tenant management
+- **Database Schema**: Multi-tenant architecture with users, tenants, and permissions
+- **API-First Design**: RESTful API with OpenAPI documentation
+- **Modern Frontend**: File-based routing, server state management, form handling
