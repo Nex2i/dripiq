@@ -20,7 +20,7 @@ Create a `.env.local` file in the `client/` directory:
 
 ```bash
 # API Configuration
-VITE_API_URL=http://localhost:8080
+VITE_API_BASE_URL=http://localhost:8080
 
 # Supabase Configuration
 VITE_SUPABASE_URL=your_supabase_project_url

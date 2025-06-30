@@ -154,7 +154,7 @@ dripIq solves the critical problem of lost sales opportunities by automating the
    ```
    
    ```env
-   VITE_API_URL="http://localhost:3001"
+   VITE_API_BASE_URL="http://localhost:3001"
    VITE_SUPABASE_URL="your-supabase-url"
    VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
    ```

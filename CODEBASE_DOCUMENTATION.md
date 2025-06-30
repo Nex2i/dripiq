@@ -633,7 +633,7 @@ Response: `200 OK`
 
 #### Client (.env)
 ```env
-VITE_API_URL=http://localhost:3001
+VITE_API_BASE_URL=http://localhost:3001
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```

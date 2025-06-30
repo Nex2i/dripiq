@@ -1,37 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-
-interface Permission {
-  id: string
-  name: string
-  description: string
-  resource: string
-  action: string
-}
-
-interface Role {
-  id: string
-  name: string
-  description: string
-  permissions: Permission[]
-}
-
-interface UserWithRole {
-  id: string
-  email: string
-  name: string
-  isActive: boolean
-  role: Role
-  tenantId: string
-  isSuperUser: boolean
-}
-
-interface UserPermissions {
-  permissions: Permission[]
-  role?: Role
-  canInvite: boolean
-  canManage: boolean
-}
+import {
+  userManagementService,
+  type Permission,
+  type Role,
+  type UserWithRole,
+  type UserPermissions,
+} from '@/services/user-management.service'
 
 const UserManagement: React.FC = () => {
   const { user } = useAuth()
@@ -64,23 +39,9 @@ const UserManagement: React.FC = () => {
     setError(null)
 
     try {
-      const token = localStorage.getItem('token')
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      }
-
       // Load user permissions
-      const permissionsResponse = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/user-management/my-permissions/${currentTenantId}`,
-        { headers },
-      )
-
-      if (!permissionsResponse.ok) {
-        throw new Error('Failed to load permissions')
-      }
-
-      const permissionsData = await permissionsResponse.json()
+      const permissionsData =
+        await userManagementService.getUserPermissions(currentTenantId)
       setUserPermissions(permissionsData)
 
       // Only load other data if user has permission to read users
@@ -89,30 +50,13 @@ const UserManagement: React.FC = () => {
           (p: Permission) => p.name === 'users:read',
         )
       ) {
-        // Load users
-        const usersResponse = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/user-management/tenants/${currentTenantId}/users`,
-          { headers },
-        )
+        // Load users and roles in parallel
+        const [usersData, rolesData] = await Promise.all([
+          userManagementService.getTenantUsers(currentTenantId),
+          userManagementService.getTenantRoles(currentTenantId),
+        ])
 
-        if (!usersResponse.ok) {
-          throw new Error('Failed to load users')
-        }
-
-        const usersData = await usersResponse.json()
         setUsers(usersData.data.users)
-
-        // Load roles
-        const rolesResponse = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/user-management/tenants/${currentTenantId}/roles`,
-          { headers },
-        )
-
-        if (!rolesResponse.ok) {
-          throw new Error('Failed to load roles')
-        }
-
-        const rolesData = await rolesResponse.json()
         setRoles(rolesData.roles)
       }
     } catch (err: any) {
@@ -128,28 +72,10 @@ const UserManagement: React.FC = () => {
     if (!currentTenantId) return
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/user-management/invite`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...inviteForm,
-            tenantId: currentTenantId,
-          }),
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to invite user')
-      }
-
-      const result = await response.json()
+      const result = await userManagementService.inviteUser({
+        ...inviteForm,
+        tenantId: currentTenantId,
+      })
 
       // Show temporary password if provided
       if (result.tempPassword) {
@@ -172,23 +98,9 @@ const UserManagement: React.FC = () => {
     if (!currentTenantId) return
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/user-management/tenants/${currentTenantId}/users/${userId}/role`,
-        {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ roleId: newRoleId }),
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update user role')
-      }
+      await userManagementService.updateUserRole(currentTenantId, userId, {
+        roleId: newRoleId,
+      })
 
       loadData() // Reload users
     } catch (err: any) {
@@ -206,22 +118,7 @@ const UserManagement: React.FC = () => {
     }
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/user-management/tenants/${currentTenantId}/users/${userId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to remove user')
-      }
+      await userManagementService.removeUserFromTenant(currentTenantId, userId)
 
       loadData() // Reload users
     } catch (err: any) {
@@ -231,23 +128,9 @@ const UserManagement: React.FC = () => {
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/user-management/users/${userId}/status`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ isActive: !currentStatus }),
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update user status')
-      }
+      await userManagementService.updateUserStatus(userId, {
+        isActive: !currentStatus,
+      })
 
       loadData() // Reload users
     } catch (err: any) {
