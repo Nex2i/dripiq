@@ -1,10 +1,12 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
+import { useState } from 'react'
 
 export default function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -12,6 +14,19 @@ export default function Header() {
     } catch (error) {
       console.error('Logout error:', error)
     }
+  }
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+  }
+
+  const navigateAndClose = (path: string) => {
+    navigate({ to: path })
+    closeMobileMenu()
   }
 
   return (
@@ -27,6 +42,7 @@ export default function Header() {
                 <Logo size="md" showText={true} />
               </Link>
 
+              {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-6">
                 <button
                   onClick={() => navigate({ to: '/demo/table' })}
@@ -50,6 +66,31 @@ export default function Header() {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={toggleMobileMenu}
+                className="md:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                aria-label="Toggle mobile menu"
+              >
+                <div className="w-6 h-6 flex flex-col justify-around">
+                  <span
+                    className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
+                      isMobileMenuOpen ? 'rotate-45 translate-y-2.5' : ''
+                    }`}
+                  />
+                  <span
+                    className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
+                      isMobileMenuOpen ? 'opacity-0' : ''
+                    }`}
+                  />
+                  <span
+                    className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
+                      isMobileMenuOpen ? '-rotate-45 -translate-y-2.5' : ''
+                    }`}
+                  />
+                </div>
+              </button>
+
               {user ? (
                 <div className="flex items-center space-x-4">
                   <div className="hidden sm:flex items-center space-x-3">
@@ -97,7 +138,88 @@ export default function Header() {
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        <div
+          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
+            isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="px-4 py-6 bg-white/95 backdrop-blur-sm border-t border-gray-200/50">
+            <nav className="flex flex-col space-y-4">
+              <button
+                onClick={() => navigateAndClose('/demo/table')}
+                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+              >
+                DemoTable
+              </button>
+              <button
+                onClick={() => navigateAndClose('/demo/tanstack-query')}
+                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+              >
+                DemoTanstackQuery
+              </button>
+              <button
+                onClick={() => navigateAndClose('/demo/form/simple')}
+                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+              >
+                DemoFormSimple
+              </button>
+
+              {/* Mobile User Info */}
+              {user && (
+                <div className="pt-4 border-t border-gray-200/50">
+                  <div className="flex items-center space-x-3 px-4 py-2">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-semibold">
+                        {(user.user.name || user.user.email)
+                          ?.charAt(0)
+                          .toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">
+                        {user.user.name || user.user.email}
+                      </div>
+                      {user.tenants && user.tenants.length > 0 && (
+                        <div className="text-xs text-gray-500">
+                          {user.tenants[0].name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Auth Buttons */}
+              {!user && (
+                <div className="pt-4 border-t border-gray-200/50 space-y-3">
+                  <button
+                    onClick={() => navigateAndClose('/auth/login')}
+                    className="w-full text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border border-gray-300 cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => navigateAndClose('/auth/register')}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl text-base font-semibold border-none cursor-pointer transition-all duration-300"
+                  >
+                    Start Free Trial
+                  </button>
+                </div>
+              )}
+            </nav>
+          </div>
+        </div>
       </div>
+
+      {/* Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+          onClick={closeMobileMenu}
+        />
+      )}
     </>
   )
 }
