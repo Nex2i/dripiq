@@ -31,11 +31,17 @@ class LeadsService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
   // Get all leads
-  async getLeads(): Promise<Lead[]> {
+  async getLeads(searchQuery?: string): Promise<Lead[]> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
-      const response = await fetch(`${this.baseUrl}/leads`, {
+      // Build URL with optional search parameter
+      const url = new URL(`${this.baseUrl}/leads`)
+      if (searchQuery && searchQuery.trim()) {
+        url.searchParams.append('search', searchQuery.trim())
+      }
+
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

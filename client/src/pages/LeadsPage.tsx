@@ -17,8 +17,43 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   return itemRank.passed
 }
 
+// Debounced Input Component
+function DebouncedInput({
+  value: initialValue,
+  onChange,
+  debounce = 500,
+  ...props
+}: {
+  value: string | number
+  onChange: (value: string | number) => void
+  debounce?: number
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
+  const [value, setValue] = React.useState(initialValue)
+
+  React.useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value)
+    }, debounce)
+
+    return () => clearTimeout(timeout)
+  }, [value, debounce, onChange])
+
+  return (
+    <input
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+  )
+}
+
 const LeadsPage: React.FC = () => {
-  const { data: leads = [], isLoading, error, refetch } = useLeads()
+  const [searchQuery, setSearchQuery] = React.useState('')
+  const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
   const invalidateLeads = useInvalidateLeads()
 
   const handleRefresh = () => {
@@ -184,9 +219,11 @@ const LeadsPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
             <p className="mt-2 text-gray-600">
-              {leads.length === 0
+              {leads.length === 0 && !searchQuery
                 ? 'No leads yet'
-                : `${leads.length} lead${leads.length === 1 ? '' : 's'} total`}
+                : searchQuery
+                  ? `${leads.length} lead${leads.length === 1 ? '' : 's'} found for "${searchQuery}"`
+                  : `${leads.length} lead${leads.length === 1 ? '' : 's'} total`}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -214,6 +251,54 @@ const LeadsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Search Input */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <DebouncedInput
+              value={searchQuery}
+              onChange={(value) => setSearchQuery(String(value))}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-500"
+              placeholder="Search leads by name, email, company, or phone..."
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                title="Clear search"
+              >
+                <svg
+                  className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {leads.length === 0 ? (
             <div className="p-12 text-center">
@@ -228,12 +313,21 @@ const LeadsPage: React.FC = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No leads yet
+                {searchQuery ? 'No leads found' : 'No leads yet'}
               </h3>
               <p className="text-gray-500 mb-6">
-                Get started by adding your first lead using the + button in the
-                header.
+                {searchQuery
+                  ? `No leads match your search for "${searchQuery}". Try a different search term.`
+                  : 'Get started by adding your first lead using the + button in the header.'}
               </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  Clear Search
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">

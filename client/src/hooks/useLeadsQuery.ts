@@ -17,10 +17,10 @@ export const leadQueryKeys = {
 }
 
 // Hook to get all leads
-export function useLeads() {
+export function useLeads(searchQuery?: string) {
   return useQuery({
-    queryKey: leadQueryKeys.list(),
-    queryFn: () => leadsService.getLeads(),
+    queryKey: leadQueryKeys.list({ search: searchQuery }),
+    queryFn: () => leadsService.getLeads(searchQuery),
     staleTime: 1000 * 60, // Consider data stale after 1 minute
     refetchOnMount: 'always', // Always refetch when component mounts
     refetchOnWindowFocus: true,

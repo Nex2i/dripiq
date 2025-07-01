@@ -41,7 +41,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Get All Leads',
-      description: 'Retrieve all leads from the database',
+      description: 'Retrieve all leads from the database with optional search',
+      querystring: Type.Object({
+        search: Type.Optional(Type.String({ description: 'Search term to filter leads' })),
+      }),
       response: {
         200: Type.Array(leadResponseSchema, { description: 'List of leads' }),
         500: Type.Object({
@@ -50,9 +53,17 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }),
       },
     },
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+    handler: async (
+      request: FastifyRequest<{
+        Querystring: {
+          search?: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
-        const leads = await getLeads();
+        const { search } = request.query;
+        const leads = await getLeads(search);
 
         reply.send(leads);
       } catch (error: any) {
