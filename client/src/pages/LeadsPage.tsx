@@ -1,52 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { leadsService, type Lead } from '../services/leads.service'
+import React from 'react'
+import { useLeads, useInvalidateLeads } from '../hooks/useLeadsQuery'
 
 const LeadsPage: React.FC = () => {
-  const [leads, setLeads] = useState<Lead[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: leads = [], isLoading, error, refetch } = useLeads()
+  const invalidateLeads = useInvalidateLeads()
 
-  const fetchLeads = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const data = await leadsService.getLeads()
-      setLeads(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch leads')
-      console.error('Error fetching leads:', err)
-    } finally {
-      setIsLoading(false)
-    }
+  const handleRefresh = () => {
+    invalidateLeads()
+    refetch()
   }
-
-  useEffect(() => {
-    fetchLeads()
-  }, [])
-
-  // Auto-refresh leads when page becomes visible or gains focus
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchLeads()
-      }
-    }
-
-    const handleFocus = () => {
-      fetchLeads()
-    }
-
-    // Listen for page visibility changes (tab switching)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    // Listen for window focus (switching between apps/windows)
-    window.addEventListener('focus', handleFocus)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -64,11 +26,14 @@ const LeadsPage: React.FC = () => {
       lost: 'bg-red-100 text-red-800',
     }
 
+    // Handle undefined, null, or empty status values
+    const displayStatus = status || 'new'
+
     return (
       <span
-        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}
+        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[displayStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}
       >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
       </span>
     )
   }
@@ -113,9 +78,11 @@ const LeadsPage: React.FC = () => {
               <p className="text-gray-900 font-medium mb-2">
                 Error loading leads
               </p>
-              <p className="text-gray-500 mb-4">{error}</p>
+              <p className="text-gray-500 mb-4">
+                {error?.message || String(error)}
+              </p>
               <button
-                onClick={fetchLeads}
+                onClick={handleRefresh}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Try Again
@@ -141,7 +108,7 @@ const LeadsPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={fetchLeads}
+              onClick={handleRefresh}
               disabled={isLoading}
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh leads"
@@ -229,9 +196,9 @@ const LeadsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {leads.map((lead) => (
+                  {leads.map((lead, index) => (
                     <tr
-                      key={lead.id}
+                      key={lead.id || `lead-${index}`}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">

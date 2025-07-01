@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { leadsService, type CreateLeadData } from '../services/leads.service'
+import { type CreateLeadData } from '../services/leads.service'
 import { useNavigate } from '@tanstack/react-router'
+import { useCreateLead } from '../hooks/useLeadsQuery'
 
 interface AddLeadModalProps {
   isOpen: boolean
@@ -9,13 +10,13 @@ interface AddLeadModalProps {
 
 const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
+  const createLeadMutation = useCreateLead()
   const [formData, setFormData] = useState<CreateLeadData>({
     name: '',
     email: '',
     company: '',
     phone: '',
   })
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const resetForm = () => {
@@ -43,20 +44,19 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError(null)
 
-    try {
-      const newLead = await leadsService.createLead(formData)
-      resetForm()
-      onClose()
-      // Redirect to leads page
-      navigate({ to: '/leads' })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add lead')
-    } finally {
-      setIsLoading(false)
-    }
+    createLeadMutation.mutate(formData, {
+      onSuccess: () => {
+        resetForm()
+        onClose()
+        // Redirect to leads page (cache will be automatically updated)
+        navigate({ to: '/leads' })
+      },
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Failed to add lead')
+      },
+    })
   }
 
   if (!isOpen) return null
@@ -70,7 +70,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
-              disabled={isLoading}
+              disabled={createLeadMutation.isPending}
             >
               <svg
                 className="w-6 h-6"
@@ -110,7 +110,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 required
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
               />
             </div>
 
@@ -129,7 +129,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 required
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
               />
             </div>
 
@@ -147,7 +147,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
                 value={formData.company}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
               />
             </div>
 
@@ -165,7 +165,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
                 value={formData.phone}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
               />
             </div>
 
@@ -174,16 +174,16 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={handleClose}
                 className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                disabled={isLoading}
+                disabled={createLeadMutation.isPending}
               >
-                {isLoading ? (
+                {createLeadMutation.isPending ? (
                   <>
                     <svg
                       className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"

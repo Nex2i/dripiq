@@ -1,8 +1,9 @@
 import db from '../libs/drizzleClient';
 import { leads, NewLead } from '../db/schema';
+import { desc } from 'drizzle-orm';
 
 export const getLeads = async () => {
-  const result = await db.select().from(leads);
+  const result = await db.select().from(leads).orderBy(desc(leads.createdAt));
   return result;
 };
 
