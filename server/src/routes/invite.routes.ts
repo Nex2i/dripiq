@@ -7,7 +7,7 @@ import { SupabaseAdminService } from '@/modules/supabase-admin.service';
 import { TenantService } from '@/modules/tenant.service';
 import { UserService } from '@/modules/user.service';
 
-const basePath = '/api';
+const basePath = '';
 
 // Schema for invite creation
 const createInviteSchema = Type.Object({
@@ -25,7 +25,6 @@ const verifyInviteSchema = Type.Object({
 
 // Schema for users list query params
 const usersQuerySchema = Type.Object({
-  tenantId: Type.String(),
   page: Type.Optional(Type.Integer({ minimum: 1 })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
 });
@@ -45,7 +44,6 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     handler: async (
       request: FastifyRequest<{
         Querystring: {
-          tenantId: string;
           page?: number;
           limit?: number;
         };
@@ -53,7 +51,8 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
       reply: FastifyReply
     ) => {
       try {
-        const { tenantId, page = 1, limit = 25 } = request.query;
+        const { page = 1, limit = 25 } = request.query;
+        const tenantId = (request as any).tenantId;
 
         const result = await InviteService.getTenantUsers(tenantId, page, limit);
 

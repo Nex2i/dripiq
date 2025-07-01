@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Plus, MoreVertical, Eye, RefreshCw, Trash2, Users, AlertCircle } from 'lucide-react'
+import {
+  Plus,
+  MoreVertical,
+  Eye,
+  RefreshCw,
+  Trash2,
+  Users,
+  AlertCircle,
+} from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
 import { invitesService, type User } from '../../services/invites.service'
 import { useAuth } from '../../contexts/AuthContext'
@@ -55,7 +63,10 @@ export default function UsersPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await invitesService.getUsers(user.tenants[0].id, pagination.page, pagination.limit)
+      const response = await invitesService.getUsers(
+        pagination.page,
+        pagination.limit,
+      )
       setUsers(response.data)
       setPagination(response.pagination)
     } catch (err) {
@@ -137,7 +148,9 @@ export default function UsersPage() {
             // Error state
             <div className="text-center py-12">
               <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Error loading users</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                Error loading users
+              </h3>
               <p className="mt-1 text-sm text-gray-500">{error}</p>
               <div className="mt-6">
                 <button
@@ -275,8 +288,18 @@ export default function UsersPage() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
-                        <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of{' '}
+                        Showing{' '}
+                        <span className="font-medium">
+                          {(pagination.page - 1) * pagination.limit + 1}
+                        </span>{' '}
+                        to{' '}
+                        <span className="font-medium">
+                          {Math.min(
+                            pagination.page * pagination.limit,
+                            pagination.total,
+                          )}
+                        </span>{' '}
+                        of{' '}
                         <span className="font-medium">{pagination.total}</span>{' '}
                         results
                       </p>

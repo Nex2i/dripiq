@@ -61,15 +61,14 @@ export interface ApiError {
 }
 
 class InvitesService {
-  private baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085') + '/api'
+  private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
   // Get all users for a tenant (combines seats + invites)
-  async getUsers(tenantId: string, page = 1, limit = 25): Promise<UsersResponse> {
+  async getUsers(page = 1, limit = 25): Promise<UsersResponse> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
       const url = new URL(`${this.baseUrl}/users`)
-      url.searchParams.append('tenantId', tenantId)
       url.searchParams.append('page', page.toString())
       url.searchParams.append('limit', limit.toString())
 
@@ -143,7 +142,9 @@ class InvitesService {
   }
 
   // Accept invitation
-  async acceptInvite(token: string): Promise<{ message: string; invite: any; seat: any }> {
+  async acceptInvite(
+    token: string,
+  ): Promise<{ message: string; invite: any; seat: any }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
@@ -169,17 +170,22 @@ class InvitesService {
   }
 
   // Resend invitation
-  async resendInvite(inviteId: string): Promise<{ message: string; invite: any }> {
+  async resendInvite(
+    inviteId: string,
+  ): Promise<{ message: string; invite: any }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
-      const response = await fetch(`${this.baseUrl}/invites/${inviteId}/resend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
+      const response = await fetch(
+        `${this.baseUrl}/invites/${inviteId}/resend`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
         },
-      })
+      )
 
       if (!response.ok) {
         const errorData: ApiError = await response.json()
@@ -194,7 +200,9 @@ class InvitesService {
   }
 
   // Revoke invitation
-  async revokeInvite(inviteId: string): Promise<{ message: string; invite: any }> {
+  async revokeInvite(
+    inviteId: string,
+  ): Promise<{ message: string; invite: any }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
