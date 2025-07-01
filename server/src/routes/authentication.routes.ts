@@ -209,7 +209,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         }
 
         // Fetch user from database using Supabase ID
-        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
+        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.supabaseId);
 
         if (!dbUser) {
           reply.status(404).send({

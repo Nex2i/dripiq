@@ -2,11 +2,20 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState } from 'react'
+import AddLeadModal from './AddLeadModal'
+
+interface LeadFormData {
+  name: string
+  email: string
+  company?: string
+  phone?: string
+}
 
 export default function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -45,6 +54,12 @@ export default function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-6">
                 <button
+                  onClick={() => navigate({ to: '/leads' })}
+                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                >
+                  Leads
+                </button>
+                <button
                   onClick={() => navigate({ to: '/demo/table' })}
                   className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
                 >
@@ -66,6 +81,27 @@ export default function Header() {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Add Lead Button */}
+              <button
+                onClick={() => setIsAddLeadModalOpen(true)}
+                className="p-2 rounded-full text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                aria-label="Add new lead"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </button>
               {/* Mobile Menu Button */}
               <button
                 onClick={toggleMobileMenu}
@@ -148,6 +184,12 @@ export default function Header() {
           <div className="px-4 py-6 bg-white/95 backdrop-blur-sm border-t border-gray-200/50">
             <nav className="flex flex-col space-y-4">
               <button
+                onClick={() => navigateAndClose('/leads')}
+                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+              >
+                Leads
+              </button>
+              <button
                 onClick={() => navigateAndClose('/demo/table')}
                 className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
               >
@@ -229,6 +271,11 @@ export default function Header() {
           onClick={closeMobileMenu}
         />
       )}
+
+      <AddLeadModal
+        isOpen={isAddLeadModalOpen}
+        onClose={() => setIsAddLeadModalOpen(false)}
+      />
     </>
   )
 }

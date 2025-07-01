@@ -1,11 +1,32 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
-import { ForbiddenError } from '@/exceptions/error'; // Assuming this is a custom error class
-import { logger } from '@/libs/logger'; // Assuming this is your logger
-import { supabase } from '@/libs/supabaseClient'; // Import the server-side Supabase client
+import { ForbiddenError } from '@/exceptions/error';
+import { logger } from '@/libs/logger';
+import { supabase } from '@/libs/supabaseClient';
+import { UserService } from '@/modules/user.service';
+import { TenantService } from '@/modules/tenant.service';
+
+export interface AuthenticatedRequest extends FastifyRequest {
+  user: {
+    id: string; // Database user ID
+    supabaseId: string;
+    email: string;
+    name?: string;
+    avatar?: string;
+  };
+  tenantId: string; // Primary/current tenant ID (automatically determined)
+  userTenants: Array<{
+    id: string;
+    name: string;
+    isSuperUser: boolean;
+  }>;
+}
 
 export default fastifyPlugin(
   async (fastify: FastifyInstance) => {
+    /**
+     * Enhanced authentication prehandler - validates JWT, attaches user, and determines tenant context
+     */
     const authPrehandler = async (request: FastifyRequest, _reply: FastifyReply) => {
       try {
         const authHeader = request.headers?.authorization;
@@ -26,30 +47,53 @@ export default fastifyPlugin(
           error,
         } = await supabase.auth.getUser(token);
 
-        if (error) {
-          logger.warn(`Supabase auth.getUser error: ${error.message}`, {
-            authHeader: request.headers?.authorization, // Log only a part or a masked version in production
+        if (error || !user) {
+          logger.warn(`Supabase auth.getUser error: ${error?.message}`, {
             requestUrl: request.url,
           });
-          // Distinguish between different types of errors if needed, e.g., token expired vs. invalid token
-          throw new ForbiddenError(`Invalid Token: ${error.message}`);
+          throw new ForbiddenError(`Invalid Token: ${error?.message || 'User not found'}`);
         }
 
-        if (!user) {
-          // This case might be redundant if error is always set when user is null, but good for safety
-          throw new ForbiddenError('Invalid Token: User not found for token.');
+        // Get user from database
+        const dbUser = await UserService.getUserBySupabaseId(user.id);
+        if (!dbUser) {
+          throw new ForbiddenError('User not found in database');
         }
 
-        // Attach user information to the request object
-        // Ensure your FastifyRequest interface is extended to include 'user'
-        // (as seen in the original file, it was expected to be `request.user = payload.user;`)
-        (request as any).user = user; // Using 'as any' for now, proper type extension is better
+        // Get user's tenants to determine tenant context
+        const userTenants = await TenantService.getUserTenants(dbUser.id);
+
+        if (userTenants.length === 0) {
+          throw new ForbiddenError('User is not associated with any tenant');
+        }
+
+        // Use the first tenant as the primary tenant (or we could add logic for default tenant)
+        const primaryTenant = userTenants[0]!; // Safe because we checked length > 0
+
+        // Attach user and tenant information to the request
+        const authenticatedRequest = request as AuthenticatedRequest;
+        authenticatedRequest.user = {
+          id: dbUser.id,
+          supabaseId: dbUser.supabaseId,
+          email: dbUser.email,
+          name: dbUser.name || undefined,
+          avatar: dbUser.avatar || undefined,
+        };
+
+        authenticatedRequest.tenantId = primaryTenant.tenant.id;
+        authenticatedRequest.userTenants = userTenants.map((ut) => ({
+          id: ut.tenant.id,
+          name: ut.tenant.name,
+          isSuperUser: ut.isSuperUser,
+        }));
+
+        logger.debug(
+          `User ${dbUser.id} authenticated with primary tenant: ${primaryTenant.tenant.id}`
+        );
       } catch (error: any) {
-        // Log the error with more details
         logger.warn(`authPrehandler Error: ${error.message || 'Unknown auth error'}`, {
           error: error instanceof Error ? error.stack : JSON.stringify(error),
           requestUrl: request.url,
-          // Avoid logging sensitive parts of authHeader in production directly
           authHeaderProvided: !!request.headers?.authorization,
         });
 
@@ -70,6 +114,7 @@ export default fastifyPlugin(
       }
     };
 
+    // Decorate fastify instance with authentication prehandler
     fastify.decorate('authPrehandler', authPrehandler);
   },
   {
