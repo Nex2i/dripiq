@@ -1,75 +1,84 @@
-import React, { useState } from 'react';
-import { X, Mail, User, Shield, Settings } from 'lucide-react';
-import { invitesService, type CreateInviteData } from '../services/invites.service';
+import React, { useState } from 'react'
+import { X, Mail, User, Shield, Settings } from 'lucide-react'
+import {
+  invitesService,
+  type CreateInviteData,
+} from '../services/invites.service'
 
 interface InviteUserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: () => void
 }
 
 interface InviteFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: 'owner' | 'manager' | 'rep';
-  dailyCap: number;
+  firstName: string
+  lastName: string
+  email: string
+  role: 'owner' | 'manager' | 'rep'
+  dailyCap: number
 }
 
-export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalProps) {
+export function InviteUserModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: InviteUserModalProps) {
   const [formData, setFormData] = useState<InviteFormData>({
     firstName: '',
     lastName: '',
     email: '',
     role: 'rep',
     dailyCap: 200,
-  });
+  })
 
-  const [errors, setErrors] = useState<Partial<Record<keyof InviteFormData, string>>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof InviteFormData, string>>
+  >({})
+  const [isLoading, setIsLoading] = useState(false)
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof InviteFormData, string>> = {};
+    const newErrors: Partial<Record<keyof InviteFormData, string>> = {}
 
     // First name validation
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+      newErrors.firstName = 'First name is required'
     } else if (formData.firstName.length > 50) {
-      newErrors.firstName = 'First name must be 50 characters or less';
+      newErrors.firstName = 'First name must be 50 characters or less'
     }
 
     // Last name validation (optional but has length limit)
     if (formData.lastName.length > 50) {
-      newErrors.lastName = 'Last name must be 50 characters or less';
+      newErrors.lastName = 'Last name must be 50 characters or less'
     }
 
     // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email is required'
     } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
+        newErrors.email = 'Please enter a valid email address'
       }
     }
 
     // Daily cap validation
     if (formData.dailyCap < 1 || formData.dailyCap > 2000) {
-      newErrors.dailyCap = 'Daily cap must be between 1 and 2,000';
+      newErrors.dailyCap = 'Daily cap must be between 1 and 2,000'
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+    e.preventDefault()
+
     if (!validateForm()) {
-      return;
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
 
     try {
       const inviteData: CreateInviteData = {
@@ -78,10 +87,10 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
         email: formData.email,
         role: formData.role,
         dailyCap: formData.dailyCap,
-      };
+      }
 
-      await invitesService.createInvite(inviteData);
-      
+      await invitesService.createInvite(inviteData)
+
       // Reset form
       setFormData({
         firstName: '',
@@ -89,38 +98,44 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
         email: '',
         role: 'rep',
         dailyCap: 200,
-      });
-      setErrors({});
-      
-      onSuccess();
-    } catch (error) {
-      console.error('Error sending invite:', error);
-      // Show error to user
-      setErrors({ email: error instanceof Error ? error.message : 'Failed to send invitation' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      })
+      setErrors({})
 
-  const handleChange = (field: keyof InviteFormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+      onSuccess()
+    } catch (error) {
+      console.error('Error sending invite:', error)
+      // Show error to user
+      setErrors({
+        email:
+          error instanceof Error ? error.message : 'Failed to send invitation',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleChange = (
+    field: keyof InviteFormData,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 bg-opacity-25 backdrop-blur-sm transition-opacity"
           onClick={onClose}
         />
-        
+
         {/* Modal */}
         <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto">
           {/* Header */}
@@ -141,7 +156,10 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {/* First Name */}
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="firstName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 <User className="h-4 w-4 inline mr-1" />
                 First name *
               </label>
@@ -163,7 +181,10 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
 
             {/* Last Name */}
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="lastName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Last name
               </label>
               <input
@@ -184,7 +205,10 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 <Mail className="h-4 w-4 inline mr-1" />
                 Email address *
               </label>
@@ -205,14 +229,22 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
 
             {/* Role */}
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 <Shield className="h-4 w-4 inline mr-1" />
                 Role
               </label>
               <select
                 id="role"
                 value={formData.role}
-                onChange={(e) => handleChange('role', e.target.value as 'owner' | 'manager' | 'rep')}
+                onChange={(e) =>
+                  handleChange(
+                    'role',
+                    e.target.value as 'owner' | 'manager' | 'rep',
+                  )
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="rep">Rep</option>
@@ -223,7 +255,10 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
 
             {/* Daily Send Cap */}
             <div>
-              <label htmlFor="dailyCap" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="dailyCap"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 <Settings className="h-4 w-4 inline mr-1" />
                 Daily send cap
               </label>
@@ -231,7 +266,9 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
                 type="number"
                 id="dailyCap"
                 value={formData.dailyCap}
-                onChange={(e) => handleChange('dailyCap', parseInt(e.target.value) || 200)}
+                onChange={(e) =>
+                  handleChange('dailyCap', parseInt(e.target.value) || 200)
+                }
                 min={1}
                 max={2000}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -268,5 +305,5 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
         </div>
       </div>
     </div>
-  );
+  )
 }
