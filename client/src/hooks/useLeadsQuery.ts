@@ -159,6 +159,37 @@ export function useDeleteLead() {
   })
 }
 
+// Hook to bulk delete leads
+export function useBulkDeleteLeads() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (ids: string[]) => leadsService.bulkDeleteLeads(ids),
+    onSuccess: (data, deletedIds) => {
+      // Remove the leads from the list cache
+      queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
+        if (!oldLeads) return []
+        return oldLeads.filter((lead) => !deletedIds.includes(lead.id))
+      })
+
+      // Remove individual lead caches
+      deletedIds.forEach((id) => {
+        queryClient.removeQueries({
+          queryKey: leadQueryKeys.detail(id),
+        })
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error bulk deleting leads:', error)
+    },
+  })
+}
+
 // Hook to invalidate leads data (useful for manual refresh)
 export function useInvalidateLeads() {
   const queryClient = useQueryClient()

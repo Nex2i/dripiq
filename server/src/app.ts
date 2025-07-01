@@ -34,6 +34,8 @@ async function startServer() {
   await app.register(fastifyCors, {
     origin: true,
     credentials: CREDENTIALS === 'true',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
   await app.register(fastifyHelmet);
 

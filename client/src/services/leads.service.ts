@@ -158,6 +158,34 @@ class LeadsService {
       throw error
     }
   }
+
+  // Bulk delete leads
+  async bulkDeleteLeads(
+    ids: string[],
+  ): Promise<{ deletedCount: number; deletedLeads: Lead[] }> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
+
+      const response = await fetch(`${this.baseUrl}/leads/bulk`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({ ids }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete leads')
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error bulk deleting leads:', error)
+      throw error
+    }
+  }
 }
 
 export const leadsService = new LeadsService()

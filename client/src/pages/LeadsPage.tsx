@@ -5,9 +5,14 @@ import {
   useReactTable,
   type ColumnDef,
   type FilterFn,
+  type RowSelectionState,
 } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
-import { useLeads, useInvalidateLeads } from '../hooks/useLeadsQuery'
+import {
+  useLeads,
+  useInvalidateLeads,
+  useBulkDeleteLeads,
+} from '../hooks/useLeadsQuery'
 import type { Lead } from '../services/leads.service'
 
 // Define a simple fuzzy filter function (required by global module declaration)
@@ -53,12 +58,34 @@ function DebouncedInput({
 
 const LeadsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
   const invalidateLeads = useInvalidateLeads()
+  const bulkDeleteMutation = useBulkDeleteLeads()
 
   const handleRefresh = () => {
     invalidateLeads()
     refetch()
+  }
+
+  const handleBulkDelete = async () => {
+    const selectedIds = Object.keys(rowSelection).filter(
+      (id) => rowSelection[id],
+    )
+    if (selectedIds.length === 0) return
+
+    if (
+      window.confirm(
+        `Are you sure you want to delete ${selectedIds.length} lead(s)? This action cannot be undone.`,
+      )
+    ) {
+      try {
+        await bulkDeleteMutation.mutateAsync(selectedIds)
+        setRowSelection({}) // Clear selection after successful delete
+      } catch (error) {
+        console.error('Failed to delete leads:', error)
+      }
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -92,6 +119,28 @@ const LeadsPage: React.FC = () => {
   // Define table columns
   const columns = React.useMemo<ColumnDef<Lead>[]>(
     () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            checked={table.getIsAllRowsSelected()}
+            onChange={table.getToggleAllRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        ),
+        enableSorting: false,
+        enableColumnFilter: false,
+        size: 40,
+      },
       {
         accessorKey: 'name',
         header: 'Name',
@@ -150,11 +199,21 @@ const LeadsPage: React.FC = () => {
   const table = useReactTable({
     data: leads,
     columns,
+    state: {
+      rowSelection,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.id,
     filterFns: {
       fuzzy: fuzzyFilter,
     },
   })
+
+  const selectedRowCount = Object.keys(rowSelection).filter(
+    (id) => rowSelection[id],
+  ).length
 
   if (isLoading) {
     return (
@@ -224,6 +283,11 @@ const LeadsPage: React.FC = () => {
                 : searchQuery
                   ? `${leads.length} lead${leads.length === 1 ? '' : 's'} found for "${searchQuery}"`
                   : `${leads.length} lead${leads.length === 1 ? '' : 's'} total`}
+              {selectedRowCount > 0 && (
+                <span className="ml-2 text-blue-600 font-medium">
+                  ({selectedRowCount} selected)
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -299,6 +363,86 @@ const LeadsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedRowCount > 0 && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <svg
+                className="h-5 w-5 text-blue-600 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span className="text-blue-900 font-medium">
+                {selectedRowCount} lead{selectedRowCount === 1 ? '' : 's'}{' '}
+                selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setRowSelection({})}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Clear selection
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleteMutation.isPending}
+                className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bulkDeleteMutation.isPending ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    Delete Selected
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {leads.length === 0 ? (
             <div className="p-12 text-center">
@@ -356,7 +500,9 @@ const LeadsPage: React.FC = () => {
                   {table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className={`hover:bg-gray-50 transition-colors ${
+                        row.getIsSelected() ? 'bg-blue-50' : ''
+                      }`}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
