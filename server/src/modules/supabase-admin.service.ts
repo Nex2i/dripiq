@@ -23,6 +23,7 @@ export interface GenerateLinkData {
   type: 'signup' | 'recovery';
   email: string;
   redirectTo?: string;
+  password?: string; // Required for signup type
 }
 
 export class SupabaseAdminService {
@@ -53,13 +54,29 @@ export class SupabaseAdminService {
    */
   static async generateLink(data: GenerateLinkData): Promise<string> {
     try {
-      const result = await supabaseAdmin.auth.admin.generateLink({
-        type: data.type,
-        email: data.email,
-        options: {
-          redirectTo: data.redirectTo,
-        },
-      });
+      let result: any;
+
+      if (data.type === 'signup') {
+        if (!data.password) {
+          throw new Error('Password is required for signup links');
+        }
+        result = await supabaseAdmin.auth.admin.generateLink({
+          type: 'signup',
+          email: data.email,
+          password: data.password,
+          options: {
+            redirectTo: data.redirectTo,
+          },
+        });
+      } else {
+        result = await supabaseAdmin.auth.admin.generateLink({
+          type: 'recovery',
+          email: data.email,
+          options: {
+            redirectTo: data.redirectTo,
+          },
+        });
+      }
 
       if (result.error) {
         throw new Error(`Supabase admin generateLink error: ${result.error.message}`);

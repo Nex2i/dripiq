@@ -31,15 +31,11 @@ const usersQuerySchema = Type.Object({
 });
 
 export default async function InviteRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
-  
   // Get users for a tenant (Admin only)
   fastify.route({
     method: HttpMethods.GET,
     url: `${basePath}/users`,
-    preHandler: [
-      fastify.authPrehandler,
-      fastify.requireAdmin(),
-    ],
+    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
       querystring: usersQuerySchema,
       tags: ['Invites'],
@@ -85,20 +81,14 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/invites`,
-    preHandler: [
-      fastify.authPrehandler,
-      fastify.requireAdmin(),
-    ],
+    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
       body: createInviteSchema,
       tags: ['Invites'],
       summary: 'Create User Invitation',
       description: 'Create a new user invitation. Admin only.',
     },
-    handler: async (
-      request: FastifyRequest<{ Body: InviteDto }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Body: InviteDto }>, reply: FastifyReply) => {
       try {
         const currentUser = (request as any).user;
         const tenantId = (request as any).tenantId;
@@ -118,7 +108,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         };
 
         // Create Supabase user (disabled state)
-        const supabaseUser = await SupabaseAdminService.createUser({
+        const _supabaseUser = await SupabaseAdminService.createUser({
           email: inviteData.email,
           emailConfirm: false,
           metadata: { workspaceId: tenantId },
@@ -165,8 +155,11 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         });
       } catch (error: any) {
         fastify.log.error(`Error creating invitation: ${error.message}`);
-        
-        if (error.message.includes('already exists') || error.message.includes('already a member')) {
+
+        if (
+          error.message.includes('already exists') ||
+          error.message.includes('already a member')
+        ) {
           reply.status(409).send({
             message: error.message,
           });
@@ -195,10 +188,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
       summary: 'Verify Invitation Token',
       description: 'Verify an invitation token and return invitation details.',
     },
-    handler: async (
-      request: FastifyRequest<{ Body: { token: string } }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
       try {
         const { token } = request.body;
 
@@ -244,10 +234,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
       summary: 'Accept Invitation',
       description: 'Accept an invitation and create user seat.',
     },
-    handler: async (
-      request: FastifyRequest<{ Body: { token: string } }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
       try {
         const { token } = request.body;
         const currentUser = (request as any).user;
@@ -270,7 +257,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         });
       } catch (error: any) {
         fastify.log.error(`Error accepting invitation: ${error.message}`);
-        
+
         if (error.message.includes('Invalid or expired')) {
           reply.status(404).send({
             message: error.message,
@@ -293,10 +280,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/invites/:inviteId/resend`,
-    preHandler: [
-      fastify.authPrehandler,
-      fastify.requireAdmin(),
-    ],
+    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
       params: Type.Object({ inviteId: Type.String() }),
       tags: ['Invites'],
@@ -356,10 +340,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
   fastify.route({
     method: HttpMethods.DELETE,
     url: `${basePath}/invites/:inviteId`,
-    preHandler: [
-      fastify.authPrehandler,
-      fastify.requireAdmin(),
-    ],
+    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
       params: Type.Object({ inviteId: Type.String() }),
       tags: ['Invites'],

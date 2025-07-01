@@ -1,7 +1,7 @@
-import { eq, and, desc } from 'drizzle-orm';
-import { db, invites, seats, users, userTenants, NewInvite, Invite, NewSeat } from '@/db';
-import bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
+import { eq, and, desc } from 'drizzle-orm';
+import bcrypt from 'bcrypt';
+import { db, invites, seats, users, NewInvite, Invite, NewSeat } from '@/db';
 
 export interface CreateInviteData {
   tenantId: string;
@@ -95,7 +95,11 @@ export class InviteService {
   /**
    * Get all users (seats + invites) for a tenant
    */
-  static async getTenantUsers(tenantId: string, page = 1, limit = 25): Promise<{
+  static async getTenantUsers(
+    tenantId: string,
+    page = 1,
+    limit = 25
+  ): Promise<{
     users: UserWithInviteInfo[];
     total: number;
     page: number;
@@ -104,17 +108,14 @@ export class InviteService {
     const offset = (page - 1) * limit;
 
     // Get active users (seats)
-    const activeUsers = await db
+    const activeUsersQuery = await db
       .select({
         id: users.id,
-        firstName: users.name,
-        lastName: users.name, // We'll need to split name field or modify schema
+        name: users.name,
         email: users.email,
         role: seats.role,
-        status: 'active' as const,
-        invitedAt: seats.createdAt,
-        lastLogin: users.updatedAt, // This should be actual last login timestamp
-        source: 'seat' as const,
+        createdAt: seats.createdAt,
+        updatedAt: users.updatedAt,
       })
       .from(seats)
       .innerJoin(users, eq(seats.supabaseUid, users.supabaseId))
@@ -122,7 +123,7 @@ export class InviteService {
       .orderBy(desc(seats.createdAt));
 
     // Get pending invitations
-    const pendingInvites = await db
+    const pendingInvitesQuery = await db
       .select({
         id: invites.id,
         firstName: invites.firstName,
@@ -130,31 +131,40 @@ export class InviteService {
         email: invites.email,
         role: invites.role,
         status: invites.status,
-        invitedAt: invites.createdAt,
-        lastLogin: null,
-        source: 'invite' as const,
+        createdAt: invites.createdAt,
       })
       .from(invites)
       .where(eq(invites.tenantId, tenantId))
       .orderBy(desc(invites.createdAt));
 
+    // Transform active users
+    const activeUsers: UserWithInviteInfo[] = activeUsersQuery.map((user) => ({
+      id: user.id,
+      firstName: user.name || undefined, // Split this properly if name contains first/last
+      lastName: undefined, // We'll need to modify schema or handle name splitting
+      email: user.email,
+      role: user.role,
+      status: 'active' as const,
+      invitedAt: user.createdAt,
+      lastLogin: user.updatedAt,
+      source: 'seat' as const,
+    }));
+
+    // Transform pending invites
+    const pendingInvites: UserWithInviteInfo[] = pendingInvitesQuery.map((invite) => ({
+      id: invite.id,
+      firstName: invite.firstName || undefined,
+      lastName: invite.lastName || undefined,
+      email: invite.email,
+      role: invite.role,
+      status: invite.status as 'pending' | 'active' | 'expired',
+      invitedAt: invite.createdAt,
+      lastLogin: undefined,
+      source: 'invite' as const,
+    }));
+
     // Combine and sort
-    const allUsers: UserWithInviteInfo[] = [
-      ...activeUsers.map((user) => ({
-        ...user,
-        status: 'active' as const,
-        lastLogin: user.lastLogin || undefined,
-        invitedAt: user.invitedAt || undefined,
-      })),
-      ...pendingInvites.map((invite) => ({
-        ...invite,
-        status: invite.status as 'pending' | 'active' | 'expired',
-        firstName: invite.firstName || undefined,
-        lastName: invite.lastName || undefined,
-        lastLogin: undefined,
-        invitedAt: invite.invitedAt || undefined,
-      })),
-    ].sort((a, b) => {
+    const allUsers: UserWithInviteInfo[] = [...activeUsers, ...pendingInvites].sort((a, b) => {
       // Sort by status (pending first), then by role, then by email
       if (a.status !== b.status) {
         const statusOrder = { pending: 0, expired: 1, active: 2 };
@@ -162,7 +172,9 @@ export class InviteService {
       }
       if (a.role !== b.role) {
         const roleOrder = { owner: 0, manager: 1, rep: 2 };
-        return roleOrder[a.role as keyof typeof roleOrder] - roleOrder[b.role as keyof typeof roleOrder];
+        return (
+          roleOrder[a.role as keyof typeof roleOrder] - roleOrder[b.role as keyof typeof roleOrder]
+        );
       }
       return a.email.localeCompare(b.email);
     });

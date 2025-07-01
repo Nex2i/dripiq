@@ -1,42 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Navigate } from '@tanstack/react-router';
-import { CheckCircle, XCircle, Clock, Mail, Building2 } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useSearch, Navigate } from '@tanstack/react-router'
+import { CheckCircle, XCircle, Clock, Mail, Building2 } from 'lucide-react'
 
 interface InviteInfo {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName?: string;
-  role: string;
-  tenantId: string;
-  expiresAt: string;
+  id: string
+  email: string
+  firstName: string
+  lastName?: string
+  role: string
+  tenantId: string
+  expiresAt: string
 }
 
 export default function AcceptInvitePage() {
-  const searchParams = useSearchParams();
-  const token = searchParams.token;
-  
-  const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null);
-  const [status, setStatus] = useState<'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'error'>('loading');
-  const [isAccepting, setIsAccepting] = useState(false);
+  const search = useSearch({ strict: false }) as any
+  const token = search?.token
+
+  const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null)
+  const [status, setStatus] = useState<
+    'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'error'
+  >('loading')
+  const [isAccepting, setIsAccepting] = useState(false)
 
   useEffect(() => {
     if (!token) {
-      setStatus('invalid');
-      return;
+      setStatus('invalid')
+      return
     }
 
-    verifyInviteToken(token);
-  }, [token]);
+    verifyInviteToken(token)
+  }, [token])
 
   const verifyInviteToken = async (token: string) => {
     try {
       // TODO: Replace with actual API call
-      console.log('Verifying invite token:', token);
-      
+      console.log('Verifying invite token:', token)
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       // Mock successful verification
       const mockInviteInfo: InviteInfo = {
         id: 'invite_123',
@@ -46,41 +48,41 @@ export default function AcceptInvitePage() {
         role: 'Sales Rep',
         tenantId: 'tenant_123',
         expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
-      };
+      }
 
-      setInviteInfo(mockInviteInfo);
-      setStatus('valid');
+      setInviteInfo(mockInviteInfo)
+      setStatus('valid')
     } catch (error) {
-      console.error('Error verifying invite:', error);
-      setStatus('error');
+      console.error('Error verifying invite:', error)
+      setStatus('error')
     }
-  };
+  }
 
   const handleAcceptInvite = async () => {
-    if (!token) return;
+    if (!token) return
 
-    setIsAccepting(true);
-    
+    setIsAccepting(true)
+
     try {
       // TODO: Replace with actual API call
-      console.log('Accepting invite with token:', token);
-      
+      console.log('Accepting invite with token:', token)
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setStatus('accepted');
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      setStatus('accepted')
+
       // Redirect to dashboard after a delay
       setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 2000);
+        window.location.href = '/dashboard'
+      }, 2000)
     } catch (error) {
-      console.error('Error accepting invite:', error);
-      setStatus('error');
+      console.error('Error accepting invite:', error)
+      setStatus('error')
     } finally {
-      setIsAccepting(false);
+      setIsAccepting(false)
     }
-  };
+  }
 
   const formatExpiryDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -89,12 +91,12 @@ export default function AcceptInvitePage() {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    }).format(new Date(dateString));
-  };
+    }).format(new Date(dateString))
+  }
 
   // Redirect to login if no token
   if (!token) {
-    return <Navigate to="/auth/login" />;
+    return <Navigate to="/auth/login" />
   }
 
   return (
@@ -116,7 +118,9 @@ export default function AcceptInvitePage() {
           {status === 'loading' && (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-sm text-gray-600">Verifying invitation...</p>
+              <p className="mt-4 text-sm text-gray-600">
+                Verifying invitation...
+              </p>
             </div>
           )}
 
@@ -132,18 +136,24 @@ export default function AcceptInvitePage() {
               <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="font-medium text-gray-700">Invited as:</span>
+                    <span className="font-medium text-gray-700">
+                      Invited as:
+                    </span>
                     <span className="ml-2 text-gray-900">
                       {inviteInfo.firstName} {inviteInfo.lastName}
                     </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Email:</span>
-                    <span className="ml-2 text-gray-900">{inviteInfo.email}</span>
+                    <span className="ml-2 text-gray-900">
+                      {inviteInfo.email}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Role:</span>
-                    <span className="ml-2 text-gray-900">{inviteInfo.role}</span>
+                    <span className="ml-2 text-gray-900">
+                      {inviteInfo.role}
+                    </span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Expires:</span>
@@ -170,7 +180,8 @@ export default function AcceptInvitePage() {
               </button>
 
               <p className="text-xs text-gray-500 text-center">
-                By accepting this invitation, you agree to join the workspace and will be able to access the platform.
+                By accepting this invitation, you agree to join the workspace
+                and will be able to access the platform.
               </p>
             </div>
           )}
@@ -183,7 +194,8 @@ export default function AcceptInvitePage() {
                   Invitation Accepted!
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Welcome to the team! You'll be redirected to the dashboard shortly.
+                  Welcome to the team! You'll be redirected to the dashboard
+                  shortly.
                 </p>
               </div>
               <div className="animate-pulse">
@@ -200,11 +212,12 @@ export default function AcceptInvitePage() {
                   Invalid Invitation
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  This invitation link is invalid or malformed. Please check the link and try again.
+                  This invitation link is invalid or malformed. Please check the
+                  link and try again.
                 </p>
               </div>
               <button
-                onClick={() => window.location.href = '/auth/login'}
+                onClick={() => (window.location.href = '/auth/login')}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Go to Sign In
@@ -220,11 +233,12 @@ export default function AcceptInvitePage() {
                   Invitation Expired
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  This invitation has expired. Please contact your team administrator for a new invitation.
+                  This invitation has expired. Please contact your team
+                  administrator for a new invitation.
                 </p>
               </div>
               <button
-                onClick={() => window.location.href = '/auth/login'}
+                onClick={() => (window.location.href = '/auth/login')}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Go to Sign In
@@ -240,7 +254,8 @@ export default function AcceptInvitePage() {
                   Error Verifying Invitation
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  There was an error processing your invitation. Please try again or contact support.
+                  There was an error processing your invitation. Please try
+                  again or contact support.
                 </p>
               </div>
               <div className="space-y-2">
@@ -251,7 +266,7 @@ export default function AcceptInvitePage() {
                   Try Again
                 </button>
                 <button
-                  onClick={() => window.location.href = '/auth/login'}
+                  onClick={() => (window.location.href = '/auth/login')}
                   className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Go to Sign In
@@ -262,5 +277,5 @@ export default function AcceptInvitePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

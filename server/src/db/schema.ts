@@ -160,45 +160,53 @@ export const leads = appSchema.table('leads', {
 });
 
 // Invites table for user invitations
-export const invites = appSchema.table('invites', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  email: text('email').notNull(),
-  firstName: text('first_name').notNull(),
-  lastName: text('last_name'),
-  role: text('role').notNull(), // 'owner', 'manager', 'rep'
-  dailyCap: text('daily_cap').notNull().default('200'),
-  tokenHash: text('token_hash').notNull(),
-  status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'expired'
-  expiresAt: timestamp('expires_at').notNull(),
-  acceptedAt: timestamp('accepted_at'),
-  messageId: text('message_id'), // For tracking email delivery
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => ({
-  tenantEmailUnique: unique().on(table.tenantId, table.email),
-}));
+export const invites = appSchema.table(
+  'invites',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name'),
+    role: text('role').notNull(), // 'owner', 'manager', 'rep'
+    dailyCap: text('daily_cap').notNull().default('200'),
+    tokenHash: text('token_hash').notNull(),
+    status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'expired'
+    expiresAt: timestamp('expires_at').notNull(),
+    acceptedAt: timestamp('accepted_at'),
+    messageId: text('message_id'), // For tracking email delivery
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    tenantEmailUnique: unique().on(table.tenantId, table.email),
+  })
+);
 
 // Seats table for active users in tenants
-export const seats = appSchema.table('seats', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  supabaseUid: text('supabase_uid').notNull(),
-  role: text('role').notNull(), // 'owner', 'manager', 'rep'
-  dailyCap: text('daily_cap').notNull().default('200'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => ({
-  tenantSupabaseUidUnique: unique().on(table.tenantId, table.supabaseUid),
-}));
+export const seats = appSchema.table(
+  'seats',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    supabaseUid: text('supabase_uid').notNull(),
+    role: text('role').notNull(), // 'owner', 'manager', 'rep'
+    dailyCap: text('daily_cap').notNull().default('200'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    tenantSupabaseUidUnique: unique().on(table.tenantId, table.supabaseUid),
+  })
+);
 
 // Relations for new tables
 export const invitesRelations = relations(invites, ({ one }) => ({

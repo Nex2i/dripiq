@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { Plus, MoreVertical, Eye, RefreshCw, Trash2, Users } from 'lucide-react';
-import { InviteUserModal } from '../../components/InviteUserModal';
+import { useState } from 'react'
+import { Plus, MoreVertical, Eye, RefreshCw, Trash2, Users } from 'lucide-react'
+import { InviteUserModal } from '../../components/InviteUserModal'
 
 interface User {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  email: string;
-  role: string;
-  status: 'pending' | 'active' | 'expired';
-  invitedAt?: Date;
-  lastLogin?: Date;
-  source: 'invite' | 'seat';
+  id: string
+  firstName?: string
+  lastName?: string
+  email: string
+  role: string
+  status: 'pending' | 'active' | 'expired'
+  invitedAt?: Date
+  lastLogin?: Date
+  source: 'invite' | 'seat'
 }
 
 export default function UsersPage() {
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([
     // Mock data for development
     {
@@ -39,30 +39,30 @@ export default function UsersPage() {
       invitedAt: new Date('2024-01-14'),
       source: 'invite',
     },
-  ]);
+  ])
 
   const getStatusBadge = (status: string) => {
-    const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full';
+    const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full'
     switch (status) {
       case 'active':
-        return `${baseClasses} bg-green-100 text-green-800`;
+        return `${baseClasses} bg-green-100 text-green-800`
       case 'pending':
-        return `${baseClasses} bg-yellow-100 text-yellow-800`;
+        return `${baseClasses} bg-yellow-100 text-yellow-800`
       case 'expired':
-        return `${baseClasses} bg-red-100 text-red-800`;
+        return `${baseClasses} bg-red-100 text-red-800`
       default:
-        return `${baseClasses} bg-gray-100 text-gray-800`;
+        return `${baseClasses} bg-gray-100 text-gray-800`
     }
-  };
+  }
 
   const formatDate = (date?: Date) => {
-    if (!date) return '-';
+    if (!date) return '-'
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(date);
-  };
+    }).format(date)
+  }
 
   const handleInviteSuccess = (inviteData: any) => {
     // Add the new invite to the users list
@@ -75,27 +75,27 @@ export default function UsersPage() {
       status: 'pending',
       invitedAt: new Date(),
       source: 'invite',
-    };
-    setUsers(prev => [newUser, ...prev]);
-    setIsInviteModalOpen(false);
-  };
+    }
+    setUsers((prev) => [newUser, ...prev])
+    setIsInviteModalOpen(false)
+  }
 
   const handleResendInvite = (userId: string) => {
     // TODO: Implement resend invite API call
-    console.log('Resending invite for user:', userId);
-  };
+    console.log('Resending invite for user:', userId)
+  }
 
   const handleRevokeInvite = (userId: string) => {
     // TODO: Implement revoke invite API call
-    console.log('Revoking invite for user:', userId);
-    setUsers(prev => prev.map(user => 
-      user.id === userId 
-        ? { ...user, status: 'expired' as const }
-        : user
-    ));
-  };
+    console.log('Revoking invite for user:', userId)
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === userId ? { ...user, status: 'expired' as const } : user,
+      ),
+    )
+  }
 
-  const emptyState = users.length === 0;
+  const emptyState = users.length === 0
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -127,7 +127,9 @@ export default function UsersPage() {
             // Empty state
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No team members yet</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No team members yet
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
                 Get started by inviting your first teammate.
               </p>
@@ -188,7 +190,8 @@ export default function UsersPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={getStatusBadge(user.status)}>
-                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                              {user.status.charAt(0).toUpperCase() +
+                                user.status.slice(1)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -249,7 +252,8 @@ export default function UsersPage() {
                       <p className="text-sm text-gray-700">
                         Showing <span className="font-medium">1</span> to{' '}
                         <span className="font-medium">{users.length}</span> of{' '}
-                        <span className="font-medium">{users.length}</span> results
+                        <span className="font-medium">{users.length}</span>{' '}
+                        results
                       </p>
                     </div>
                     <div>
@@ -280,5 +284,5 @@ export default function UsersPage() {
         onSuccess={handleInviteSuccess}
       />
     </div>
-  );
+  )
 }

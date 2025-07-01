@@ -61,6 +61,15 @@ export class UserService {
   }
 
   /**
+   * Get user by ID
+   */
+  static async getUserById(id: string): Promise<User | null> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+
+    return result[0] || null;
+  }
+
+  /**
    * Update user data
    */
   static async updateUser(supabaseId: string, updateData: Partial<CreateUserData>): Promise<User> {
