@@ -95,7 +95,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         // Step 4: Get Admin role for the user
         const { RoleService } = await import('@/modules/role.service');
         const adminRole = await RoleService.getRoleByName('Admin');
-        
+
         if (!adminRole) {
           reply.status(500).send({
             message: 'Admin role not found. Please ensure roles are seeded.',
@@ -230,11 +230,13 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
               id: ut.tenant.id,
               name: ut.tenant.name,
               isSuperUser: ut.isSuperUser,
-              role: userPermissions ? {
-                id: userPermissions.roleId,
-                name: userPermissions.roleName,
-                permissions: userPermissions.permissions,
-              } : null,
+              role: userPermissions
+                ? {
+                    id: userPermissions.roleId,
+                    name: userPermissions.roleName,
+                    permissions: userPermissions.permissions,
+                  }
+                : null,
               createdAt: ut.tenant.createdAt,
               updatedAt: ut.tenant.updatedAt,
             };

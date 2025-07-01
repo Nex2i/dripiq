@@ -7,7 +7,7 @@
 const mockDb = {
   roles: [
     { id: 'admin-role-id', name: 'Admin', description: 'Full system access' },
-    { id: 'sales-role-id', name: 'Sales', description: 'Campaign and lead management' }
+    { id: 'sales-role-id', name: 'Sales', description: 'Campaign and lead management' },
   ],
   permissions: [
     { id: 'perm-1', name: 'campaigns:create', resource: 'campaigns', action: 'create' },
@@ -29,46 +29,57 @@ const mockDb = {
   userTenants: [
     { userId: 'user-1', tenantId: 'tenant-1', roleId: 'admin-role-id', isSuperUser: true },
     { userId: 'user-2', tenantId: 'tenant-1', roleId: 'sales-role-id', isSuperUser: false },
-  ]
+  ],
 };
 
 // Mock RoleService for testing
 class MockRoleService {
-  static async userHasPermission(userId: string, tenantId: string, resource: string, action: string): Promise<boolean> {
+  static async userHasPermission(
+    userId: string,
+    tenantId: string,
+    resource: string,
+    action: string
+  ): Promise<boolean> {
     console.log(`🔍 Checking permission for user ${userId}: ${resource}:${action}`);
-    
-    const userTenant = mockDb.userTenants.find(ut => ut.userId === userId && ut.tenantId === tenantId);
+
+    const userTenant = mockDb.userTenants.find(
+      (ut) => ut.userId === userId && ut.tenantId === tenantId
+    );
     if (!userTenant) {
       console.log(`❌ User not found in tenant`);
       return false;
     }
 
-    const role = mockDb.roles.find(r => r.id === userTenant.roleId);
+    const role = mockDb.roles.find((r) => r.id === userTenant.roleId);
     if (!role) {
       console.log(`❌ Role not found`);
       return false;
     }
 
-    const rolePermissions = mockDb.rolePermissions.filter(rp => rp.roleId === role.id);
-    const permissionIds = rolePermissions.map(rp => rp.permissionId);
-    
-    const hasPermission = mockDb.permissions.some(p => 
-      permissionIds.includes(p.id) && p.resource === resource && p.action === action
+    const rolePermissions = mockDb.rolePermissions.filter((rp) => rp.roleId === role.id);
+    const permissionIds = rolePermissions.map((rp) => rp.permissionId);
+
+    const hasPermission = mockDb.permissions.some(
+      (p) => permissionIds.includes(p.id) && p.resource === resource && p.action === action
     );
 
-    console.log(`${hasPermission ? '✅' : '❌'} Permission ${hasPermission ? 'granted' : 'denied'} for ${role.name}`);
+    console.log(
+      `${hasPermission ? '✅' : '❌'} Permission ${hasPermission ? 'granted' : 'denied'} for ${role.name}`
+    );
     return hasPermission;
   }
 
   static async userIsAdmin(userId: string, tenantId: string): Promise<boolean> {
     console.log(`👑 Checking admin status for user ${userId}`);
-    
-    const userTenant = mockDb.userTenants.find(ut => ut.userId === userId && ut.tenantId === tenantId);
+
+    const userTenant = mockDb.userTenants.find(
+      (ut) => ut.userId === userId && ut.tenantId === tenantId
+    );
     if (!userTenant) return false;
 
-    const role = mockDb.roles.find(r => r.id === userTenant.roleId);
+    const role = mockDb.roles.find((r) => r.id === userTenant.roleId);
     const isAdmin = userTenant.isSuperUser || role?.name === 'Admin';
-    
+
     console.log(`${isAdmin ? '✅' : '❌'} Admin status: ${isAdmin}`);
     return isAdmin;
   }
@@ -103,7 +114,7 @@ async function runRoleSystemTests() {
 // Role system summary
 function printRoleSystemSummary() {
   console.log('🔐 ROLE-BASED ACCESS CONTROL SYSTEM SUMMARY\n');
-  
+
   console.log('📊 IMPLEMENTED COMPONENTS:');
   console.log('✅ Database Schema (roles, permissions, role_permissions, updated user_tenants)');
   console.log('✅ RoleService class with permission checking methods');
@@ -175,6 +186,7 @@ async function main() {
 }
 
 // Execute if run directly
+// eslint-disable-next-line no-undef
 if (require.main === module) {
   main().catch(console.error);
 }

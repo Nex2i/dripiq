@@ -1,8 +1,8 @@
-import { tenants, users, userTenants } from './schema';
-import { db } from './index';
 import { eq } from 'drizzle-orm';
 import { TenantService } from '@/modules/tenant.service';
+import { tenants, users, userTenants } from './schema';
 import { seedRoles } from './seed-roles';
+import { db } from './index';
 
 async function seed() {
   try {
@@ -112,7 +112,7 @@ async function createSeedUser() {
   // Get Admin role
   const { RoleService } = await import('@/modules/role.service');
   const adminRole = await RoleService.getRoleByName('Admin');
-  
+
   if (!adminRole) {
     console.log('⚠️  Admin role not found, skipping user-tenant assignment');
     return;
@@ -125,13 +125,16 @@ async function createSeedUser() {
     isSuperUser: true,
   });
 
-  console.log(`✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`);
+  console.log(
+    `✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`
+  );
 }
 
 // Export for external use and auto-execute
 export { seed };
 
 // Auto-execute seed when file is run
+// eslint-disable-next-line no-undef
 if (require.main === module) {
   seed()
     .then(() => {

@@ -35,7 +35,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       summary: 'Get All Roles',
       description: 'Get all available roles in the system',
     },
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
         const roles = await RoleService.getAllRoles();
         reply.send({
@@ -62,7 +62,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       summary: 'Get All Permissions',
       description: 'Get all available permissions in the system',
     },
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
         const permissions = await RoleService.getAllPermissions();
         reply.send({
@@ -288,7 +288,8 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
         }
 
         // Get user from database using Supabase ID
-        const dbUser = await fastify.userService.getUserBySupabaseId(supabaseUser.id);
+        const { UserService } = await import('@/modules/user.service');
+        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
         if (!dbUser) {
           reply.status(404).send({ message: 'User not found' });
           return;
