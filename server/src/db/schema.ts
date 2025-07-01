@@ -71,6 +71,20 @@ export const userTenantsRelations = relations(userTenants, ({ one }) => ({
   }),
 }));
 
+// Leads table
+export const leads = appSchema.table('leads', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  company: text('company'),
+  phone: text('phone'),
+  status: text('status').notNull().default('new'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -78,3 +92,5 @@ export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 export type UserTenant = typeof userTenants.$inferSelect;
 export type NewUserTenant = typeof userTenants.$inferInsert;
+export type Lead = typeof leads.$inferSelect;
+export type NewLead = typeof leads.$inferInsert;

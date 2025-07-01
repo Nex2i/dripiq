@@ -13,6 +13,7 @@ import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import LeadsPage from './pages/LeadsPage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -92,6 +93,12 @@ const authRegisterRoute = createRoute({
   component: () => <Register />,
 })
 
+const leadsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/leads',
+  component: () => <LeadsPage />,
+})
+
 // Create all protected demo routes directly
 const formSimpleRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -125,6 +132,7 @@ const tanStackQueryRoute = createRoute({
 
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
+  leadsRoute,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,

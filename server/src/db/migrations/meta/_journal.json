@@ -29,6 +29,13 @@
       "when": 1751329558612,
       "tag": "0003_ambitious_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1751330283041,
+      "tag": "0004_steady_solo",
+      "breakpoints": true
     }
   ]
 }
