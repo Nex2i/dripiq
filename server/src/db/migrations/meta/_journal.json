@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751254703842,
+      "when": 1751383326536,
       "tag": "0000_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751303021865,
-      "tag": "0001_mature_miracleman",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751327268677,
-      "tag": "0002_certain_epoch",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1751329558612,
-      "tag": "0003_ambitious_argent",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1751330283041,
-      "tag": "0004_steady_solo",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1751333951113,
-      "tag": "0005_clammy_plazm",
       "breakpoints": true
     }
   ]

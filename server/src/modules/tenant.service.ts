@@ -80,17 +80,19 @@ export class TenantService {
   }
 
   /**
-   * Add user to tenant
+   * Add user to tenant with role
    */
   static async addUserToTenant(
     userId: string,
     tenantId: string,
+    roleId: string,
     isSuperUser: boolean = false
   ): Promise<UserTenant> {
     try {
       const newUserTenant: NewUserTenant = {
         userId,
         tenantId,
+        roleId,
         isSuperUser,
       };
 

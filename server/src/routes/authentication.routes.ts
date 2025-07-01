@@ -92,10 +92,21 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           name,
         });
 
-        // Step 4: Link user to tenant as super user
-        await TenantService.addUserToTenant(user.id, tenant.id, true);
+        // Step 4: Get Admin role for the user
+        const { RoleService } = await import('@/modules/role.service');
+        const adminRole = await RoleService.getRoleByName('Admin');
+        
+        if (!adminRole) {
+          reply.status(500).send({
+            message: 'Admin role not found. Please ensure roles are seeded.',
+          });
+          return;
+        }
 
-        // Step 5: Sign in the user to get session token
+        // Step 5: Link user to tenant as admin with super user privileges
+        await TenantService.addUserToTenant(user.id, tenant.id, adminRole.id, true);
+
+        // Step 6: Sign in the user to get session token
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -207,8 +218,28 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           return;
         }
 
-        // Fetch user's tenants
+        // Fetch user's tenants with roles
         const userTenants = await TenantService.getUserTenants(dbUser.id);
+
+        // Get role information for each tenant
+        const { RoleService } = await import('@/modules/role.service');
+        const tenantsWithRoles = await Promise.all(
+          userTenants.map(async (ut) => {
+            const userPermissions = await RoleService.getUserPermissions(dbUser.id, ut.tenant.id);
+            return {
+              id: ut.tenant.id,
+              name: ut.tenant.name,
+              isSuperUser: ut.isSuperUser,
+              role: userPermissions ? {
+                id: userPermissions.roleId,
+                name: userPermissions.roleName,
+                permissions: userPermissions.permissions,
+              } : null,
+              createdAt: ut.tenant.createdAt,
+              updatedAt: ut.tenant.updatedAt,
+            };
+          })
+        );
 
         reply.send({
           user: {
@@ -219,13 +250,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
             createdAt: dbUser.createdAt,
             updatedAt: dbUser.updatedAt,
           },
-          tenants: userTenants.map((ut) => ({
-            id: ut.tenant.id,
-            name: ut.tenant.name,
-            isSuperUser: ut.isSuperUser,
-            createdAt: ut.tenant.createdAt,
-            updatedAt: ut.tenant.updatedAt,
-          })),
+          tenants: tenantsWithRoles,
           supabaseUser: {
             id: supabaseUser.id,
             email: supabaseUser.email,
