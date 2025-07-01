@@ -26,7 +26,7 @@ export default defineConfig({
   dbCredentials: {
     ...dbConfig,
   },
-  schemaFilter: [schemaName],
+  schemaFilter: schemaName,
   verbose: true,
   strict: true,
 });

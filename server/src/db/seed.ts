@@ -2,6 +2,7 @@ import { tenants, users, userTenants } from './schema';
 import { db } from './index';
 import { eq } from 'drizzle-orm';
 import { TenantService } from '@/modules/tenant.service';
+import { seedRoles } from './seed-roles';
 
 async function seed() {
   try {
@@ -16,6 +17,11 @@ async function seed() {
     } else {
       console.log('⚠️  Skipping data clearing (set CLEAR_DB=true to clear existing data)');
     }
+
+    // Seed roles and permissions first
+    console.log('🔐 Seeding roles and permissions...');
+    await seedRoles();
+    console.log('✅ Roles and permissions seeded');
 
     // Check if tenants already exist to avoid duplicates
     const existingTenants = await db.select().from(tenants).limit(1);
@@ -95,7 +101,7 @@ async function createSeedUser() {
     return;
   }
 
-  // Assign the seed user to the first tenant as super user
+  // Assign the seed user to the first tenant as admin with super user privileges
   const tenant = firstTenant[0];
 
   if (!tenant) {
@@ -103,13 +109,23 @@ async function createSeedUser() {
     return;
   }
 
+  // Get Admin role
+  const { RoleService } = await import('@/modules/role.service');
+  const adminRole = await RoleService.getRoleByName('Admin');
+  
+  if (!adminRole) {
+    console.log('⚠️  Admin role not found, skipping user-tenant assignment');
+    return;
+  }
+
   await db.insert(userTenants).values({
     userId: seedUser.id,
     tenantId: tenant.id,
+    roleId: adminRole.id,
     isSuperUser: true,
   });
 
-  console.log(`✅ Assigned seed user to tenant "${tenant.name}" as super user`);
+  console.log(`✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`);
 }
 
 // Export for external use and auto-execute
