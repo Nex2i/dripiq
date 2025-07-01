@@ -8,7 +8,7 @@ export interface CreateInviteData {
   email: string;
   firstName: string;
   lastName?: string;
-  role: 'owner' | 'manager' | 'rep';
+  role: string; // Accept any role name from database
   dailyCap?: number;
 }
 
@@ -16,7 +16,7 @@ export interface InviteDto {
   email: string;
   firstName: string;
   lastName?: string;
-  role: 'owner' | 'manager' | 'rep';
+  role: string; // Accept any role name from database
   dailyCap?: number;
 }
 
@@ -165,16 +165,14 @@ export class InviteService {
 
     // Combine and sort
     const allUsers: UserWithInviteInfo[] = [...activeUsers, ...pendingInvites].sort((a, b) => {
-      // Sort by status (pending first), then by role, then by email
+      // Sort by status (pending first), then by role (alphabetically), then by email
       if (a.status !== b.status) {
         const statusOrder = { pending: 0, expired: 1, active: 2 };
         return statusOrder[a.status] - statusOrder[b.status];
       }
       if (a.role !== b.role) {
-        const roleOrder = { owner: 0, manager: 1, rep: 2 };
-        return (
-          roleOrder[a.role as keyof typeof roleOrder] - roleOrder[b.role as keyof typeof roleOrder]
-        );
+        // Sort roles alphabetically (Admin comes before Sales)
+        return a.role.localeCompare(b.role);
       }
       return a.email.localeCompare(b.email);
     });

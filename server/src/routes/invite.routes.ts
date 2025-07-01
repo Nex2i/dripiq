@@ -14,7 +14,7 @@ const createInviteSchema = Type.Object({
   email: Type.String({ format: 'email' }),
   firstName: Type.String({ minLength: 1, maxLength: 50 }),
   lastName: Type.Optional(Type.String({ maxLength: 50 })),
-  role: Type.Union([Type.Literal('owner'), Type.Literal('manager'), Type.Literal('rep')]),
+  role: Type.String({ minLength: 1 }), // Accept any valid role name from database
   dailyCap: Type.Optional(Type.Integer({ minimum: 1, maximum: 2000 })),
 });
 
@@ -106,20 +106,20 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           dailyCap: request.body.dailyCap || 200,
         };
 
-        // Create Supabase user (disabled state)
-        const _supabaseUser = await SupabaseAdminService.createUser({
-          email: inviteData.email,
-          emailConfirm: false,
-          metadata: { workspaceId: tenantId },
-        });
-
-        // Create invitation in database
+        // Create invitation in database first
         const { invite, token } = await InviteService.createInvite(inviteData);
 
-        // Generate password set link
+        // First create a Supabase user in an unconfirmed state
+        const supabaseUser = await SupabaseAdminService.createUser({
+          email: inviteData.email,
+          emailConfirm: false,
+          metadata: { workspaceId: tenantId, inviteToken: token },
+        });
+
+        // Generate password reset link that allows user to set their password
         const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/accept-invite?token=${token}`;
         const passwordSetLink = await SupabaseAdminService.generateLink({
-          type: 'signup',
+          type: 'recovery',
           email: inviteData.email,
           redirectTo: redirectUrl,
         });
@@ -299,7 +299,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         // Generate new password set link
         const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/accept-invite?token=${token}`;
         const passwordSetLink = await SupabaseAdminService.generateLink({
-          type: 'signup',
+          type: 'recovery',
           email: invite.email,
           redirectTo: redirectUrl,
         });
@@ -342,6 +342,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
       params: Type.Object({ inviteId: Type.String() }),
+      body: false, // Explicitly indicate no body is expected
       tags: ['Invites'],
       summary: 'Revoke Invitation',
       description: 'Revoke/cancel an invitation. Admin only.',

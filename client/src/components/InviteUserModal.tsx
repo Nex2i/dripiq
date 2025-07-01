@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Mail, User, Shield, Settings } from 'lucide-react'
 import {
   invitesService,
   type CreateInviteData,
 } from '../services/invites.service'
+import { rolesService, type Role } from '../services/roles.service'
 
 interface InviteUserModalProps {
   isOpen: boolean
@@ -15,7 +16,7 @@ interface InviteFormData {
   firstName: string
   lastName: string
   email: string
-  role: 'owner' | 'manager' | 'rep'
+  role: string
   dailyCap: number
 }
 
@@ -28,7 +29,7 @@ export function InviteUserModal({
     firstName: '',
     lastName: '',
     email: '',
-    role: 'rep',
+    role: '',
     dailyCap: 200,
   })
 
@@ -36,6 +37,33 @@ export function InviteUserModal({
     Partial<Record<keyof InviteFormData, string>>
   >({})
   const [isLoading, setIsLoading] = useState(false)
+  const [roles, setRoles] = useState<Role[]>([])
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false)
+
+  // Fetch roles when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchRoles()
+    }
+  }, [isOpen])
+
+  const fetchRoles = async () => {
+    setIsLoadingRoles(true)
+    try {
+      const fetchedRoles = await rolesService.getRoles()
+      setRoles(fetchedRoles)
+
+      // Set default role to the first available role
+      if (fetchedRoles.length > 0 && !formData.role) {
+        setFormData((prev) => ({ ...prev, role: fetchedRoles[0].name }))
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+      // You could show an error message to the user here
+    } finally {
+      setIsLoadingRoles(false)
+    }
+  }
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof InviteFormData, string>> = {}
@@ -62,6 +90,11 @@ export function InviteUserModal({
       }
     }
 
+    // Role validation
+    if (!formData.role) {
+      newErrors.role = 'Role is required'
+    }
+
     // Daily cap validation
     if (formData.dailyCap < 1 || formData.dailyCap > 2000) {
       newErrors.dailyCap = 'Daily cap must be between 1 and 2,000'
@@ -85,7 +118,7 @@ export function InviteUserModal({
         firstName: formData.firstName,
         lastName: formData.lastName || undefined,
         email: formData.email,
-        role: formData.role,
+        role: formData.role, // Send actual role name from database
         dailyCap: formData.dailyCap,
       }
 
@@ -96,7 +129,7 @@ export function InviteUserModal({
         firstName: '',
         lastName: '',
         email: '',
-        role: 'rep',
+        role: roles.length > 0 ? roles[0].name : '',
         dailyCap: 200,
       })
       setErrors({})
@@ -234,23 +267,36 @@ export function InviteUserModal({
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 <Shield className="h-4 w-4 inline mr-1" />
-                Role
+                Role *
               </label>
               <select
                 id="role"
                 value={formData.role}
-                onChange={(e) =>
-                  handleChange(
-                    'role',
-                    e.target.value as 'owner' | 'manager' | 'rep',
-                  )
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => handleChange('role', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.role ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={isLoadingRoles}
               >
-                <option value="rep">Rep</option>
-                <option value="manager">Manager</option>
-                <option value="owner">Owner</option>
+                {isLoadingRoles ? (
+                  <option value="">Loading roles...</option>
+                ) : (
+                  <>
+                    {roles.length === 0 ? (
+                      <option value="">No roles available</option>
+                    ) : (
+                      roles.map((role) => (
+                        <option key={role.id} value={role.name}>
+                          {role.name}
+                        </option>
+                      ))
+                    )}
+                  </>
+                )}
               </select>
+              {errors.role && (
+                <p className="mt-1 text-sm text-red-600">{errors.role}</p>
+              )}
             </div>
 
             {/* Daily Send Cap */}

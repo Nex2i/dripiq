@@ -16,7 +16,7 @@ export interface CreateInviteData {
   firstName: string
   lastName?: string
   email: string
-  role: 'owner' | 'manager' | 'rep'
+  role: string
   dailyCap?: number
 }
 
@@ -209,7 +209,6 @@ class InvitesService {
       const response = await fetch(`${this.baseUrl}/invites/${inviteId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           ...authHeaders,
         },
       })
