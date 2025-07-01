@@ -1,45 +1,21 @@
-import { useState } from 'react'
-import { Plus, MoreVertical, Eye, RefreshCw, Trash2, Users } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, MoreVertical, Eye, RefreshCw, Trash2, Users, AlertCircle } from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
-
-interface User {
-  id: string
-  firstName?: string
-  lastName?: string
-  email: string
-  role: string
-  status: 'pending' | 'active' | 'expired'
-  invitedAt?: Date
-  lastLogin?: Date
-  source: 'invite' | 'seat'
-}
+import { invitesService, type User } from '../../services/invites.service'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function UsersPage() {
+  const { user } = useAuth()
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
-  const [users, setUsers] = useState<User[]>([
-    // Mock data for development
-    {
-      id: '1',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      role: 'Admin',
-      status: 'active',
-      lastLogin: new Date('2024-01-15'),
-      invitedAt: new Date('2024-01-01'),
-      source: 'seat',
-    },
-    {
-      id: '2',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@example.com',
-      role: 'Sales',
-      status: 'pending',
-      invitedAt: new Date('2024-01-14'),
-      source: 'invite',
-    },
-  ])
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+  })
 
   const getStatusBadge = (status: string) => {
     const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full'
@@ -55,44 +31,72 @@ export default function UsersPage() {
     }
   }
 
-  const formatDate = (date?: Date) => {
-    if (!date) return '-'
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-'
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(date)
+    }).format(new Date(dateString))
   }
 
-  const handleInviteSuccess = (inviteData: any) => {
-    // Add the new invite to the users list
-    const newUser: User = {
-      id: inviteData.id,
-      firstName: inviteData.firstName,
-      lastName: inviteData.lastName,
-      email: inviteData.email,
-      role: inviteData.role,
-      status: 'pending',
-      invitedAt: new Date(),
-      source: 'invite',
+  // Load users on component mount and when tenant changes
+  useEffect(() => {
+    loadUsers()
+  }, [user])
+
+  const loadUsers = async () => {
+    if (!user?.tenants?.[0]?.id) {
+      setLoading(false)
+      setError('No tenant found')
+      return
     }
-    setUsers((prev) => [newUser, ...prev])
+
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await invitesService.getUsers(user.tenants[0].id, pagination.page, pagination.limit)
+      setUsers(response.data)
+      setPagination(response.pagination)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users')
+      console.error('Error loading users:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleInviteSuccess = () => {
     setIsInviteModalOpen(false)
+    // Reload the users list to show the new invite
+    loadUsers()
   }
 
-  const handleResendInvite = (userId: string) => {
-    // TODO: Implement resend invite API call
-    console.log('Resending invite for user:', userId)
+  const handleResendInvite = async (userId: string) => {
+    try {
+      await invitesService.resendInvite(userId)
+      // Could show a success message here
+      console.log('Invite resent successfully')
+    } catch (err) {
+      console.error('Error resending invite:', err)
+      // Could show an error message here
+    }
   }
 
-  const handleRevokeInvite = (userId: string) => {
-    // TODO: Implement revoke invite API call
-    console.log('Revoking invite for user:', userId)
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === userId ? { ...user, status: 'expired' as const } : user,
-      ),
-    )
+  const handleRevokeInvite = async (userId: string) => {
+    try {
+      await invitesService.revokeInvite(userId)
+      // Update the user status locally
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === userId ? { ...user, status: 'expired' as const } : user,
+        ),
+      )
+      console.log('Invite revoked successfully')
+    } catch (err) {
+      console.error('Error revoking invite:', err)
+      // Could show an error message here
+    }
   }
 
   const emptyState = users.length === 0
@@ -123,7 +127,28 @@ export default function UsersPage() {
 
         {/* Main Content */}
         <div className="mt-8">
-          {emptyState ? (
+          {loading ? (
+            // Loading state
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-sm text-gray-600">Loading users...</p>
+            </div>
+          ) : error ? (
+            // Error state
+            <div className="text-center py-12">
+              <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Error loading users</h3>
+              <p className="mt-1 text-sm text-gray-500">{error}</p>
+              <div className="mt-6">
+                <button
+                  onClick={loadUsers}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          ) : emptyState ? (
             // Empty state
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-gray-400" />
@@ -250,9 +275,9 @@ export default function UsersPage() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">1</span> to{' '}
-                        <span className="font-medium">{users.length}</span> of{' '}
-                        <span className="font-medium">{users.length}</span>{' '}
+                        Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
+                        <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of{' '}
+                        <span className="font-medium">{pagination.total}</span>{' '}
                         results
                       </p>
                     </div>

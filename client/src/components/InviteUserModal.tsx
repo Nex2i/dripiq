@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { X, Mail, User, Shield, Settings } from 'lucide-react';
+import { invitesService, type CreateInviteData } from '../services/invites.service';
 
 interface InviteUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (data: any) => void;
+  onSuccess: () => void;
 }
 
 interface InviteFormData {
@@ -71,21 +72,15 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      console.log('Sending invite:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock successful response
-      const mockResponse = {
-        id: `invite_${Date.now()}`,
-        ...formData,
-        status: 'pending',
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      const inviteData: CreateInviteData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName || undefined,
+        email: formData.email,
+        role: formData.role,
+        dailyCap: formData.dailyCap,
       };
 
-      onSuccess(mockResponse);
+      await invitesService.createInvite(inviteData);
       
       // Reset form
       setFormData({
@@ -96,9 +91,12 @@ export function InviteUserModal({ isOpen, onClose, onSuccess }: InviteUserModalP
         dailyCap: 200,
       });
       setErrors({});
+      
+      onSuccess();
     } catch (error) {
       console.error('Error sending invite:', error);
-      // Handle error - could set an error state here
+      // Show error to user
+      setErrors({ email: error instanceof Error ? error.message : 'Failed to send invitation' });
     } finally {
       setIsLoading(false);
     }

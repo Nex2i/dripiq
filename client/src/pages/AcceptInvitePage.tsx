@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearch, Navigate } from '@tanstack/react-router'
 import { CheckCircle, XCircle, Clock, Mail, Building2 } from 'lucide-react'
+import { invitesService } from '../services/invites.service'
 
 interface InviteInfo {
   id: string
@@ -33,28 +34,27 @@ export default function AcceptInvitePage() {
 
   const verifyInviteToken = async (token: string) => {
     try {
-      // TODO: Replace with actual API call
-      console.log('Verifying invite token:', token)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Mock successful verification
-      const mockInviteInfo: InviteInfo = {
-        id: 'invite_123',
-        email: 'user@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'Sales Rep',
-        tenantId: 'tenant_123',
-        expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
+      const response = await invitesService.verifyInvite(token)
+      
+      const inviteInfo: InviteInfo = {
+        id: response.invite.id,
+        email: response.invite.email,
+        firstName: response.invite.firstName,
+        lastName: response.invite.lastName,
+        role: response.invite.role,
+        tenantId: response.invite.tenantId,
+        expiresAt: response.invite.expiresAt,
       }
 
-      setInviteInfo(mockInviteInfo)
+      setInviteInfo(inviteInfo)
       setStatus('valid')
     } catch (error) {
       console.error('Error verifying invite:', error)
-      setStatus('error')
+      if (error instanceof Error && error.message.includes('expired')) {
+        setStatus('expired')
+      } else {
+        setStatus('error')
+      }
     }
   }
 
@@ -64,12 +64,7 @@ export default function AcceptInvitePage() {
     setIsAccepting(true)
 
     try {
-      // TODO: Replace with actual API call
-      console.log('Accepting invite with token:', token)
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
+      await invitesService.acceptInvite(token)
       setStatus('accepted')
 
       // Redirect to dashboard after a delay
