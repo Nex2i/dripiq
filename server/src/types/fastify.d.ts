@@ -5,6 +5,10 @@ import { schema } from '../utils/validateEnv';
 declare module 'fastify' {
   interface FastifyInstance {
     authPrehandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authCache: {
+      clear: (supabaseId?: string) => void;
+      cleanup: () => void;
+    };
   }
 }
 

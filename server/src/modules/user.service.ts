@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { db, users, User, NewUser, UserTenant } from '@/db';
+import { db, users, User, NewUser, UserTenant, userTenants, tenants, Tenant } from '@/db';
 
 export interface CreateUserData {
   supabaseId: string;
@@ -91,6 +91,73 @@ export class UserService {
     }
 
     return user;
+  }
+
+  /**
+   * Optimized method for authentication - gets user and tenants in a single query
+   */
+  static async getUserWithTenantsForAuth(supabaseId: string): Promise<{
+    user: User;
+    userTenants: Array<{
+      id: string;
+      name: string;
+      isSuperUser: boolean;
+    }>;
+  } | null> {
+    // Single query to get user and all their tenants with JOIN
+    const result = await db
+      .select({
+        // User fields
+        userId: users.id,
+        userSupabaseId: users.supabaseId,
+        userEmail: users.email,
+        userName: users.name,
+        userAvatar: users.avatar,
+        userCreatedAt: users.createdAt,
+        userUpdatedAt: users.updatedAt,
+        // Tenant fields (null if user has no tenants)
+        tenantId: tenants.id,
+        tenantName: tenants.name,
+        isSuperUser: userTenants.isSuperUser,
+      })
+      .from(users)
+      .leftJoin(userTenants, eq(users.id, userTenants.userId))
+      .leftJoin(tenants, eq(userTenants.tenantId, tenants.id))
+      .where(eq(users.supabaseId, supabaseId));
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    // Reconstruct the user object
+    const userRow = result[0]!;
+    const user: User = {
+      id: userRow.userId,
+      supabaseId: userRow.userSupabaseId,
+      email: userRow.userEmail,
+      name: userRow.userName,
+      avatar: userRow.userAvatar,
+      createdAt: userRow.userCreatedAt,
+      updatedAt: userRow.userUpdatedAt,
+    };
+
+    // Build unique tenants list (filter out null tenants)
+    const tenantMap = new Map<string, { id: string; name: string; isSuperUser: boolean }>();
+
+    for (const row of result) {
+      if (row.tenantId && row.tenantName) {
+        tenantMap.set(row.tenantId, {
+          id: row.tenantId,
+          name: row.tenantName,
+          isSuperUser: row.isSuperUser || false,
+        });
+      }
+    }
+
+    return {
+      user,
+      userTenants: Array.from(tenantMap.values()),
+    };
   }
 
   /**

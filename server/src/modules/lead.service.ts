@@ -4,8 +4,8 @@ import { leads, NewLead } from '../db/schema';
 import { validateUserTenantAccess } from '../utils/tenantValidation';
 
 export const getLeads = async (userId: string, tenantId: string, searchQuery?: string) => {
-  // Validate user has access to this tenant
-  await validateUserTenantAccess(userId, tenantId);
+  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
+  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
   // Build base query with tenant filter
   const baseWhere = eq(leads.tenantId, tenantId);
@@ -40,8 +40,8 @@ export const createLead = async (
   tenantId: string,
   lead: Omit<NewLead, 'tenantId'>
 ) => {
-  // Validate user has access to this tenant
-  await validateUserTenantAccess(userId, tenantId);
+  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
+  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
   // Add tenantId to the lead data
   const leadWithTenant: NewLead = {
@@ -54,8 +54,8 @@ export const createLead = async (
 };
 
 export const getLeadById = async (userId: string, tenantId: string, id: string) => {
-  // Validate user has access to this tenant
-  await validateUserTenantAccess(userId, tenantId);
+  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
+  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
   const result = await db
     .select()
@@ -71,8 +71,8 @@ export const updateLead = async (
   id: string,
   leadData: Partial<Omit<NewLead, 'tenantId'>>
 ) => {
-  // Validate user has access to this tenant
-  await validateUserTenantAccess(userId, tenantId);
+  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
+  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
   const result = await db
     .update(leads)
@@ -83,8 +83,8 @@ export const updateLead = async (
 };
 
 export const deleteLead = async (userId: string, tenantId: string, id: string) => {
-  // Validate user has access to this tenant
-  await validateUserTenantAccess(userId, tenantId);
+  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
+  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
   const result = await db
     .delete(leads)
@@ -98,8 +98,8 @@ export const bulkDeleteLeads = async (userId: string, tenantId: string, ids: str
     return [];
   }
 
-  // Validate user has access to this tenant
-  await validateUserTenantAccess(userId, tenantId);
+  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
+  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
   const result = await db
     .delete(leads)

@@ -4,7 +4,6 @@ import { ForbiddenError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabaseClient';
 import { UserService } from '@/modules/user.service';
-import { TenantService } from '@/modules/tenant.service';
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user: {
@@ -20,12 +19,88 @@ export interface AuthenticatedRequest extends FastifyRequest {
     name: string;
     isSuperUser: boolean;
   }>;
+  // Add a flag to indicate tenant access has been validated
+  tenantAccessValidated: boolean;
 }
+
+// Simple in-memory cache with TTL for authentication data
+interface CacheEntry {
+  data: {
+    user: {
+      id: string;
+      supabaseId: string;
+      email: string;
+      name?: string;
+      avatar?: string;
+    };
+    userTenants: Array<{
+      id: string;
+      name: string;
+      isSuperUser: boolean;
+    }>;
+  };
+  expiresAt: number;
+}
+
+class AuthCache {
+  private cache = new Map<string, CacheEntry>();
+  private readonly TTL = 5 * 60 * 1000; // 5 minutes
+
+  set(supabaseId: string, data: CacheEntry['data']): void {
+    this.cache.set(supabaseId, {
+      data,
+      expiresAt: Date.now() + this.TTL,
+    });
+  }
+
+  get(supabaseId: string): CacheEntry['data'] | null {
+    const entry = this.cache.get(supabaseId);
+    if (!entry) {
+      return null;
+    }
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(supabaseId);
+      return null;
+    }
+
+    return entry.data;
+  }
+
+  clear(supabaseId?: string): void {
+    if (supabaseId) {
+      this.cache.delete(supabaseId);
+    } else {
+      this.cache.clear();
+    }
+  }
+
+  // Clean up expired entries periodically
+  cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiresAt) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const authCache = new AuthCache();
+
+// Run cleanup every 10 minutes
+setInterval(
+  () => {
+    authCache.cleanup();
+  },
+  10 * 60 * 1000
+);
 
 export default fastifyPlugin(
   async (fastify: FastifyInstance) => {
     /**
      * Enhanced authentication prehandler - validates JWT, attaches user, and determines tenant context
+     * Optimized with caching and single database query
      */
     const authPrehandler = async (request: FastifyRequest, _reply: FastifyReply) => {
       try {
@@ -42,6 +117,7 @@ export default fastifyPlugin(
           throw new ForbiddenError('No token provided in Authorization Header.');
         }
 
+        // Validate JWT with Supabase
         const {
           data: { user },
           error,
@@ -54,41 +130,55 @@ export default fastifyPlugin(
           throw new ForbiddenError(`Invalid Token: ${error?.message || 'User not found'}`);
         }
 
-        // Get user from database
-        const dbUser = await UserService.getUserBySupabaseId(user.id);
-        if (!dbUser) {
-          throw new ForbiddenError('User not found in database');
-        }
+        // Check cache first
+        let userData = authCache.get(user.id);
 
-        // Get user's tenants to determine tenant context
-        const userTenants = await TenantService.getUserTenants(dbUser.id);
+        if (!userData) {
+          // Cache miss - fetch from database with single optimized query
+          const dbResult = await UserService.getUserWithTenantsForAuth(user.id);
 
-        if (userTenants.length === 0) {
-          throw new ForbiddenError('User is not associated with any tenant');
+          if (!dbResult) {
+            throw new ForbiddenError('User not found in database');
+          }
+
+          if (dbResult.userTenants.length === 0) {
+            throw new ForbiddenError('User is not associated with any tenant');
+          }
+
+          userData = {
+            user: {
+              id: dbResult.user.id,
+              supabaseId: dbResult.user.supabaseId,
+              email: dbResult.user.email,
+              name: dbResult.user.name || undefined,
+              avatar: dbResult.user.avatar || undefined,
+            },
+            userTenants: dbResult.userTenants,
+          };
+
+          // Cache the result
+          authCache.set(user.id, userData);
+
+          logger.debug(
+            `Authentication cache miss for user ${userData.user.id} - data loaded from DB`
+          );
+        } else {
+          logger.debug(`Authentication cache hit for user ${userData.user.id}`);
         }
 
         // Use the first tenant as the primary tenant (or we could add logic for default tenant)
-        const primaryTenant = userTenants[0]!; // Safe because we checked length > 0
+        const primaryTenant = userData.userTenants[0]!; // Safe because we checked length > 0
 
         // Attach user and tenant information to the request
         const authenticatedRequest = request as AuthenticatedRequest;
-        authenticatedRequest.user = {
-          id: dbUser.id,
-          supabaseId: dbUser.supabaseId,
-          email: dbUser.email,
-          name: dbUser.name || undefined,
-          avatar: dbUser.avatar || undefined,
-        };
-
-        authenticatedRequest.tenantId = primaryTenant.tenant.id;
-        authenticatedRequest.userTenants = userTenants.map((ut) => ({
-          id: ut.tenant.id,
-          name: ut.tenant.name,
-          isSuperUser: ut.isSuperUser,
-        }));
+        authenticatedRequest.user = userData.user;
+        authenticatedRequest.tenantId = primaryTenant.id;
+        authenticatedRequest.userTenants = userData.userTenants;
+        // Mark tenant access as validated to avoid redundant checks
+        authenticatedRequest.tenantAccessValidated = true;
 
         logger.debug(
-          `User ${dbUser.id} authenticated with primary tenant: ${primaryTenant.tenant.id}`
+          `User ${userData.user.id} authenticated with primary tenant: ${primaryTenant.id}`
         );
       } catch (error: any) {
         logger.warn(`authPrehandler Error: ${error.message || 'Unknown auth error'}`, {
@@ -114,8 +204,12 @@ export default fastifyPlugin(
       }
     };
 
-    // Decorate fastify instance with authentication prehandler
+    // Decorate fastify instance with authentication prehandler and cache utilities
     fastify.decorate('authPrehandler', authPrehandler);
+    fastify.decorate('authCache', {
+      clear: authCache.clear.bind(authCache),
+      cleanup: authCache.cleanup.bind(authCache),
+    });
   },
   {
     name: 'authentication',
