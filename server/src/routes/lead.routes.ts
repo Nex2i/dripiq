@@ -587,11 +587,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // Delete the leads with tenant context
-        const deletedLeads = await bulkDeleteLeads(
-          authenticatedRequest.user.id,
-          authenticatedRequest.tenantId,
-          ids
-        );
+        const deletedLeads = await bulkDeleteLeads(authenticatedRequest.tenantId, ids);
 
         fastify.log.info(
           `Bulk deleted ${deletedLeads.length} leads for tenant: ${authenticatedRequest.tenantId}`
