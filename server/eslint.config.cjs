@@ -23,6 +23,12 @@ module.exports = [
         console: true,
         require: true,
         module: true,
+        setInterval: true,
+        setTimeout: true,
+        clearInterval: true,
+        clearTimeout: true,
+        setImmediate: true,
+        clearImmediate: true,
       },
     },
     plugins: {

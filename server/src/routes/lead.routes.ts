@@ -82,11 +82,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const authenticatedRequest = request as AuthenticatedRequest;
         const { search } = request.query;
 
-        const leads = await getLeads(
-          authenticatedRequest.user.id,
-          authenticatedRequest.tenantId,
-          search
-        );
+        const leads = await getLeads(authenticatedRequest.tenantId, search);
 
         reply.send(leads);
       } catch (error: any) {
@@ -179,7 +175,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         // Create the lead with tenant context
         const newLead = await createLead(
-          authenticatedRequest.user.id,
           authenticatedRequest.tenantId,
           leadData as Omit<NewLead, 'tenantId'>
         );
@@ -285,11 +280,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        const lead = await getLeadById(
-          authenticatedRequest.user.id,
-          authenticatedRequest.tenantId,
-          id
-        );
+        const lead = await getLeadById(authenticatedRequest.tenantId, id);
 
         if (!lead) {
           reply.status(404).send({
@@ -390,12 +381,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        const updatedLead = await updateLead(
-          authenticatedRequest.user.id,
-          authenticatedRequest.tenantId,
-          id,
-          updateData
-        );
+        const updatedLead = await updateLead(authenticatedRequest.tenantId, id, updateData);
 
         if (!updatedLead) {
           reply.status(404).send({
@@ -494,11 +480,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        const deletedLead = await deleteLead(
-          authenticatedRequest.user.id,
-          authenticatedRequest.tenantId,
-          id
-        );
+        const deletedLead = await deleteLead(authenticatedRequest.tenantId, id);
 
         if (!deletedLead) {
           reply.status(404).send({

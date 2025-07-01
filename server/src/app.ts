@@ -32,7 +32,28 @@ async function startServer() {
   // Initialize Plugins
   await app.register(fastifyEnv, { dotenv: true, schema });
   await app.register(fastifyCors, {
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow localhost for development
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+
+      // Allow any Netlify domain
+      if (origin.includes('.netlify.app')) {
+        return callback(null, true);
+      }
+
+      // Allow your production backend domain
+      if (origin.includes('dripiq.onrender.com')) {
+        return callback(null, true);
+      }
+
+      // Allow any other origin for now (you can make this more restrictive later)
+      return callback(null, true);
+    },
     credentials: CREDENTIALS === 'true',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],

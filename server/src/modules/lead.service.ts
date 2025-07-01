@@ -1,9 +1,8 @@
 import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import db from '../libs/drizzleClient';
 import { leads, NewLead } from '../db/schema';
-import { validateUserTenantAccess } from '../utils/tenantValidation';
 
-export const getLeads = async (userId: string, tenantId: string, searchQuery?: string) => {
+export const getLeads = async (tenantId: string, searchQuery?: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
@@ -35,11 +34,7 @@ export const getLeads = async (userId: string, tenantId: string, searchQuery?: s
   return result;
 };
 
-export const createLead = async (
-  userId: string,
-  tenantId: string,
-  lead: Omit<NewLead, 'tenantId'>
-) => {
+export const createLead = async (tenantId: string, lead: Omit<NewLead, 'tenantId'>) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
@@ -53,7 +48,7 @@ export const createLead = async (
   return result[0];
 };
 
-export const getLeadById = async (userId: string, tenantId: string, id: string) => {
+export const getLeadById = async (tenantId: string, id: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
@@ -66,7 +61,6 @@ export const getLeadById = async (userId: string, tenantId: string, id: string) 
 };
 
 export const updateLead = async (
-  userId: string,
   tenantId: string,
   id: string,
   leadData: Partial<Omit<NewLead, 'tenantId'>>
@@ -82,7 +76,7 @@ export const updateLead = async (
   return result[0];
 };
 
-export const deleteLead = async (userId: string, tenantId: string, id: string) => {
+export const deleteLead = async (tenantId: string, id: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
@@ -93,7 +87,7 @@ export const deleteLead = async (userId: string, tenantId: string, id: string) =
   return result[0];
 };
 
-export const bulkDeleteLeads = async (userId: string, tenantId: string, ids: string[]) => {
+export const bulkDeleteLeads = async (tenantId: string, ids: string[]) => {
   if (ids.length === 0) {
     return [];
   }

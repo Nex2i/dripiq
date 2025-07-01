@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { db, users, User, NewUser, UserTenant, userTenants, tenants, Tenant } from '@/db';
+import { db, users, User, NewUser, UserTenant, userTenants, tenants } from '@/db';
 
 export interface CreateUserData {
   supabaseId: string;
