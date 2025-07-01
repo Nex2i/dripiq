@@ -9,7 +9,6 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 // Import components and pages
 import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
-import UserManagement from './pages/UserManagement'
 import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
@@ -80,13 +79,6 @@ const dashboardRoute = createRoute({
   component: () => <Dashboard />,
 })
 
-// User Management route - protected
-const userManagementRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/user-management',
-  component: () => <UserManagement />,
-})
-
 // Auth routes - public only (redirect to home if already logged in)
 const authLoginRoute = createRoute({
   getParentRoute: () => authRoute,
@@ -133,7 +125,6 @@ const tanStackQueryRoute = createRoute({
 
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
-  userManagementRoute,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,
