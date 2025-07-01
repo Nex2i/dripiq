@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { RoleService, CreateRoleData, CreatePermissionData } from '@/modules/role.service';
+import { UserService } from '@/modules/user.service';
 
 const basePath = '/roles';
 
@@ -288,7 +289,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
         }
 
         // Get user from database using Supabase ID
-        const dbUser = await fastify.userService.getUserBySupabaseId(supabaseUser.id);
+        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
         if (!dbUser) {
           reply.status(404).send({ message: 'User not found' });
           return;

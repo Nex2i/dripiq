@@ -1,13 +1,14 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { RoleService } from '@/modules/role.service';
+import { UserService } from '@/modules/user.service';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    requirePermission: (resource: string, action: string) => (
-      request: FastifyRequest,
-      reply: FastifyReply
-    ) => Promise<void>;
+    requirePermission: (
+      resource: string,
+      action: string
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     requireAdmin: () => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
@@ -16,58 +17,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
   // Middleware to check if user has specific permission
   fastify.decorate(
     'requirePermission',
-    (resource: string, action: string) =>
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        try {
-          // Get user from auth middleware
-          const user = (request as any).user;
-          if (!user?.id) {
-            reply.status(401).send({ message: 'Authentication required' });
-            return;
-          }
-
-          // Get tenant from request (could be in params, query, or body)
-          const tenantId = getTenantFromRequest(request);
-          if (!tenantId) {
-            reply.status(400).send({ message: 'Tenant ID required' });
-            return;
-          }
-
-          // Get user from database using Supabase ID
-          const dbUser = await fastify.userService.getUserBySupabaseId(user.id);
-          if (!dbUser) {
-            reply.status(404).send({ message: 'User not found' });
-            return;
-          }
-
-          // Check if user has the required permission
-          const hasPermission = await RoleService.userHasPermission(
-            dbUser.id,
-            tenantId,
-            resource,
-            action
-          );
-
-          if (!hasPermission) {
-            reply.status(403).send({
-              message: 'Insufficient permissions',
-              required: { resource, action },
-            });
-            return;
-          }
-
-          // Permission check passed, continue to route handler
-        } catch (error: any) {
-          fastify.log.error(`Permission check error: ${error.message}`);
-          reply.status(500).send({ message: 'Permission check failed' });
-        }
-      }
-  );
-
-  // Middleware to check if user is admin
-  fastify.decorate(
-    'requireAdmin',
-    () => async (request: FastifyRequest, reply: FastifyReply) => {
+    (resource: string, action: string) => async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         // Get user from auth middleware
         const user = (request as any).user;
@@ -76,7 +26,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
           return;
         }
 
-        // Get tenant from request
+        // Get tenant from request (could be in params, query, or body)
         const tenantId = getTenantFromRequest(request);
         if (!tenantId) {
           reply.status(400).send({ message: 'Tenant ID required' });
@@ -84,29 +34,76 @@ async function permissionsPlugin(fastify: FastifyInstance) {
         }
 
         // Get user from database using Supabase ID
-        const dbUser = await fastify.userService.getUserBySupabaseId(user.id);
+        const dbUser = await UserService.getUserBySupabaseId(user.id);
         if (!dbUser) {
           reply.status(404).send({ message: 'User not found' });
           return;
         }
 
-        // Check if user is admin
-        const isAdmin = await RoleService.userIsAdmin(dbUser.id, tenantId);
+        // Check if user has the required permission
+        const hasPermission = await RoleService.userHasPermission(
+          dbUser.id,
+          tenantId,
+          resource,
+          action
+        );
 
-        if (!isAdmin) {
+        if (!hasPermission) {
           reply.status(403).send({
-            message: 'Admin access required',
+            message: 'Insufficient permissions',
+            required: { resource, action },
           });
           return;
         }
 
-        // Admin check passed, continue to route handler
+        // Permission check passed, continue to route handler
       } catch (error: any) {
-        fastify.log.error(`Admin check error: ${error.message}`);
-        reply.status(500).send({ message: 'Admin check failed' });
+        fastify.log.error(`Permission check error: ${error.message}`);
+        reply.status(500).send({ message: 'Permission check failed' });
       }
     }
   );
+
+  // Middleware to check if user is admin
+  fastify.decorate('requireAdmin', () => async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      // Get user from auth middleware
+      const user = (request as any).user;
+      if (!user?.id) {
+        reply.status(401).send({ message: 'Authentication required' });
+        return;
+      }
+
+      // Get tenant from request
+      const tenantId = getTenantFromRequest(request);
+      if (!tenantId) {
+        reply.status(400).send({ message: 'Tenant ID required' });
+        return;
+      }
+
+      // Get user from database using Supabase ID
+      const dbUser = await UserService.getUserBySupabaseId(user.id);
+      if (!dbUser) {
+        reply.status(404).send({ message: 'User not found' });
+        return;
+      }
+
+      // Check if user is admin
+      const isAdmin = await RoleService.userIsAdmin(dbUser.id, tenantId);
+
+      if (!isAdmin) {
+        reply.status(403).send({
+          message: 'Admin access required',
+        });
+        return;
+      }
+
+      // Admin check passed, continue to route handler
+    } catch (error: any) {
+      fastify.log.error(`Admin check error: ${error.message}`);
+      reply.status(500).send({ message: 'Admin check failed' });
+    }
+  });
 }
 
 /**
