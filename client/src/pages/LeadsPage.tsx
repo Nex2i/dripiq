@@ -1,5 +1,21 @@
 import React from 'react'
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  type ColumnDef,
+  type FilterFn,
+} from '@tanstack/react-table'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import { useLeads, useInvalidateLeads } from '../hooks/useLeadsQuery'
+import type { Lead } from '../services/leads.service'
+
+// Define a simple fuzzy filter function (required by global module declaration)
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  const itemRank = rankItem(row.getValue(columnId), value)
+  addMeta({ itemRank })
+  return itemRank.passed
+}
 
 const LeadsPage: React.FC = () => {
   const { data: leads = [], isLoading, error, refetch } = useLeads()
@@ -37,6 +53,73 @@ const LeadsPage: React.FC = () => {
       </span>
     )
   }
+
+  // Define table columns
+  const columns = React.useMemo<ColumnDef<Lead>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: (info) => (
+          <div className="text-sm font-medium text-gray-900">
+            {info.getValue() as string}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'company',
+        header: 'Company',
+        cell: (info) => (
+          <div className="text-sm text-gray-500">
+            {(info.getValue() as string) || '-'}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: (info) => (
+          <div className="text-sm text-gray-500">
+            {info.getValue() as string}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'phone',
+        header: 'Phone',
+        cell: (info) => (
+          <div className="text-sm text-gray-500">
+            {(info.getValue() as string) || '-'}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: (info) => getStatusBadge(info.getValue() as string),
+      },
+      {
+        accessorKey: 'createdAt',
+        header: 'Created',
+        cell: (info) => (
+          <div className="text-sm text-gray-500">
+            {formatDate(info.getValue() as string)}
+          </div>
+        ),
+      },
+    ],
+    [],
+  )
+
+  // Create table instance
+  const table = useReactTable({
+    data: leads,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
+  })
 
   if (isLoading) {
     return (
@@ -156,79 +239,42 @@ const LeadsPage: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Name
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Company
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Email
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Phone
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Created
-                    </th>
-                  </tr>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th
+                          key={header.id}
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {leads.map((lead, index) => (
+                  {table.getRowModel().rows.map((row) => (
                     <tr
-                      key={lead.id || `lead-${index}`}
+                      key={row.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {lead.name}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {lead.company || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {lead.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {lead.phone || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(lead.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {formatDate(lead.createdAt)}
-                        </div>
-                      </td>
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="px-6 py-4 whitespace-nowrap"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
