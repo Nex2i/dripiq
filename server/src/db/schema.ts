@@ -159,6 +159,62 @@ export const leads = appSchema.table('leads', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Invites table for user invitations
+export const invites = appSchema.table('invites', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name'),
+  role: text('role').notNull(), // 'owner', 'manager', 'rep'
+  dailyCap: text('daily_cap').notNull().default('200'),
+  tokenHash: text('token_hash').notNull(),
+  status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'expired'
+  expiresAt: timestamp('expires_at').notNull(),
+  acceptedAt: timestamp('accepted_at'),
+  messageId: text('message_id'), // For tracking email delivery
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  tenantEmailUnique: unique().on(table.tenantId, table.email),
+}));
+
+// Seats table for active users in tenants
+export const seats = appSchema.table('seats', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  supabaseUid: text('supabase_uid').notNull(),
+  role: text('role').notNull(), // 'owner', 'manager', 'rep'
+  dailyCap: text('daily_cap').notNull().default('200'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  tenantSupabaseUidUnique: unique().on(table.tenantId, table.supabaseUid),
+}));
+
+// Relations for new tables
+export const invitesRelations = relations(invites, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [invites.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const seatsRelations = relations(seats, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [seats.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -174,3 +230,7 @@ export type RolePermission = typeof rolePermissions.$inferSelect;
 export type NewRolePermission = typeof rolePermissions.$inferInsert;
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
+export type Invite = typeof invites.$inferSelect;
+export type NewInvite = typeof invites.$inferInsert;
+export type Seat = typeof seats.$inferSelect;
+export type NewSeat = typeof seats.$inferInsert;

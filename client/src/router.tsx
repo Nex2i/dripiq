@@ -14,6 +14,8 @@ import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import LeadsPage from './pages/LeadsPage'
+import UsersPage from './pages/settings/UsersPage'
+import AcceptInvitePage from './pages/AcceptInvitePage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -73,6 +75,13 @@ const landingRoute = createRoute({
   component: () => <LandingPage />,
 })
 
+// Accept invite route - public
+const acceptInviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/accept-invite',
+  component: () => <AcceptInvitePage />,
+})
+
 // Dashboard route - protected
 const dashboardRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -97,6 +106,12 @@ const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/leads',
   component: () => <LeadsPage />,
+})
+
+const usersRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/settings/users',
+  component: () => <UsersPage />,
 })
 
 // Create all protected demo routes directly
@@ -133,6 +148,7 @@ const tanStackQueryRoute = createRoute({
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   leadsRoute,
+  usersRoute,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,
@@ -145,6 +161,7 @@ const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   landingRoute,
+  acceptInviteRoute,
   protectedRouteTree,
   authRouteTree,
 ])
