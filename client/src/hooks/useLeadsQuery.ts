@@ -84,7 +84,7 @@ export function useCreateLead() {
       })
     },
     onError: (error, newLeadData, context) => {
-      console.error('Error creating lead:', error)
+      console.error('Error creating lead:', error, newLeadData)
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(leadQueryKeys.list(), context?.previousLeads)
     },
@@ -167,6 +167,8 @@ export function useBulkDeleteLeads() {
     mutationFn: (ids: string[]) => leadsService.bulkDeleteLeads(ids),
     onSuccess: (data, deletedIds) => {
       // Remove the leads from the list cache
+      console.log('data', data)
+      console.log('deletedIds', deletedIds)
       queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
         if (!oldLeads) return []
         return oldLeads.filter((lead) => !deletedIds.includes(lead.id))

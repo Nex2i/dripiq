@@ -4,13 +4,6 @@ import Logo from './Logo'
 import { useState } from 'react'
 import AddLeadModal from './AddLeadModal'
 
-interface LeadFormData {
-  name: string
-  email: string
-  company?: string
-  phone?: string
-}
-
 export default function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
