@@ -3,9 +3,11 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  type ColumnDef,
-  type FilterFn,
-  type RowSelectionState,
+} from '@tanstack/react-table'
+import type {
+  ColumnDef,
+  FilterFn,
+  RowSelectionState,
 } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import {

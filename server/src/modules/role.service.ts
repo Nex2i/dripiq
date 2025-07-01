@@ -79,14 +79,20 @@ export class RoleService {
   /**
    * Assign permission to role
    */
-  static async assignPermissionToRole(roleId: string, permissionId: string): Promise<RolePermission> {
+  static async assignPermissionToRole(
+    roleId: string,
+    permissionId: string
+  ): Promise<RolePermission> {
     try {
       const newRolePermission: NewRolePermission = {
         roleId,
         permissionId,
       };
 
-      const [rolePermission] = await db.insert(rolePermissions).values(newRolePermission).returning();
+      const [rolePermission] = await db
+        .insert(rolePermissions)
+        .values(newRolePermission)
+        .returning();
       return rolePermission!;
     } catch (error: any) {
       // If relationship already exists (unique constraint violation), fetch and return it
@@ -94,7 +100,9 @@ export class RoleService {
         const existingRelation = await db
           .select()
           .from(rolePermissions)
-          .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)))
+          .where(
+            and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId))
+          )
           .limit(1)
           .then((result) => result[0]);
 
@@ -113,7 +121,9 @@ export class RoleService {
   static async removePermissionFromRole(roleId: string, permissionId: string): Promise<void> {
     await db
       .delete(rolePermissions)
-      .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)));
+      .where(
+        and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId))
+      );
   }
 
   /**
@@ -180,7 +190,10 @@ export class RoleService {
   /**
    * Get user permissions for a specific tenant
    */
-  static async getUserPermissions(userId: string, tenantId: string): Promise<UserPermissions | null> {
+  static async getUserPermissions(
+    userId: string,
+    tenantId: string
+  ): Promise<UserPermissions | null> {
     const userTenant = await db
       .select()
       .from(userTenants)
@@ -217,7 +230,7 @@ export class RoleService {
     action: string
   ): Promise<boolean> {
     const userPermissions = await this.getUserPermissions(userId, tenantId);
-    
+
     if (!userPermissions) {
       return false;
     }

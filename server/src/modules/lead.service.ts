@@ -1,6 +1,6 @@
+import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import db from '../libs/drizzleClient';
 import { leads, NewLead } from '../db/schema';
-import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import { validateUserTenantAccess } from '../utils/tenantValidation';
 
 export const getLeads = async (userId: string, tenantId: string, searchQuery?: string) => {

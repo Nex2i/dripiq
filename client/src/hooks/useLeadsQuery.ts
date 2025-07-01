@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  leadsService,
-  type Lead,
-  type CreateLeadData,
-  type UpdateLeadData,
+import { leadsService } from '../services/leads.service'
+import type {
+  Lead,
+  CreateLeadData,
+  UpdateLeadData,
 } from '../services/leads.service'
 
 // Query keys for leads

@@ -21,6 +21,8 @@ module.exports = [
         __dirname: true,
         process: true,
         console: true,
+        require: true,
+        module: true,
       },
     },
     plugins: {

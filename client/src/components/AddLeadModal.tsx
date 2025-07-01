@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { type CreateLeadData } from '../services/leads.service'
+import type { CreateLeadData } from '../services/leads.service'
 import { useNavigate } from '@tanstack/react-router'
 import { useCreateLead } from '../hooks/useLeadsQuery'
 
@@ -42,7 +42,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
     }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 

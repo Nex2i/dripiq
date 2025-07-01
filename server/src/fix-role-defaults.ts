@@ -1,6 +1,6 @@
+import { eq, isNull } from 'drizzle-orm';
 import { db } from './db/index';
 import { roles, userTenants } from './db/schema';
-import { eq, isNull } from 'drizzle-orm';
 
 /**
  * Fix role_id null values by creating admin role and updating existing records
