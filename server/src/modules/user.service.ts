@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { db, users, User, NewUser } from '@/db';
+import { db, users, User, NewUser, UserTenant } from '@/db';
 
 export interface CreateUserData {
   supabaseId: string;
@@ -91,5 +91,29 @@ export class UserService {
     }
 
     return user;
+  }
+
+  /**
+   * Get users by tenant (with tenant access validation)
+   */
+  static async getUsersByTenant(
+    requestingUserId: string,
+    tenantId: string
+  ): Promise<(UserTenant & { user: User })[]> {
+    // Validate requesting user has access to this tenant
+    const { validateUserTenantAccess } = await import('../utils/tenantValidation');
+    await validateUserTenantAccess(requestingUserId, tenantId);
+
+    const { userTenants } = await import('@/db');
+    const result = await db
+      .select()
+      .from(userTenants)
+      .innerJoin(users, eq(userTenants.userId, users.id))
+      .where(eq(userTenants.tenantId, tenantId));
+
+    return result.map((row) => ({
+      ...row.user_tenants,
+      user: row.users,
+    }));
   }
 }

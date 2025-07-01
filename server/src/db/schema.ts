@@ -81,6 +81,9 @@ export const leads = appSchema.table('leads', {
   company: text('company'),
   phone: text('phone'),
   status: text('status').notNull().default('new'),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

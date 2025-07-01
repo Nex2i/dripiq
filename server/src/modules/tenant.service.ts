@@ -132,12 +132,17 @@ export class TenantService {
   }
 
   /**
-   * Update tenant data
+   * Update tenant data (with user access validation)
    */
   static async updateTenant(
+    userId: string,
     tenantId: string,
     updateData: Partial<CreateTenantData>
   ): Promise<Tenant> {
+    // Validate user has access to this tenant
+    const { validateUserTenantAccess } = await import('../utils/tenantValidation');
+    await validateUserTenantAccess(userId, tenantId);
+
     const [tenant] = await db
       .update(tenants)
       .set({
@@ -155,9 +160,13 @@ export class TenantService {
   }
 
   /**
-   * Delete tenant
+   * Delete tenant (with user access validation)
    */
-  static async deleteTenant(tenantId: string): Promise<Tenant> {
+  static async deleteTenant(userId: string, tenantId: string): Promise<Tenant> {
+    // Validate user has super user access to this tenant
+    const { validateUserSuperAccess } = await import('../utils/tenantValidation');
+    await validateUserSuperAccess(userId, tenantId);
+
     const [tenant] = await db.delete(tenants).where(eq(tenants.id, tenantId)).returning();
 
     if (!tenant) {
@@ -165,5 +174,19 @@ export class TenantService {
     }
 
     return tenant;
+  }
+
+  /**
+   * Get tenant by ID (with user access validation)
+   */
+  static async getTenantByIdSecure(
+    userId: string,
+    tenantId: string
+  ): Promise<TenantWithUsers | null> {
+    // Validate user has access to this tenant
+    const { validateUserTenantAccess } = await import('../utils/tenantValidation');
+    await validateUserTenantAccess(userId, tenantId);
+
+    return this.getTenantById(tenantId);
   }
 }
