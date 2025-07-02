@@ -69,7 +69,7 @@ export default function Header() {
 
   return (
     <>
-      <div className="bg-surface/95 backdrop-blur-sm shadow-brand border-b border-[var(--extra-light-gray)] sticky top-0 z-50">
+      <div className="bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-300 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
@@ -84,7 +84,7 @@ export default function Header() {
               <nav className="hidden md:flex space-x-6">
                 <button
                   onClick={() => navigate({ to: '/leads' })}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                  className="text-gray-700 hover:text-brand px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-brand-light"
                 >
                   Leads
                 </button>
@@ -95,7 +95,7 @@ export default function Header() {
               {/* Add Lead Button */}
               <button
                 onClick={() => setIsAddLeadModalOpen(true)}
-                className="p-2 rounded-full text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                className="p-2 rounded-full text-gray-700 hover:text-brand hover:bg-brand-light transition-colors duration-200"
                 aria-label="Add new lead"
               >
                 <svg
@@ -116,7 +116,7 @@ export default function Header() {
               {/* Mobile Menu Button */}
               <button
                 onClick={toggleMobileMenu}
-                className="md:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                className="md:hidden p-2 rounded-lg text-gray-700 hover:text-brand hover:bg-brand-light transition-colors duration-200"
                 aria-label="Toggle mobile menu"
               >
                 <div className="w-6 h-6 flex flex-col justify-around">
@@ -146,7 +146,7 @@ export default function Header() {
                       className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                       aria-label="Open profile menu"
                     >
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-gradient-to-r from-brand to-brand/80 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-semibold">
                           {(user.user.name || user.user.email)
                             ?.charAt(0)
@@ -208,13 +208,13 @@ export default function Header() {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => navigate({ to: '/auth/login' })}
-                    className="text-gray-600 hover:text-blue-600 px-4 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                    className="text-gray-700 hover:text-brand px-4 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-brand-light"
                   >
                     Sign in
                   </button>
                   <button
                     onClick={() => navigate({ to: '/auth/register' })}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border-none cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-r from-brand to-brand/90 hover:from-brand/90 hover:to-brand/80 text-white px-4 py-2 rounded-xl text-sm font-semibold border-none cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
                   >
                     Start Free Trial
                   </button>
@@ -234,13 +234,13 @@ export default function Header() {
             <nav className="flex flex-col space-y-4">
               <button
                 onClick={() => navigateAndClose('/leads')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+                className="text-gray-700 hover:text-brand px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-brand-light text-left"
               >
                 Leads
               </button>
               <button
                 onClick={() => navigateAndClose('/settings')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left flex items-center"
+                className="text-gray-700 hover:text-brand px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-brand-light text-left flex items-center"
               >
                 <Settings className="h-5 w-5 mr-3 text-gray-400" />
                 Settings
@@ -250,7 +250,7 @@ export default function Header() {
               {user && (
                 <div className="pt-4 border-t border-gray-200/50">
                   <div className="flex items-center space-x-3 px-4 py-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-r from-brand to-brand/80 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-semibold">
                         {(user.user.name || user.user.email)
                           ?.charAt(0)
@@ -285,13 +285,13 @@ export default function Header() {
                 <div className="pt-4 border-t border-gray-200/50 space-y-3">
                   <button
                     onClick={() => navigateAndClose('/auth/login')}
-                    className="w-full text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border border-gray-300 cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                    className="w-full text-gray-700 hover:text-brand px-4 py-3 text-base font-medium bg-transparent border border-gray-300 cursor-pointer transition-colors duration-200 rounded-lg hover:bg-brand-light"
                   >
                     Sign in
                   </button>
                   <button
                     onClick={() => navigateAndClose('/auth/register')}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl text-base font-semibold border-none cursor-pointer transition-all duration-300"
+                    className="w-full bg-gradient-to-r from-brand to-brand/90 hover:from-brand/90 hover:to-brand/80 text-white px-4 py-3 rounded-xl text-base font-semibold border-none cursor-pointer transition-all duration-300"
                   >
                     Start Free Trial
                   </button>

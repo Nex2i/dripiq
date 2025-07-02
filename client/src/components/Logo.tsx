@@ -88,13 +88,13 @@ export default function Logo({
       {showText && (
         <div className="flex items-baseline">
           <span
-            className={`font-bold text-[#4361EE] ${textSizeClasses[size]}`}
+            className={`font-bold text-brand ${textSizeClasses[size]}`}
             style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}
           >
             drip
           </span>
           <span
-            className={`font-bold text-[#00B894] ${textSizeClasses[size]}`}
+            className={`font-bold text-brand-accent ${textSizeClasses[size]}`}
             style={{ fontFamily: 'Inter, sans-serif', letterSpacing: '-0.02em' }}
           >
             IQ

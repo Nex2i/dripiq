@@ -34,7 +34,7 @@ export default function OrganizationPage() {
                   type="text"
                   name="org-name"
                   id="org-name"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-brand focus:border-brand block w-full sm:text-sm border-gray-300 rounded-md"
                   placeholder="Your Organization Name"
                 />
               </div>
@@ -52,7 +52,7 @@ export default function OrganizationPage() {
                   id="org-description"
                   name="org-description"
                   rows={3}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-brand focus:border-brand block w-full sm:text-sm border-gray-300 rounded-md"
                   placeholder="Brief description of your organization"
                 />
               </div>
@@ -69,7 +69,7 @@ export default function OrganizationPage() {
                 <select
                   id="industry"
                   name="industry"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-brand focus:border-brand block w-full sm:text-sm border-gray-300 rounded-md"
                 >
                   <option>Select an industry</option>
                   <option>Technology</option>
@@ -94,7 +94,7 @@ export default function OrganizationPage() {
                 <select
                   id="size"
                   name="size"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-brand focus:border-brand block w-full sm:text-sm border-gray-300 rounded-md"
                 >
                   <option>Select size</option>
                   <option>1-10 employees</option>
@@ -146,13 +146,13 @@ export default function OrganizationPage() {
               <div className="flex items-center space-x-4">
                 <input
                   type="color"
-                  value="#3B82F6"
+                  value="#4361EE"
                   className="w-12 h-8 border border-gray-300 rounded cursor-pointer"
                 />
                 <input
                   type="text"
-                  value="#3B82F6"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-24 sm:text-sm border-gray-300 rounded-md"
+                  value="#4361EE"
+                  className="shadow-sm focus:ring-brand focus:border-brand block w-24 sm:text-sm border-gray-300 rounded-md"
                 />
                 <span className="text-sm text-gray-500">
                   This color will be used in your organization's interface
@@ -174,17 +174,17 @@ export default function OrganizationPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">5</div>
-              <div className="text-sm text-blue-600">Total Members</div>
+            <div className="bg-brand-light p-4 rounded-lg">
+              <div className="text-2xl font-bold text-brand">5</div>
+              <div className="text-sm text-brand">Total Members</div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">3</div>
-              <div className="text-sm text-green-600">Active Users</div>
+            <div className="bg-brand-accent/10 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-brand-accent">3</div>
+              <div className="text-sm text-brand-accent">Active Users</div>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">2</div>
-              <div className="text-sm text-yellow-600">Pending Invites</div>
+            <div className="bg-brand-alert/10 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-brand-alert">2</div>
+              <div className="text-sm text-brand-alert">Pending Invites</div>
             </div>
           </div>
         </div>
@@ -208,7 +208,7 @@ export default function OrganizationPage() {
               Permanently delete this organization and all associated data. This
               action cannot be undone.
             </p>
-            <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            <button className="bg-brand-error hover:bg-brand-error/90 text-white px-4 py-2 rounded-md text-sm font-medium">
               Delete Organization
             </button>
           </div>
@@ -217,7 +217,7 @@ export default function OrganizationPage() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <button className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand">
           Save Changes
         </button>
       </div>

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="DripIQ_Logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 300 100">
   <defs>
-    <!-- Background gradient for logo icon -->
+    <!-- Background gradient for logo icon using theme colors -->
     <linearGradient id="logoBackground" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1A1F36"/>
-      <stop offset="50%" style="stop-color:#4361EE"/>
-      <stop offset="100%" style="stop-color:#1A1F36"/>
+      <stop offset="0%" style="stop-color:#1A1F36"/><!-- theme.colors.brand.dark -->
+      <stop offset="50%" style="stop-color:#4361EE"/><!-- theme.colors.brand.DEFAULT -->
+      <stop offset="100%" style="stop-color:#1A1F36"/><!-- theme.colors.brand.dark -->
     </linearGradient>
     
-    <!-- Center node gradient -->
+    <!-- Center node gradient using theme colors -->
     <radialGradient id="centerNodeGradient" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" style="stop-color:#FFCB05"/>
-      <stop offset="70%" style="stop-color:#4361EE"/>
-      <stop offset="100%" style="stop-color:#00B894"/>
+      <stop offset="0%" style="stop-color:#FFCB05"/><!-- theme.colors.brand.alert -->
+      <stop offset="70%" style="stop-color:#4361EE"/><!-- theme.colors.brand.DEFAULT -->
+      <stop offset="100%" style="stop-color:#00B894"/><!-- theme.colors.brand.accent -->
     </radialGradient>
   </defs>
   
@@ -62,11 +62,11 @@
     </g>
   </g>
   
-  <!-- Brand Text -->
-  <g id="brandText" fill="#1A1F36" font-family="Inter, system-ui, sans-serif" font-weight="700">
-    <!-- "drip" text -->
+  <!-- Brand Text using theme colors -->
+  <g id="brandText" font-family="Inter, system-ui, sans-serif" font-weight="700">
+    <!-- "drip" text - theme.colors.brand.DEFAULT -->
     <text x="110" y="40" font-size="32" fill="#4361EE" letter-spacing="-0.02em">drip</text>
-    <!-- "IQ" text -->
+    <!-- "IQ" text - theme.colors.brand.accent -->
     <text x="110" y="70" font-size="32" fill="#00B894" letter-spacing="-0.02em">IQ</text>
   </g>
   
@@ -105,7 +105,7 @@
       <line x1="42" y1="50" x2="42" y2="62"/>
     </g>
     
-    <!-- Text beside icon -->
+    <!-- Text beside icon using theme colors -->
     <text x="70" y="40" font-size="20" fill="#4361EE" font-family="Inter, system-ui, sans-serif" font-weight="700" letter-spacing="-0.02em">drip</text>
     <text x="130" y="40" font-size="20" fill="#00B894" font-family="Inter, system-ui, sans-serif" font-weight="700" letter-spacing="-0.02em">IQ</text>
   </g>

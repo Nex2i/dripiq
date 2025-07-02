@@ -1,24 +1,5 @@
 @import 'tailwindcss';
 
-/* DripIQ Brand Color Palette */
-:root {
-  /* Primary Colors */
-  --navy-charcoal: #1A1F36;
-  --indigo-blue: #4361EE;
-  --cloud-white: #F7F9FC;
-  --light-steel-blue: #EDF2FA;
-  
-  /* Accent Colors */
-  --success-teal: #00B894;
-  --soft-red: #FF6B6B;
-  --alert-yellow: #FFCB05;
-  
-  /* Grays */
-  --mid-gray: #5A5E6B;
-  --light-gray: #AAB0C0;
-  --extra-light-gray: #E4E7ED;
-}
-
 /* Custom animations and enhanced styling for dripIq */
 @keyframes fadeInUp {
   from {
@@ -179,14 +160,9 @@
 }
 
 body {
-  @apply m-0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  @apply m-0 bg-gray-100 text-gray-900 min-h-screen font-sans;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--cloud-white);
-  color: var(--navy-charcoal);
-  min-height: 100vh;
 }
 
 code {
@@ -241,131 +217,96 @@ code {
 
 /* Enhanced button styling with DripIQ brand colors */
 .btn-primary {
-  background: linear-gradient(135deg, var(--indigo-blue) 0%, #3b4bdb 100%);
+  background-color: #4361EE;
   color: white;
   font-weight: 600;
   padding: 12px 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(67, 97, 238, 0.25);
+  box-shadow: 0 4px 16px rgba(67, 97, 238, 0.25);
   transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  transform: translateY(0);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #3b4bdb 0%, #2f3bc9 100%);
-  box-shadow: 0 6px 20px rgba(67, 97, 238, 0.35);
+  background-color: #3b4bdb;
+  box-shadow: 0 8px 25px rgba(67, 97, 238, 0.35);
   transform: translateY(-2px);
 }
 
 .btn-secondary {
-  background: white;
-  color: var(--navy-charcoal);
-  font-weight: 600;
-  padding: 12px 24px;
-  border-radius: 12px;
-  border: 2px solid var(--light-gray);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  @apply bg-white text-gray-900 font-semibold py-3 px-6 rounded-xl border-2 border-gray-300 transition-all duration-300;
+  color: #1A1F36;
 }
 
 .btn-secondary:hover {
-  background: var(--light-steel-blue);
-  border-color: var(--indigo-blue);
-  color: var(--indigo-blue);
+  background-color: #EDF2FA;
+  border-color: #4361EE;
+  color: #4361EE;
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--success-teal) 0%, #00a085 100%);
+  background-color: #00B894;
   color: white;
   font-weight: 600;
   padding: 12px 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(0, 184, 148, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 184, 148, 0.25);
   transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  transform: translateY(0);
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #00a085 0%, #008f76 100%);
-  box-shadow: 0 6px 20px rgba(0, 184, 148, 0.35);
+  background-color: #00a085;
+  box-shadow: 0 8px 25px rgba(0, 184, 148, 0.35);
   transform: translateY(-2px);
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, var(--soft-red) 0%, #ff5252 100%);
+  background-color: #FF6B6B;
   color: white;
   font-weight: 600;
   padding: 12px 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(255, 107, 107, 0.25);
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.25);
   transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  transform: translateY(0);
 }
 
 .btn-danger:hover {
-  background: linear-gradient(135deg, #ff5252 0%, #ff4444 100%);
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.35);
+  background-color: #ff5252;
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.35);
   transform: translateY(-2px);
 }
 
 .btn-warning {
-  background: linear-gradient(135deg, var(--alert-yellow) 0%, #ffb700 100%);
-  color: var(--navy-charcoal);
+  background-color: #FFCB05;
+  color: #1A1F36;
   font-weight: 600;
   padding: 12px 24px;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(255, 203, 5, 0.25);
+  box-shadow: 0 4px 16px rgba(255, 203, 5, 0.25);
   transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  transform: translateY(0);
 }
 
 .btn-warning:hover {
-  background: linear-gradient(135deg, #ffb700 0%, #ffa000 100%);
-  box-shadow: 0 6px 20px rgba(255, 203, 5, 0.35);
+  background-color: #ffb700;
+  box-shadow: 0 8px 25px rgba(255, 203, 5, 0.35);
   transform: translateY(-2px);
 }
 
 /* Card styling with DripIQ theme */
 .card {
-  background: white;
-  border-radius: 16px;
-  border: 1px solid var(--extra-light-gray);
-  box-shadow: 0 2px 8px rgba(26, 31, 54, 0.08);
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: 0 8px 25px rgba(26, 31, 54, 0.15);
-  transform: translateY(-2px);
+  @apply bg-white rounded-2xl border border-gray-300 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5;
 }
 
 .card-elevated {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(26, 31, 54, 0.12);
-  transition: all 0.3s ease;
-}
-
-.card-elevated:hover {
-  box-shadow: 0 12px 40px rgba(26, 31, 54, 0.2);
-  transform: translateY(-4px);
+  @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
 }
 
 /* Glass morphism effect with DripIQ styling */
 .glass {
-  background: rgba(247, 249, 252, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(237, 242, 250, 0.5);
-  border-radius: 16px;
+  @apply bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 rounded-2xl;
 }
 
 .glass-dark {
@@ -378,69 +319,23 @@ code {
 
 /* Status indicators */
 .status-success {
-  background: var(--success-teal);
+  background-color: #00B894;
   color: white;
 }
 
 .status-danger {
-  background: var(--soft-red);
+  background-color: #FF6B6B;
   color: white;
 }
 
 .status-warning {
-  background: var(--alert-yellow);
-  color: var(--navy-charcoal);
+  background-color: #FFCB05;
+  color: #1A1F36;
 }
 
 .status-info {
-  background: var(--indigo-blue);
+  background-color: #4361EE;
   color: white;
-}
-
-/* Text colors */
-.text-primary {
-  color: var(--navy-charcoal);
-}
-
-.text-secondary {
-  color: var(--mid-gray);
-}
-
-.text-muted {
-  color: var(--light-gray);
-}
-
-.text-brand {
-  color: var(--indigo-blue);
-}
-
-.text-success {
-  color: var(--success-teal);
-}
-
-.text-danger {
-  color: var(--soft-red);
-}
-
-.text-warning {
-  color: var(--alert-yellow);
-}
-
-/* Background colors */
-.bg-brand {
-  background: var(--indigo-blue);
-}
-
-.bg-brand-light {
-  background: var(--light-steel-blue);
-}
-
-.bg-surface {
-  background: var(--cloud-white);
-}
-
-.bg-sidebar {
-  background: var(--navy-charcoal);
 }
 
 /* Custom scrollbar with DripIQ styling */
@@ -449,25 +344,21 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--extra-light-gray);
+  @apply bg-gray-300;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--light-gray);
-  border-radius: 4px;
+  @apply bg-gray-500 rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--mid-gray);
+  @apply bg-gray-700;
 }
 
 /* Loading spinner enhancement with brand colors */
 .spinner {
-  border: 3px solid var(--extra-light-gray);
-  border-top: 3px solid var(--indigo-blue);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  @apply border-4 border-gray-300 rounded-full w-8 h-8;
+  border-top-color: #4361EE;
   animation: spin 1s linear infinite;
 }
 
@@ -482,68 +373,44 @@ code {
 
 /* Form inputs with DripIQ styling */
 .input-field {
-  padding: 12px 16px;
-  border: 2px solid var(--extra-light-gray);
-  border-radius: 12px;
-  background: white;
-  color: var(--navy-charcoal);
-  font-family: 'Inter', sans-serif;
-  transition: all 0.3s ease;
+  @apply px-4 py-3 border-2 border-gray-300 rounded-xl bg-white text-gray-900 font-sans transition-all duration-300 focus:shadow-lg focus:outline-none;
+  color: #1A1F36;
 }
 
 .input-field:focus {
-  border-color: var(--indigo-blue);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-  outline: none;
+  border-color: #4361EE;
 }
 
 .input-field::placeholder {
-  color: var(--light-gray);
+  @apply text-gray-500;
 }
 
 /* Badge styling */
 .badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
 }
 
 .badge-primary {
-  background: var(--indigo-blue);
+  background-color: #4361EE;
   color: white;
 }
 
 .badge-success {
-  background: var(--success-teal);
+  background-color: #00B894;
   color: white;
 }
 
 .badge-danger {
-  background: var(--soft-red);
+  background-color: #FF6B6B;
   color: white;
 }
 
 .badge-warning {
-  background: var(--alert-yellow);
-  color: var(--navy-charcoal);
+  background-color: #FFCB05;
+  color: #1A1F36;
 }
 
 .badge-light {
-  background: var(--light-steel-blue);
-  color: var(--navy-charcoal);
+  background-color: #EDF2FA;
+  color: #1A1F36;
 }
-
-/* Shadows */
-.shadow-brand {
-  box-shadow: 0 4px 14px rgba(67, 97, 238, 0.15);
-}
-
-.shadow-brand-lg {
-  box-shadow: 0 8px 25px rgba(67, 97, 238, 0.2);
-}
-
-/* Import Inter font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
