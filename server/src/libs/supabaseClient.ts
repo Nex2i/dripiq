@@ -5,13 +5,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error(
-    'Supabase URL or anon key is missing. Make sure to set SUPABASE_URL and SUPABASE_ANON_KEY in your .env file.'
+    'Supabase URL or service role key is missing. Make sure to set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your .env file.'
   );
 }
 
 // Regular client for all operations
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});

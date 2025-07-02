@@ -1,17 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Create admin client with service role key
-// Note: This should use SUPABASE_SERVICE_ROLE_KEY for admin operations
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!, // Fallback for now
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+import { supabase } from '@/libs/supabaseClient';
 
 export interface CreateUserData {
   email: string;
@@ -38,7 +25,7 @@ export class SupabaseAdminService {
    */
   static async createUser(data: CreateUserData): Promise<any> {
     try {
-      const result = await supabaseAdmin.auth.admin.createUser({
+      const result = await supabase.auth.admin.createUser({
         email: data.email,
         email_confirm: true,
         app_metadata: data.metadata || {},
@@ -66,7 +53,7 @@ export class SupabaseAdminService {
         if (!data.password) {
           throw new Error('Password is required for signup links');
         }
-        result = await supabaseAdmin.auth.admin.generateLink({
+        result = await supabase.auth.admin.generateLink({
           type: 'signup',
           email: data.email,
           password: data.password,
@@ -75,7 +62,7 @@ export class SupabaseAdminService {
           },
         });
       } else {
-        result = await supabaseAdmin.auth.admin.generateLink({
+        result = await supabase.auth.admin.generateLink({
           type: 'recovery',
           email: data.email,
           options: {
@@ -100,7 +87,7 @@ export class SupabaseAdminService {
    */
   static async updateUser(userId: string, updates: any): Promise<any> {
     try {
-      const result = await supabaseAdmin.auth.admin.updateUserById(userId, updates);
+      const result = await supabase.auth.admin.updateUserById(userId, updates);
 
       if (result.error) {
         throw new Error(`Supabase admin updateUser error: ${result.error.message}`);
@@ -118,7 +105,7 @@ export class SupabaseAdminService {
    */
   static async getUserByEmail(email: string): Promise<any> {
     try {
-      const result = await supabaseAdmin.auth.admin.listUsers({
+      const result = await supabase.auth.admin.listUsers({
         page: 1,
         perPage: 1000, // Adjust as needed
       });
@@ -141,7 +128,7 @@ export class SupabaseAdminService {
    */
   static async deleteUser(userId: string): Promise<void> {
     try {
-      const result = await supabaseAdmin.auth.admin.deleteUser(userId);
+      const result = await supabase.auth.admin.deleteUser(userId);
 
       if (result.error) {
         throw new Error(`Supabase admin deleteUser error: ${result.error.message}`);
@@ -158,7 +145,7 @@ export class SupabaseAdminService {
    */
   static async inviteUserByEmail(data: InviteUserData): Promise<any> {
     try {
-      const result = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
+      const result = await supabase.auth.admin.inviteUserByEmail(data.email, {
         redirectTo: data.redirectTo,
         data: data.data || {},
       });
