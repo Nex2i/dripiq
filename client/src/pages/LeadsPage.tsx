@@ -367,10 +367,11 @@ const LeadsPage: React.FC = () => {
 
         {/* Bulk Actions */}
         {selectedRowCount > 0 && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="mb-4 rounded-lg p-4 flex items-center justify-between" style={{ backgroundColor: '#EDF2FA', borderColor: '#AAB0C0' }}>
             <div className="flex items-center">
               <svg
-                className="h-5 w-5 text-blue-600 mr-2"
+                                  className="h-5 w-5 mr-2"
+                  style={{ color: '#4361EE' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -382,7 +383,7 @@ const LeadsPage: React.FC = () => {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-blue-900 font-medium">
+                              <span className="font-medium" style={{ color: '#1A1F36' }}>
                 {selectedRowCount} lead{selectedRowCount === 1 ? '' : 's'}{' '}
                 selected
               </span>
@@ -390,7 +391,8 @@ const LeadsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setRowSelection({})}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="text-sm font-medium hover:opacity-80 transition-opacity"
+                style={{ color: '#4361EE' }}
               >
                 Clear selection
               </button>
@@ -503,8 +505,9 @@ const LeadsPage: React.FC = () => {
                     <tr
                       key={row.id}
                       className={`hover:bg-gray-50 transition-colors ${
-                        row.getIsSelected() ? 'bg-blue-50' : ''
+                        row.getIsSelected() ? '' : ''
                       }`}
+                      style={row.getIsSelected() ? { backgroundColor: '#EDF2FA' } : {}}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td

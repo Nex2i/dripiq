@@ -220,7 +220,7 @@ export default function UsersPage() {
           {isAdmin && (
             <button
               onClick={() => setIsInviteModalOpen(true)}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="btn-primary ml-3 inline-flex items-center px-4 py-2 rounded-md shadow-sm text-sm font-medium"
             >
               <Plus className="h-4 w-4 mr-2" />
               Invite user
@@ -234,7 +234,7 @@ export default function UsersPage() {
         {loading ? (
           // Loading state
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderBottomColor: '#4361EE' }}></div>
             <p className="mt-4 text-sm text-gray-600">Loading users...</p>
           </div>
         ) : error ? (
@@ -248,7 +248,7 @@ export default function UsersPage() {
             <div className="mt-6">
               <button
                 onClick={loadData}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="btn-primary inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md"
               >
                 Try again
               </button>
@@ -268,13 +268,13 @@ export default function UsersPage() {
             </p>
             {isAdmin && (
               <div className="mt-6">
-                <button
-                  onClick={() => setIsInviteModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invite your first teammate
-                </button>
+                                  <button
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="btn-primary inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Invite your first teammate
+                  </button>
               </div>
             )}
           </div>
@@ -330,7 +330,7 @@ export default function UsersPage() {
                                 onChange={(e) =>
                                   handleRoleChange(e.target.value)
                                 }
-                                className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                className="input-field block w-32 px-3 py-1 sm:text-sm"
                               >
                                 {roles.map((role) => (
                                   <option key={role.id} value={role.id}>
@@ -386,7 +386,8 @@ export default function UsersPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
                               <button
-                                className="text-blue-600 hover:text-blue-900 p-1"
+                                className="p-1 hover:opacity-80 transition-opacity"
+                                style={{ color: '#4361EE' }}
                                 title="View details"
                               >
                                 <Eye className="h-4 w-4" />
@@ -456,7 +457,8 @@ export default function UsersPage() {
                       <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                         Previous
                       </button>
-                      <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                      <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium"
+                        style={{ backgroundColor: '#EDF2FA', color: '#4361EE' }}>
                         1
                       </button>
                       <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">

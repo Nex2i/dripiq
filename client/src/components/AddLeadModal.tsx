@@ -108,18 +108,7 @@ const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 transition-colors focus:outline-none"
-                style={{ 
-                  '--tw-ring-color': '#4361EE'
-                } as React.CSSProperties}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#4361EE';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(67, 97, 238, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#E4E7ED';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className="input-field"
                 required
                 disabled={createLeadMutation.isPending}
               />
