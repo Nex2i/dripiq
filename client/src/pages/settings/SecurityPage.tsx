@@ -55,7 +55,7 @@ export default function SecurityPage() {
               />
             </div>
 
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            <button className="btn-primary text-white px-4 py-2 rounded-md text-sm font-medium">
               Update Password
             </button>
           </div>

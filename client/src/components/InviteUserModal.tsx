@@ -164,7 +164,7 @@ export function InviteUserModal({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center">
-              <Mail className="h-5 w-5 text-blue-600 mr-2" />
+              <Mail className="h-5 w-5 mr-2" style={{ color: '#4361EE' }} />
               <h3 className="text-lg font-medium text-gray-900">Invite User</h3>
             </div>
             <button
@@ -191,8 +191,8 @@ export function InviteUserModal({
                 id="firstName"
                 value={formData.firstName}
                 onChange={(e) => handleChange('firstName', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.firstName ? 'border-red-300' : 'border-gray-300'
+                className={`input-field ${
+                  errors.firstName ? 'border-red-300' : ''
                 }`}
                 placeholder="Enter first name"
                 maxLength={50}
@@ -215,8 +215,8 @@ export function InviteUserModal({
                 id="lastName"
                 value={formData.lastName}
                 onChange={(e) => handleChange('lastName', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.lastName ? 'border-red-300' : 'border-gray-300'
+                className={`input-field ${
+                  errors.lastName ? 'border-red-300' : ''
                 }`}
                 placeholder="Enter last name (optional)"
                 maxLength={50}
@@ -240,8 +240,8 @@ export function InviteUserModal({
                 id="email"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.email ? 'border-red-300' : 'border-gray-300'
+                className={`input-field ${
+                  errors.email ? 'border-red-300' : ''
                 }`}
                 placeholder="Enter email address"
               />
@@ -263,8 +263,8 @@ export function InviteUserModal({
                 id="role"
                 value={formData.role}
                 onChange={(e) => handleChange('role', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.role ? 'border-red-300' : 'border-gray-300'
+                className={`input-field ${
+                  errors.role ? 'border-red-300' : ''
                 }`}
                 disabled={isLoadingRoles}
               >
@@ -294,14 +294,14 @@ export function InviteUserModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Sending...' : 'Send invitation'}
               </button>

@@ -33,6 +33,16 @@
   }
 }
 
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(67, 97, 238, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(67, 97, 238, 0.5);
+  }
+}
+
 @keyframes float-horizontal {
   0%,
   100% {
@@ -150,14 +160,9 @@
 }
 
 body {
-  @apply m-0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  @apply m-0 bg-gray-100 text-gray-900 min-h-screen font-sans;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
-  min-height: 100vh;
 }
 
 code {
@@ -176,6 +181,10 @@ code {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .animate-float-horizontal {
@@ -206,47 +215,150 @@ code {
   animation: float-swing 9s ease-in-out infinite;
 }
 
-/* Enhanced button hover effects */
+/* Enhanced button styling with DripIQ brand colors */
 .btn-primary {
-  @apply bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+  background-color: #4361EE;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(67, 97, 238, 0.25);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+}
+
+.btn-primary:hover {
+  background-color: #3b4bdb;
+  box-shadow: 0 8px 25px rgba(67, 97, 238, 0.35);
+  transform: translateY(-2px);
 }
 
 .btn-secondary {
-  @apply bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 px-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-300;
+  @apply bg-white text-gray-900 font-semibold py-3 px-6 rounded-xl border-2 border-gray-300 transition-all duration-300;
+  color: #1A1F36;
 }
 
-/* Glass morphism effect */
+.btn-secondary:hover {
+  background-color: #EDF2FA;
+  border-color: #4361EE;
+  color: #4361EE;
+}
+
+.btn-success {
+  background-color: #00B894;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 184, 148, 0.25);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+}
+
+.btn-success:hover {
+  background-color: #00a085;
+  box-shadow: 0 8px 25px rgba(0, 184, 148, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background-color: #FF6B6B;
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.25);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+}
+
+.btn-danger:hover {
+  background-color: #ff5252;
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-warning {
+  background-color: #FFCB05;
+  color: #1A1F36;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(255, 203, 5, 0.25);
+  transition: all 0.3s ease;
+  transform: translateY(0);
+}
+
+.btn-warning:hover {
+  background-color: #ffb700;
+  box-shadow: 0 8px 25px rgba(255, 203, 5, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Card styling with DripIQ theme */
+.card {
+  @apply bg-white rounded-2xl border border-gray-300 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5;
+}
+
+.card-elevated {
+  @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
+}
+
+/* Glass morphism effect with DripIQ styling */
 .glass {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  @apply bg-gray-100/80 backdrop-blur-xl border border-gray-300/50 rounded-2xl;
 }
 
-/* Custom scrollbar */
+.glass-dark {
+  background: rgba(26, 31, 54, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(90, 94, 107, 0.3);
+  border-radius: 16px;
+  color: white;
+}
+
+/* Status indicators */
+.status-success {
+  background-color: #00B894;
+  color: white;
+}
+
+.status-danger {
+  background-color: #FF6B6B;
+  color: white;
+}
+
+.status-warning {
+  background-color: #FFCB05;
+  color: #1A1F36;
+}
+
+.status-info {
+  background-color: #4361EE;
+  color: white;
+}
+
+/* Custom scrollbar with DripIQ styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  @apply bg-gray-300;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  @apply bg-gray-500 rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  @apply bg-gray-700;
 }
 
-/* Loading spinner enhancement */
+/* Loading spinner enhancement with brand colors */
 .spinner {
-  border: 3px solid #f3f4f6;
-  border-top: 3px solid #3b82f6;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  @apply border-4 border-gray-300 rounded-full w-8 h-8;
+  border-top-color: #4361EE;
   animation: spin 1s linear infinite;
 }
 
@@ -257,4 +369,115 @@ code {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Form inputs with DripIQ styling */
+.input-field {
+  @apply px-4 py-3 border-2 border-gray-300 rounded-xl bg-white text-gray-900 font-sans transition-all duration-300 focus:shadow-lg focus:outline-none;
+  color: #1A1F36;
+}
+
+.input-field:focus {
+  border-color: #4361EE;
+}
+
+.input-field::placeholder {
+  @apply text-gray-500;
+}
+
+/* Badge styling */
+.badge {
+  @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+}
+
+.badge-primary {
+  background-color: #4361EE;
+  color: white;
+}
+
+.badge-success {
+  background-color: #00B894;
+  color: white;
+}
+
+.badge-danger {
+  background-color: #FF6B6B;
+  color: white;
+}
+
+.badge-warning {
+  background-color: #FFCB05;
+  color: #1A1F36;
+}
+
+.badge-light {
+  background-color: #EDF2FA;
+  color: #1A1F36;
+}
+
+/* Brand text colors */
+.text-primary {
+  color: #4361EE;
+}
+
+.text-primary-dark {
+  color: #1A1F36;
+}
+
+.text-success {
+  color: #00B894;
+}
+
+.text-warning {
+  color: #FFCB05;
+}
+
+.text-danger {
+  color: #FF6B6B;
+}
+
+/* Checkbox styling */
+.checkbox {
+  appearance: none;
+  background-color: white;
+  border: 2px solid #E4E7ED;
+  border-radius: 4px;
+  width: 1rem;
+  height: 1rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.checkbox:checked {
+  background-color: #4361EE;
+  border-color: #4361EE;
+}
+
+.checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Background classes */
+.bg-brand-light {
+  background-color: #EDF2FA;
+}
+
+.bg-brand-primary {
+  background-color: #4361EE;
+}
+
+.bg-brand-dark {
+  background-color: #1A1F36;
 }

@@ -100,7 +100,7 @@ const LeadsPage: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusColors = {
-      new: 'bg-blue-100 text-blue-800',
+      new: 'text-white',
       contacted: 'bg-yellow-100 text-yellow-800',
       qualified: 'bg-green-100 text-green-800',
       lost: 'bg-red-100 text-red-800',
@@ -126,7 +126,7 @@ const LeadsPage: React.FC = () => {
         header: ({ table }) => (
           <input
             type="checkbox"
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="checkbox"
             checked={table.getIsAllRowsSelected()}
             onChange={table.getToggleAllRowsSelectedHandler()}
           />
@@ -134,7 +134,7 @@ const LeadsPage: React.FC = () => {
         cell: ({ row }) => (
           <input
             type="checkbox"
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="checkbox"
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
           />
@@ -226,7 +226,7 @@ const LeadsPage: React.FC = () => {
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderBottomColor: '#4361EE' }}></div>
               <p className="mt-4 text-gray-500">Loading leads...</p>
             </div>
           </div>
@@ -262,7 +262,7 @@ const LeadsPage: React.FC = () => {
               </p>
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="btn-primary px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Try Again
               </button>
@@ -286,7 +286,7 @@ const LeadsPage: React.FC = () => {
                   ? `${leads.length} lead${leads.length === 1 ? '' : 's'} found for "${searchQuery}"`
                   : `${leads.length} lead${leads.length === 1 ? '' : 's'} total`}
               {selectedRowCount > 0 && (
-                <span className="ml-2 text-blue-600 font-medium">
+                <span className="ml-2 font-medium" style={{ color: '#4361EE' }}>
                   ({selectedRowCount} selected)
                 </span>
               )}
@@ -338,7 +338,7 @@ const LeadsPage: React.FC = () => {
             <DebouncedInput
               value={searchQuery}
               onChange={(value) => setSearchQuery(String(value))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-500"
+              className="input-field w-full pl-10 pr-4 py-3 bg-white text-gray-900 placeholder-gray-500"
               placeholder="Search leads by name, email, company, or phone..."
             />
             {searchQuery && (
@@ -367,10 +367,11 @@ const LeadsPage: React.FC = () => {
 
         {/* Bulk Actions */}
         {selectedRowCount > 0 && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="mb-4 rounded-lg p-4 flex items-center justify-between" style={{ backgroundColor: '#EDF2FA', borderColor: '#AAB0C0' }}>
             <div className="flex items-center">
               <svg
-                className="h-5 w-5 text-blue-600 mr-2"
+                                  className="h-5 w-5 mr-2"
+                  style={{ color: '#4361EE' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -382,7 +383,7 @@ const LeadsPage: React.FC = () => {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-blue-900 font-medium">
+                              <span className="font-medium" style={{ color: '#1A1F36' }}>
                 {selectedRowCount} lead{selectedRowCount === 1 ? '' : 's'}{' '}
                 selected
               </span>
@@ -390,7 +391,8 @@ const LeadsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setRowSelection({})}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="text-sm font-medium hover:opacity-80 transition-opacity"
+                style={{ color: '#4361EE' }}
               >
                 Clear selection
               </button>
@@ -467,12 +469,12 @@ const LeadsPage: React.FC = () => {
                   : 'Get started by adding your first lead using the + button in the header.'}
               </p>
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Clear Search
-                </button>
+                              <button
+                onClick={() => setSearchQuery('')}
+                className="btn-primary px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Clear Search
+              </button>
               )}
             </div>
           ) : (
@@ -503,8 +505,9 @@ const LeadsPage: React.FC = () => {
                     <tr
                       key={row.id}
                       className={`hover:bg-gray-50 transition-colors ${
-                        row.getIsSelected() ? 'bg-blue-50' : ''
+                        row.getIsSelected() ? '' : ''
                       }`}
+                      style={row.getIsSelected() ? { backgroundColor: '#EDF2FA' } : {}}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
