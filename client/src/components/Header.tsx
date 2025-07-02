@@ -2,7 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
-import { Settings } from 'lucide-react'
+import { Settings, ChevronDown, X, Menu, LogOut } from 'lucide-react'
 import AddLeadModal from './AddLeadModal'
 
 export default function Header() {
@@ -11,6 +11,8 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [isSettingsDropdownOpen, setIsSettingsDropdownOpen] = useState(false)
+  const [isMobileSettingsOpen, setIsMobileSettingsOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
   const handleLogout = async () => {
@@ -69,7 +71,7 @@ export default function Header() {
 
   return (
     <>
-      <div className="bg-white/90 backdrop-blur-sm shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
+      <div className="bg-surface-elevated backdrop-blur-sm shadow-lg border-b border-border-primary/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
@@ -84,185 +86,290 @@ export default function Header() {
               <nav className="hidden md:flex space-x-6">
                 <button
                   onClick={() => navigate({ to: '/leads' })}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                  className="text-text-secondary hover:text-primary-500 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-primary-50"
                 >
                   Leads
                 </button>
               </nav>
             </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Add Lead Button */}
-              <button
-                onClick={() => setIsAddLeadModalOpen(true)}
-                className="p-2 rounded-full text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
-                aria-label="Add new lead"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </button>
-              {/* Mobile Menu Button */}
-              <button
-                onClick={toggleMobileMenu}
-                className="md:hidden p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
-                aria-label="Toggle mobile menu"
-              >
-                <div className="w-6 h-6 flex flex-col justify-around">
-                  <span
-                    className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
-                      isMobileMenuOpen ? 'rotate-45 translate-y-2.5' : ''
-                    }`}
-                  />
-                  <span
-                    className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
-                      isMobileMenuOpen ? 'opacity-0' : ''
-                    }`}
-                  />
-                  <span
-                    className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
-                      isMobileMenuOpen ? '-rotate-45 -translate-y-2.5' : ''
-                    }`}
-                  />
-                </div>
-              </button>
-
+            {/* Desktop User Menu */}
+            <div className="hidden md:flex items-center space-x-4">
               {user ? (
-                <div className="hidden md:flex items-center">
-                  <div className="relative" ref={profileMenuRef}>
-                    <button
-                      onClick={toggleProfileMenu}
-                      className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                      aria-label="Open profile menu"
-                    >
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">
-                          {(user.user.name || user.user.email)
-                            ?.charAt(0)
-                            .toUpperCase()}
-                        </span>
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={toggleProfileMenu}
+                    className="flex items-center space-x-3 text-text-secondary hover:text-text-primary transition-colors duration-200 p-2 rounded-lg hover:bg-neutral-50"
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                      <span className="text-text-inverse text-sm font-semibold">
+                        {(user.user.name || user.user.email)
+                          ?.charAt(0)
+                          .toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="hidden lg:block text-left">
+                      <div className="text-sm font-medium text-text-primary">
+                        {user.user.name || user.user.email}
                       </div>
-                      <div className="text-sm hidden sm:block">
-                        <div className="font-medium text-gray-900">
-                          {user.user.name || user.user.email}
+                      {user.tenants && user.tenants.length > 0 && (
+                        <div className="text-xs text-text-tertiary">
+                          {user.tenants[0].name}
                         </div>
-                        {user.tenants && user.tenants.length > 0 && (
-                          <div className="text-xs text-gray-500">
-                            {user.tenants[0].name}
-                          </div>
-                        )}
-                      </div>
-                      <svg
-                        className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-                          isProfileMenuOpen ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isProfileMenuOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
 
-                    {/* Profile Dropdown Menu */}
-                    {isProfileMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                        <button
-                          onClick={() => {
-                            navigate({ to: '/settings' })
-                            closeProfileMenu()
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center"
-                        >
-                          <Settings className="h-4 w-4 mr-3 text-gray-400" />
-                          Settings
-                        </button>
-                        <div className="border-t border-gray-100 my-1"></div>
+                  {/* Dropdown Menu */}
+                  {isProfileMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-surface-primary rounded-xl shadow-xl border border-border-primary z-50">
+                      <div className="p-4 border-b border-border-primary">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                            <span className="text-text-inverse text-sm font-semibold">
+                              {(user.user.name || user.user.email)
+                                ?.charAt(0)
+                                .toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-medium text-text-primary">
+                              {user.user.name || user.user.email}
+                            </div>
+                            {user.tenants && user.tenants.length > 0 && (
+                              <div className="text-sm text-text-tertiary">
+                                {user.tenants[0].name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-2">
+                        {/* Settings Dropdown */}
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setIsSettingsDropdownOpen(!isSettingsDropdownOpen)
+                            }
+                            className="w-full flex items-center justify-between px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Settings className="h-4 w-4" />
+                              <span>Settings</span>
+                            </div>
+                            <ChevronDown
+                              className={`h-4 w-4 transition-transform duration-200 ${
+                                isSettingsDropdownOpen ? 'rotate-180' : ''
+                              }`}
+                            />
+                          </button>
+
+                          {isSettingsDropdownOpen && (
+                            <div className="mt-1 ml-6 space-y-1">
+                              <button
+                                onClick={() => {
+                                  navigate({ to: '/settings/organization' })
+                                  closeProfileMenu()
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                              >
+                                Organization
+                              </button>
+                              <button
+                                onClick={() => {
+                                  navigate({ to: '/settings/users' })
+                                  closeProfileMenu()
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                              >
+                                Users
+                              </button>
+                              <button
+                                onClick={() => {
+                                  navigate({ to: '/settings/billing' })
+                                  closeProfileMenu()
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                              >
+                                Billing
+                              </button>
+                              <button
+                                onClick={() => {
+                                  navigate({ to: '/settings/security' })
+                                  closeProfileMenu()
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                              >
+                                Security
+                              </button>
+                              <button
+                                onClick={() => {
+                                  navigate({ to: '/settings/notifications' })
+                                  closeProfileMenu()
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                              >
+                                Notifications
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
                         <button
                           onClick={handleLogoutFromMenu}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                          className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200 mt-1"
                         >
-                          Sign out
+                          <LogOut className="h-4 w-4" />
+                          <span>Sign out</span>
                         </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <button
                     onClick={() => navigate({ to: '/auth/login' })}
-                    className="text-gray-600 hover:text-blue-600 px-4 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                    className="text-text-secondary hover:text-text-primary px-4 py-2 rounded-lg hover:bg-neutral-50 transition-all duration-200"
                   >
-                    Sign in
+                    Sign In
                   </button>
                   <button
                     onClick={() => navigate({ to: '/auth/register' })}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border-none cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-xl"
+                    className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                   >
-                    Start Free Trial
+                    Get Started
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={toggleMobileMenu}
+                className="text-text-secondary hover:text-text-primary p-2 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
             </div>
           </div>
         </div>
 
         {/* Mobile Menu */}
-        <div
-          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-            isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="px-4 py-6 bg-white/95 backdrop-blur-sm border-t border-gray-200/50">
-            <nav className="flex flex-col space-y-4">
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-surface-primary border-t border-border-primary">
+            <div className="px-4 py-4 space-y-3">
+              {/* Mobile Navigation Links */}
               <button
-                onClick={() => navigateAndClose('/leads')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
+                onClick={() => {
+                  navigate({ to: '/leads' })
+                  closeMobileMenu()
+                }}
+                className="block w-full text-left px-3 py-3 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
               >
                 Leads
               </button>
-              <button
-                onClick={() => navigateAndClose('/settings')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left flex items-center"
-              >
-                <Settings className="h-5 w-5 mr-3 text-gray-400" />
-                Settings
-              </button>
+
+              {/* Mobile Settings Menu */}
+              {user && (
+                <div>
+                  <button
+                    onClick={() =>
+                      setIsMobileSettingsOpen(!isMobileSettingsOpen)
+                    }
+                    className="flex items-center justify-between w-full px-3 py-3 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Settings className="h-5 w-5" />
+                      <span>Settings</span>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isMobileSettingsOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {isMobileSettingsOpen && (
+                    <div className="mt-2 ml-6 space-y-2">
+                      <button
+                        onClick={() => {
+                          navigate({ to: '/settings/organization' })
+                          closeMobileMenu()
+                        }}
+                        className="block w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                      >
+                        Organization
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate({ to: '/settings/users' })
+                          closeMobileMenu()
+                        }}
+                        className="block w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                      >
+                        Users
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate({ to: '/settings/billing' })
+                          closeMobileMenu()
+                        }}
+                        className="block w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                      >
+                        Billing
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate({ to: '/settings/security' })
+                          closeMobileMenu()
+                        }}
+                        className="block w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                      >
+                        Security
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate({ to: '/settings/notifications' })
+                          closeMobileMenu()
+                        }}
+                        className="block w-full text-left px-3 py-2 text-sm text-text-tertiary hover:text-text-primary hover:bg-neutral-50 rounded-lg transition-colors duration-200"
+                      >
+                        Notifications
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Mobile User Info */}
               {user && (
-                <div className="pt-4 border-t border-gray-200/50">
+                <div className="pt-4 border-t border-border-primary/50">
                   <div className="flex items-center space-x-3 px-4 py-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-semibold">
+                    <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+                      <span className="text-text-inverse text-sm font-semibold">
                         {(user.user.name || user.user.email)
                           ?.charAt(0)
                           .toUpperCase()}
                       </span>
                     </div>
                     <div className="text-sm">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-text-primary">
                         {user.user.name || user.user.email}
                       </div>
                       {user.tenants && user.tenants.length > 0 && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-text-tertiary">
                           {user.tenants[0].name}
                         </div>
                       )}
@@ -273,7 +380,7 @@ export default function Header() {
                       handleLogout()
                       closeMobileMenu()
                     }}
-                    className="w-full mt-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 border border-gray-300 hover:border-gray-400"
+                    className="w-full mt-3 bg-gradient-to-r from-neutral-100 to-neutral-200 hover:from-neutral-200 hover:to-neutral-300 text-text-secondary px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 border border-border-primary hover:border-border-secondary"
                   >
                     Sign out
                   </button>
@@ -282,24 +389,30 @@ export default function Header() {
 
               {/* Mobile Auth Buttons */}
               {!user && (
-                <div className="pt-4 border-t border-gray-200/50 space-y-3">
+                <div className="pt-4 border-t border-border-primary/50 space-y-3">
                   <button
-                    onClick={() => navigateAndClose('/auth/login')}
-                    className="w-full text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border border-gray-300 cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
+                    onClick={() => {
+                      navigate({ to: '/auth/login' })
+                      closeMobileMenu()
+                    }}
+                    className="w-full text-text-secondary hover:text-text-primary px-4 py-3 rounded-xl hover:bg-neutral-50 transition-all duration-200 border border-border-primary hover:border-border-secondary text-center"
                   >
-                    Sign in
+                    Sign In
                   </button>
                   <button
-                    onClick={() => navigateAndClose('/auth/register')}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl text-base font-semibold border-none cursor-pointer transition-all duration-300"
+                    onClick={() => {
+                      navigate({ to: '/auth/register' })
+                      closeMobileMenu()
+                    }}
+                    className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse px-4 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-200 text-center"
                   >
-                    Start Free Trial
+                    Get Started
                   </button>
                 </div>
               )}
-            </nav>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Backdrop */}

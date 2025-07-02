@@ -60,9 +60,9 @@ function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-gradient-hero-from via-gradient-hero-via to-gradient-hero-to">
       {/* Navigation Header */}
-      <nav className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200/20">
+      <nav className="relative z-10 bg-surface-elevated backdrop-blur-sm border-b border-border-primary/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
@@ -71,7 +71,7 @@ function LandingPage() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={handleContactSales}
-                className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                className="text-text-secondary hover:text-text-primary px-4 py-2 rounded-lg hover:bg-neutral-100 transition-all duration-200"
               >
                 Contact Sales
               </button>
@@ -79,13 +79,13 @@ function LandingPage() {
                 <>
                   <button
                     onClick={() => navigate({ to: '/auth/login' })}
-                    className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                    className="text-text-secondary hover:text-text-primary px-4 py-2 rounded-lg hover:bg-neutral-100 transition-all duration-200"
                   >
                     Login
                   </button>
                   <button
                     onClick={() => navigate({ to: '/auth/register' })}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                    className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     Get Started
                   </button>
@@ -93,7 +93,7 @@ function LandingPage() {
               ) : (
                 <button
                   onClick={() => navigate({ to: '/dashboard' })}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                  className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   Go to Dashboard
                 </button>
@@ -111,31 +111,31 @@ function LandingPage() {
               <Logo size="lg" showText={true} className="scale-150" />
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-text-primary mb-6">
               Automated, intelligent follow-up for your{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
                 lost leads
               </span>
             </h1>
 
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-text-secondary mb-8 max-w-3xl mx-auto">
               Transform closed-lost leads into high-converting opportunities
               using AI-powered drip campaigns, deep personalized outreach, and
               multi-channel engagement.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               {!user ? (
                 <>
                   <button
                     onClick={() => navigate({ to: '/auth/register' })}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    Start Free Trial
+                    Start Your Free Trial
                   </button>
                   <button
                     onClick={handleContactSales}
-                    className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-4 rounded-xl text-lg font-semibold border-2 border-gray-200 hover:border-gray-300 transition-all duration-300"
+                    className="bg-surface-primary hover:bg-neutral-50 text-text-primary px-8 py-4 rounded-xl text-lg font-semibold border-2 border-border-primary hover:border-border-secondary transition-all duration-300"
                   >
                     Contact Sales
                   </button>
@@ -143,7 +143,7 @@ function LandingPage() {
               ) : (
                 <button
                   onClick={() => navigate({ to: '/dashboard' })}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   Go to Dashboard
                 </button>
@@ -153,26 +153,29 @@ function LandingPage() {
         </div>
 
         {/* Floating animated elements */}
-        <div className="absolute top-16 left-8 w-20 h-20 bg-blue-200 rounded-full opacity-20 animate-float-horizontal"></div>
-        <div className="absolute top-32 right-12 w-16 h-16 bg-indigo-200 rounded-full opacity-25 animate-float-diagonal"></div>
-        <div className="absolute bottom-24 left-1/4 w-12 h-12 bg-purple-200 rounded-full opacity-20 animate-float-circular"></div>
-        <div className="absolute top-1/2 right-1/4 w-14 h-14 bg-cyan-200 rounded-full opacity-15 animate-float-gentle"></div>
-        <div className="absolute bottom-1/3 right-8 w-18 h-18 bg-rose-200 rounded-full opacity-20 animate-float-wave"></div>
-        <div className="absolute top-1/3 left-1/3 w-10 h-10 bg-emerald-200 rounded-full opacity-25 animate-float-horizontal delay-[2s]"></div>
-        <div className="absolute bottom-1/2 left-16 w-8 h-8 bg-yellow-200 rounded-full opacity-20 animate-float-gentle delay-[4s]"></div>
-        <div className="absolute top-3/4 right-1/3 w-22 h-22 bg-violet-200 rounded-full opacity-15 animate-float-diagonal delay-[1s]"></div>
+        <div className="absolute top-20 left-8 w-16 h-16 bg-primary-200 rounded-full opacity-20 animate-float-horizontal"></div>
+        <div className="absolute bottom-20 right-8 w-12 h-12 bg-secondary-200 rounded-full opacity-25 animate-float-vertical"></div>
+        <div className="absolute top-32 right-16 w-10 h-10 bg-success-200 rounded-full opacity-15 animate-float-diagonal"></div>
+        <div className="absolute bottom-32 left-16 w-14 h-14 bg-warning-200 rounded-full opacity-20 animate-float-circular"></div>
+        <div className="absolute top-1/2 left-1/4 w-8 h-8 bg-error-200 rounded-full opacity-15 animate-float-gentle"></div>
+        <div className="absolute top-1/3 right-1/3 w-12 h-12 bg-neutral-300 rounded-full opacity-20 animate-float-swing"></div>
+        <div className="absolute top-1/2 right-1/4 w-14 h-14 bg-primary-300 rounded-full opacity-15 animate-float-gentle"></div>
+        <div className="absolute bottom-1/3 right-8 w-18 h-18 bg-secondary-300 rounded-full opacity-20 animate-float-wave"></div>
+        <div className="absolute top-1/3 left-1/3 w-10 h-10 bg-success-300 rounded-full opacity-25 animate-float-horizontal delay-[2s]"></div>
+        <div className="absolute bottom-1/2 left-16 w-8 h-8 bg-warning-300 rounded-full opacity-20 animate-float-gentle delay-[4s]"></div>
+        <div className="absolute top-3/4 right-1/3 w-22 h-22 bg-error-300 rounded-full opacity-15 animate-float-diagonal delay-[1s]"></div>
       </div>
 
       {/* Stats Section */}
-      <div className="bg-white/80 backdrop-blur-sm py-16">
+      <div className="bg-surface-elevated backdrop-blur-sm py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">
+                <div className="text-3xl md:text-4xl font-bold text-primary-500 mb-2">
                   {stat.number}
                 </div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
+                <div className="text-text-secondary font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -180,29 +183,31 @@ function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <div className="py-20">
+      <div className="py-20 bg-surface-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Powerful Features for Sales Teams
+            <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-4">
+              Intelligent Lead Recovery Platform
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to turn lost opportunities into recovered
-              revenue
+            <p className="text-xl text-text-secondary max-w-3xl mx-auto">
+              Our AI-powered platform helps you re-engage lost leads with
+              personalized, multi-channel campaigns that convert.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white/70 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-white/20"
+                className="bg-surface-secondary p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-border-primary"
               >
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center mb-6">
+                  <span className="text-2xl">{feature.icon}</span>
+                </div>
+                <h3 className="text-xl font-semibold text-text-primary mb-4">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <p className="text-text-secondary">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -210,12 +215,12 @@ function LandingPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-20">
+      <div className="bg-gradient-to-r from-primary-500 to-secondary-500 py-20">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-text-inverse mb-6">
             Ready to recover your lost revenue?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-primary-100 mb-8">
             Join hundreds of sales teams already using dripIq to re-engage
             closed-lost leads
           </p>
@@ -224,13 +229,13 @@ function LandingPage() {
               <>
                 <button
                   onClick={() => navigate({ to: '/auth/register' })}
-                  className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="bg-surface-primary hover:bg-neutral-100 text-primary-500 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   Start Your Free Trial
                 </button>
                 <button
                   onClick={handleContactSales}
-                  className="bg-transparent hover:bg-white/10 text-white px-8 py-4 rounded-xl text-lg font-semibold border-2 border-white hover:border-gray-200 transition-all duration-300"
+                  className="bg-transparent hover:bg-white/10 text-text-inverse px-8 py-4 rounded-xl text-lg font-semibold border-2 border-white hover:border-neutral-200 transition-all duration-300"
                 >
                   Contact Sales
                 </button>
@@ -238,7 +243,7 @@ function LandingPage() {
             ) : (
               <button
                 onClick={() => navigate({ to: '/dashboard' })}
-                className="bg-white hover:bg-gray-100 text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="bg-surface-primary hover:bg-neutral-100 text-primary-500 px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Go to Dashboard
               </button>
@@ -248,7 +253,7 @@ function LandingPage() {
       </div>
 
       {/* Footer */}
-      <div className="bg-gray-900 py-12">
+      <div className="bg-neutral-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Logo size="sm" showText={true} />
@@ -256,7 +261,7 @@ function LandingPage() {
           <div className="flex justify-center space-x-6 mb-4">
             <button
               onClick={handleContactSales}
-              className="text-gray-400 hover:text-white transition-colors duration-200"
+              className="text-neutral-400 hover:text-text-inverse transition-colors duration-200"
             >
               Contact Sales
             </button>
@@ -264,20 +269,20 @@ function LandingPage() {
               <>
                 <button
                   onClick={() => navigate({ to: '/auth/login' })}
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-neutral-400 hover:text-text-inverse transition-colors duration-200"
                 >
                   Login
                 </button>
                 <button
                   onClick={() => navigate({ to: '/auth/register' })}
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  className="text-neutral-400 hover:text-text-inverse transition-colors duration-200"
                 >
                   Sign Up
                 </button>
               </>
             )}
           </div>
-          <p className="text-center text-gray-400">
+          <p className="text-center text-neutral-400">
             © 2025 dripIq. Built with ❤️ for sales teams.
           </p>
         </div>

@@ -62,7 +62,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gradient-hero-from via-gradient-hero-via to-gradient-hero-to py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center mb-6">
@@ -71,19 +71,19 @@ export default function Login() {
           <div className="text-center mb-4">
             <button
               onClick={() => router.navigate({ to: '/' } as any)}
-              className="text-sm text-gray-500 hover:text-gray-700 underline bg-transparent border-none cursor-pointer inline-flex items-center"
+              className="text-sm text-text-tertiary hover:text-text-secondary underline bg-transparent border-none cursor-pointer inline-flex items-center"
             >
               ← Back to Home
             </button>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
             Welcome back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-text-secondary">
             Don't have an account?{' '}
             <button
               onClick={() => router.navigate({ to: '/auth/register' } as any)}
-              className="font-medium text-blue-600 hover:text-blue-500 underline bg-transparent border-none cursor-pointer"
+              className="font-medium text-primary-500 hover:text-primary-600 underline bg-transparent border-none cursor-pointer"
             >
               Sign up for free
             </button>
@@ -124,10 +124,7 @@ export default function Login() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="email" className="sr-only">
                   Email address
                 </label>
                 <input
@@ -136,18 +133,15 @@ export default function Login() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your email"
+                  className="relative block w-full px-3 py-3 border border-border-primary placeholder-text-muted text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 bg-surface-primary"
+                  placeholder="Email address"
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isSubmitting}
                 />
               </div>
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="password" className="sr-only">
                   Password
                 </label>
                 <input
@@ -156,8 +150,8 @@ export default function Login() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your password"
+                  className="relative block w-full px-3 py-3 border border-border-primary placeholder-text-muted text-text-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 bg-surface-primary"
+                  placeholder="Password"
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isSubmitting}
@@ -166,15 +160,15 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{error}</div>
+              <div className="rounded-xl bg-error-50 p-4 border border-error-200">
+                <div className="text-sm text-error-700">{error}</div>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-semibold rounded-xl text-text-inverse bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
             >
               {isSubmitting ? (
                 <>

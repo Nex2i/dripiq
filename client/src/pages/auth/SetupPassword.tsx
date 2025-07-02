@@ -124,14 +124,14 @@ export default function SetupPassword() {
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gradient-hero-from via-gradient-hero-via to-gradient-hero-to py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
               Password Set Successfully!
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="mt-2 text-center text-sm text-text-secondary">
               Your password has been set. You'll be redirected to the dashboard
               shortly.
             </p>
@@ -146,14 +146,14 @@ export default function SetupPassword() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gradient-hero-from via-gradient-hero-via to-gradient-hero-to py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <XCircle className="mx-auto h-16 w-16 text-red-600" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
               Setup Failed
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="mt-2 text-center text-sm text-text-secondary">
               There was an error setting up your password. Please try again.
             </p>
             <button
@@ -169,18 +169,18 @@ export default function SetupPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gradient-hero-from via-gradient-hero-via to-gradient-hero-to py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center mb-6">
             <Logo size="lg" showText={true} />
           </div>
           <div className="text-center">
-            <KeyRound className="mx-auto h-12 w-12 text-blue-600" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <KeyRound className="mx-auto h-12 w-12 text-primary-500" />
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
               Set Your Password
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="mt-2 text-center text-sm text-text-secondary">
               {isInvited
                 ? 'Welcome to the team! Please set a secure password for your account.'
                 : 'Please set a secure password for your account.'}
@@ -194,7 +194,7 @@ export default function SetupPassword() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-text-secondary mb-1"
                 >
                   New Password
                 </label>
@@ -204,7 +204,7 @@ export default function SetupPassword() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-surface-primary text-text-primary"
                   placeholder="Enter your password (min 8 characters)"
                   value={formData.password}
                   onChange={handleChange}
@@ -215,7 +215,7 @@ export default function SetupPassword() {
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-text-secondary mb-1"
                 >
                   Confirm Password
                 </label>
@@ -225,7 +225,7 @@ export default function SetupPassword() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors bg-surface-primary text-text-primary"
                   placeholder="Re-enter your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -234,7 +234,7 @@ export default function SetupPassword() {
               </div>
             </div>
 
-            <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+            <div className="text-xs text-text-tertiary bg-neutral-50 p-3 rounded-lg">
               <p className="font-medium mb-1">Password requirements:</p>
               <ul className="space-y-1">
                 <li>• At least 8 characters long</li>
@@ -244,20 +244,20 @@ export default function SetupPassword() {
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 p-4 border border-red-200">
-                <div className="text-sm text-red-700">{error}</div>
+              <div className="rounded-xl bg-error-50 p-4 border border-error-200">
+                <div className="text-sm text-error-700">{error}</div>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-text-inverse py-3 px-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? (
                 <>
                   <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline"
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-text-inverse inline"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"

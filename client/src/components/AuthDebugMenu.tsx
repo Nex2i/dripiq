@@ -74,123 +74,116 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono flex items-center gap-2 transition-colors"
+          className="bg-primary-500 hover:bg-primary-600 text-text-inverse px-3 py-2 rounded-lg shadow-lg text-sm font-mono flex items-center gap-2 transition-colors"
           title="Auth Debug Menu (Dev Only)"
         >
-          🔐
-          <span
-            className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          >
-            ▲
-          </span>
+          <span>Debug</span>
+          <span className="text-xs">🔍</span>
         </button>
 
         {/* Debug Panel */}
         {isOpen && (
-          <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white p-4 rounded-lg shadow-xl min-w-80 max-w-96 font-mono text-xs border border-gray-700">
+          <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 bg-neutral-900 text-text-inverse p-4 rounded-lg shadow-xl min-w-80 max-w-96 font-mono text-xs border border-neutral-700">
             <div className="space-y-3">
-              {/* Auth Status */}
-              <div>
-                <div className="text-orange-400 font-semibold mb-1">
-                  Auth Status:
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>Loading:</div>
-                  <div
-                    className={loading ? 'text-yellow-400' : 'text-green-400'}
+              {/* Auth State */}
+              <div className="text-warning-400 font-semibold mb-1">
+                Auth State:
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span
+                    className={loading ? 'text-warning-400' : 'text-success-400'}
                   >
-                    {loading ? 'true' : 'false'}
-                  </div>
-                  <div>Authenticated:</div>
-                  <div className={user ? 'text-green-400' : 'text-red-400'}>
-                    {user ? 'true' : 'false'}
-                  </div>
-                  <div>Session:</div>
-                  <div className={session ? 'text-green-400' : 'text-red-400'}>
-                    {session ? 'active' : 'none'}
-                  </div>
+                    Loading: {loading ? 'true' : 'false'}
+                  </span>
                 </div>
+                <div className={user ? 'text-success-400' : 'text-error-400'}>
+                  User: {user ? 'authenticated' : 'null'}
+                </div>
+                <div className={session ? 'text-success-400' : 'text-error-400'}>
+                  Session: {session ? 'active' : 'null'}
+                </div>
+                                 
               </div>
 
-              {/* User Info */}
+              {/* User Data */}
               {user && (
-                <div>
-                  <div className="text-orange-400 font-semibold mb-1">
-                    User Info:
+                <>
+                  <div className="text-warning-400 font-semibold mb-1">
+                    User Data:
                   </div>
-                  <div className="bg-gray-800 p-2 rounded border text-xs space-y-1">
-                    <div>ID: {user.user.id}</div>
-                    <div>Email: {user.user.email}</div>
-                    <div>Name: {user.user.name || 'N/A'}</div>
-                    <div>Tenants: {user.tenants.length}</div>
-                    {user.tenants.length > 0 && (
-                      <div className="text-gray-400">
-                        {user.tenants.map((tenant) => (
-                          <div key={tenant.id} className="ml-2">
-                            • {tenant.name}{' '}
-                            {tenant.role
-                              ? `(${tenant.role.name})`
-                              : '(No Role)'}{' '}
-                            {tenant.isSuperUser ? '[Super]' : ''}
-                          </div>
-                        ))}
+                                     <div className="bg-neutral-800 p-2 rounded border text-xs space-y-1">
+                     <div>
+                       <span className="text-success-400">ID:</span>{' '}
+                       {user.user.id?.substring(0, 8)}...
+                     </div>
+                     <div>
+                       <span className="text-success-400">Email:</span>{' '}
+                       {user.user.email}
+                     </div>
+                     <div className="text-text-muted">
+                       <span className="text-success-400">Name:</span>{' '}
+                       {user.user.name || 'Not set'}
+                     </div>
+                     <div>
+                       <span className="text-success-400">Created:</span>{' '}
+                       {user.user.createdAt
+                         ? new Date(user.user.createdAt).toLocaleDateString()
+                         : 'Unknown'}
+                     </div>
+                   </div>
+                </>
+              )}
+
+              {/* Tenant Data */}
+              {user?.tenants && user.tenants.length > 0 && (
+                <>
+                  <div className="text-warning-400 font-semibold mb-1">
+                    Tenant Data:
+                  </div>
+                  <div className="bg-neutral-800 p-2 rounded border text-xs space-y-1">
+                    {user.tenants.map((tenant, index) => (
+                      <div key={tenant.id}>
+                        <div className="text-success-400">
+                          Tenant {index + 1}:
+                        </div>
+                                                 <div className="ml-2 space-y-1">
+                           <div>ID: {tenant.id?.substring(0, 8)}...</div>
+                           <div>Name: {tenant.name}</div>
+                           <div>Role: {tenant.role?.name || 'No role'}</div>
+                         </div>
                       </div>
-                    )}
+                    ))}
                   </div>
-                </div>
+                </>
               )}
 
-              {/* Session Info */}
-              {session && (
-                <div>
-                  <div className="text-orange-400 font-semibold mb-1">
-                    Session Info:
-                  </div>
-                  <div className="bg-gray-800 p-2 rounded border text-xs space-y-1">
-                    <div>User ID: {session.user?.id}</div>
-                    <div>Email: {session.user?.email}</div>
-                    <div>Token Type: {session.token_type}</div>
-                    <div>
-                      Expires At:{' '}
-                      {session.expires_at
-                        ? new Date(session.expires_at * 1000).toLocaleString()
-                        : 'N/A'}
-                    </div>
-                    <div>
-                      Email Confirmed:{' '}
-                      {session.user?.email_confirmed_at ? 'Yes' : 'No'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-2 border-t border-gray-700">
+              {/* Actions */}
+              <div className="space-y-2 pt-2 border-t border-neutral-700">
+                <button
+                  onClick={handleRefreshAuthState}
+                  disabled={loading}
+                  className="w-full bg-error-600 hover:bg-error-700 disabled:bg-error-800 disabled:cursor-not-allowed text-text-inverse px-3 py-2 rounded text-sm transition-colors"
+                >
+                  Refresh Session
+                </button>
                 <button
                   onClick={handleForceLogout}
                   disabled={isForceLoggingOut}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm transition-colors"
+                  className="w-full bg-primary-500 hover:bg-primary-600 text-text-inverse px-3 py-2 rounded text-sm transition-colors"
                 >
-                  {isForceLoggingOut ? 'Logging out...' : '🚪 Force Logout'}
+                  {isForceLoggingOut ? 'Logging out...' : '� Force Logout'}
                 </button>
-
-                <button
-                  onClick={handleRefreshAuthState}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
-                >
-                  🔄 Refresh Auth State
-                </button>
-
                 <button
                   onClick={copyAuthStateToClipboard}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                  className="w-full bg-success-600 hover:bg-success-700 text-text-inverse px-3 py-2 rounded text-sm transition-colors"
                 >
                   📋 Copy State to Clipboard
                 </button>
               </div>
 
               {/* Environment Info */}
-              <div className="pt-2 border-t border-gray-700 text-gray-400 text-xs">
+              <div className="pt-2 border-t border-neutral-700 text-text-muted text-xs">
                 <div>Env: {import.meta.env.MODE}</div>
                 <div>API: {import.meta.env.VITE_API_BASE_URL}</div>
               </div>
