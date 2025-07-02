@@ -1,5 +1,5 @@
-import { db, userTenants, users, User, NewUser, UserTenant, NewUserTenant } from '@/db';
 import { eq, and, desc } from 'drizzle-orm';
+import { db, userTenants, users, NewUser, UserTenant, NewUserTenant } from '@/db';
 
 export interface CreateInviteData {
   tenantId: string;

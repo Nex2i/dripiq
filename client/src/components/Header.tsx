@@ -44,7 +44,10 @@ export default function Header() {
   // Close profile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
         closeProfileMenu()
       }
     }
@@ -58,7 +61,7 @@ export default function Header() {
     }
   }, [isProfileMenuOpen])
 
-  const handleLogoutFromMenu = async () => {
+  const handleLogoutFromMenu = () => {
     closeProfileMenu()
     handleLogout()
   }

@@ -133,7 +133,7 @@ export async function createNewUserInvite(inviteData: CreateInviteData, tenantId
   }
 
   // Create the user and user-tenant relationship immediately with the Supabase ID
-  const { userTenant, token } = await InviteService.createInvite(
+  const { userTenant } = await InviteService.createInvite(
     {
       ...inviteData,
       role: role.id, // Pass role ID instead of role name

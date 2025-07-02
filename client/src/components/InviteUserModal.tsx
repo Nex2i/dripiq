@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { X, Mail, User, Shield } from 'lucide-react'
-import {
-  invitesService,
-  type CreateInviteData,
-} from '../services/invites.service'
-import { rolesService, type Role } from '../services/roles.service'
+import { invitesService } from '../services/invites.service'
+import type { CreateInviteData } from '../services/invites.service'
+import { rolesService } from '../services/roles.service'
+import type { Role } from '../services/roles.service'
 
 interface InviteUserModalProps {
   isOpen: boolean

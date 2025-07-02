@@ -9,7 +9,8 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
-import { invitesService, type User } from '../../services/invites.service'
+import { invitesService } from '../../services/invites.service'
+import type { User } from '../../services/invites.service'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function UsersPage() {
