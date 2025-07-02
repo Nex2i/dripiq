@@ -205,277 +205,270 @@ export default function UsersPage() {
   const emptyState = users.length === 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              User Management
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {isAdmin
-                ? 'Manage team members and their access to your workspace'
-                : 'View team members in your workspace'}
-            </p>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            {isAdmin && (
-              <button
-                onClick={() => setIsInviteModalOpen(true)}
-                className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Invite user
-              </button>
-            )}
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="md:flex md:items-center md:justify-between">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-medium text-gray-900">User Management</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {isAdmin
+              ? 'Manage team members and their access to your workspace'
+              : 'View team members in your workspace'}
+          </p>
         </div>
-
-        {/* Main Content */}
-        <div className="mt-8">
-          {loading ? (
-            // Loading state
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-sm text-gray-600">Loading users...</p>
-            </div>
-          ) : error ? (
-            // Error state
-            <div className="text-center py-12">
-              <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                Error loading users
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">{error}</p>
-              <div className="mt-6">
-                <button
-                  onClick={loadData}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Try again
-                </button>
-              </div>
-            </div>
-          ) : emptyState ? (
-            // Empty state
-            <div className="text-center py-12">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                No team members yet
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {isAdmin
-                  ? 'Get started by inviting your first teammate.'
-                  : 'No team members have been added to this workspace yet.'}
-              </p>
-              {isAdmin && (
-                <div className="mt-6">
-                  <button
-                    onClick={() => setIsInviteModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Invite your first teammate
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Users table
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <div className="px-4 py-5 sm:p-6">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Role
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last login
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Invited
-                        </th>
-                        {isAdmin && (
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {users.map((userRow) => (
-                        <tr key={userRow.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {userRow.firstName && userRow.lastName
-                              ? `${userRow.firstName} ${userRow.lastName}`
-                              : userRow.firstName || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {userRow.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {editingRole?.userId === userRow.id ? (
-                              <div className="flex items-center space-x-2">
-                                <select
-                                  value={editingRole.newRoleId}
-                                  onChange={(e) =>
-                                    handleRoleChange(e.target.value)
-                                  }
-                                  className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                >
-                                  {roles.map((role) => (
-                                    <option key={role.id} value={role.id}>
-                                      {role.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  onClick={handleSaveRole}
-                                  disabled={updatingRole === userRow.id}
-                                  className="p-1 text-green-600 hover:text-green-900 disabled:opacity-50"
-                                >
-                                  <Check className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={handleCancelEdit}
-                                  disabled={updatingRole === userRow.id}
-                                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <span>{userRow.role}</span>
-                                {isAdmin && (
-                                  <button
-                                    onClick={() =>
-                                      handleEditRole(userRow.id, userRow.role)
-                                    }
-                                    className="p-1 text-gray-400 hover:text-gray-600"
-                                    title="Edit role"
-                                  >
-                                    <Edit3 className="h-3 w-3" />
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={getStatusBadge(userRow.status)}>
-                              {userRow.status.charAt(0).toUpperCase() +
-                                userRow.status.slice(1)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(userRow.lastLogin)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(userRow.invitedAt)}
-                          </td>
-                          {isAdmin && (
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  className="text-blue-600 hover:text-blue-900 p-1"
-                                  title="View details"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </button>
-                                {userRow.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={() =>
-                                        handleResendInvite(userRow.id)
-                                      }
-                                      className="text-green-600 hover:text-green-900 p-1"
-                                      title="Resend invite"
-                                    >
-                                      <RefreshCw className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleRemoveUser(userRow.id)
-                                      }
-                                      className="text-red-600 hover:text-red-900 p-1"
-                                      title="Remove user"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </>
-                                )}
-                                <button className="text-gray-400 hover:text-gray-600 p-1">
-                                  <MoreVertical className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="flex-1 flex justify-between sm:hidden">
-                    <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                      Previous
-                    </button>
-                    <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                      Next
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Showing{' '}
-                        <span className="font-medium">
-                          {(pagination.page - 1) * pagination.limit + 1}
-                        </span>{' '}
-                        to{' '}
-                        <span className="font-medium">
-                          {Math.min(
-                            pagination.page * pagination.limit,
-                            pagination.total,
-                          )}
-                        </span>{' '}
-                        of{' '}
-                        <span className="font-medium">{pagination.total}</span>{' '}
-                        results
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                        <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                          Previous
-                        </button>
-                        <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                          1
-                        </button>
-                        <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                          Next
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="mt-4 flex md:mt-0 md:ml-4">
+          {isAdmin && (
+            <button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Invite user
+            </button>
           )}
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div>
+        {loading ? (
+          // Loading state
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-sm text-gray-600">Loading users...</p>
+          </div>
+        ) : error ? (
+          // Error state
+          <div className="text-center py-12">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              Error loading users
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">{error}</p>
+            <div className="mt-6">
+              <button
+                onClick={loadData}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        ) : emptyState ? (
+          // Empty state
+          <div className="text-center py-12">
+            <Users className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No team members yet
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {isAdmin
+                ? 'Get started by inviting your first teammate.'
+                : 'No team members have been added to this workspace yet.'}
+            </p>
+            {isAdmin && (
+              <div className="mt-6">
+                <button
+                  onClick={() => setIsInviteModalOpen(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invite your first teammate
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          // Users table
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last login
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invited
+                      </th>
+                      {isAdmin && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((userRow) => (
+                      <tr key={userRow.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {userRow.firstName && userRow.lastName
+                            ? `${userRow.firstName} ${userRow.lastName}`
+                            : userRow.firstName || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {userRow.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {editingRole?.userId === userRow.id ? (
+                            <div className="flex items-center space-x-2">
+                              <select
+                                value={editingRole.newRoleId}
+                                onChange={(e) =>
+                                  handleRoleChange(e.target.value)
+                                }
+                                className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              >
+                                {roles.map((role) => (
+                                  <option key={role.id} value={role.id}>
+                                    {role.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={handleSaveRole}
+                                disabled={updatingRole === userRow.id}
+                                className="p-1 text-green-600 hover:text-green-900 disabled:opacity-50"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                disabled={updatingRole === userRow.id}
+                                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <span>{userRow.role}</span>
+                              {isAdmin && (
+                                <button
+                                  onClick={() =>
+                                    handleEditRole(userRow.id, userRow.role)
+                                  }
+                                  className="p-1 text-gray-400 hover:text-gray-600"
+                                  title="Edit role"
+                                >
+                                  <Edit3 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={getStatusBadge(userRow.status)}>
+                            {userRow.status.charAt(0).toUpperCase() +
+                              userRow.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(userRow.lastLogin)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(userRow.invitedAt)}
+                        </td>
+                        {isAdmin && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                className="text-blue-600 hover:text-blue-900 p-1"
+                                title="View details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              {userRow.status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      handleResendInvite(userRow.id)
+                                    }
+                                    className="text-green-600 hover:text-green-900 p-1"
+                                    title="Resend invite"
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveUser(userRow.id)}
+                                    className="text-red-600 hover:text-red-900 p-1"
+                                    title="Remove user"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
+                              <button className="text-gray-400 hover:text-gray-600 p-1">
+                                <MoreVertical className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="mt-6 flex items-center justify-between">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                  </button>
+                  <button className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {(pagination.page - 1) * pagination.limit + 1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(
+                          pagination.page * pagination.limit,
+                          pagination.total,
+                        )}
+                      </span>{' '}
+                      of <span className="font-medium">{pagination.total}</span>{' '}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        Previous
+                      </button>
+                      <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                        1
+                      </button>
+                      <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Invite Modal */}

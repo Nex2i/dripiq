@@ -15,7 +15,13 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
+import SettingsLayout from './pages/settings/SettingsLayout'
+import SettingsPage from './pages/settings/SettingsPage'
 import UsersPage from './pages/settings/UsersPage'
+import NotificationsPage from './pages/settings/NotificationsPage'
+import SecurityPage from './pages/settings/SecurityPage'
+import BillingPage from './pages/settings/BillingPage'
+import OrganizationPage from './pages/settings/OrganizationPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 // Import demo components directly
@@ -115,10 +121,53 @@ const leadsRoute = createRoute({
   component: () => <LeadsPage />,
 })
 
-const usersRoute = createRoute({
+// Settings routes with layout
+const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
-  path: '/settings/users',
+  path: '/settings',
+  component: () => <SettingsLayout />,
+})
+
+const settingsIndexRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/',
+  component: () => <SettingsPage />,
+})
+
+const settingsGeneralRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/general',
+  component: () => <SettingsPage />,
+})
+
+const settingsUsersRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/users',
   component: () => <UsersPage />,
+})
+
+const settingsNotificationsRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/notifications',
+  component: () => <NotificationsPage />,
+})
+
+const settingsSecurityRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/security',
+  component: () => <SecurityPage />,
+})
+
+const settingsBillingRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/billing',
+  component: () => <BillingPage />,
+})
+
+const settingsOrganizationRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/organization',
+  component: () => <OrganizationPage />,
 })
 
 // Create all protected demo routes directly
@@ -159,10 +208,20 @@ const notFoundRoute = createRoute({
   component: () => <NotFoundPage />,
 })
 
+const settingsRouteTree = settingsRoute.addChildren([
+  settingsIndexRoute,
+  settingsGeneralRoute,
+  settingsUsersRoute,
+  settingsNotificationsRoute,
+  settingsSecurityRoute,
+  settingsBillingRoute,
+  settingsOrganizationRoute,
+])
+
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   leadsRoute,
-  usersRoute,
+  settingsRouteTree,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,
