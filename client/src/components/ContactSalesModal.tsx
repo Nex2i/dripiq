@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { cn } from '../lib/utils'
 
 interface ContactSalesModalProps {
   isOpen: boolean
@@ -110,7 +111,7 @@ export default function ContactSalesModal({
     <div className="fixed inset-0 z-50">
       {/* Background overlay */}
       <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-background/30 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       ></div>
 
@@ -118,16 +119,19 @@ export default function ContactSalesModal({
       <div className="fixed inset-0 z-10 overflow-y-auto">
         <div className="flex items-center justify-center min-h-full p-4 text-center">
           {/* Modal */}
-          <div className="relative w-full max-w-lg bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all">
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div className="relative w-full max-w-lg bg-card rounded-lg text-left overflow-hidden shadow-xl transform transition-all border">
+            <div className="bg-card px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-lg font-medium text-card-foreground">
                   Contact Sales
                 </h3>
                 <button
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold bg-transparent border-none cursor-pointer disabled:opacity-50"
+                  className={cn(
+                    "text-muted-foreground hover:text-foreground text-2xl font-bold bg-transparent border-none cursor-pointer",
+                    isSubmitting && "opacity-50"
+                  )}
                 >
                   ×
                 </button>
@@ -137,7 +141,7 @@ export default function ContactSalesModal({
                 <div className="text-center py-8">
                   <div className="mb-4">
                     <svg
-                      className="mx-auto h-12 w-12 text-green-500"
+                      className="mx-auto h-12 w-12 text-success"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -150,10 +154,10 @@ export default function ContactSalesModal({
                       />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">
+                  <h4 className="text-lg font-medium text-card-foreground mb-2">
                     Thank you!
                   </h4>
-                  <p className="text-gray-600">
+                  <p className="text-muted-foreground">
                     We've received your message and will get back to you within
                     24 hours.
                   </p>
@@ -163,7 +167,7 @@ export default function ContactSalesModal({
                   <div>
                     <label
                       htmlFor="name"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-card-foreground mb-1"
                     >
                       Full Name *
                     </label>
@@ -175,7 +179,7 @@ export default function ContactSalesModal({
                       value={formData.name}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                       placeholder="Enter your full name"
                     />
                   </div>
@@ -183,7 +187,7 @@ export default function ContactSalesModal({
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-card-foreground mb-1"
                     >
                       Email Address *
                     </label>
@@ -195,7 +199,7 @@ export default function ContactSalesModal({
                       value={formData.email}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                       placeholder="Enter your email address"
                     />
                   </div>
@@ -203,7 +207,7 @@ export default function ContactSalesModal({
                   <div>
                     <label
                       htmlFor="company"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-card-foreground mb-1"
                     >
                       Company *
                     </label>
@@ -215,7 +219,7 @@ export default function ContactSalesModal({
                       value={formData.company}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                       placeholder="Enter your company name"
                     />
                   </div>
@@ -223,7 +227,7 @@ export default function ContactSalesModal({
                   <div>
                     <label
                       htmlFor="phone"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-card-foreground mb-1"
                     >
                       Phone Number
                     </label>
@@ -234,7 +238,7 @@ export default function ContactSalesModal({
                       value={formData.phone}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                       placeholder="Enter your phone number (optional)"
                     />
                   </div>
@@ -242,7 +246,7 @@ export default function ContactSalesModal({
                   <div>
                     <label
                       htmlFor="message"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-card-foreground mb-1"
                     >
                       Message *
                     </label>
@@ -254,14 +258,14 @@ export default function ContactSalesModal({
                       value={formData.message}
                       onChange={handleChange}
                       disabled={isSubmitting}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
                       placeholder="Tell us about your needs and how we can help..."
                     />
                   </div>
 
                   {error && (
-                    <div className="rounded-md bg-red-50 p-3">
-                      <div className="text-sm text-red-700">{error}</div>
+                    <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+                      <div className="text-sm text-destructive">{error}</div>
                     </div>
                   )}
 
@@ -270,14 +274,20 @@ export default function ContactSalesModal({
                       type="button"
                       onClick={handleClose}
                       disabled={isSubmitting}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                      className={cn(
+                        "px-4 py-2 text-sm font-medium text-secondary-foreground bg-secondary border border-border rounded-md hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-ring",
+                        isSubmitting && "opacity-50"
+                      )}
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 min-w-[80px]"
+                      className={cn(
+                        "px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring min-w-[80px]",
+                        isSubmitting && "opacity-50"
+                      )}
                     >
                       {isSubmitting ? (
                         <svg

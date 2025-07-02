@@ -1,6 +1,7 @@
 import { useStore } from '@tanstack/react-form'
 
 import { useFieldContext, useFormContext } from '../hooks/demo.form-context'
+import { cn } from '../lib/utils'
 
 export function SubscribeButton({ label }: { label: string }) {
   const form = useFormContext()
@@ -10,7 +11,10 @@ export function SubscribeButton({ label }: { label: string }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+          className={cn(
+            "px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors",
+            isSubmitting && "opacity-50"
+          )}
         >
           {label}
         </button>
@@ -29,7 +33,7 @@ function ErrorMessages({
       {errors.map((error) => (
         <div
           key={typeof error === 'string' ? error : error.message}
-          className="text-red-500 mt-1 font-bold"
+          className="text-destructive mt-1 font-bold"
         >
           {typeof error === 'string' ? error : error.message}
         </div>
@@ -50,14 +54,14 @@ export function TextField({
 
   return (
     <div>
-      <label htmlFor={label} className="block font-bold mb-1 text-xl">
+      <label htmlFor={label} className="block font-bold mb-1 text-xl text-foreground">
         {label}
         <input
           value={field.state.value}
           placeholder={placeholder}
           onBlur={field.handleBlur}
           onChange={(e) => field.handleChange(e.target.value)}
-          className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </label>
       {field.state.meta.isTouched && <ErrorMessages errors={errors} />}
@@ -77,14 +81,14 @@ export function TextArea({
 
   return (
     <div>
-      <label htmlFor={label} className="block font-bold mb-1 text-xl">
+      <label htmlFor={label} className="block font-bold mb-1 text-xl text-foreground">
         {label}
         <textarea
           value={field.state.value}
           onBlur={field.handleBlur}
           rows={rows}
           onChange={(e) => field.handleChange(e.target.value)}
-          className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </label>
       {field.state.meta.isTouched && <ErrorMessages errors={errors} />}
@@ -105,7 +109,7 @@ export function Select({
 
   return (
     <div>
-      <label htmlFor={label} className="block font-bold mb-1 text-xl">
+      <label htmlFor={label} className="block font-bold mb-1 text-xl text-foreground">
         {label}
       </label>
       <select
@@ -113,7 +117,7 @@ export function Select({
         value={field.state.value}
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
-        className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
       >
         {values.map((value) => (
           <option key={value.value} value={value.value}>
