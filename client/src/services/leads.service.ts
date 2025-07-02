@@ -4,6 +4,7 @@ export interface Lead {
   id: string
   name: string
   email: string
+  url: string
   company?: string
   phone?: string
   status: string
@@ -14,6 +15,7 @@ export interface Lead {
 export interface CreateLeadData {
   name: string
   email: string
+  url: string
   company?: string
   phone?: string
   status?: string
@@ -22,6 +24,7 @@ export interface CreateLeadData {
 export interface UpdateLeadData {
   name?: string
   email?: string
+  url?: string
   company?: string
   phone?: string
   status?: string

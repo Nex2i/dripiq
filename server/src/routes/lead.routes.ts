@@ -18,6 +18,7 @@ const basePath = '/leads';
 const createLeadBodySchema = Type.Object({
   name: Type.String({ minLength: 1, description: 'Lead name' }),
   email: Type.String({ format: 'email', description: 'Lead email address' }),
+  url: Type.String({ format: 'uri', minLength: 1, description: 'Lead website URL' }),
   company: Type.Optional(Type.String({ description: 'Lead company' })),
   phone: Type.Optional(Type.String({ description: 'Lead phone number' })),
   status: Type.Optional(
@@ -34,6 +35,7 @@ const leadResponseSchema = Type.Object({
   id: Type.String({ description: 'Lead ID' }),
   name: Type.String({ description: 'Lead name' }),
   email: Type.String({ description: 'Lead email' }),
+  url: Type.String({ description: 'Lead website URL' }),
   company: Type.Optional(Type.String({ description: 'Lead company' })),
   phone: Type.Optional(Type.String({ description: 'Lead phone' })),
   status: Type.String({ description: 'Lead status' }),
@@ -145,6 +147,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         Body: {
           name: string;
           email: string;
+          url: string;
           company?: string;
           phone?: string;
           status?: string;
@@ -169,6 +172,14 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           reply.status(400).send({
             message: 'Lead email is required',
             error: 'Email cannot be empty',
+          });
+          return;
+        }
+
+        if (!leadData.url?.trim()) {
+          reply.status(400).send({
+            message: 'Lead URL is required',
+            error: 'URL cannot be empty',
           });
           return;
         }
@@ -361,6 +372,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         Body: Partial<{
           name: string;
           email: string;
+          url: string;
           company?: string;
           phone?: string;
           status?: string;

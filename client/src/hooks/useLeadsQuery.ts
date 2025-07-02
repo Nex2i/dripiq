@@ -58,6 +58,7 @@ export function useCreateLead() {
         id: `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique temporary ID
         name: newLeadData.name,
         email: newLeadData.email,
+        url: newLeadData.url,
         company: newLeadData.company || '',
         phone: newLeadData.phone || '',
         status: newLeadData.status || 'new', // Default status

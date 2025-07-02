@@ -152,6 +152,7 @@ export const leads = appSchema.table('leads', {
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
   email: text('email').notNull(),
+  url: text('url').notNull(),
   company: text('company'),
   phone: text('phone'),
   status: text('status').notNull().default('new'),

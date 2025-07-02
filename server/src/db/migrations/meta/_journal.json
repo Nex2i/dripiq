@@ -43,6 +43,13 @@
       "when": 1751485400000,
       "tag": "0005_consolidate_user_tenants",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1751491358387,
+      "tag": "0006_add_url_to_leads",
+      "breakpoints": true
     }
   ]
 }

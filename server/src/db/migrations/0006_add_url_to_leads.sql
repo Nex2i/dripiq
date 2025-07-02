@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."leads" ADD COLUMN "url" text NOT NULL;--> statement-breakpoint
