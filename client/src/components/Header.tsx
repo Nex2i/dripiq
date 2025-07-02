@@ -2,6 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
+import { Settings } from 'lucide-react'
 import AddLeadModal from './AddLeadModal'
 
 export default function Header() {
@@ -207,6 +208,17 @@ export default function Header() {
                     {isProfileMenuOpen && (
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                         <button
+                          onClick={() => {
+                            navigate({ to: '/settings' })
+                            closeProfileMenu()
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center"
+                        >
+                          <Settings className="h-4 w-4 mr-3 text-gray-400" />
+                          Settings
+                        </button>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
                           onClick={handleLogoutFromMenu}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                         >
@@ -249,6 +261,13 @@ export default function Header() {
                 className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
               >
                 Leads
+              </button>
+              <button
+                onClick={() => navigateAndClose('/settings')}
+                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left flex items-center"
+              >
+                <Settings className="h-5 w-5 mr-3 text-gray-400" />
+                Settings
               </button>
               <button
                 onClick={() => navigateAndClose('/settings/users')}
