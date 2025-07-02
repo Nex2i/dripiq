@@ -27,16 +27,16 @@ const updateUserRoleSchema = Type.Object({
 });
 
 export default async function InviteRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
-  // Get users for a tenant (Admin only)
+  // Get users for a tenant (Authenticated users only)
   fastify.route({
     method: HttpMethods.GET,
     url: `${basePath}/users`,
-    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
+    preHandler: [fastify.authPrehandler],
     schema: {
       querystring: usersQuerySchema,
       tags: ['Invites'],
       summary: 'Get Users for Tenant',
-      description: 'Get all users (seats + invites) for a tenant. Admin only.',
+      description: 'Get all users (seats + invites) for a tenant. Requires authentication.',
     },
     handler: async (
       request: FastifyRequest<{

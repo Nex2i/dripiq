@@ -214,7 +214,9 @@ export default function UsersPage() {
               User Management
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              Manage team members and their access to your workspace
+              {isAdmin
+                ? 'Manage team members and their access to your workspace'
+                : 'View team members in your workspace'}
             </p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
@@ -263,7 +265,9 @@ export default function UsersPage() {
                 No team members yet
               </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Get started by inviting your first teammate.
+                {isAdmin
+                  ? 'Get started by inviting your first teammate.'
+                  : 'No team members have been added to this workspace yet.'}
               </p>
               {isAdmin && (
                 <div className="mt-6">
@@ -303,9 +307,11 @@ export default function UsersPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Invited
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        {isAdmin && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -379,39 +385,43 @@ export default function UsersPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(userRow.invitedAt)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                className="text-blue-600 hover:text-blue-900 p-1"
-                                title="View details"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </button>
-                              {isAdmin && userRow.status === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleResendInvite(userRow.id)
-                                    }
-                                    className="text-green-600 hover:text-green-900 p-1"
-                                    title="Resend invite"
-                                  >
-                                    <RefreshCw className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleRemoveUser(userRow.id)}
-                                    className="text-red-600 hover:text-red-900 p-1"
-                                    title="Remove user"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </>
-                              )}
-                              <button className="text-gray-400 hover:text-gray-600 p-1">
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
+                          {isAdmin && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  className="text-blue-600 hover:text-blue-900 p-1"
+                                  title="View details"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+                                {userRow.status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleResendInvite(userRow.id)
+                                      }
+                                      className="text-green-600 hover:text-green-900 p-1"
+                                      title="Resend invite"
+                                    >
+                                      <RefreshCw className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleRemoveUser(userRow.id)
+                                      }
+                                      className="text-red-600 hover:text-red-900 p-1"
+                                      title="Remove user"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
+                                <button className="text-gray-400 hover:text-gray-600 p-1">
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
