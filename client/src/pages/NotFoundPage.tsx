@@ -17,7 +17,7 @@ export default function NotFoundPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-blue-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full text-center">
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -27,11 +27,11 @@ export default function NotFoundPage() {
         {/* 404 Illustration */}
         <div className="mb-8">
           <div className="relative">
-            <div className="text-8xl sm:text-9xl font-bold text-blue-200 opacity-50">
+            <div className="text-8xl sm:text-9xl font-bold opacity-50" style={{ color: '#EDF2FA' }}>
               404
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 text-blue-600">
+              <div className="w-16 h-16" style={{ color: '#4361EE' }}>
                 <svg
                   fill="none"
                   stroke="currentColor"
@@ -64,7 +64,7 @@ export default function NotFoundPage() {
           <div className="space-y-4">
             <button
               onClick={handleGoHome}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              className="btn-primary w-full px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             >
               {isAuthenticated ? 'Go to Dashboard' : 'Go to Home'}
             </button>
@@ -87,14 +87,16 @@ export default function NotFoundPage() {
                 <>
                   <button
                     onClick={() => navigate({ to: '/auth/login' })}
-                    className="text-blue-600 hover:text-blue-700 underline"
+                    className="underline hover:opacity-80 transition-opacity"
+                    style={{ color: '#4361EE' }}
                   >
                     Sign In
                   </button>
                   <span className="hidden sm:inline text-gray-300">•</span>
                   <button
                     onClick={() => navigate({ to: '/auth/register' })}
-                    className="text-blue-600 hover:text-blue-700 underline"
+                    className="underline hover:opacity-80 transition-opacity"
+                    style={{ color: '#4361EE' }}
                   >
                     Sign Up
                   </button>
@@ -103,7 +105,8 @@ export default function NotFoundPage() {
               )}
               <a
                 href="mailto:support@dripiq.com"
-                className="text-blue-600 hover:text-blue-700 underline"
+                className="underline hover:opacity-80 transition-opacity"
+                style={{ color: '#4361EE' }}
               >
                 Contact Support
               </a>
@@ -112,7 +115,7 @@ export default function NotFoundPage() {
         </div>
 
         {/* Floating animated elements */}
-        <div className="absolute top-20 left-8 w-16 h-16 bg-blue-200 rounded-full opacity-20 animate-float-horizontal"></div>
+        <div className="absolute top-20 left-8 w-16 h-16 rounded-full opacity-20 animate-float-horizontal" style={{ backgroundColor: '#EDF2FA' }}></div>
         <div className="absolute bottom-20 right-8 w-12 h-12 bg-indigo-200 rounded-full opacity-25 animate-float-vertical"></div>
         <div className="absolute top-32 right-16 w-10 h-10 bg-purple-200 rounded-full opacity-15 animate-float-diagonal"></div>
         <div className="absolute bottom-32 left-16 w-14 h-14 bg-cyan-200 rounded-full opacity-20 animate-float-circular"></div>

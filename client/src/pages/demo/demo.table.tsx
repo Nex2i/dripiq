@@ -141,7 +141,10 @@ function TableDemo() {
         <DebouncedInput
           value={globalFilter ?? ''}
           onChange={(value) => setGlobalFilter(String(value))}
-          className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:ring-2 focus:border-transparent outline-none"
+            style={{
+              '--tw-ring-color': '#4361EE'
+            } as React.CSSProperties}
           placeholder="Search all columns..."
         />
       </div>
@@ -163,7 +166,7 @@ function TableDemo() {
                           <div
                             {...{
                               className: header.column.getCanSort()
-                                ? 'cursor-pointer select-none hover:text-blue-400 transition-colors'
+                                ? 'cursor-pointer select-none hover:opacity-80 transition-opacity'
                                 : '',
                               onClick: header.column.getToggleSortingHandler(),
                             }}
@@ -259,7 +262,10 @@ function TableDemo() {
               const page = e.target.value ? Number(e.target.value) - 1 : 0
               table.setPageIndex(page)
             }}
-            className="w-16 px-2 py-1 bg-gray-800 rounded-md border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className="w-16 px-2 py-1 bg-gray-800 rounded-md border border-gray-700 focus:ring-2 focus:border-transparent outline-none"
+            style={{
+              '--tw-ring-color': '#4361EE'
+            } as React.CSSProperties}
           />
         </span>
         <select
@@ -267,7 +273,10 @@ function TableDemo() {
           onChange={(e) => {
             table.setPageSize(Number(e.target.value))
           }}
-          className="px-2 py-1 bg-gray-800 rounded-md border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="px-2 py-1 bg-gray-800 rounded-md border border-gray-700 focus:ring-2 focus:border-transparent outline-none"
+            style={{
+              '--tw-ring-color': '#4361EE'
+            } as React.CSSProperties}
         >
           {[10, 20, 30, 40, 50].map((pageSize) => (
             <option key={pageSize} value={pageSize}>
@@ -282,13 +291,13 @@ function TableDemo() {
       <div className="mt-4 flex gap-2">
         <button
           onClick={() => rerender()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="btn-primary px-4 py-2 rounded-md transition-colors"
         >
           Force Rerender
         </button>
         <button
           onClick={() => refreshData()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="btn-primary px-4 py-2 rounded-md transition-colors"
         >
           Refresh Data
         </button>
@@ -316,7 +325,10 @@ function Filter({ column }: { column: Column<any, unknown> }) {
       value={(columnFilterValue ?? '') as string}
       onChange={(value) => column.setFilterValue(value)}
       placeholder={`Search...`}
-      className="w-full px-2 py-1 bg-gray-700 text-white rounded-md border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+      className="w-full px-2 py-1 bg-gray-700 text-white rounded-md border border-gray-600 focus:ring-2 focus:border-transparent outline-none"
+      style={{
+        '--tw-ring-color': '#4361EE'
+      } as React.CSSProperties}
     />
   )
 }

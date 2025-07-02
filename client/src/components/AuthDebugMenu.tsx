@@ -74,7 +74,10 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono flex items-center gap-2 transition-colors"
+          className="text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono flex items-center gap-2 transition-colors"
+        style={{ backgroundColor: '#4361EE' }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3b4bdb'}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4361EE'}
           title="Auth Debug Menu (Dev Only)"
         >
           🔐
@@ -176,7 +179,10 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
 
                 <button
                   onClick={handleRefreshAuthState}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                  className="w-full text-white px-3 py-2 rounded text-sm transition-colors"
+              style={{ backgroundColor: '#4361EE' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3b4bdb'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#4361EE'}
                 >
                   🔄 Refresh Auth State
                 </button>
