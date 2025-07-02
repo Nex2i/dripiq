@@ -17,7 +17,7 @@ async function startServer() {
     schemaErrorFormatter,
     ajv: {
       customOptions: {
-        coerceTypes: false,
+        coerceTypes: true,
         allErrors: true,
       },
       plugins: [],

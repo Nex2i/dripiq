@@ -21,7 +21,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
       try {
         // Get user from auth middleware
         const user = (request as any).user;
-        if (!user?.id) {
+        if (!user?.supabaseId) {
           reply.status(401).send({ message: 'Authentication required' });
           return;
         }
@@ -34,7 +34,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
         }
 
         // Get user from database using Supabase ID
-        const dbUser = await UserService.getUserBySupabaseId(user.id);
+        const dbUser = await UserService.getUserBySupabaseId(user.supabaseId);
         if (!dbUser) {
           reply.status(404).send({ message: 'User not found' });
           return;
@@ -69,7 +69,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
     try {
       // Get user from auth middleware
       const user = (request as any).user;
-      if (!user?.id) {
+      if (!user?.supabaseId) {
         reply.status(401).send({ message: 'Authentication required' });
         return;
       }
@@ -82,7 +82,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
       }
 
       // Get user from database using Supabase ID
-      const dbUser = await UserService.getUserBySupabaseId(user.id);
+      const dbUser = await UserService.getUserBySupabaseId(user.supabaseId);
       if (!dbUser) {
         reply.status(404).send({ message: 'User not found' });
         return;
@@ -111,6 +111,12 @@ async function permissionsPlugin(fastify: FastifyInstance) {
  * Looks in params, query, and body in that order
  */
 function getTenantFromRequest(request: FastifyRequest): string | null {
+  // Check if tenantId is already in the request object
+  const tenantId = (request as any).tenantId;
+  if (tenantId) {
+    return tenantId;
+  }
+
   // Check params first (e.g., /api/tenants/:tenantId/campaigns)
   const params = request.params as any;
   if (params?.tenantId) {

@@ -73,7 +73,7 @@ export const rolePermissions = appSchema.table(
   })
 );
 
-// User-Tenant relationship table (updated to include role)
+// User-Tenant relationship table (consolidated with invite functionality)
 export const userTenants = appSchema.table(
   'user_tenants',
   {
@@ -90,6 +90,9 @@ export const userTenants = appSchema.table(
       .notNull()
       .references(() => roles.id, { onDelete: 'restrict' }),
     isSuperUser: boolean('is_super_user').notNull().default(false),
+    status: text('status').notNull().default('active'), // 'pending' (password not set) | 'active' (password set, can login)
+    invitedAt: timestamp('invited_at'), // When the user was invited/added
+    acceptedAt: timestamp('accepted_at'), // When they completed setup/login
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

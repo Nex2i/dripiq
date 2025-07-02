@@ -13,7 +13,9 @@ import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
+import UsersPage from './pages/settings/UsersPage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -73,6 +75,13 @@ const landingRoute = createRoute({
   component: () => <LandingPage />,
 })
 
+// Setup password route - public (for invited users who don't have passwords yet)
+const setupPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/setup-password',
+  component: () => <SetupPassword />,
+})
+
 // Dashboard route - protected
 const dashboardRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -93,10 +102,22 @@ const authRegisterRoute = createRoute({
   component: () => <Register />,
 })
 
+const authSetupPasswordRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: '/setup-password',
+  component: () => <SetupPassword />,
+})
+
 const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/leads',
   component: () => <LeadsPage />,
+})
+
+const usersRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/settings/users',
+  component: () => <UsersPage />,
 })
 
 // Create all protected demo routes directly
@@ -133,6 +154,7 @@ const tanStackQueryRoute = createRoute({
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   leadsRoute,
+  usersRoute,
   formSimpleRoute,
   formAddressRoute,
   storeRoute,
@@ -140,11 +162,16 @@ const protectedRouteTree = protectedRoute.addChildren([
   tanStackQueryRoute,
 ])
 
-const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
+const authRouteTree = authRoute.addChildren([
+  authLoginRoute,
+  authRegisterRoute,
+  authSetupPasswordRoute,
+])
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   landingRoute,
+  setupPasswordRoute,
   protectedRouteTree,
   authRouteTree,
 ])
