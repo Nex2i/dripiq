@@ -80,7 +80,7 @@ async function createSeedUser() {
     .values({
       supabaseId: 'fee55c3d-5077-41ba-8e42-a2f97c64cd92',
       email: 'ryanzhutch@gmail.com',
-      name: 'Ryan Hutchinson',
+      name: 'Ryan Hutchison',
       createdAt: new Date('2025-06-30T03:46:22.185Z'),
       updatedAt: new Date('2025-06-30T16:58:18.567Z'),
     })
