@@ -16,7 +16,7 @@ import Register from './pages/auth/Register'
 import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
 import SettingsLayout from './pages/settings/SettingsLayout'
-import SettingsPage from './pages/settings/SettingsPage'
+import TenantSettingsPage from './pages/settings/TenantSettingsPage'
 import UsersPage from './pages/settings/UsersPage'
 import NotificationsPage from './pages/settings/NotificationsPage'
 import SecurityPage from './pages/settings/SecurityPage'
@@ -131,13 +131,13 @@ const settingsRoute = createRoute({
 const settingsIndexRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: '/',
-  component: () => <SettingsPage />,
+  component: () => <TenantSettingsPage />,
 })
 
 const settingsGeneralRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: '/general',
-  component: () => <SettingsPage />,
+  component: () => <TenantSettingsPage />,
 })
 
 const settingsUsersRoute = createRoute({

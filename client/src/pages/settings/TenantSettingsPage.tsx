@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { Save, Building, Mail, Globe } from 'lucide-react'
 
-export default function SettingsPage() {
+export default function TenantSettingsPage() {
   const { user } = useAuth()
   const [isSaving, setIsSaving] = useState(false)
 

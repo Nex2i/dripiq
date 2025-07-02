@@ -1,4 +1,4 @@
-import { Bell, Mail, MessageSquare, Smartphone } from 'lucide-react'
+import { Bell, Mail, Smartphone } from 'lucide-react'
 
 export default function NotificationsPage() {
   return (
