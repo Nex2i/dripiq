@@ -97,10 +97,10 @@ export default function OrganizationPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center space-x-3 mb-3">
+      <div className="mb-4">
+        <div className="flex items-center space-x-3 mb-2">
           <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-primary-400)] to-[var(--color-primary-600)] rounded-lg flex items-center justify-center shadow-md">
             <Building className="h-4 w-4 text-white" />
           </div>
@@ -108,41 +108,26 @@ export default function OrganizationPage() {
             Organization Settings
           </h2>
         </div>
-        <p className="text-gray-600 leading-relaxed">
-          Manage your organization's core details and branding information.
-          These settings help identify your workspace and organization.
+        <p className="text-gray-600">
+          Manage your organization's core details and information.
         </p>
       </div>
 
       {/* Organization Details */}
       <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
-        <div className="px-6 py-8 sm:p-10">
-          <div className="flex items-center mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary-500)] to-[var(--color-primary-600)] rounded-xl flex items-center justify-center shadow-lg mr-4">
-              <Building className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">
-                Organization Details
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Configure your organization's basic information
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-8">
+        <div className="px-6 py-6">
+          <div className="space-y-5">
             {/* Tenant Name */}
             <div className="group">
               <label
                 htmlFor="tenant-name"
-                className="block text-sm font-semibold text-gray-800 mb-3 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
               >
                 Tenant Name
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Tag className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Tag className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
                 </div>
                 <input
                   type="text"
@@ -152,7 +137,7 @@ export default function OrganizationPage() {
                   onChange={(e) =>
                     handleInputChange('tenantName', e.target.value)
                   }
-                  className="block w-full pl-12 pr-4 py-4 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
                            placeholder:text-gray-400 
                            hover:border-gray-300 hover:shadow-sm hover:bg-white/80
                            focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
@@ -160,7 +145,7 @@ export default function OrganizationPage() {
                   placeholder="Enter your tenant name"
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500">
                 The internal name for your workspace
               </p>
             </div>
@@ -169,13 +154,13 @@ export default function OrganizationPage() {
             <div className="group">
               <label
                 htmlFor="org-name"
-                className="block text-sm font-semibold text-gray-800 mb-3 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
               >
                 Organization Name
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Building className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Building className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
                 </div>
                 <input
                   type="text"
@@ -185,7 +170,7 @@ export default function OrganizationPage() {
                   onChange={(e) =>
                     handleInputChange('organizationName', e.target.value)
                   }
-                  className="block w-full pl-12 pr-4 py-4 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
                            placeholder:text-gray-400 
                            hover:border-gray-300 hover:shadow-sm hover:bg-white/80
                            focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
@@ -193,7 +178,7 @@ export default function OrganizationPage() {
                   placeholder="Enter your organization name"
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500">
                 Your company or organization's public name
               </p>
             </div>
@@ -202,13 +187,13 @@ export default function OrganizationPage() {
             <div className="group">
               <label
                 htmlFor="org-website"
-                className="block text-sm font-semibold text-gray-800 mb-3 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
               >
                 Organization Website
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Globe className="h-5 w-5 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Globe className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
                 </div>
                 <input
                   type="url"
@@ -218,7 +203,7 @@ export default function OrganizationPage() {
                   onChange={(e) =>
                     handleInputChange('organizationWebsite', e.target.value)
                   }
-                  className="block w-full pl-12 pr-4 py-4 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
                            placeholder:text-gray-400 
                            hover:border-gray-300 hover:shadow-sm hover:bg-white/80
                            focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
@@ -226,7 +211,7 @@ export default function OrganizationPage() {
                   placeholder="https://your-company.com"
                 />
               </div>
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500">
                 Your organization's main website URL
               </p>
             </div>
@@ -235,7 +220,7 @@ export default function OrganizationPage() {
       </div>
 
       {/* Save Button */}
-      <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         {isDirty && !updateOrganizationMutation.isPending && (
           <div className="flex items-center text-amber-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
             <AlertCircle className="h-4 w-4 mr-2" />
@@ -262,7 +247,7 @@ export default function OrganizationPage() {
         <button
           onClick={handleSave}
           disabled={!isDirty || updateOrganizationMutation.isPending}
-          className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-semibold text-white 
+          className="group relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold text-white 
                    bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-700)] 
                    rounded-xl shadow-lg shadow-[var(--color-primary-200)]/50
                    hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-800)] 

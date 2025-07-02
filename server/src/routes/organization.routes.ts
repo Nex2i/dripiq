@@ -1,5 +1,6 @@
 import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
+import { UserService } from '@/modules/user.service';
 
 const basePath = '/organizations';
 
@@ -24,20 +25,9 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const supabaseUser = (request as any).user;
+        const user = (request as any).user;
 
-        if (!supabaseUser?.id) {
-          return reply.status(401).send({ message: 'Authentication required' });
-        }
-
-        // Get database user from Supabase user
-        const { UserService } = await import('@/modules/user.service');
-        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
-        if (!dbUser) {
-          return reply.status(404).send({ message: 'User not found' });
-        }
-
-        const tenant = await TenantService.getTenantByIdSecure(dbUser.id, id);
+        const tenant = await TenantService.getTenantByIdSecure(user.id, id);
 
         if (!tenant) {
           return reply.status(404).send({ message: 'Organization not found' });
@@ -71,21 +61,10 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const supabaseUser = (request as any).user;
+        const user = (request as any).user;
         const updateData = request.body;
 
-        if (!supabaseUser?.id) {
-          return reply.status(401).send({ message: 'Authentication required' });
-        }
-
-        // Get database user from Supabase user
-        const { UserService } = await import('@/modules/user.service');
-        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
-        if (!dbUser) {
-          return reply.status(404).send({ message: 'User not found' });
-        }
-
-        const updatedTenant = await TenantService.updateTenant(dbUser.id, id, updateData);
+        const updatedTenant = await TenantService.updateTenant(user.id, id, updateData);
 
         // Return updated organization data
         return reply.send({
