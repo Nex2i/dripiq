@@ -15,11 +15,6 @@ const createInviteSchema = Type.Object({
   role: Type.String({ minLength: 1 }), // Accept any valid role name from database
 });
 
-// Schema for invite verification
-const verifyInviteSchema = Type.Object({
-  token: Type.String(),
-});
-
 // Schema for users list query params
 const usersQuerySchema = Type.Object({
   page: Type.Optional(Type.Integer({ minimum: 1 })),
@@ -139,64 +134,33 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     },
   });
 
-  // Verify invitation token
-  fastify.route({
-    method: HttpMethods.POST,
-    url: `${basePath}/invites/verify`,
-    schema: {
-      body: verifyInviteSchema,
-      tags: ['Invites'],
-      summary: 'Verify Invitation Token',
-      description: 'Verify an invitation token and return user details.',
-    },
-    handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
-      try {
-        const { token } = request.body;
-
-        const userTenant = await InviteService.verifyInviteToken(token);
-
-        if (!userTenant) {
-          reply.status(404).send({
-            message: 'Invalid or already activated invitation token',
-          });
-          return;
-        }
-
-        reply.send({
-          message: 'Token is valid',
-          userTenant: {
-            id: userTenant.id,
-            tenantId: userTenant.tenantId,
-            roleId: userTenant.roleId,
-            status: userTenant.status,
-            invitedAt: userTenant.invitedAt,
-          },
-        });
-      } catch (error: any) {
-        fastify.log.error(`Error verifying invitation: ${error.message}`);
-        reply.status(500).send({
-          message: 'Failed to verify invitation',
-          error: error.message,
-        });
-      }
-    },
-  });
-
-  // Activate user account (when they complete password setup)
+  // Activate user when they set their password (Public endpoint)
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/invites/activate`,
     schema: {
-      body: verifyInviteSchema,
+      body: Type.Object({
+        supabaseId: Type.String(),
+      }),
       tags: ['Invites'],
       summary: 'Activate User Account',
-      description: 'Activate a user account after password setup.',
+      description: 'Activate a user account when they complete password setup.',
     },
-    handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
+    handler: async (
+      request: FastifyRequest<{ Body: { supabaseId: string } }>,
+      reply: FastifyReply
+    ) => {
       try {
-        const { token } = request.body;
+        const { supabaseId } = request.body;
 
-        const userTenant = await InviteService.activateUser(token);
+        const userTenant = await InviteService.activateUserBySupabaseId(supabaseId);
+
+        if (!userTenant) {
+          reply.status(404).send({
+            message: 'User not found or already activated',
+          });
+          return;
+        }
 
         reply.send({
           message: 'User account activated successfully',
@@ -210,17 +174,10 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         });
       } catch (error: any) {
         fastify.log.error(`Error activating user: ${error.message}`);
-
-        if (error.message.includes('Invalid or already activated')) {
-          reply.status(404).send({
-            message: error.message,
-          });
-        } else {
-          reply.status(500).send({
-            message: 'Failed to activate user account',
-            error: error.message,
-          });
-        }
+        reply.status(500).send({
+          message: 'Failed to activate user account',
+          error: error.message,
+        });
       }
     },
   });

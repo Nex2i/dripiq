@@ -95,7 +95,7 @@ export default function SetupPassword() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (user && isInvited) {
+      if (user) {
         try {
           // Activate the user account in our database (change status from pending to active)
           await invitesService.activateUser(user.id)

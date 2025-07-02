@@ -41,17 +41,6 @@ export interface InviteResponse {
   }
 }
 
-export interface InviteVerificationResponse {
-  message: string
-  userTenant: {
-    id: string
-    tenantId: string
-    roleId: string
-    status: string
-    invitedAt: string
-  }
-}
-
 export interface ApiError {
   message: string
   error?: string
@@ -115,31 +104,8 @@ class InvitesService {
     }
   }
 
-  // Verify invitation token
-  async verifyInvite(token: string): Promise<InviteVerificationResponse> {
-    try {
-      const response = await fetch(`${this.baseUrl}/invites/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      })
-
-      if (!response.ok) {
-        const errorData: ApiError = await response.json()
-        throw new Error(errorData.message || 'Failed to verify invitation')
-      }
-
-      return response.json()
-    } catch (error) {
-      console.error('Error verifying invite:', error)
-      throw error
-    }
-  }
-
-  // Activate user account (when they complete password setup)
-  async activateUser(token: string): Promise<{
+  // Activate user account when they set their password
+  async activateUser(supabaseId: string): Promise<{
     message: string
     userTenant: {
       id: string
@@ -155,7 +121,7 @@ class InvitesService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ supabaseId }),
       })
 
       if (!response.ok) {

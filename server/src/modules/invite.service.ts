@@ -156,27 +156,29 @@ export class InviteService {
   }
 
   /**
-   * Verify invitation token (using Supabase ID)
+   * Activate user account when they set their password
    */
-  static async verifyInviteToken(token: string): Promise<UserTenant | null> {
+  static async activateUserBySupabaseId(supabaseId: string): Promise<UserTenant | null> {
+    // Find the user by Supabase ID
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.supabaseId, supabaseId))
+      .limit(1);
+
+    if (!userRecord) {
+      return null;
+    }
+
+    // Find pending user-tenant relationship
     const [userTenant] = await db
       .select()
       .from(userTenants)
-      .innerJoin(users, eq(userTenants.userId, users.id))
-      .where(and(eq(users.supabaseId, token), eq(userTenants.status, 'pending')))
+      .where(and(eq(userTenants.userId, userRecord.id), eq(userTenants.status, 'pending')))
       .limit(1);
 
-    return userTenant?.user_tenants || null;
-  }
-
-  /**
-   * Activate user account (when they complete password setup)
-   */
-  static async activateUser(token: string): Promise<UserTenant> {
-    const userTenant = await this.verifyInviteToken(token);
-
     if (!userTenant) {
-      throw new Error('Invalid or already activated invitation token');
+      return null;
     }
 
     // Update user-tenant status to active
@@ -190,11 +192,7 @@ export class InviteService {
       .where(eq(userTenants.id, userTenant.id))
       .returning();
 
-    if (!updatedUserTenant) {
-      throw new Error('Failed to activate user');
-    }
-
-    return updatedUserTenant;
+    return updatedUserTenant || null;
   }
 
   /**
