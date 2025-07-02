@@ -78,7 +78,11 @@ async function createSeedUser() {
   const [seedUser] = await db
     .insert(users)
     .values({
-      supabaseId: 'fee55c3d-5077-41ba-8e42-a2f97c64cd92',
+      // supabaseId should be different if not prod
+      supabaseId:
+        process.env.NODE_ENV === 'production'
+          ? 'fee55c3d-5077-41ba-8e42-a2f97c64cd92'
+          : '91d39f85-07b7-4ae7-8da9-b4e4e675ce55',
       email: 'ryanzhutch@gmail.com',
       name: 'Ryan Hutchison',
       createdAt: new Date('2025-06-30T03:46:22.185Z'),
