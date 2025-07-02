@@ -39,7 +39,10 @@ export interface UserPermissions {
 
 export class RoleService {
   /**
-   * Create a new role
+   * Creates a new role in the database.
+   * @param roleData - The data for the new role.
+   * @returns A promise that resolves to the created role.
+   * @throws Throws an error if the role creation fails.
    */
   static async createRole(roleData: CreateRoleData): Promise<Role> {
     const newRole: NewRole = {
@@ -57,7 +60,10 @@ export class RoleService {
   }
 
   /**
-   * Create a new permission
+   * Creates a new permission in the database.
+   * @param permissionData - The data for the new permission.
+   * @returns A promise that resolves to the created permission.
+   * @throws Throws an error if the permission creation fails.
    */
   static async createPermission(permissionData: CreatePermissionData): Promise<Permission> {
     const newPermission: NewPermission = {
@@ -77,7 +83,11 @@ export class RoleService {
   }
 
   /**
-   * Assign permission to role
+   * Assigns a permission to a role.
+   * If the permission is already assigned to the role, it returns the existing relationship.
+   * @param roleId - The ID of the role.
+   * @param permissionId - The ID of the permission to assign.
+   * @returns A promise that resolves to the role-permission relationship object.
    */
   static async assignPermissionToRole(
     roleId: string,
@@ -116,7 +126,10 @@ export class RoleService {
   }
 
   /**
-   * Remove permission from role
+   * Removes a permission from a role.
+   * @param roleId - The ID of the role.
+   * @param permissionId - The ID of the permission to remove.
+   * @returns A promise that resolves when the permission is removed.
    */
   static async removePermissionFromRole(roleId: string, permissionId: string): Promise<void> {
     await db
@@ -127,21 +140,25 @@ export class RoleService {
   }
 
   /**
-   * Get all roles
+   * Retrieves all roles from the database.
+   * @returns A promise that resolves to an array of all roles.
    */
   static async getAllRoles(): Promise<Role[]> {
     return await db.select().from(roles);
   }
 
   /**
-   * Get all permissions
+   * Retrieves all permissions from the database.
+   * @returns A promise that resolves to an array of all permissions.
    */
   static async getAllPermissions(): Promise<Permission[]> {
     return await db.select().from(permissions);
   }
 
   /**
-   * Get role by ID with permissions
+   * Retrieves a role by its ID, including its associated permissions.
+   * @param roleId - The ID of the role to retrieve.
+   * @returns A promise that resolves to the role object with its permissions, or null if not found.
    */
   static async getRoleById(roleId: string): Promise<RoleWithPermissions | null> {
     const role = await db
@@ -172,7 +189,9 @@ export class RoleService {
   }
 
   /**
-   * Get role by name
+   * Retrieves a role by its name.
+   * @param name - The name of the role to retrieve.
+   * @returns A promise that resolves to the role object or null if not found.
    */
   static async getRoleByName(name: string): Promise<Role | null> {
     const result = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
@@ -180,7 +199,9 @@ export class RoleService {
   }
 
   /**
-   * Get permission by name
+   * Retrieves a permission by its name.
+   * @param name - The name of the permission to retrieve.
+   * @returns A promise that resolves to the permission object or null if not found.
    */
   static async getPermissionByName(name: string): Promise<Permission | null> {
     const result = await db.select().from(permissions).where(eq(permissions.name, name)).limit(1);
@@ -188,7 +209,10 @@ export class RoleService {
   }
 
   /**
-   * Get user permissions for a specific tenant
+   * Retrieves a user's permissions for a specific tenant.
+   * @param userId - The ID of the user.
+   * @param tenantId - The ID of the tenant.
+   * @returns A promise that resolves to an object containing the user's role and permissions, or null if the user is not associated with the tenant.
    */
   static async getUserPermissions(
     userId: string,
@@ -221,7 +245,12 @@ export class RoleService {
   }
 
   /**
-   * Check if user has specific permission
+   * Checks if a user has a specific permission within a tenant.
+   * @param userId - The ID of the user.
+   * @param tenantId - The ID of the tenant.
+   * @param resource - The resource the permission applies to.
+   * @param action - The action the permission allows.
+   * @returns A promise that resolves to true if the user has the permission, false otherwise.
    */
   static async userHasPermission(
     userId: string,
@@ -241,7 +270,10 @@ export class RoleService {
   }
 
   /**
-   * Check if user has admin role (full permissions)
+   * Checks if a user has an admin role or super user privileges within a tenant.
+   * @param userId - The ID of the user.
+   * @param tenantId - The ID of the tenant.
+   * @returns A promise that resolves to true if the user is an admin, false otherwise.
    */
   static async userIsAdmin(userId: string, tenantId: string): Promise<boolean> {
     const userTenant = await db
@@ -261,7 +293,11 @@ export class RoleService {
   }
 
   /**
-   * Update role
+   * Updates a role's data.
+   * @param roleId - The ID of the role to update.
+   * @param updateData - An object containing the fields to update.
+   * @returns A promise that resolves to the updated role object.
+   * @throws Throws an error if the role is not found.
    */
   static async updateRole(roleId: string, updateData: Partial<CreateRoleData>): Promise<Role> {
     const [role] = await db
@@ -281,7 +317,10 @@ export class RoleService {
   }
 
   /**
-   * Delete role
+   * Deletes a role from the database.
+   * @param roleId - The ID of the role to delete.
+   * @returns A promise that resolves to the deleted role object.
+   * @throws Throws an error if the role is not found.
    */
   static async deleteRole(roleId: string): Promise<Role> {
     const [role] = await db.delete(roles).where(eq(roles.id, roleId)).returning();

@@ -1,4 +1,4 @@
-# 🚀 dripIq
+# 🚀 DripIQ
 
 > *"Automated, intelligent follow-up for your lost leads."*
 
@@ -18,7 +18,7 @@ An AI-powered Salesforce re-engagement platform that transforms closed-lost lead
 
 ## 🎯 About
 
-dripIq solves the critical problem of lost sales opportunities by automating the re-engagement process. Instead of letting closed-lost leads disappear forever, our platform uses AI to research prospects, craft personalized messages, and execute multi-touch campaigns across email, SMS, voice, and video channels.
+DripIQ solves the critical problem of lost sales opportunities by automating the re-engagement process. Instead of letting closed-lost leads disappear forever, our platform uses AI to research prospects, craft personalized messages, and execute multi-touch campaigns across email, SMS, voice, and video channels.
 
 ### Target Users
 
@@ -62,33 +62,37 @@ dripIq solves the critical problem of lost sales opportunities by automating the
 ## 🛠 Tech Stack
 
 ### Frontend
-- **React 18** with TypeScript
-- **Vite** for build tooling
-- **TailwindCSS** for styling
-- **React Router** for navigation
-- **TanStack Query** for data fetching
-- **Zustand** for state management
+- **[React 19.0.0](https://react.dev/)** - The latest version of React with cutting-edge features
+- **[TypeScript 5.7.2](https://www.typescriptlang.org/)** - Type-safe JavaScript development
+- **[Vite 6.1.0](https://vitejs.dev/)** - Lightning-fast build tool and development server
+- **[TailwindCSS 4.0.6](https://tailwindcss.com/)** - Utility-first CSS framework with latest v4 features
+- **[@tanstack/react-router](https://tanstack.com/router)** - Type-safe routing with file-based routing patterns
+- **[@tanstack/react-query](https://tanstack.com/query)** - Powerful data synchronization for React
+- **[@tanstack/react-form](https://tanstack.com/form)** - Performant, flexible forms with validation
+- **[@tanstack/react-table](https://tanstack.com/table)** - Headless UI for building powerful tables & datagrids
+- **[@tanstack/react-store](https://tanstack.com/store)** - Framework agnostic state management
+- **[Zod](https://zod.dev/)** - TypeScript-first schema validation
 
 ### Backend
-- **Node.js** with **Fastify**
-- **TypeScript** for type safety
-- **Drizzle ORM** with **PostgreSQL**
-- **JWT** authentication
-- **Supabase** integration
-- **OpenAI/Claude** for AI capabilities
+- **[Node.js](https://nodejs.org/)** with **[Fastify](https://www.fastify.io/)**
+- **[TypeScript](https://www.typescriptlang.org/)** for type safety
+- **[Drizzle ORM](https://orm.drizzle.team/)** with **[PostgreSQL](https://www.postgresql.org/)**
+- **[JWT](https://jwt.io/)** authentication
+- **[Supabase](https://supabase.com/)** integration
+- **[OpenAI/Claude](https://www.anthropic.com/claude)** for AI capabilities
 
 ### Infrastructure
-- **PostgreSQL** database
-- **Supabase** for auth and real-time features
-- **AWS/Azure** hosting ready
-- **Docker** containerization support
+- **[PostgreSQL](https://www.postgresql.org/)** database
+- **[Supabase](https://supabase.com/)** for auth and real-time features
+- **[AWS/Azure](https://aws.amazon.com/)** hosting ready
+- **[Docker](https://www.docker.com/)** containerization support
 
 ### Third-Party Integrations
-- **Salesforce API** (OAuth, REST)
-- **ElevenLabs** (Text-to-Speech)
-- **Twilio** (SMS, Voice)
-- **SendGrid/Mailgun** (Email)
-- **Calendar APIs** (Google/Outlook)
+- **[Salesforce API](https://developer.salesforce.com/docs/apis)** (OAuth, REST)
+- **[ElevenLabs](https://beta.elevenlabs.io/)** (Text-to-Speech)
+- **[Twilio](https://www.twilio.com/)** (SMS, Voice)
+- **[SendGrid/Mailgun](https://sendgrid.com/)** (Email)
+- **[Calendar APIs](https://developers.google.com/calendar)** (Google/Outlook)
 
 ## 🚀 Getting Started
 
@@ -185,7 +189,7 @@ dripIq solves the critical problem of lost sales opportunities by automating the
    ```
 
 6. **Access the Application**
-   - Frontend: http://localhost:5173
+   - Frontend: http://localhost:3000
    - Backend API: http://localhost:3001
    - API Documentation: http://localhost:3001/docs
 
@@ -278,4 +282,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by the dripIq team**
+**Built with ❤️ by the DripIQ team**

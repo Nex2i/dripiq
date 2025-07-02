@@ -2,6 +2,12 @@ import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import db from '../libs/drizzleClient';
 import { leads, NewLead } from '../db/schema';
 
+/**
+ * Retrieves a list of leads for a specific tenant, with optional search functionality.
+ * @param tenantId - The ID of the tenant to retrieve leads for.
+ * @param searchQuery - An optional string to search for in the lead's name, email, company, or phone number.
+ * @returns A promise that resolves to an array of lead objects.
+ */
 export const getLeads = async (tenantId: string, searchQuery?: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
@@ -34,6 +40,12 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
   return result;
 };
 
+/**
+ * Creates a new lead for a specific tenant.
+ * @param tenantId - The ID of the tenant the lead will belong to.
+ * @param lead - The data for the new lead.
+ * @returns A promise that resolves to the newly created lead object.
+ */
 export const createLead = async (tenantId: string, lead: Omit<NewLead, 'tenantId'>) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
@@ -48,6 +60,12 @@ export const createLead = async (tenantId: string, lead: Omit<NewLead, 'tenantId
   return result[0];
 };
 
+/**
+ * Retrieves a single lead by its ID, ensuring it belongs to the specified tenant.
+ * @param tenantId - The ID of the tenant the lead belongs to.
+ * @param id - The ID of the lead to retrieve.
+ * @returns A promise that resolves to the lead object, or undefined if not found.
+ */
 export const getLeadById = async (tenantId: string, id: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
@@ -60,6 +78,13 @@ export const getLeadById = async (tenantId: string, id: string) => {
   return result[0];
 };
 
+/**
+ * Updates a lead's data, ensuring it belongs to the specified tenant.
+ * @param tenantId - The ID of the tenant the lead belongs to.
+ * @param id - The ID of the lead to update.
+ * @param leadData - An object containing the fields to update.
+ * @returns A promise that resolves to the updated lead object.
+ */
 export const updateLead = async (
   tenantId: string,
   id: string,
@@ -76,6 +101,12 @@ export const updateLead = async (
   return result[0];
 };
 
+/**
+ * Deletes a lead, ensuring it belongs to the specified tenant.
+ * @param tenantId - The ID of the tenant the lead belongs to.
+ * @param id - The ID of the lead to delete.
+ * @returns A promise that resolves to the deleted lead object.
+ */
 export const deleteLead = async (tenantId: string, id: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
@@ -87,6 +118,12 @@ export const deleteLead = async (tenantId: string, id: string) => {
   return result[0];
 };
 
+/**
+ * Deletes multiple leads in bulk, ensuring they all belong to the specified tenant.
+ * @param tenantId - The ID of the tenant the leads belong to.
+ * @param ids - An array of lead IDs to delete.
+ * @returns A promise that resolves to an array of the deleted lead objects.
+ */
 export const bulkDeleteLeads = async (tenantId: string, ids: string[]) => {
   if (ids.length === 0) {
     return [];

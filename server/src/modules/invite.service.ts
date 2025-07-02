@@ -30,7 +30,11 @@ export interface UserWithInviteInfo {
 
 export class InviteService {
   /**
-   * Create a new user invitation by immediately creating the user and tenant relationship
+   * Creates a new user invitation by immediately creating the user and a pending user-tenant relationship.
+   * @param data - The data for the new invitation.
+   * @param supabaseId - The Supabase ID for the new user.
+   * @returns A promise that resolves to an object containing the new user-tenant relationship and a token for password setup.
+   * @throws Throws an error if a user with the same email already exists in the tenant.
    */
   static async createInvite(
     data: CreateInviteData,
@@ -83,7 +87,11 @@ export class InviteService {
   }
 
   /**
-   * Get all users for a tenant
+   * Retrieves all users for a specific tenant, with pagination.
+   * @param tenantId - The ID of the tenant.
+   * @param page - The page number to retrieve.
+   * @param limit - The number of users per page.
+   * @returns A promise that resolves to an object containing the paginated list of users and pagination details.
    */
   static async getTenantUsers(
     tenantId: string,
@@ -158,7 +166,10 @@ export class InviteService {
   }
 
   /**
-   * Activate user account when they set their password
+   * Activates a user's account by updating their user-tenant relationship status to 'active'.
+   * This is typically called after a user sets their password for the first time.
+   * @param supabaseId - The Supabase ID of the user to activate.
+   * @returns A promise that resolves to the updated user-tenant relationship object, or null if not found.
    */
   static async activateUserBySupabaseId(supabaseId: string): Promise<UserTenant | null> {
     // Find the user by Supabase ID
@@ -198,7 +209,12 @@ export class InviteService {
   }
 
   /**
-   * Resend invitation (update user and send new setup email)
+   * Resends an invitation to a user by updating the invitation timestamp.
+   * This would typically trigger a new setup email to be sent.
+   * @param userId - The ID of the user to resend the invitation to.
+   * @param tenantId - The ID of the tenant the user is being invited to.
+   * @returns A promise that resolves to an object containing the updated user-tenant relationship and a token for password setup.
+   * @throws Throws an error if the invitation is not found or has already been activated.
    */
   static async resendInvite(
     userId: string,
@@ -240,7 +256,11 @@ export class InviteService {
   }
 
   /**
-   * Remove user from tenant
+   * Removes a user from a tenant by deleting their user-tenant relationship.
+   * @param userId - The ID of the user to remove.
+   * @param tenantId - The ID of the tenant to remove the user from.
+   * @returns A promise that resolves when the user is removed.
+   * @throws Throws an error if the user is not found in the tenant.
    */
   static async removeUser(userId: string, tenantId: string): Promise<void> {
     const result = await db
@@ -254,7 +274,10 @@ export class InviteService {
   }
 
   /**
-   * Get user-tenant relationship by user and tenant ID
+   * Retrieves the user-tenant relationship for a specific user and tenant.
+   * @param userId - The ID of the user.
+   * @param tenantId - The ID of the tenant.
+   * @returns A promise that resolves to the user-tenant relationship object, or null if not found.
    */
   static async getUserTenant(userId: string, tenantId: string): Promise<UserTenant | null> {
     const result = await db
@@ -267,7 +290,12 @@ export class InviteService {
   }
 
   /**
-   * Update user-tenant relationship with Supabase user ID
+   * Updates a user-tenant relationship with a Supabase user ID.
+   * @param userId - The internal ID of the user.
+   * @param tenantId - The ID of the tenant.
+   * @param supabaseId - The Supabase ID to associate with the user.
+   * @returns A promise that resolves to the updated user-tenant relationship object.
+   * @throws Throws an error if the user-tenant relationship is not found.
    */
   static async updateUserTenantWithSupabaseId(
     userId: string,
@@ -298,7 +326,12 @@ export class InviteService {
   }
 
   /**
-   * Update user role in a tenant
+   * Updates a user's role within a specific tenant.
+   * @param userId - The ID of the user.
+   * @param tenantId - The ID of the tenant.
+   * @param roleId - The new role ID to assign to the user.
+   * @returns A promise that resolves to the updated user-tenant relationship object.
+   * @throws Throws an error if the role ID is invalid, the user is not in the tenant, or the update fails.
    */
   static async updateUserRole(
     userId: string,
