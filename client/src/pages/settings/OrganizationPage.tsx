@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Building, AlertCircle, Globe, Tag } from 'lucide-react'
+import { Building, AlertCircle, Globe, Tag, RotateCcw } from 'lucide-react'
 import {
   useOrganization,
   useUpdateOrganization,
+  useResyncOrganization,
 } from '../../hooks/useOrganizationQuery'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -16,6 +17,7 @@ export default function OrganizationPage() {
     error,
   } = useOrganization(currentTenantId || '')
   const updateOrganizationMutation = useUpdateOrganization()
+  const resyncOrganizationMutation = useResyncOrganization()
 
   const [formData, setFormData] = useState({
     tenantName: '',
@@ -62,6 +64,16 @@ export default function OrganizationPage() {
     }
   }
 
+  const handleResync = async () => {
+    if (!organization) return
+
+    try {
+      await resyncOrganizationMutation.mutateAsync(organization.id)
+    } catch (error) {
+      console.error('Error resyncing organization:', error)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -100,13 +112,32 @@ export default function OrganizationPage() {
     <div className="space-y-4">
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-center space-x-3 mb-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-primary-400)] to-[var(--color-primary-600)] rounded-lg flex items-center justify-center shadow-md">
-            <Building className="h-4 w-4 text-white" />
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-[var(--color-primary-400)] to-[var(--color-primary-600)] rounded-lg flex items-center justify-center shadow-md">
+              <Building className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Organization Settings
+            </h2>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Organization Settings
-          </h2>
+
+          {/* Resync Button */}
+          <button
+            onClick={handleResync}
+            disabled={resyncOrganizationMutation.isPending}
+            className="group relative inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer transition-all duration-200"
+            title="Resync organization details"
+          >
+            <RotateCcw
+              className={`h-4 w-4 mr-2 transition-transform duration-600 ${
+                resyncOrganizationMutation.isPending
+                  ? 'animate-spin'
+                  : 'group-hover:rotate-180'
+              }`}
+            />
+            {resyncOrganizationMutation.isPending ? 'Resyncing...' : 'Resync'}
+          </button>
         </div>
         <p className="text-gray-600">
           Manage your organization's core details and information.

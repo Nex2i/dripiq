@@ -85,4 +85,38 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
       }
     },
   });
+
+  // POST /organizations/:id/resync - Resync organization details
+  fastify.route<{
+    Params: OrganizationParams;
+  }>({
+    method: 'POST',
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/:id/resync`,
+    handler: async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const user = (request as any).user;
+
+        // Verify user has access to this organization
+        const tenant = await TenantService.getTenantByIdSecure(user.id, id);
+        if (!tenant) {
+          return reply.status(404).send({ message: 'Organization not found' });
+        }
+
+        // TODO: Implement actual resync logic here
+        // For now, just return a 200 status
+        return reply.status(200).send({
+          message: 'Organization details resynced successfully',
+          id: tenant.id,
+        });
+      } catch (error: any) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          message: 'Internal server error',
+          error: error.message,
+        });
+      }
+    },
+  });
 }

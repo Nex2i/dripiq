@@ -50,6 +50,27 @@ export function useUpdateOrganization() {
   })
 }
 
+// Hook to resync organization details
+export function useResyncOrganization() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => organizationService.resyncOrganization(id),
+    onSuccess: (_, id) => {
+      // Invalidate and refetch organization data
+      queryClient.invalidateQueries({
+        queryKey: organizationQueryKeys.detail(id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: organizationQueryKeys.all,
+      })
+    },
+    onError: (error) => {
+      console.error('Error resyncing organization:', error)
+    },
+  })
+}
+
 // Hook to invalidate organization data (useful for manual refresh)
 export function useInvalidateOrganization() {
   const queryClient = useQueryClient()

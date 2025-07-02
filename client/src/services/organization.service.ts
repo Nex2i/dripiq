@@ -68,6 +68,36 @@ class OrganizationService {
       throw error
     }
   }
+
+  // Resync organization details
+  async resyncOrganization(
+    id: string,
+  ): Promise<{ message: string; id: string }> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
+
+      const response = await fetch(
+        `${this.baseUrl}/organizations/${id}/resync`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
+        },
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to resync organization')
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error resyncing organization:', error)
+      throw error
+    }
+  }
 }
 
 export const organizationService = new OrganizationService()
