@@ -23,7 +23,10 @@ export interface TenantWithUsers extends Tenant {
 
 export class TenantService {
   /**
-   * Create a new tenant in the database
+   * Creates a new tenant in the database.
+   * @param tenantData - The data for the new tenant.
+   * @returns A promise that resolves to the created tenant.
+   * @throws Throws an error if the tenant creation fails.
    */
   static async createTenant(tenantData: CreateTenantData): Promise<Tenant> {
     const newTenant: NewTenant = {
@@ -40,7 +43,9 @@ export class TenantService {
   }
 
   /**
-   * Get tenant by ID with users
+   * Retrieves a tenant by its ID, including a list of its associated users.
+   * @param tenantId - The ID of the tenant to retrieve.
+   * @returns A promise that resolves to the tenant object with its users, or null if not found.
    */
   static async getTenantById(tenantId: string): Promise<TenantWithUsers | null> {
     const tenant = await db
@@ -71,7 +76,9 @@ export class TenantService {
   }
 
   /**
-   * Get tenant by name
+   * Retrieves a tenant by its name.
+   * @param name - The name of the tenant to retrieve.
+   * @returns A promise that resolves to the tenant object or null if not found.
    */
   static async getTenantByName(name: string): Promise<Tenant | null> {
     const result = await db.select().from(tenants).where(eq(tenants.name, name)).limit(1);
@@ -80,7 +87,13 @@ export class TenantService {
   }
 
   /**
-   * Add user to tenant with role
+   * Adds a user to a tenant with a specific role.
+   * If the user is already associated with the tenant, it returns the existing relationship.
+   * @param userId - The ID of the user to add.
+   * @param tenantId - The ID of the tenant to which the user will be added.
+   * @param roleId - The ID of the role to assign to the user within the tenant.
+   * @param isSuperUser - A boolean indicating if the user should have super user privileges in the tenant.
+   * @returns A promise that resolves to the user-tenant relationship object.
    */
   static async addUserToTenant(
     userId: string,
@@ -118,7 +131,9 @@ export class TenantService {
   }
 
   /**
-   * Get user's tenants
+   * Retrieves all tenants a user is associated with.
+   * @param userId - The ID of the user.
+   * @returns A promise that resolves to an array of user-tenant objects, with the full tenant object nested.
    */
   static async getUserTenants(userId: string): Promise<(UserTenant & { tenant: Tenant })[]> {
     const result = await db
@@ -134,7 +149,12 @@ export class TenantService {
   }
 
   /**
-   * Update tenant data (with user access validation)
+   * Updates a tenant's data after validating that the requesting user has access.
+   * @param userId - The ID of the user making the request.
+   * @param tenantId - The ID of the tenant to update.
+   * @param updateData - An object containing the fields to update.
+   * @returns A promise that resolves to the updated tenant object.
+   * @throws Throws an error if the tenant is not found.
    */
   static async updateTenant(
     userId: string,
@@ -162,7 +182,11 @@ export class TenantService {
   }
 
   /**
-   * Delete tenant (with user access validation)
+   * Deletes a tenant after validating that the requesting user has super user access.
+   * @param userId - The ID of the user making the request.
+   * @param tenantId - The ID of the tenant to delete.
+   * @returns A promise that resolves to the deleted tenant object.
+   * @throws Throws an error if the tenant is not found.
    */
   static async deleteTenant(userId: string, tenantId: string): Promise<Tenant> {
     // Validate user has super user access to this tenant
@@ -179,7 +203,10 @@ export class TenantService {
   }
 
   /**
-   * Get tenant by ID (with user access validation)
+   * Retrieves a tenant by its ID securely, by first validating user access.
+   * @param userId - The ID of the user making the request.
+   * @param tenantId - The ID of the tenant to retrieve.
+   * @returns A promise that resolves to the tenant object with its users, or null if not found.
    */
   static async getTenantByIdSecure(
     userId: string,

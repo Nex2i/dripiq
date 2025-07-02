@@ -10,7 +10,10 @@ export interface CreateUserData {
 
 export class UserService {
   /**
-   * Create a new user in the database
+   * Creates a new user in the database.
+   * If a user with the same Supabase ID already exists, it returns the existing user.
+   * @param userData - The data for the new user.
+   * @returns A promise that resolves to the created or existing user.
    */
   static async createUser(userData: CreateUserData): Promise<User> {
     try {
@@ -43,7 +46,9 @@ export class UserService {
   }
 
   /**
-   * Get user by Supabase ID
+   * Retrieves a user by their Supabase ID.
+   * @param supabaseId - The Supabase ID of the user.
+   * @returns A promise that resolves to the user object or null if not found.
    */
   static async getUserBySupabaseId(supabaseId: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
@@ -52,7 +57,9 @@ export class UserService {
   }
 
   /**
-   * Get user by email
+   * Retrieves a user by their email address.
+   * @param email - The email address of the user.
+   * @returns A promise that resolves to the user object or null if not found.
    */
   static async getUserByEmail(email: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -61,7 +68,9 @@ export class UserService {
   }
 
   /**
-   * Get user by ID
+   * Retrieves a user by their internal database ID.
+   * @param id - The internal ID of the user.
+   * @returns A promise that resolves to the user object or null if not found.
    */
   static async getUserById(id: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
@@ -70,7 +79,11 @@ export class UserService {
   }
 
   /**
-   * Update user data
+   * Updates a user's data based on their Supabase ID.
+   * @param supabaseId - The Supabase ID of the user to update.
+   * @param updateData - An object containing the fields to update.
+   * @returns A promise that resolves to the updated user object.
+   * @throws Throws an error if the user is not found.
    */
   static async updateUser(supabaseId: string, updateData: Partial<CreateUserData>): Promise<User> {
     const [user] = await db
@@ -90,7 +103,10 @@ export class UserService {
   }
 
   /**
-   * Delete user
+   * Deletes a user from the database based on their Supabase ID.
+   * @param supabaseId - The Supabase ID of the user to delete.
+   * @returns A promise that resolves to the deleted user object.
+   * @throws Throws an error if the user is not found.
    */
   static async deleteUser(supabaseId: string): Promise<User> {
     const [user] = await db.delete(users).where(eq(users.supabaseId, supabaseId)).returning();
@@ -103,7 +119,10 @@ export class UserService {
   }
 
   /**
-   * Optimized method for authentication - gets user and tenants in a single query
+   * Retrieves a user and their associated tenants in a single, optimized query.
+   * This method is primarily used for authentication purposes.
+   * @param supabaseId - The Supabase ID of the user.
+   * @returns A promise that resolves to an object containing the user and their tenants, or null if the user is not found.
    */
   static async getUserWithTenantsForAuth(supabaseId: string): Promise<{
     user: User;
@@ -170,7 +189,11 @@ export class UserService {
   }
 
   /**
-   * Get users by tenant (with tenant access validation)
+   * Retrieves all users associated with a specific tenant.
+   * It also validates that the user making the request has access to that tenant.
+   * @param requestingUserId - The ID of the user making the request, used for validation.
+   * @param tenantId - The ID of the tenant for which to retrieve users.
+   * @returns A promise that resolves to an array of user-tenant objects, with the full user object nested.
    */
   static async getUsersByTenant(
     requestingUserId: string,
