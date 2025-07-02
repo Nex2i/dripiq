@@ -16,6 +16,7 @@ import Register from './pages/auth/Register'
 import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
 import UsersPage from './pages/settings/UsersPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -151,6 +152,13 @@ const tanStackQueryRoute = createRoute({
   component: () => <TanStackQueryDemo />,
 })
 
+// Catch-all 404 route
+const notFoundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '$',
+  component: () => <NotFoundPage />,
+})
+
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   leadsRoute,
@@ -174,6 +182,7 @@ const routeTree = rootRoute.addChildren([
   setupPasswordRoute,
   protectedRouteTree,
   authRouteTree,
+  notFoundRoute,
 ])
 
 // Create and export the router
