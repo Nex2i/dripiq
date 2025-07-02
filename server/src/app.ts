@@ -47,7 +47,7 @@ async function startServer() {
       }
 
       // Allow your production backend domain
-      if (origin.includes('dripiq.onrender.com')) {
+      if (origin.includes('.onrender.com')) {
         return callback(null, true);
       }
 
@@ -55,8 +55,8 @@ async function startServer() {
       return callback(null, true);
     },
     credentials: CREDENTIALS === 'true',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: '*',
+    allowedHeaders: '*',
   });
   await app.register(fastifyHelmet);
 
