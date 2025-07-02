@@ -81,7 +81,6 @@ class OrganizationService {
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             ...authHeaders,
           },
         },
