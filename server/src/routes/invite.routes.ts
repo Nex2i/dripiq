@@ -147,31 +147,29 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
       body: verifyInviteSchema,
       tags: ['Invites'],
       summary: 'Verify Invitation Token',
-      description: 'Verify an invitation token and return invitation details.',
+      description: 'Verify an invitation token and return user details.',
     },
     handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
       try {
         const { token } = request.body;
 
-        const invite = await InviteService.verifyInviteToken(token);
+        const userTenant = await InviteService.verifyInviteToken(token);
 
-        if (!invite) {
+        if (!userTenant) {
           reply.status(404).send({
-            message: 'Invalid or expired invitation token',
+            message: 'Invalid or already activated invitation token',
           });
           return;
         }
 
         reply.send({
           message: 'Token is valid',
-          invite: {
-            id: invite.id,
-            email: invite.email,
-            firstName: invite.firstName,
-            lastName: invite.lastName,
-            role: invite.role,
-            tenantId: invite.tenantId,
-            expiresAt: invite.expiresAt,
+          userTenant: {
+            id: userTenant.id,
+            tenantId: userTenant.tenantId,
+            roleId: userTenant.roleId,
+            status: userTenant.status,
+            invitedAt: userTenant.invitedAt,
           },
         });
       } catch (error: any) {
@@ -184,73 +182,42 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     },
   });
 
-  // Accept invitation
+  // Activate user account (when they complete password setup)
   fastify.route({
     method: HttpMethods.POST,
-    url: `${basePath}/invites/accept`,
-    // preHandler: [fastify.authPrehandler],
+    url: `${basePath}/invites/activate`,
     schema: {
       body: verifyInviteSchema,
       tags: ['Invites'],
-      summary: 'Accept Invitation',
-      description: 'Accept an invitation and create user seat.',
+      summary: 'Activate User Account',
+      description: 'Activate a user account after password setup.',
     },
     handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
       try {
         const { token } = request.body;
 
-        const result = await InviteService.acceptInvite(token);
-
-        // Check if this is a new user who needs to set their password
-        // New users will have been created via inviteUserByEmail and need to set password
-        let needsPasswordSetup = false;
-        let passwordSetupUrl = null;
-
-        if (result.invite.supabaseId) {
-          // Update Supabase user to enable login
-          await SupabaseAdminService.updateUser(result.invite.supabaseId, {
-            email_confirm: true,
-            user_metadata: {
-              invited: true,
-              tenantId: result.invite.tenantId,
-            },
-          });
-
-          // Generate a password reset link for new users to set their password
-          try {
-            const resetLink = await SupabaseAdminService.generateLink({
-              type: 'recovery',
-              email: result.invite.email,
-              redirectTo: `${process.env.FRONTEND_ORIGIN}/auth/setup-password?invited=true`,
-            });
-            needsPasswordSetup = true;
-            passwordSetupUrl = resetLink;
-          } catch (error: any) {
-            fastify.log.warn(`Could not generate password setup link: ${error.message}`);
-          }
-        }
+        const userTenant = await InviteService.activateUser(token);
 
         reply.send({
-          message: 'Invitation accepted successfully',
-          invite: result.invite,
-          seat: result.seat,
-          needsPasswordSetup,
-          passwordSetupUrl,
+          message: 'User account activated successfully',
+          userTenant: {
+            id: userTenant.id,
+            tenantId: userTenant.tenantId,
+            roleId: userTenant.roleId,
+            status: userTenant.status,
+            acceptedAt: userTenant.acceptedAt,
+          },
         });
       } catch (error: any) {
-        fastify.log.error(`Error accepting invitation: ${error.message}`);
+        fastify.log.error(`Error activating user: ${error.message}`);
 
-        if (error.message.includes('Invalid or expired')) {
+        if (error.message.includes('Invalid or already activated')) {
           reply.status(404).send({
-            message: error.message,
-          });
-        } else if (error.message.includes('already a member')) {
-          reply.status(409).send({
             message: error.message,
           });
         } else {
           reply.status(500).send({
-            message: 'Failed to accept invitation',
+            message: 'Failed to activate user account',
             error: error.message,
           });
         }
@@ -261,44 +228,55 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
   // Resend invitation (Admin only)
   fastify.route({
     method: HttpMethods.POST,
-    url: `${basePath}/invites/:inviteId/resend`,
+    url: `${basePath}/users/:userId/resend`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      params: Type.Object({ inviteId: Type.String() }),
+      params: Type.Object({ userId: Type.String() }),
       tags: ['Invites'],
       summary: 'Resend Invitation',
-      description: 'Resend an invitation email. Admin only.',
+      description: 'Resend an invitation email for a pending user. Admin only.',
     },
     handler: async (
-      request: FastifyRequest<{ Params: { inviteId: string } }>,
+      request: FastifyRequest<{ Params: { userId: string } }>,
       reply: FastifyReply
     ) => {
       try {
-        const { inviteId } = request.params;
-        const currentUser = (request as any).user;
+        const { userId } = request.params;
+        const tenantId = (request as any).tenantId;
 
-        const { invite, token } = await InviteService.resendInvite(inviteId);
+        const { userTenant, token } = await InviteService.resendInvite(userId, tenantId);
 
         // Use Supabase's invite functionality to resend
-        const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/accept-invite?token=${token}`;
+        const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/setup-password`;
+
+        // Note: We'll need to get user email from the user record
+        const { UserService } = await import('@/modules/user.service');
+        const user = await UserService.getUserById(userId);
+
+        if (!user) {
+          reply.status(404).send({ message: 'User not found' });
+          return;
+        }
+
         await SupabaseAdminService.inviteUserByEmail({
-          email: invite.email,
+          email: user.email,
           redirectTo: redirectUrl,
           data: {
-            workspaceId: invite.tenantId,
-            inviteToken: token,
-            firstName: invite.firstName,
-            lastName: invite.lastName,
-            role: invite.role,
+            tenantId: tenantId,
+            firstName: user.name?.split(' ')[0] || '',
+            lastName: user.name?.split(' ').slice(1).join(' ') || '',
+            role: userTenant.roleId,
           },
         });
 
         reply.send({
           message: 'Invitation resent successfully',
-          invite: {
-            id: invite.id,
-            email: invite.email,
-            expiresAt: invite.expiresAt,
+          userTenant: {
+            id: userTenant.id,
+            userId: userId,
+            tenantId: tenantId,
+            status: userTenant.status,
+            invitedAt: userTenant.invitedAt,
           },
         });
       } catch (error: any) {
@@ -311,41 +289,44 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     },
   });
 
-  // Revoke invitation (Admin only)
+  // Remove user from tenant (Admin only)
   fastify.route({
     method: HttpMethods.DELETE,
-    url: `${basePath}/invites/:inviteId`,
+    url: `${basePath}/users/:userId`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      params: Type.Object({ inviteId: Type.String() }),
+      params: Type.Object({ userId: Type.String() }),
       body: false, // Explicitly indicate no body is expected
       tags: ['Invites'],
-      summary: 'Revoke Invitation',
-      description: 'Revoke/cancel an invitation. Admin only.',
+      summary: 'Remove User',
+      description: 'Remove a user from the tenant. Admin only.',
     },
     handler: async (
-      request: FastifyRequest<{ Params: { inviteId: string } }>,
+      request: FastifyRequest<{ Params: { userId: string } }>,
       reply: FastifyReply
     ) => {
       try {
-        const { inviteId } = request.params;
+        const { userId } = request.params;
+        const tenantId = (request as any).tenantId;
 
-        const revokedInvite = await InviteService.revokeInvite(inviteId);
+        await InviteService.removeUser(userId, tenantId);
 
         reply.send({
-          message: 'Invitation revoked successfully',
-          invite: {
-            id: revokedInvite.id,
-            email: revokedInvite.email,
-            status: revokedInvite.status,
-          },
+          message: 'User removed from workspace successfully',
         });
       } catch (error: any) {
-        fastify.log.error(`Error revoking invitation: ${error.message}`);
-        reply.status(500).send({
-          message: 'Failed to revoke invitation',
-          error: error.message,
-        });
+        fastify.log.error(`Error removing user: ${error.message}`);
+
+        if (error.message.includes('not found')) {
+          reply.status(404).send({
+            message: error.message,
+          });
+        } else {
+          reply.status(500).send({
+            message: 'Failed to remove user',
+            error: error.message,
+          });
+        }
       }
     },
   });

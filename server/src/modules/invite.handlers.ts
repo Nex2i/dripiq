@@ -87,10 +87,9 @@ export async function handleExistingSupabaseUser(
 
   if (existingDbUser) {
     // Check if they're already a member of this tenant
-    const existingTenantUsers = await TenantService.getUserTenants(existingDbUser.id);
-    const isAlreadyMember = existingTenantUsers.some((ut) => ut.tenantId === tenantId);
+    const existingUserTenant = await InviteService.getUserTenant(existingDbUser.id, tenantId);
 
-    if (isAlreadyMember) {
+    if (existingUserTenant) {
       throw new Error('User is already a member of this workspace');
     }
 
@@ -114,34 +113,42 @@ export async function handleExistingSupabaseUser(
  * Handle the complete new user invitation flow
  */
 export async function createNewUserInvite(inviteData: CreateInviteData, tenantId: string) {
-  // Create invitation in database first to get the invite ID
-  const { invite, token } = await InviteService.createInvite(inviteData);
-
-  // Use Supabase's built-in invite functionality with invite ID in redirect URL
-  const redirectUrl = `${process.env.FRONTEND_ORIGIN}/accept-invite?token=${token}`;
+  // Use Supabase's built-in invite functionality first to get the user ID
+  const redirectUrl = `${process.env.FRONTEND_ORIGIN}/setup-password`;
   const supabaseUser = await SupabaseAdminService.inviteUserByEmail({
     email: inviteData.email,
     redirectTo: redirectUrl,
     data: {
-      workspaceId: tenantId,
-      inviteToken: token,
+      tenantId: tenantId,
       firstName: inviteData.firstName,
       lastName: inviteData.lastName,
       role: inviteData.role,
     },
   });
 
-  // Update the invitation record with the Supabase user ID
-  await InviteService.updateInviteWithSupabaseId(invite.id, supabaseUser.id);
+  // Get the role ID for the invite data
+  const role = await RoleService.getRoleByName(inviteData.role);
+  if (!role) {
+    throw new Error('Invalid role specified');
+  }
+
+  // Create the user and user-tenant relationship immediately with the Supabase ID
+  const { userTenant, token } = await InviteService.createInvite(
+    {
+      ...inviteData,
+      role: role.id, // Pass role ID instead of role name
+    },
+    supabaseUser.id
+  );
 
   return {
-    message: 'Invitation sent successfully',
+    message: 'User has been invited and account created',
     invite: {
-      id: invite.id,
-      email: invite.email,
-      role: invite.role,
-      status: invite.status,
-      expiresAt: invite.expiresAt,
+      id: userTenant.id,
+      email: inviteData.email,
+      role: inviteData.role,
+      status: userTenant.status,
+      invitedAt: userTenant.invitedAt,
     },
   };
 }

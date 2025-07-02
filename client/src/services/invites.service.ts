@@ -6,10 +6,10 @@ export interface User {
   lastName?: string
   email: string
   role: string
-  status: 'pending' | 'active' | 'expired'
+  status: 'pending' | 'active'
   invitedAt?: string
   lastLogin?: string
-  source: 'invite' | 'seat'
+  source: 'user_tenant'
 }
 
 export interface CreateInviteData {
@@ -37,20 +37,18 @@ export interface InviteResponse {
     email: string
     role: string
     status: string
-    expiresAt: string
+    invitedAt: string
   }
 }
 
 export interface InviteVerificationResponse {
   message: string
-  invite: {
+  userTenant: {
     id: string
-    email: string
-    firstName: string
-    lastName?: string
-    role: string
     tenantId: string
-    expiresAt: string
+    roleId: string
+    status: string
+    invitedAt: string
   }
 }
 
@@ -62,7 +60,7 @@ export interface ApiError {
 class InvitesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
-  // Get all users for a tenant (combines seats + invites)
+  // Get all users for a tenant
   async getUsers(page = 1, limit = 25): Promise<UsersResponse> {
     try {
       const authHeaders = await authService.getAuthHeaders()
@@ -140,55 +138,52 @@ class InvitesService {
     }
   }
 
-  // Accept invitation
-  async acceptInvite(token: string): Promise<{
+  // Activate user account (when they complete password setup)
+  async activateUser(token: string): Promise<{
     message: string
-    invite: any
-    seat: any
-    needsPasswordSetup?: boolean
-    passwordSetupUrl?: string
+    userTenant: {
+      id: string
+      tenantId: string
+      roleId: string
+      status: string
+      acceptedAt: string
+    }
   }> {
     try {
-      const authHeaders = await authService.getAuthHeaders()
-
-      const response = await fetch(`${this.baseUrl}/invites/accept`, {
+      const response = await fetch(`${this.baseUrl}/invites/activate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...authHeaders,
         },
         body: JSON.stringify({ token }),
       })
 
       if (!response.ok) {
         const errorData: ApiError = await response.json()
-        throw new Error(errorData.message || 'Failed to accept invitation')
+        throw new Error(errorData.message || 'Failed to activate user account')
       }
 
       return response.json()
     } catch (error) {
-      console.error('Error accepting invite:', error)
+      console.error('Error activating user:', error)
       throw error
     }
   }
 
   // Resend invitation
   async resendInvite(
-    inviteId: string,
-  ): Promise<{ message: string; invite: any }> {
+    userId: string,
+  ): Promise<{ message: string; userTenant: any }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
-      const response = await fetch(
-        `${this.baseUrl}/invites/${inviteId}/resend`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...authHeaders,
-          },
+      const response = await fetch(`${this.baseUrl}/users/${userId}/resend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
         },
-      )
+      })
 
       if (!response.ok) {
         const errorData: ApiError = await response.json()
@@ -202,14 +197,12 @@ class InvitesService {
     }
   }
 
-  // Revoke invitation
-  async revokeInvite(
-    inviteId: string,
-  ): Promise<{ message: string; invite: any }> {
+  // Remove user from tenant
+  async removeUser(userId: string): Promise<{ message: string }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
-      const response = await fetch(`${this.baseUrl}/invites/${inviteId}`, {
+      const response = await fetch(`${this.baseUrl}/users/${userId}`, {
         method: 'DELETE',
         headers: {
           ...authHeaders,
@@ -218,12 +211,12 @@ class InvitesService {
 
       if (!response.ok) {
         const errorData: ApiError = await response.json()
-        throw new Error(errorData.message || 'Failed to revoke invitation')
+        throw new Error(errorData.message || 'Failed to remove user')
       }
 
       return response.json()
     } catch (error) {
-      console.error('Error revoking invite:', error)
+      console.error('Error removing user:', error)
       throw error
     }
   }

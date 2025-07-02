@@ -32,8 +32,6 @@ export default function UsersPage() {
         return `${baseClasses} bg-green-100 text-green-800`
       case 'pending':
         return `${baseClasses} bg-yellow-100 text-yellow-800`
-      case 'expired':
-        return `${baseClasses} bg-red-100 text-red-800`
       default:
         return `${baseClasses} bg-gray-100 text-gray-800`
     }
@@ -94,18 +92,14 @@ export default function UsersPage() {
     }
   }
 
-  const handleRevokeInvite = async (userId: string) => {
+  const handleRemoveUser = async (userId: string) => {
     try {
-      await invitesService.revokeInvite(userId)
-      // Update the user status locally
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === userId ? { ...user, status: 'expired' as const } : user,
-        ),
-      )
-      console.log('Invite revoked successfully')
+      await invitesService.removeUser(userId)
+      // Remove the user from the local state
+      setUsers((prev) => prev.filter((user) => user.id !== userId))
+      console.log('User removed successfully')
     } catch (err) {
-      console.error('Error revoking invite:', err)
+      console.error('Error removing user:', err)
       // Could show an error message here
     }
   }
@@ -256,9 +250,9 @@ export default function UsersPage() {
                                     <RefreshCw className="h-4 w-4" />
                                   </button>
                                   <button
-                                    onClick={() => handleRevokeInvite(user.id)}
+                                    onClick={() => handleRemoveUser(user.id)}
                                     className="text-red-600 hover:text-red-900 p-1"
-                                    title="Revoke invite"
+                                    title="Remove user"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </button>

@@ -3,6 +3,7 @@ import { useRouter, useSearch } from '@tanstack/react-router'
 import { KeyRound, CheckCircle, XCircle } from 'lucide-react'
 import Logo from '../../components/Logo'
 import { supabase } from '../../lib/supabaseClient'
+import { invitesService } from '../../services/invites.service'
 
 export default function SetupPassword() {
   const router = useRouter()
@@ -87,6 +88,21 @@ export default function SetupPassword() {
 
       if (updateError) {
         throw updateError
+      }
+
+      // Get the current user to activate their account in our database
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user && isInvited) {
+        try {
+          // Activate the user account in our database (change status from pending to active)
+          await invitesService.activateUser(user.id)
+        } catch (activateError: any) {
+          console.warn('Failed to activate user in database:', activateError)
+          // Don't fail the whole process if this fails, as the password was set successfully
+        }
       }
 
       setStatus('success')

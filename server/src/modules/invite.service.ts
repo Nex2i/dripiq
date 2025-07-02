@@ -1,7 +1,5 @@
+import { db, userTenants, users, User, NewUser, UserTenant, NewUserTenant } from '@/db';
 import { eq, and, desc } from 'drizzle-orm';
-import { db, invites, seats, users, NewInvite, Invite, NewSeat } from '@/db';
-import { RoleService } from './role.service';
-import { TenantService } from './tenant.service';
 
 export interface CreateInviteData {
   tenantId: string;
@@ -24,73 +22,68 @@ export interface UserWithInviteInfo {
   lastName?: string;
   email: string;
   role: string;
-  status: 'pending' | 'active' | 'expired';
+  status: 'pending' | 'active';
   invitedAt?: Date;
   lastLogin?: Date;
-  source: 'invite' | 'seat';
+  source: 'user_tenant';
 }
 
 export class InviteService {
   /**
-   * Create a new user invitation
+   * Create a new user invitation by immediately creating the user and tenant relationship
    */
   static async createInvite(
     data: CreateInviteData,
-    supabaseId?: string
-  ): Promise<{ invite: Invite; token: string }> {
-    // Check if email already exists in seats or invites for this tenant
-    const [existingSeat, existingInvite] = await Promise.all([
-      db
-        .select()
-        .from(seats)
-        .innerJoin(users, eq(seats.supabaseUid, users.supabaseId))
-        .where(and(eq(seats.tenantId, data.tenantId), eq(users.email, data.email)))
-        .limit(1),
-      db
-        .select()
-        .from(invites)
-        .where(
-          and(
-            eq(invites.tenantId, data.tenantId),
-            eq(invites.email, data.email),
-            eq(invites.status, 'pending')
-          )
-        )
-        .limit(1),
-    ]);
+    supabaseId: string
+  ): Promise<{ userTenant: UserTenant; token: string }> {
+    // Check if email already exists in this tenant
+    const existingUserTenant = await db
+      .select()
+      .from(userTenants)
+      .innerJoin(users, eq(userTenants.userId, users.id))
+      .where(and(eq(userTenants.tenantId, data.tenantId), eq(users.email, data.email)))
+      .limit(1);
 
-    if (existingSeat.length > 0) {
-      throw new Error('User is already a member of this workspace');
+    if (existingUserTenant.length > 0) {
+      throw new Error('User with this email is already a member of this workspace');
     }
 
-    if (existingInvite.length > 0) {
-      throw new Error('An invitation is already pending for this email');
-    }
+    // Create user immediately
+    const fullName = data.lastName ? `${data.firstName} ${data.lastName}` : data.firstName;
 
-    // Create invite
-    const newInvite: NewInvite = {
-      tenantId: data.tenantId,
-      supabaseId: supabaseId || null,
-      email: data.email.toLowerCase(),
-      firstName: data.firstName,
-      lastName: data.lastName || null,
-      role: data.role,
-      status: 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    const newUser: NewUser = {
+      supabaseId: supabaseId,
+      email: data.email,
+      name: fullName,
     };
 
-    const [invite] = await db.insert(invites).values(newInvite).returning();
+    const [user] = await db.insert(users).values(newUser).returning();
 
-    if (!invite) {
-      throw new Error('Failed to create invitation');
+    if (!user) {
+      throw new Error('Failed to create user');
     }
 
-    // Use invite ID as the token
-    return { invite, token: invite.id };
+    // Create user-tenant relationship with pending status
+    const newUserTenant: NewUserTenant = {
+      userId: user.id,
+      tenantId: data.tenantId,
+      roleId: data.role, // This should be the role ID, not role name
+      status: 'pending',
+      invitedAt: new Date(),
+    };
+
+    const [userTenant] = await db.insert(userTenants).values(newUserTenant).returning();
+
+    if (!userTenant) {
+      throw new Error('Failed to create user-tenant relationship');
+    }
+
+    // Return user ID as token for password setup
+    return { userTenant, token: user.supabaseId };
   }
 
   /**
-   * Get all users (seats + invites) for a tenant
+   * Get all users for a tenant
    */
   static async getTenantUsers(
     tenantId: string,
@@ -104,71 +97,46 @@ export class InviteService {
   }> {
     const offset = (page - 1) * limit;
 
-    // Get active users (seats)
-    const activeUsersQuery = await db
+    // Get all users for this tenant
+    const tenantUsersQuery = await db
       .select({
         id: users.id,
-        name: users.name,
         email: users.email,
-        role: seats.role,
-        createdAt: seats.createdAt,
-        updatedAt: users.updatedAt,
+        name: users.name,
+        status: userTenants.status,
+        invitedAt: userTenants.invitedAt,
+        acceptedAt: userTenants.acceptedAt,
+        createdAt: userTenants.createdAt,
+        roleId: userTenants.roleId,
       })
-      .from(seats)
-      .innerJoin(users, eq(seats.supabaseUid, users.supabaseId))
-      .where(eq(seats.tenantId, tenantId))
-      .orderBy(desc(seats.createdAt));
+      .from(userTenants)
+      .innerJoin(users, eq(userTenants.userId, users.id))
+      .where(eq(userTenants.tenantId, tenantId))
+      .orderBy(desc(userTenants.createdAt));
 
-    // Get pending invitations
-    const pendingInvitesQuery = await db
-      .select({
-        id: invites.id,
-        firstName: invites.firstName,
-        lastName: invites.lastName,
-        email: invites.email,
-        role: invites.role,
-        status: invites.status,
-        createdAt: invites.createdAt,
-      })
-      .from(invites)
-      .where(eq(invites.tenantId, tenantId))
-      .orderBy(desc(invites.createdAt));
+    // Transform to UserWithInviteInfo format
+    const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
+      const [firstName, ...lastNameParts] = (ut.name || '').split(' ');
+      return {
+        id: ut.id,
+        firstName: firstName || undefined,
+        lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
+        email: ut.email,
+        role: ut.roleId, // This should be resolved to role name in a real app
+        status: ut.status as 'pending' | 'active',
+        invitedAt: ut.invitedAt || undefined,
+        lastLogin: ut.acceptedAt || undefined,
+        source: 'user_tenant' as const,
+      };
+    });
 
-    // Transform active users
-    const activeUsers: UserWithInviteInfo[] = activeUsersQuery.map((user) => ({
-      id: user.id,
-      firstName: user.name || undefined, // Split this properly if name contains first/last
-      lastName: undefined, // We'll need to modify schema or handle name splitting
-      email: user.email,
-      role: user.role,
-      status: 'active' as const,
-      invitedAt: user.createdAt,
-      lastLogin: user.updatedAt,
-      source: 'seat' as const,
-    }));
-
-    // Transform pending invites
-    const pendingInvites: UserWithInviteInfo[] = pendingInvitesQuery.map((invite) => ({
-      id: invite.id,
-      firstName: invite.firstName || undefined,
-      lastName: invite.lastName || undefined,
-      email: invite.email,
-      role: invite.role,
-      status: invite.status as 'pending' | 'active' | 'expired',
-      invitedAt: invite.createdAt,
-      lastLogin: undefined,
-      source: 'invite' as const,
-    }));
-
-    // Combine and sort
-    const allUsers: UserWithInviteInfo[] = [...activeUsers, ...pendingInvites].sort((a, b) => {
-      // Sort by status (pending first), then by role (alphabetically), then by email
+    // Sort by status (pending first), then by role, then by email
+    allUsers.sort((a, b) => {
       if (a.status !== b.status) {
-        const statusOrder = { pending: 0, expired: 1, active: 2 };
+        const statusOrder = { pending: 0, active: 1 };
         return statusOrder[a.status] - statusOrder[b.status];
       }
       if (a.role !== b.role) {
-        // Sort roles alphabetically (Admin comes before Sales)
         return a.role.localeCompare(b.role);
       }
       return a.email.localeCompare(b.email);
@@ -188,186 +156,144 @@ export class InviteService {
   }
 
   /**
-   * Verify invitation token (using invite ID)
+   * Verify invitation token (using Supabase ID)
    */
-  static async verifyInviteToken(token: string): Promise<Invite | null> {
-    const [invite] = await db
+  static async verifyInviteToken(token: string): Promise<UserTenant | null> {
+    const [userTenant] = await db
       .select()
-      .from(invites)
-      .where(and(eq(invites.id, token), eq(invites.status, 'pending')))
+      .from(userTenants)
+      .innerJoin(users, eq(userTenants.userId, users.id))
+      .where(and(eq(users.supabaseId, token), eq(userTenants.status, 'pending')))
       .limit(1);
 
-    if (!invite || invite.expiresAt < new Date()) {
-      return null;
-    }
-
-    return invite;
+    return userTenant?.user_tenants || null;
   }
 
   /**
-   * Accept invitation
+   * Activate user account (when they complete password setup)
    */
-  static async acceptInvite(token: string): Promise<{ invite: Invite; seat: any }> {
-    const invite = await this.verifyInviteToken(token);
+  static async activateUser(token: string): Promise<UserTenant> {
+    const userTenant = await this.verifyInviteToken(token);
 
-    if (!invite) {
-      throw new Error('Invalid or expired invitation token');
+    if (!userTenant) {
+      throw new Error('Invalid or already activated invitation token');
     }
 
-    // Check if user already has a seat in this tenant
-    const existingSeat = await db
-      .select()
-      .from(seats)
-      .where(and(eq(seats.tenantId, invite.tenantId)))
-      .limit(1);
-
-    if (existingSeat.length > 0) {
-      throw new Error('User is already a member of this workspace');
-    }
-
-    // Update invite status
-    const [updatedInvite] = await db
-      .update(invites)
+    // Update user-tenant status to active
+    const [updatedUserTenant] = await db
+      .update(userTenants)
       .set({
-        status: 'accepted',
+        status: 'active',
         acceptedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(invites.id, invite.id))
+      .where(eq(userTenants.id, userTenant.id))
       .returning();
 
-    // Ensure supabaseId exists
-    if (!invite.supabaseId) {
-      throw new Error('Invalid invitation: missing supabase ID');
+    if (!updatedUserTenant) {
+      throw new Error('Failed to activate user');
     }
 
-    // Create user in our database if they don't exist
-    const { UserService } = await import('@/modules/user.service');
-    let user = await UserService.getUserBySupabaseId(invite.supabaseId);
-
-    if (!user) {
-      // Create the user in our database
-      const fullName = invite.lastName
-        ? `${invite.firstName} ${invite.lastName}`
-        : invite.firstName;
-
-      user = await UserService.createUser({
-        supabaseId: invite.supabaseId,
-        email: invite.email,
-        name: fullName,
-      });
-    }
-
-    // Get the role ID from the role name
-    const role = await RoleService.getRoleByName(invite.role);
-    if (!role) {
-      throw new Error(`Invalid role specified: ${invite.role}`);
-    }
-
-    // Add user to tenant (this creates the user_tenants relationship)
-    await TenantService.addUserToTenant(user.id, invite.tenantId, role.id, false);
-
-    // Create seat (for workspace-specific permissions)
-    const newSeat: NewSeat = {
-      tenantId: invite.tenantId,
-      supabaseUid: invite.supabaseId,
-      role: invite.role,
-    };
-
-    const [seat] = await db.insert(seats).values(newSeat).returning();
-
-    if (!seat) {
-      throw new Error('Failed to create user seat');
-    }
-
-    return { invite: updatedInvite!, seat };
+    return updatedUserTenant;
   }
 
   /**
-   * Resend invitation
+   * Resend invitation (update user and send new setup email)
    */
-  static async resendInvite(inviteId: string): Promise<{ invite: Invite; token: string }> {
-    const invite = await db.select().from(invites).where(eq(invites.id, inviteId)).limit(1);
+  static async resendInvite(
+    userId: string,
+    tenantId: string
+  ): Promise<{ userTenant: UserTenant; token: string }> {
+    const [userTenant] = await db
+      .select()
+      .from(userTenants)
+      .innerJoin(users, eq(userTenants.userId, users.id))
+      .where(
+        and(
+          eq(userTenants.userId, userId),
+          eq(userTenants.tenantId, tenantId),
+          eq(userTenants.status, 'pending')
+        )
+      )
+      .limit(1);
 
-    if (!invite.length || invite[0]!.status !== 'pending') {
-      throw new Error('Invitation not found or not pending');
+    if (!userTenant) {
+      throw new Error('User invitation not found or already activated');
     }
 
-    // Update invite with extended expiry
-    const [updatedInvite] = await db
-      .update(invites)
+    // Update invite timestamp
+    const [updatedUserTenant] = await db
+      .update(userTenants)
       .set({
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        invitedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(invites.id, inviteId))
+      .where(eq(userTenants.id, userTenant.user_tenants.id))
       .returning();
 
-    // Return invite ID as token
-    return { invite: updatedInvite!, token: inviteId };
-  }
-
-  /**
-   * Revoke invitation
-   */
-  static async revokeInvite(inviteId: string): Promise<Invite> {
-    const [revokedInvite] = await db
-      .update(invites)
-      .set({
-        status: 'expired',
-        updatedAt: new Date(),
-      })
-      .where(eq(invites.id, inviteId))
-      .returning();
-
-    if (!revokedInvite) {
-      throw new Error('Invitation not found');
+    if (!updatedUserTenant) {
+      throw new Error('Failed to update invitation');
     }
 
-    return revokedInvite;
+    // Return Supabase ID as token
+    return { userTenant: updatedUserTenant, token: userTenant.users.supabaseId };
   }
 
   /**
-   * Mark expired invitations
+   * Remove user from tenant
    */
-  static async markExpiredInvites(): Promise<number> {
+  static async removeUser(userId: string, tenantId: string): Promise<void> {
     const result = await db
-      .update(invites)
-      .set({
-        status: 'expired',
-        updatedAt: new Date(),
-      })
-      .where(and(eq(invites.status, 'pending'), eq(invites.expiresAt, invites.expiresAt)))
-      .returning({ id: invites.id });
+      .delete(userTenants)
+      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
+      .returning({ id: userTenants.id });
 
-    return result.length;
+    if (result.length === 0) {
+      throw new Error('User not found in this workspace');
+    }
   }
 
   /**
-   * Get invitation by ID
+   * Get user-tenant relationship by user and tenant ID
    */
-  static async getInviteById(inviteId: string): Promise<Invite | null> {
-    const result = await db.select().from(invites).where(eq(invites.id, inviteId)).limit(1);
+  static async getUserTenant(userId: string, tenantId: string): Promise<UserTenant | null> {
+    const result = await db
+      .select()
+      .from(userTenants)
+      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
+      .limit(1);
+
     return result[0] || null;
   }
 
   /**
-   * Update invitation with Supabase user ID
+   * Update user-tenant relationship with Supabase user ID
    */
-  static async updateInviteWithSupabaseId(inviteId: string, supabaseId: string): Promise<Invite> {
-    const [updatedInvite] = await db
-      .update(invites)
+  static async updateUserTenantWithSupabaseId(
+    userId: string,
+    tenantId: string,
+    supabaseId: string
+  ): Promise<UserTenant> {
+    // First update the user record
+    await db
+      .update(users)
       .set({
         supabaseId: supabaseId,
         updatedAt: new Date(),
       })
-      .where(eq(invites.id, inviteId))
-      .returning();
+      .where(eq(users.id, userId));
 
-    if (!updatedInvite) {
-      throw new Error('Invitation not found');
+    // Get the updated user-tenant relationship
+    const [userTenant] = await db
+      .select()
+      .from(userTenants)
+      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
+      .limit(1);
+
+    if (!userTenant) {
+      throw new Error('User-tenant relationship not found');
     }
 
-    return updatedInvite;
+    return userTenant;
   }
 }

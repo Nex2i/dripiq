@@ -16,7 +16,6 @@ import Register from './pages/auth/Register'
 import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
 import UsersPage from './pages/settings/UsersPage'
-import AcceptInvitePage from './pages/AcceptInvitePage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -76,11 +75,11 @@ const landingRoute = createRoute({
   component: () => <LandingPage />,
 })
 
-// Accept invite route - public
-const acceptInviteRoute = createRoute({
+// Setup password route - public (for invited users who don't have passwords yet)
+const setupPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/accept-invite',
-  component: () => <AcceptInvitePage />,
+  path: '/setup-password',
+  component: () => <SetupPassword />,
 })
 
 // Dashboard route - protected
@@ -172,7 +171,7 @@ const authRouteTree = authRoute.addChildren([
 // Build the route tree
 const routeTree = rootRoute.addChildren([
   landingRoute,
-  acceptInviteRoute,
+  setupPasswordRoute,
   protectedRouteTree,
   authRouteTree,
 ])
