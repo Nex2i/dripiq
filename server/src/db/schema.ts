@@ -25,6 +25,8 @@ export const tenants = appSchema.table('tenants', {
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
+  organizationName: text('organization_name'),
+  organizationWebsite: text('organization_website'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

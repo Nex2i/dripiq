@@ -13,6 +13,8 @@ import {
 
 export interface CreateTenantData {
   name: string;
+  organizationName?: string;
+  organizationWebsite?: string;
 }
 
 export interface TenantWithUsers extends Tenant {

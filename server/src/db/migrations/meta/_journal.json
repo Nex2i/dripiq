@@ -50,6 +50,13 @@
       "when": 1751491358387,
       "tag": "0006_add_url_to_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1751491992008,
+      "tag": "0007_add_organization_fields_to_tenants",
+      "breakpoints": true
     }
   ]
 }
