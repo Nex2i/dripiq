@@ -7,24 +7,39 @@ import {
   Trash2,
   Users,
   AlertCircle,
+  Check,
+  X,
+  Edit3,
 } from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
 import { invitesService } from '../../services/invites.service'
-import type { User } from '../../services/invites.service'
+import type { User, Role } from '../../services/invites.service'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function UsersPage() {
   const { user } = useAuth()
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editingRole, setEditingRole] = useState<{
+    userId: string
+    currentRole: string
+    newRoleId: string
+  } | null>(null)
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 25,
     total: 0,
     totalPages: 0,
   })
+
+  // Check if current user is admin
+  const isAdmin = user?.tenants?.[0]?.role?.name === 'Admin'
+
+  console.log(user)
 
   const getStatusBadge = (status: string) => {
     const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full'
@@ -47,10 +62,38 @@ export default function UsersPage() {
     }).format(new Date(dateString))
   }
 
-  // Load users on component mount and when tenant changes
+  // Load users and roles on component mount and when tenant changes
   useEffect(() => {
-    loadUsers()
+    loadData()
   }, [user])
+
+  const loadData = async () => {
+    if (!user?.tenants?.[0]?.id) {
+      setLoading(false)
+      setError('No tenant found')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Load users and roles in parallel
+      const [usersResponse, rolesResponse] = await Promise.all([
+        invitesService.getUsers(pagination.page, pagination.limit),
+        invitesService.getRoles(),
+      ])
+
+      setUsers(usersResponse.data)
+      setPagination(usersResponse.pagination)
+      setRoles(rolesResponse)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+      console.error('Error loading data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const loadUsers = async () => {
     if (!user?.tenants?.[0]?.id) {
@@ -105,6 +148,60 @@ export default function UsersPage() {
     }
   }
 
+  const handleEditRole = (userId: string, currentRole: string) => {
+    const currentRoleObj = roles.find((role) => role.name === currentRole)
+    setEditingRole({
+      userId,
+      currentRole,
+      newRoleId: currentRoleObj?.id || '',
+    })
+  }
+
+  const handleRoleChange = (newRoleId: string) => {
+    if (editingRole) {
+      setEditingRole({
+        ...editingRole,
+        newRoleId,
+      })
+    }
+  }
+
+  const handleSaveRole = async () => {
+    if (!editingRole) return
+
+    try {
+      setUpdatingRole(editingRole.userId)
+      await invitesService.updateUserRole(
+        editingRole.userId,
+        editingRole.newRoleId,
+      )
+
+      // Update the local state
+      const newRole = roles.find((role) => role.id === editingRole.newRoleId)
+      if (newRole) {
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === editingRole.userId
+              ? { ...user, role: newRole.name }
+              : user,
+          ),
+        )
+      }
+
+      setEditingRole(null)
+      console.log('User role updated successfully')
+    } catch (err) {
+      console.error('Error updating user role:', err)
+      // Could show an error message here
+    } finally {
+      setUpdatingRole(null)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingRole(null)
+  }
+
   const emptyState = users.length === 0
 
   return (
@@ -121,13 +218,15 @@ export default function UsersPage() {
             </p>
           </div>
           <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button
-              onClick={() => setIsInviteModalOpen(true)}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Invite user
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsInviteModalOpen(true)}
+                className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Invite user
+              </button>
+            )}
           </div>
         </div>
 
@@ -149,7 +248,7 @@ export default function UsersPage() {
               <p className="mt-1 text-sm text-gray-500">{error}</p>
               <div className="mt-6">
                 <button
-                  onClick={loadUsers}
+                  onClick={loadData}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Try again
@@ -166,15 +265,17 @@ export default function UsersPage() {
               <p className="mt-1 text-sm text-gray-500">
                 Get started by inviting your first teammate.
               </p>
-              <div className="mt-6">
-                <button
-                  onClick={() => setIsInviteModalOpen(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invite your first teammate
-                </button>
-              </div>
+              {isAdmin && (
+                <div className="mt-6">
+                  <button
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Invite your first teammate
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             // Users table
@@ -208,30 +309,75 @@ export default function UsersPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
+                      {users.map((userRow) => (
+                        <tr key={userRow.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {user.firstName && user.lastName
-                              ? `${user.firstName} ${user.lastName}`
-                              : user.firstName || 'N/A'}
+                            {userRow.firstName && userRow.lastName
+                              ? `${userRow.firstName} ${userRow.lastName}`
+                              : userRow.firstName || 'N/A'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {user.email}
+                            {userRow.email}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {user.role}
+                            {editingRole?.userId === userRow.id ? (
+                              <div className="flex items-center space-x-2">
+                                <select
+                                  value={editingRole.newRoleId}
+                                  onChange={(e) =>
+                                    handleRoleChange(e.target.value)
+                                  }
+                                  className="block w-32 px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                >
+                                  {roles.map((role) => (
+                                    <option key={role.id} value={role.id}>
+                                      {role.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={handleSaveRole}
+                                  disabled={updatingRole === userRow.id}
+                                  className="p-1 text-green-600 hover:text-green-900 disabled:opacity-50"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  disabled={updatingRole === userRow.id}
+                                  className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2">
+                                <span>{userRow.role}</span>
+                                {isAdmin && (
+                                  <button
+                                    onClick={() =>
+                                      handleEditRole(userRow.id, userRow.role)
+                                    }
+                                    className="p-1 text-gray-400 hover:text-gray-600"
+                                    title="Edit role"
+                                  >
+                                    <Edit3 className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={getStatusBadge(user.status)}>
-                              {user.status.charAt(0).toUpperCase() +
-                                user.status.slice(1)}
+                            <span className={getStatusBadge(userRow.status)}>
+                              {userRow.status.charAt(0).toUpperCase() +
+                                userRow.status.slice(1)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(user.lastLogin)}
+                            {formatDate(userRow.lastLogin)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(user.invitedAt)}
+                            {formatDate(userRow.invitedAt)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
@@ -241,17 +387,19 @@ export default function UsersPage() {
                               >
                                 <Eye className="h-4 w-4" />
                               </button>
-                              {user.status === 'pending' && (
+                              {isAdmin && userRow.status === 'pending' && (
                                 <>
                                   <button
-                                    onClick={() => handleResendInvite(user.id)}
+                                    onClick={() =>
+                                      handleResendInvite(userRow.id)
+                                    }
                                     className="text-green-600 hover:text-green-900 p-1"
                                     title="Resend invite"
                                   >
                                     <RefreshCw className="h-4 w-4" />
                                   </button>
                                   <button
-                                    onClick={() => handleRemoveUser(user.id)}
+                                    onClick={() => handleRemoveUser(userRow.id)}
                                     className="text-red-600 hover:text-red-900 p-1"
                                     title="Remove user"
                                   >
@@ -321,11 +469,13 @@ export default function UsersPage() {
       </div>
 
       {/* Invite Modal */}
-      <InviteUserModal
-        isOpen={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onSuccess={handleInviteSuccess}
-      />
+      {isAdmin && (
+        <InviteUserModal
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)}
+          onSuccess={handleInviteSuccess}
+        />
+      )}
     </div>
   )
 }

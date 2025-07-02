@@ -1,5 +1,5 @@
 import { eq, and, desc } from 'drizzle-orm';
-import { db, userTenants, users, NewUser, UserTenant, NewUserTenant } from '@/db';
+import { db, userTenants, users, roles, NewUser, UserTenant, NewUserTenant } from '@/db';
 
 export interface CreateInviteData {
   tenantId: string;
@@ -97,7 +97,7 @@ export class InviteService {
   }> {
     const offset = (page - 1) * limit;
 
-    // Get all users for this tenant
+    // Get all users for this tenant with role information
     const tenantUsersQuery = await db
       .select({
         id: users.id,
@@ -108,9 +108,11 @@ export class InviteService {
         acceptedAt: userTenants.acceptedAt,
         createdAt: userTenants.createdAt,
         roleId: userTenants.roleId,
+        roleName: roles.name,
       })
       .from(userTenants)
       .innerJoin(users, eq(userTenants.userId, users.id))
+      .leftJoin(roles, eq(userTenants.roleId, roles.id))
       .where(eq(userTenants.tenantId, tenantId))
       .orderBy(desc(userTenants.createdAt));
 
@@ -122,7 +124,7 @@ export class InviteService {
         firstName: firstName || undefined,
         lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
         email: ut.email,
-        role: ut.roleId, // This should be resolved to role name in a real app
+        role: ut.roleName || 'Unknown', // Now returns actual role name
         status: ut.status as 'pending' | 'active',
         invitedAt: ut.invitedAt || undefined,
         lastLogin: ut.acceptedAt || undefined,
@@ -293,5 +295,47 @@ export class InviteService {
     }
 
     return userTenant;
+  }
+
+  /**
+   * Update user role in a tenant
+   */
+  static async updateUserRole(
+    userId: string,
+    tenantId: string,
+    roleId: string
+  ): Promise<UserTenant> {
+    // Verify the role exists
+    const role = await db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
+    if (role.length === 0) {
+      throw new Error('Invalid role ID');
+    }
+
+    // Verify the user exists in this tenant
+    const userTenant = await db
+      .select()
+      .from(userTenants)
+      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
+      .limit(1);
+
+    if (userTenant.length === 0) {
+      throw new Error('User not found in this tenant');
+    }
+
+    // Update the user's role
+    const [updatedUserTenant] = await db
+      .update(userTenants)
+      .set({
+        roleId: roleId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
+      .returning();
+
+    if (!updatedUserTenant) {
+      throw new Error('Failed to update user role');
+    }
+
+    return updatedUserTenant;
   }
 }

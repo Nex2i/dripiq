@@ -14,6 +14,17 @@ export interface UserTenant {
   id: string
   name: string
   isSuperUser: boolean
+  role: {
+    id: string
+    name: string
+    permissions: Array<{
+      id: string
+      name: string
+      description?: string
+      resource: string
+      action: string
+    }>
+  } | null
   createdAt: string
   updatedAt: string
 }

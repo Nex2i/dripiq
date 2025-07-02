@@ -21,6 +21,11 @@ const usersQuerySchema = Type.Object({
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
 });
 
+// Schema for updating user role
+const updateUserRoleSchema = Type.Object({
+  roleId: Type.String({ minLength: 1 }),
+});
+
 export default async function InviteRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
   // Get users for a tenant (Admin only)
   fastify.route({
@@ -281,6 +286,59 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         } else {
           reply.status(500).send({
             message: 'Failed to remove user',
+            error: error.message,
+          });
+        }
+      }
+    },
+  });
+
+  // Update user role (Admin only)
+  fastify.route({
+    method: HttpMethods.PUT,
+    url: `${basePath}/users/:userId/role`,
+    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
+    schema: {
+      params: Type.Object({ userId: Type.String() }),
+      body: updateUserRoleSchema,
+      tags: ['Invites'],
+      summary: 'Update User Role',
+      description: "Update a user's role in the tenant. Admin only.",
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: { userId: string };
+        Body: { roleId: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { userId } = request.params;
+        const { roleId } = request.body;
+        const tenantId = (request as any).tenantId;
+
+        const updatedUserTenant = await InviteService.updateUserRole(userId, tenantId, roleId);
+
+        reply.send({
+          message: 'User role updated successfully',
+          userTenant: {
+            id: updatedUserTenant.id,
+            userId: userId,
+            tenantId: tenantId,
+            roleId: updatedUserTenant.roleId,
+            status: updatedUserTenant.status,
+          },
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error updating user role: ${error.message}`);
+
+        if (error.message.includes('not found') || error.message.includes('Invalid role')) {
+          reply.status(404).send({
+            message: error.message,
+          });
+        } else {
+          reply.status(500).send({
+            message: 'Failed to update user role',
             error: error.message,
           });
         }

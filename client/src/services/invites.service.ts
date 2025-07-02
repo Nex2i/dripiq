@@ -46,6 +46,17 @@ export interface ApiError {
   error?: string
 }
 
+export interface Role {
+  id: string
+  name: string
+  description?: string
+}
+
+export interface RolesResponse {
+  message: string
+  roles: Role[]
+}
+
 class InvitesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
@@ -183,6 +194,61 @@ class InvitesService {
       return response.json()
     } catch (error) {
       console.error('Error removing user:', error)
+      throw error
+    }
+  }
+
+  // Update user role
+  async updateUserRole(
+    userId: string,
+    roleId: string,
+  ): Promise<{ message: string; userTenant: any }> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
+
+      const response = await fetch(`${this.baseUrl}/users/${userId}/role`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({ roleId }),
+      })
+
+      if (!response.ok) {
+        const errorData: ApiError = await response.json()
+        throw new Error(errorData.message || 'Failed to update user role')
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error updating user role:', error)
+      throw error
+    }
+  }
+
+  // Get available roles
+  async getRoles(): Promise<Role[]> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
+
+      const response = await fetch(`${this.baseUrl}/roles`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData: ApiError = await response.json()
+        throw new Error(errorData.message || 'Failed to fetch roles')
+      }
+
+      const data: RolesResponse = await response.json()
+      return data.roles
+    } catch (error) {
+      console.error('Error fetching roles:', error)
       throw error
     }
   }

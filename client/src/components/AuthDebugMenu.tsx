@@ -128,7 +128,10 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
                         {user.tenants.map((tenant) => (
                           <div key={tenant.id} className="ml-2">
                             • {tenant.name}{' '}
-                            {tenant.isSuperUser ? '(Super)' : ''}
+                            {tenant.role
+                              ? `(${tenant.role.name})`
+                              : '(No Role)'}{' '}
+                            {tenant.isSuperUser ? '[Super]' : ''}
                           </div>
                         ))}
                       </div>
