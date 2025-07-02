@@ -17,7 +17,6 @@ export interface CreateInviteData {
   lastName?: string
   email: string
   role: string
-  dailyCap?: number
 }
 
 export interface UsersResponse {
@@ -142,9 +141,13 @@ class InvitesService {
   }
 
   // Accept invitation
-  async acceptInvite(
-    token: string,
-  ): Promise<{ message: string; invite: any; seat: any }> {
+  async acceptInvite(token: string): Promise<{
+    message: string
+    invite: any
+    seat: any
+    needsPasswordSetup?: boolean
+    passwordSetupUrl?: string
+  }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 

@@ -13,6 +13,14 @@ interface InviteInfo {
   expiresAt: string
 }
 
+interface AcceptResult {
+  message: string
+  invite: any
+  seat: any
+  needsPasswordSetup?: boolean
+  passwordSetupUrl?: string
+}
+
 export default function AcceptInvitePage() {
   const search = useSearch({ strict: false }) as any
   const token = search?.token
@@ -22,6 +30,7 @@ export default function AcceptInvitePage() {
     'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'error'
   >('loading')
   const [isAccepting, setIsAccepting] = useState(false)
+  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -35,7 +44,7 @@ export default function AcceptInvitePage() {
   const verifyInviteToken = async (token: string) => {
     try {
       const response = await invitesService.verifyInvite(token)
-      
+
       const inviteInfo: InviteInfo = {
         id: response.invite.id,
         email: response.invite.email,
@@ -64,13 +73,22 @@ export default function AcceptInvitePage() {
     setIsAccepting(true)
 
     try {
-      await invitesService.acceptInvite(token)
+      const result = await invitesService.acceptInvite(token)
       setStatus('accepted')
+      setNeedsPasswordSetup(result.needsPasswordSetup || false)
 
-      // Redirect to dashboard after a delay
-      setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 2000)
+      // Check if user needs to set up password
+      if (result.needsPasswordSetup && result.passwordSetupUrl) {
+        // Redirect to password setup
+        setTimeout(() => {
+          window.location.href = result.passwordSetupUrl!
+        }, 2000)
+      } else {
+        // Redirect to dashboard for existing users
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 2000)
+      }
     } catch (error) {
       console.error('Error accepting invite:', error)
       setStatus('error')
@@ -189,8 +207,9 @@ export default function AcceptInvitePage() {
                   Invitation Accepted!
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Welcome to the team! You'll be redirected to the dashboard
-                  shortly.
+                  {needsPasswordSetup
+                    ? "Welcome to the team! You'll be redirected to set up your password shortly."
+                    : "Welcome to the team! You'll be redirected to the dashboard shortly."}
                 </p>
               </div>
               <div className="animate-pulse">

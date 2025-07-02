@@ -13,6 +13,7 @@ import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
 import UsersPage from './pages/settings/UsersPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
@@ -102,6 +103,12 @@ const authRegisterRoute = createRoute({
   component: () => <Register />,
 })
 
+const authSetupPasswordRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: '/setup-password',
+  component: () => <SetupPassword />,
+})
+
 const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/leads',
@@ -156,7 +163,11 @@ const protectedRouteTree = protectedRoute.addChildren([
   tanStackQueryRoute,
 ])
 
-const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
+const authRouteTree = authRoute.addChildren([
+  authLoginRoute,
+  authRegisterRoute,
+  authSetupPasswordRoute,
+])
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([

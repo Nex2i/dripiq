@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Mail, User, Shield, Settings } from 'lucide-react'
+import { X, Mail, User, Shield } from 'lucide-react'
 import {
   invitesService,
   type CreateInviteData,
@@ -17,7 +17,6 @@ interface InviteFormData {
   lastName: string
   email: string
   role: string
-  dailyCap: number
 }
 
 export function InviteUserModal({
@@ -30,7 +29,6 @@ export function InviteUserModal({
     lastName: '',
     email: '',
     role: '',
-    dailyCap: 200,
   })
 
   const [errors, setErrors] = useState<
@@ -95,11 +93,6 @@ export function InviteUserModal({
       newErrors.role = 'Role is required'
     }
 
-    // Daily cap validation
-    if (formData.dailyCap < 1 || formData.dailyCap > 2000) {
-      newErrors.dailyCap = 'Daily cap must be between 1 and 2,000'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -119,7 +112,6 @@ export function InviteUserModal({
         lastName: formData.lastName || undefined,
         email: formData.email,
         role: formData.role, // Send actual role name from database
-        dailyCap: formData.dailyCap,
       }
 
       await invitesService.createInvite(inviteData)
@@ -130,7 +122,6 @@ export function InviteUserModal({
         lastName: '',
         email: '',
         role: roles.length > 0 ? roles[0].name : '',
-        dailyCap: 200,
       })
       setErrors({})
 
@@ -297,37 +288,6 @@ export function InviteUserModal({
               {errors.role && (
                 <p className="mt-1 text-sm text-red-600">{errors.role}</p>
               )}
-            </div>
-
-            {/* Daily Send Cap */}
-            <div>
-              <label
-                htmlFor="dailyCap"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                <Settings className="h-4 w-4 inline mr-1" />
-                Daily send cap
-              </label>
-              <input
-                type="number"
-                id="dailyCap"
-                value={formData.dailyCap}
-                onChange={(e) =>
-                  handleChange('dailyCap', parseInt(e.target.value) || 200)
-                }
-                min={1}
-                max={2000}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.dailyCap ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="200"
-              />
-              {errors.dailyCap && (
-                <p className="mt-1 text-sm text-red-600">{errors.dailyCap}</p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">
-                Maximum number of emails this user can send per day (1-2,000)
-              </p>
             </div>
 
             {/* Action Buttons */}

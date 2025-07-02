@@ -169,12 +169,11 @@ export const invites = appSchema.table(
     tenantId: text('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
+    supabaseId: text('supabase_id'), // Reference to Supabase user (optional initially)
     email: text('email').notNull(),
     firstName: text('first_name').notNull(),
     lastName: text('last_name'),
     role: text('role').notNull(), // 'owner', 'manager', 'rep'
-    dailyCap: text('daily_cap').notNull().default('200'),
-    tokenHash: text('token_hash').notNull(),
     status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'expired'
     expiresAt: timestamp('expires_at').notNull(),
     acceptedAt: timestamp('accepted_at'),
@@ -199,7 +198,6 @@ export const seats = appSchema.table(
       .references(() => tenants.id, { onDelete: 'cascade' }),
     supabaseUid: text('supabase_uid').notNull(),
     role: text('role').notNull(), // 'owner', 'manager', 'rep'
-    dailyCap: text('daily_cap').notNull().default('200'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

@@ -2,10 +2,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { InviteService, InviteDto, CreateInviteData } from '@/modules/invite.service';
-import { EmailService } from '@/modules/email.service';
 import { SupabaseAdminService } from '@/modules/supabase-admin.service';
-import { TenantService } from '@/modules/tenant.service';
-import { UserService } from '@/modules/user.service';
+import { handleExistingSupabaseUser, createNewUserInvite } from '@/modules/invite.handlers';
 
 const basePath = '';
 
@@ -15,7 +13,6 @@ const createInviteSchema = Type.Object({
   firstName: Type.String({ minLength: 1, maxLength: 50 }),
   lastName: Type.Optional(Type.String({ maxLength: 50 })),
   role: Type.String({ minLength: 1 }), // Accept any valid role name from database
-  dailyCap: Type.Optional(Type.Integer({ minimum: 1, maximum: 2000 })),
 });
 
 // Schema for invite verification
@@ -89,7 +86,6 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     },
     handler: async (request: FastifyRequest<{ Body: InviteDto }>, reply: FastifyReply) => {
       try {
-        const currentUser = (request as any).user;
         const tenantId = (request as any).tenantId;
 
         if (!tenantId) {
@@ -103,55 +99,21 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           firstName: request.body.firstName,
           lastName: request.body.lastName,
           role: request.body.role,
-          dailyCap: request.body.dailyCap || 200,
         };
 
-        // Create invitation in database first
-        const { invite, token } = await InviteService.createInvite(inviteData);
+        // Check if user already exists in Supabase
+        const existingSupabaseUser = await SupabaseAdminService.getUserByEmail(inviteData.email);
 
-        // First create a Supabase user in an unconfirmed state
-        const supabaseUser = await SupabaseAdminService.createUser({
-          email: inviteData.email,
-          emailConfirm: false,
-          metadata: { workspaceId: tenantId, inviteToken: token },
-        });
-
-        // Generate password reset link that allows user to set their password
-        const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/accept-invite?token=${token}`;
-        const passwordSetLink = await SupabaseAdminService.generateLink({
-          type: 'recovery',
-          email: inviteData.email,
-          redirectTo: redirectUrl,
-        });
-
-        // Get tenant and user info for email
-        const tenant = await TenantService.getTenantById(tenantId);
-        const inviterUser = await UserService.getUserById(currentUser.id);
-
-        // Send invitation email
-        const emailResult = await EmailService.sendInviteEmail({
-          email: inviteData.email,
-          firstName: inviteData.firstName,
-          inviteLink: passwordSetLink,
-          workspaceName: tenant?.name || 'DripIQ',
-          inviterName: inviterUser?.name || currentUser.email,
-        });
-
-        // Update invite with message ID if available
-        if (emailResult.messageId) {
-          // TODO: Update invite with messageId
+        let result;
+        if (existingSupabaseUser) {
+          // Handle existing Supabase user
+          result = await handleExistingSupabaseUser(existingSupabaseUser, inviteData, tenantId);
+        } else {
+          // Create new user invite
+          result = await createNewUserInvite(inviteData, tenantId);
         }
 
-        reply.status(201).send({
-          message: 'Invitation sent successfully',
-          invite: {
-            id: invite.id,
-            email: invite.email,
-            role: invite.role,
-            status: invite.status,
-            expiresAt: invite.expiresAt,
-          },
-        });
+        reply.status(201).send(result);
       } catch (error: any) {
         fastify.log.error(`Error creating invitation: ${error.message}`);
 
@@ -226,7 +188,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/invites/accept`,
-    preHandler: [fastify.authPrehandler],
+    // preHandler: [fastify.authPrehandler],
     schema: {
       body: verifyInviteSchema,
       tags: ['Invites'],
@@ -236,23 +198,44 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     handler: async (request: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) => {
       try {
         const { token } = request.body;
-        const currentUser = (request as any).user;
 
-        const result = await InviteService.acceptInvite(token, currentUser.supabaseId);
+        const result = await InviteService.acceptInvite(token);
 
-        // Update Supabase user to enable login
-        await SupabaseAdminService.updateUser(currentUser.supabaseId, {
-          email_confirm: true,
-          user_metadata: {
-            invited: true,
-            tenantId: result.invite.tenantId,
-          },
-        });
+        // Check if this is a new user who needs to set their password
+        // New users will have been created via inviteUserByEmail and need to set password
+        let needsPasswordSetup = false;
+        let passwordSetupUrl = null;
+
+        if (result.invite.supabaseId) {
+          // Update Supabase user to enable login
+          await SupabaseAdminService.updateUser(result.invite.supabaseId, {
+            email_confirm: true,
+            user_metadata: {
+              invited: true,
+              tenantId: result.invite.tenantId,
+            },
+          });
+
+          // Generate a password reset link for new users to set their password
+          try {
+            const resetLink = await SupabaseAdminService.generateLink({
+              type: 'recovery',
+              email: result.invite.email,
+              redirectTo: `${process.env.FRONTEND_ORIGIN}/auth/setup-password?invited=true`,
+            });
+            needsPasswordSetup = true;
+            passwordSetupUrl = resetLink;
+          } catch (error: any) {
+            fastify.log.warn(`Could not generate password setup link: ${error.message}`);
+          }
+        }
 
         reply.send({
           message: 'Invitation accepted successfully',
           invite: result.invite,
           seat: result.seat,
+          needsPasswordSetup,
+          passwordSetupUrl,
         });
       } catch (error: any) {
         fastify.log.error(`Error accepting invitation: ${error.message}`);
@@ -296,25 +279,18 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
 
         const { invite, token } = await InviteService.resendInvite(inviteId);
 
-        // Generate new password set link
+        // Use Supabase's invite functionality to resend
         const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/accept-invite?token=${token}`;
-        const passwordSetLink = await SupabaseAdminService.generateLink({
-          type: 'recovery',
+        await SupabaseAdminService.inviteUserByEmail({
           email: invite.email,
           redirectTo: redirectUrl,
-        });
-
-        // Get tenant info for email
-        const tenant = await TenantService.getTenantById(invite.tenantId);
-        const inviterUser = await UserService.getUserById(currentUser.id);
-
-        // Resend invitation email
-        await EmailService.sendInviteEmail({
-          email: invite.email,
-          firstName: invite.firstName || 'User',
-          inviteLink: passwordSetLink,
-          workspaceName: tenant?.name || 'DripIQ',
-          inviterName: inviterUser?.name || currentUser.email,
+          data: {
+            workspaceId: invite.tenantId,
+            inviteToken: token,
+            firstName: invite.firstName,
+            lastName: invite.lastName,
+            role: invite.role,
+          },
         });
 
         reply.send({

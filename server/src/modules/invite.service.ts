@@ -1,7 +1,7 @@
-import { randomBytes } from 'crypto';
 import { eq, and, desc } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
 import { db, invites, seats, users, NewInvite, Invite, NewSeat } from '@/db';
+import { RoleService } from './role.service';
+import { TenantService } from './tenant.service';
 
 export interface CreateInviteData {
   tenantId: string;
@@ -9,7 +9,6 @@ export interface CreateInviteData {
   firstName: string;
   lastName?: string;
   role: string; // Accept any role name from database
-  dailyCap?: number;
 }
 
 export interface InviteDto {
@@ -17,7 +16,6 @@ export interface InviteDto {
   firstName: string;
   lastName?: string;
   role: string; // Accept any role name from database
-  dailyCap?: number;
 }
 
 export interface UserWithInviteInfo {
@@ -36,7 +34,10 @@ export class InviteService {
   /**
    * Create a new user invitation
    */
-  static async createInvite(data: CreateInviteData): Promise<{ invite: Invite; token: string }> {
+  static async createInvite(
+    data: CreateInviteData,
+    supabaseId?: string
+  ): Promise<{ invite: Invite; token: string }> {
     // Check if email already exists in seats or invites for this tenant
     const [existingSeat, existingInvite] = await Promise.all([
       db
@@ -66,19 +67,14 @@ export class InviteService {
       throw new Error('An invitation is already pending for this email');
     }
 
-    // Generate secure token
-    const token = randomBytes(32).toString('hex');
-    const tokenHash = await bcrypt.hash(token, 12);
-
     // Create invite
     const newInvite: NewInvite = {
       tenantId: data.tenantId,
+      supabaseId: supabaseId || null,
       email: data.email.toLowerCase(),
       firstName: data.firstName,
       lastName: data.lastName || null,
       role: data.role,
-      dailyCap: (data.dailyCap || 200).toString(),
-      tokenHash,
       status: 'pending',
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     };
@@ -89,7 +85,8 @@ export class InviteService {
       throw new Error('Failed to create invitation');
     }
 
-    return { invite, token };
+    // Use invite ID as the token
+    return { invite, token: invite.id };
   }
 
   /**
@@ -191,31 +188,26 @@ export class InviteService {
   }
 
   /**
-   * Verify invitation token
+   * Verify invitation token (using invite ID)
    */
   static async verifyInviteToken(token: string): Promise<Invite | null> {
-    const allInvites = await db
+    const [invite] = await db
       .select()
       .from(invites)
-      .where(and(eq(invites.status, 'pending'), eq(invites.expiresAt, invites.expiresAt)));
+      .where(and(eq(invites.id, token), eq(invites.status, 'pending')))
+      .limit(1);
 
-    for (const invite of allInvites) {
-      const isValid = await bcrypt.compare(token, invite.tokenHash);
-      if (isValid && invite.expiresAt > new Date()) {
-        return invite;
-      }
+    if (!invite || invite.expiresAt < new Date()) {
+      return null;
     }
 
-    return null;
+    return invite;
   }
 
   /**
    * Accept invitation
    */
-  static async acceptInvite(
-    token: string,
-    supabaseUserId: string
-  ): Promise<{ invite: Invite; seat: any }> {
+  static async acceptInvite(token: string): Promise<{ invite: Invite; seat: any }> {
     const invite = await this.verifyInviteToken(token);
 
     if (!invite) {
@@ -226,7 +218,7 @@ export class InviteService {
     const existingSeat = await db
       .select()
       .from(seats)
-      .where(and(eq(seats.tenantId, invite.tenantId), eq(seats.supabaseUid, supabaseUserId)))
+      .where(and(eq(seats.tenantId, invite.tenantId)))
       .limit(1);
 
     if (existingSeat.length > 0) {
@@ -244,12 +236,42 @@ export class InviteService {
       .where(eq(invites.id, invite.id))
       .returning();
 
-    // Create seat
+    // Ensure supabaseId exists
+    if (!invite.supabaseId) {
+      throw new Error('Invalid invitation: missing supabase ID');
+    }
+
+    // Create user in our database if they don't exist
+    const { UserService } = await import('@/modules/user.service');
+    let user = await UserService.getUserBySupabaseId(invite.supabaseId);
+
+    if (!user) {
+      // Create the user in our database
+      const fullName = invite.lastName
+        ? `${invite.firstName} ${invite.lastName}`
+        : invite.firstName;
+
+      user = await UserService.createUser({
+        supabaseId: invite.supabaseId,
+        email: invite.email,
+        name: fullName,
+      });
+    }
+
+    // Get the role ID from the role name
+    const role = await RoleService.getRoleByName(invite.role);
+    if (!role) {
+      throw new Error(`Invalid role specified: ${invite.role}`);
+    }
+
+    // Add user to tenant (this creates the user_tenants relationship)
+    await TenantService.addUserToTenant(user.id, invite.tenantId, role.id, false);
+
+    // Create seat (for workspace-specific permissions)
     const newSeat: NewSeat = {
       tenantId: invite.tenantId,
-      supabaseUid: supabaseUserId,
+      supabaseUid: invite.supabaseId,
       role: invite.role,
-      dailyCap: invite.dailyCap,
     };
 
     const [seat] = await db.insert(seats).values(newSeat).returning();
@@ -271,22 +293,18 @@ export class InviteService {
       throw new Error('Invitation not found or not pending');
     }
 
-    // Generate new token
-    const token = randomBytes(32).toString('hex');
-    const tokenHash = await bcrypt.hash(token, 12);
-
-    // Update invite with new token and extend expiry
+    // Update invite with extended expiry
     const [updatedInvite] = await db
       .update(invites)
       .set({
-        tokenHash,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         updatedAt: new Date(),
       })
       .where(eq(invites.id, inviteId))
       .returning();
 
-    return { invite: updatedInvite!, token };
+    // Return invite ID as token
+    return { invite: updatedInvite!, token: inviteId };
   }
 
   /**
@@ -331,5 +349,25 @@ export class InviteService {
   static async getInviteById(inviteId: string): Promise<Invite | null> {
     const result = await db.select().from(invites).where(eq(invites.id, inviteId)).limit(1);
     return result[0] || null;
+  }
+
+  /**
+   * Update invitation with Supabase user ID
+   */
+  static async updateInviteWithSupabaseId(inviteId: string, supabaseId: string): Promise<Invite> {
+    const [updatedInvite] = await db
+      .update(invites)
+      .set({
+        supabaseId: supabaseId,
+        updatedAt: new Date(),
+      })
+      .where(eq(invites.id, inviteId))
+      .returning();
+
+    if (!updatedInvite) {
+      throw new Error('Invitation not found');
+    }
+
+    return updatedInvite;
   }
 }

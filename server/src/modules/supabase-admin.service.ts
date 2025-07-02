@@ -19,6 +19,12 @@ export interface CreateUserData {
   metadata?: Record<string, any>;
 }
 
+export interface InviteUserData {
+  email: string;
+  redirectTo?: string;
+  data?: Record<string, any>;
+}
+
 export interface GenerateLinkData {
   type: 'signup' | 'recovery';
   email: string;
@@ -34,7 +40,7 @@ export class SupabaseAdminService {
     try {
       const result = await supabaseAdmin.auth.admin.createUser({
         email: data.email,
-        email_confirm: data.emailConfirm || false,
+        email_confirm: true,
         app_metadata: data.metadata || {},
       });
 
@@ -108,6 +114,29 @@ export class SupabaseAdminService {
   }
 
   /**
+   * Get user by email
+   */
+  static async getUserByEmail(email: string): Promise<any> {
+    try {
+      const result = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000, // Adjust as needed
+      });
+
+      if (result.error) {
+        throw new Error(`Supabase admin listUsers error: ${result.error.message}`);
+      }
+
+      // Find user with matching email
+      const user = result.data.users.find((user) => user.email === email);
+      return user || null;
+    } catch (error: any) {
+      console.error('Error getting Supabase user by email:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Delete a user
    */
   static async deleteUser(userId: string): Promise<void> {
@@ -119,6 +148,28 @@ export class SupabaseAdminService {
       }
     } catch (error: any) {
       console.error('Error deleting Supabase user:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Invite a user by email using Supabase's built-in invite functionality
+   * This will create the user and send an invite email automatically
+   */
+  static async inviteUserByEmail(data: InviteUserData): Promise<any> {
+    try {
+      const result = await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, {
+        redirectTo: data.redirectTo,
+        data: data.data || {},
+      });
+
+      if (result.error) {
+        throw new Error(`Supabase admin inviteUserByEmail error: ${result.error.message}`);
+      }
+
+      return result.data.user;
+    } catch (error: any) {
+      console.error('Error inviting user via Supabase:', error);
       throw error;
     }
   }
