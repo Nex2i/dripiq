@@ -15,6 +15,9 @@ export const {
   PLAID_SECRET,
   NODE_ENV,
   DB_SCHEMA,
+  // SEQ Configuration
+  SEQ_SERVER_URL,
+  SEQ_API_KEY,
 } = process.env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';

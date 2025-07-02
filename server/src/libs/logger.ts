@@ -1,18 +1,51 @@
 import pino, { Logger, LoggerOptions } from 'pino';
+import { IS_PRODUCTION, SEQ_SERVER_URL, SEQ_API_KEY, NODE_ENV } from '@/config';
+
+// Create transport array based on environment
+const createTransports = () => {
+  const transports: any[] = [
+    // Always include pretty printing for console
+    {
+      target: 'pino-pretty',
+      options: {
+        translateTime: true,
+        ignore: 'pid,hostname',
+        levelFirst: true,
+        prettifier: true,
+        useLevelLabels: true,
+        levelKey: 'level',
+      },
+    },
+  ];
+
+  // Add SEQ transport for non-production environments if configured
+  if (!IS_PRODUCTION && SEQ_SERVER_URL) {
+    transports.push({
+      target: 'pino-seq',
+      options: {
+        serverUrl: SEQ_SERVER_URL,
+        apiKey: SEQ_API_KEY, // Optional: only if authentication is required
+        onError: (error: Error) => {
+          console.warn('SEQ logging error:', error.message);
+        },
+      },
+    });
+  }
+
+  return transports;
+};
 
 const loggerOptions: LoggerOptions = {
   transport: {
-    target: 'pino-pretty',
-    options: {
-      translateTime: true,
-      ignore: 'pid,hostname',
-      levelFirst: true,
-      prettifier: true,
-      useLevelLabels: true,
-      levelKey: 'level',
-    },
+    targets: createTransports(),
   },
   level: 'warn',
+  // Add base metadata that will be included with every log entry
+  base: {
+    environment: NODE_ENV,
+    application: 'promptdepot-server',
+    version: process.env.npm_package_version || '1.0.0',
+  },
 };
 
 export const baseLogger = pino(loggerOptions);
