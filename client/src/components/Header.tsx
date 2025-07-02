@@ -245,12 +245,6 @@ export default function Header() {
                 <Settings className="h-5 w-5 mr-3 text-gray-400" />
                 Settings
               </button>
-              <button
-                onClick={() => navigateAndClose('/settings/users')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
-              >
-                Users
-              </button>
 
               {/* Mobile User Info */}
               {user && (
