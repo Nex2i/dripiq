@@ -21,13 +21,13 @@ export default function BillingPage() {
             </h3>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-[var(--color-primary-200)] rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-lg font-semibold text-blue-900">
                   Free Trial
                 </h4>
-                <p className="text-sm text-blue-600 mt-1">
+                <p className="text-sm text-[var(--color-primary-600)] mt-1">
                   14 days remaining in your trial
                 </p>
                 <p className="text-xs text-blue-500 mt-2">
@@ -36,12 +36,14 @@ export default function BillingPage() {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-blue-900">$0</div>
-                <div className="text-sm text-blue-600">per month</div>
+                <div className="text-sm text-[var(--color-primary-600)]">
+                  per month
+                </div>
               </div>
             </div>
 
             <div className="mt-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+              <button className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-md text-sm font-medium">
                 Upgrade Plan
               </button>
             </div>
@@ -67,7 +69,7 @@ export default function BillingPage() {
             <p className="mt-1 text-sm text-gray-500">
               Add a payment method to continue after your trial ends.
             </p>
-            <button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            <button className="mt-4 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-md text-sm font-medium">
               Add Payment Method
             </button>
           </div>
@@ -84,7 +86,7 @@ export default function BillingPage() {
                 Billing History
               </h3>
             </div>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+            <button className="text-[var(--color-primary-600)] hover:text-blue-700 text-sm font-medium flex items-center">
               <Download className="h-4 w-4 mr-1" />
               Download All
             </button>

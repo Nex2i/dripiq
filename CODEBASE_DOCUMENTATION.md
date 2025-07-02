@@ -763,14 +763,14 @@ The project uses **TailwindCSS v4.0** with:
 
 #### Buttons
 ```html
-<button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+<button class="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white font-medium py-2 px-4 rounded-lg transition-colors">
   Primary Button
 </button>
 ```
 
 #### Forms
 ```html
-<input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+<input class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]">
 ```
 
 ---

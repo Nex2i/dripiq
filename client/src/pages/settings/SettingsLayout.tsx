@@ -79,14 +79,14 @@ export default function SettingsLayout() {
                     to={item.path}
                     className={`group rounded-md px-3 py-2 flex items-start text-sm font-medium transition-colors duration-200 ${
                       isActive
-                        ? 'bg-blue-50 border-blue-500 text-blue-700 border-l-4'
+                        ? 'bg-[var(--color-primary-50)] border-[var(--color-primary-500)] text-[var(--color-primary-700)] border-l-4'
                         : 'text-gray-900 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300'
                     }`}
                   >
                     <Icon
                       className={`flex-shrink-0 -ml-1 mr-3 h-6 w-6 ${
                         isActive
-                          ? 'text-blue-500'
+                          ? 'text-[var(--color-primary-500)]'
                           : 'text-gray-400 group-hover:text-gray-500'
                       }`}
                     />

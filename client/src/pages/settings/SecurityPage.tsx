@@ -28,7 +28,7 @@ export default function SecurityPage() {
               </label>
               <input
                 type="password"
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                 placeholder="Enter current password"
               />
             </div>
@@ -39,7 +39,7 @@ export default function SecurityPage() {
               </label>
               <input
                 type="password"
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                 placeholder="Enter new password"
               />
             </div>
@@ -50,12 +50,12 @@ export default function SecurityPage() {
               </label>
               <input
                 type="password"
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                 placeholder="Confirm new password"
               />
             </div>
 
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            <button className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-md text-sm font-medium">
               Update Password
             </button>
           </div>
@@ -85,7 +85,7 @@ export default function SecurityPage() {
               <input
                 type="checkbox"
                 defaultChecked
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] border-gray-300 rounded"
               />
             </div>
 
@@ -101,7 +101,7 @@ export default function SecurityPage() {
               <input
                 type="checkbox"
                 defaultChecked
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] border-gray-300 rounded"
               />
             </div>
           </div>

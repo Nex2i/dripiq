@@ -35,7 +35,7 @@ export default function NotificationsPage() {
               <input
                 type="checkbox"
                 defaultChecked
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] border-gray-300 rounded"
               />
             </div>
 
@@ -51,7 +51,7 @@ export default function NotificationsPage() {
               <input
                 type="checkbox"
                 defaultChecked
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] border-gray-300 rounded"
               />
             </div>
 
@@ -66,7 +66,7 @@ export default function NotificationsPage() {
               </div>
               <input
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] border-gray-300 rounded"
               />
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
               </div>
               <input
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] border-gray-300 rounded"
               />
             </div>
           </div>
@@ -103,14 +103,14 @@ export default function NotificationsPage() {
       </div>
 
       {/* Coming Soon */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-lg p-4">
         <div className="flex items-center">
           <Bell className="h-5 w-5 text-blue-400 mr-2" />
           <div>
             <h3 className="text-sm font-medium text-blue-800">
               More notification options coming soon
             </h3>
-            <p className="text-sm text-blue-600 mt-1">
+            <p className="text-sm text-[var(--color-primary-600)] mt-1">
               We're working on adding Slack, Discord, and other integrations for
               notifications.
             </p>

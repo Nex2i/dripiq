@@ -81,7 +81,7 @@ function Dashboard() {
               <button
                 key={index}
                 onClick={action.action}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-left hover:shadow-md hover:border-blue-300 transition-all duration-200 group"
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-left hover:shadow-md hover:border-[var(--color-primary-300)] transition-all duration-200 group"
               >
                 <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-200">
                   {action.icon}
@@ -112,7 +112,7 @@ function Dashboard() {
                   <span className="text-xs text-gray-400">2 hours ago</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-[var(--color-primary-500)] rounded-full"></div>
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">3 new leads</span> added to
                     pipeline

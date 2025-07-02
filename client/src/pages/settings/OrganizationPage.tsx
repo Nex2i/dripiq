@@ -34,7 +34,7 @@ export default function OrganizationPage() {
                   type="text"
                   name="org-name"
                   id="org-name"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                   placeholder="Your Organization Name"
                 />
               </div>
@@ -52,7 +52,7 @@ export default function OrganizationPage() {
                   id="org-description"
                   name="org-description"
                   rows={3}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                   placeholder="Brief description of your organization"
                 />
               </div>
@@ -69,7 +69,7 @@ export default function OrganizationPage() {
                 <select
                   id="industry"
                   name="industry"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                 >
                   <option>Select an industry</option>
                   <option>Technology</option>
@@ -94,7 +94,7 @@ export default function OrganizationPage() {
                 <select
                   id="size"
                   name="size"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                 >
                   <option>Select size</option>
                   <option>1-10 employees</option>
@@ -152,7 +152,7 @@ export default function OrganizationPage() {
                 <input
                   type="text"
                   value="#3B82F6"
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-24 sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-24 sm:text-sm border-gray-300 rounded-md"
                 />
                 <span className="text-sm text-gray-500">
                   This color will be used in your organization's interface
@@ -174,9 +174,13 @@ export default function OrganizationPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">5</div>
-              <div className="text-sm text-blue-600">Total Members</div>
+            <div className="bg-[var(--color-primary-50)] p-4 rounded-lg">
+              <div className="text-2xl font-bold text-[var(--color-primary-600)]">
+                5
+              </div>
+              <div className="text-sm text-[var(--color-primary-600)]">
+                Total Members
+              </div>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
               <div className="text-2xl font-bold text-green-600">3</div>
@@ -217,7 +221,7 @@ export default function OrganizationPage() {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <button className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]">
           Save Changes
         </button>
       </div>

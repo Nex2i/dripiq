@@ -74,7 +74,7 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono flex items-center gap-2 transition-colors"
+          className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-3 py-2 rounded-lg shadow-lg text-sm font-mono flex items-center gap-2 transition-colors"
           title="Auth Debug Menu (Dev Only)"
         >
           🔐
@@ -176,7 +176,7 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
 
                 <button
                   onClick={handleRefreshAuthState}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition-colors"
+                  className="w-full bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-3 py-2 rounded text-sm transition-colors"
                 >
                   🔄 Refresh Auth State
                 </button>

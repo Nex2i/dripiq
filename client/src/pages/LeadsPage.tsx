@@ -100,7 +100,7 @@ const LeadsPage: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusColors = {
-      new: 'bg-blue-100 text-blue-800',
+      new: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
       contacted: 'bg-yellow-100 text-yellow-800',
       qualified: 'bg-green-100 text-green-800',
       lost: 'bg-red-100 text-red-800',
@@ -126,7 +126,7 @@ const LeadsPage: React.FC = () => {
         header: ({ table }) => (
           <input
             type="checkbox"
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
             checked={table.getIsAllRowsSelected()}
             onChange={table.getToggleAllRowsSelectedHandler()}
           />
@@ -134,7 +134,7 @@ const LeadsPage: React.FC = () => {
         cell: ({ row }) => (
           <input
             type="checkbox"
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
           />
@@ -226,7 +226,7 @@ const LeadsPage: React.FC = () => {
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary-600)] mx-auto"></div>
               <p className="mt-4 text-gray-500">Loading leads...</p>
             </div>
           </div>
@@ -262,7 +262,7 @@ const LeadsPage: React.FC = () => {
               </p>
               <button
                 onClick={handleRefresh}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Try Again
               </button>
@@ -286,7 +286,7 @@ const LeadsPage: React.FC = () => {
                   ? `${leads.length} lead${leads.length === 1 ? '' : 's'} found for "${searchQuery}"`
                   : `${leads.length} lead${leads.length === 1 ? '' : 's'} total`}
               {selectedRowCount > 0 && (
-                <span className="ml-2 text-blue-600 font-medium">
+                <span className="ml-2 text-[var(--color-primary-600)] font-medium">
                   ({selectedRowCount} selected)
                 </span>
               )}
@@ -296,7 +296,7 @@ const LeadsPage: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh leads"
             >
               <svg
@@ -338,7 +338,7 @@ const LeadsPage: React.FC = () => {
             <DebouncedInput
               value={searchQuery}
               onChange={(value) => setSearchQuery(String(value))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] bg-white text-gray-900 placeholder-gray-500"
               placeholder="Search leads by name, email, company, or phone..."
             />
             {searchQuery && (
@@ -367,10 +367,10 @@ const LeadsPage: React.FC = () => {
 
         {/* Bulk Actions */}
         {selectedRowCount > 0 && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="mb-4 bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-lg p-4 flex items-center justify-between">
             <div className="flex items-center">
               <svg
-                className="h-5 w-5 text-blue-600 mr-2"
+                className="h-5 w-5 text-[var(--color-primary-600)] mr-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -382,7 +382,7 @@ const LeadsPage: React.FC = () => {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="text-blue-900 font-medium">
+              <span className="text-[var(--color-primary-900)] font-medium">
                 {selectedRowCount} lead{selectedRowCount === 1 ? '' : 's'}{' '}
                 selected
               </span>
@@ -390,7 +390,7 @@ const LeadsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setRowSelection({})}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="text-[var(--color-primary-600)] hover:text-[var(--color-primary-800)] text-sm font-medium"
               >
                 Clear selection
               </button>
@@ -469,7 +469,7 @@ const LeadsPage: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-lg font-medium transition-colors"
                 >
                   Clear Search
                 </button>
@@ -503,7 +503,9 @@ const LeadsPage: React.FC = () => {
                     <tr
                       key={row.id}
                       className={`hover:bg-gray-50 transition-colors ${
-                        row.getIsSelected() ? 'bg-blue-50' : ''
+                        row.getIsSelected()
+                          ? 'bg-[var(--color-primary-50)]'
+                          : ''
                       }`}
                     >
                       {row.getVisibleCells().map((cell) => (

@@ -51,7 +51,7 @@ export default function TenantSettingsPage() {
                   id="workspace-name"
                   value={workspaceName}
                   onChange={(e) => setWorkspaceName(e.target.value)}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                   placeholder="Your Company Name"
                 />
               </div>
@@ -71,7 +71,7 @@ export default function TenantSettingsPage() {
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                   placeholder="A brief description of your workspace"
                 />
               </div>
@@ -98,7 +98,7 @@ export default function TenantSettingsPage() {
                   id="website"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300"
+                  className="focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300"
                   placeholder="https://example.com"
                 />
               </div>
@@ -131,7 +131,7 @@ export default function TenantSettingsPage() {
                   name="timezone"
                   value={timezone}
                   onChange={(e) => setTimezone(e.target.value)}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="shadow-sm focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] block w-full sm:text-sm border-gray-300 rounded-md"
                 >
                   <option value="America/New_York">Eastern Time</option>
                   <option value="America/Chicago">Central Time</option>
@@ -198,7 +198,7 @@ export default function TenantSettingsPage() {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSaving ? (
             <>

@@ -49,9 +49,18 @@ export default function Logo({
           {/* Gradient definition */}
           <defs>
             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#3B82F6' }} />
-              <stop offset="50%" style={{ stopColor: '#1D4ED8' }} />
-              <stop offset="100%" style={{ stopColor: '#1E40AF' }} />
+              <stop
+                offset="0%"
+                style={{ stopColor: 'var(--color-primary-500)' }}
+              />
+              <stop
+                offset="50%"
+                style={{ stopColor: 'var(--color-primary-700)' }}
+              />
+              <stop
+                offset="100%"
+                style={{ stopColor: 'var(--color-primary-800)' }}
+              />
             </linearGradient>
           </defs>
         </svg>
@@ -60,7 +69,7 @@ export default function Logo({
       {/* Brand text */}
       {showText && (
         <span
-          className={`font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent ${textSizeClasses[size]}`}
+          className={`font-bold bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-800)] bg-clip-text text-transparent ${textSizeClasses[size]}`}
         >
           dripIq
         </span>
