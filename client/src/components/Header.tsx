@@ -88,30 +88,6 @@ export default function Header() {
                 >
                   Leads
                 </button>
-                <button
-                  onClick={() => navigate({ to: '/settings/users' })}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
-                >
-                  Users
-                </button>
-                <button
-                  onClick={() => navigate({ to: '/demo/table' })}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
-                >
-                  DemoTable
-                </button>
-                <button
-                  onClick={() => navigate({ to: '/demo/tanstack-query' })}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
-                >
-                  DemoTanstackQuery
-                </button>
-                <button
-                  onClick={() => navigate({ to: '/demo/form/simple' })}
-                  className="text-gray-600 hover:text-blue-600 px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-colors duration-200 rounded-lg hover:bg-blue-50"
-                >
-                  DemoFormSimple
-                </button>
               </nav>
             </div>
 
@@ -274,24 +250,6 @@ export default function Header() {
                 className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
               >
                 Users
-              </button>
-              <button
-                onClick={() => navigateAndClose('/demo/table')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
-              >
-                DemoTable
-              </button>
-              <button
-                onClick={() => navigateAndClose('/demo/tanstack-query')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
-              >
-                DemoTanstackQuery
-              </button>
-              <button
-                onClick={() => navigateAndClose('/demo/form/simple')}
-                className="text-gray-600 hover:text-blue-600 px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-blue-50 text-left"
-              >
-                DemoFormSimple
               </button>
 
               {/* Mobile User Info */}
