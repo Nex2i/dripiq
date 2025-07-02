@@ -414,3 +414,70 @@ code {
   background-color: #EDF2FA;
   color: #1A1F36;
 }
+
+/* Brand text colors */
+.text-primary {
+  color: #4361EE;
+}
+
+.text-primary-dark {
+  color: #1A1F36;
+}
+
+.text-success {
+  color: #00B894;
+}
+
+.text-warning {
+  color: #FFCB05;
+}
+
+.text-danger {
+  color: #FF6B6B;
+}
+
+/* Checkbox styling */
+.checkbox {
+  appearance: none;
+  background-color: white;
+  border: 2px solid #E4E7ED;
+  border-radius: 4px;
+  width: 1rem;
+  height: 1rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.checkbox:checked {
+  background-color: #4361EE;
+  border-color: #4361EE;
+}
+
+.checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Background classes */
+.bg-brand-light {
+  background-color: #EDF2FA;
+}
+
+.bg-brand-primary {
+  background-color: #4361EE;
+}
+
+.bg-brand-dark {
+  background-color: #1A1F36;
+}

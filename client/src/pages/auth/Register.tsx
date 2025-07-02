@@ -93,7 +93,7 @@ export default function Register() {
   }
 
   return (
-          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-sky-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-sky-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center mb-6">
@@ -114,7 +114,7 @@ export default function Register() {
             Already have an account?{' '}
             <button
               onClick={() => router.navigate({ to: '/auth/login' } as any)}
-              className="font-medium text-blue-600 hover:text-blue-500 underline bg-transparent border-none cursor-pointer"
+              className="font-medium text-primary hover:opacity-80 underline bg-transparent border-none cursor-pointer"
             >
               Sign in here
             </button>
@@ -238,7 +238,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="btn-primary w-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isSubmitting ? (
                 <>
