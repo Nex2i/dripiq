@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
-import { supabase } from '@/libs/supabaseClient';
+import { supabase } from '@/libs/supabase.client';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
 

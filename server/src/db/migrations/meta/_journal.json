@@ -64,6 +64,13 @@
       "when": 1751561416605,
       "tag": "0008_site_vectors",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1751562439556,
+      "tag": "0009_site_vectors_remove_tenant",
+      "breakpoints": true
     }
   ]
 }

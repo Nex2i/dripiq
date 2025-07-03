@@ -8,9 +8,9 @@
 // save metadata to database
 // return metadata
 
-import { supabase } from '@/libs/supabaseClient';
+import { EmbeddingsService } from './embeddings.service';
 import { ScrapingResult, ScrappingService } from './scraping.service';
-import { IUploadFile, supabaseStorage } from '@/libs/supabaseStorage';
+import { IUploadFile, supabaseStorage } from '@/libs/supabase.storage';
 
 // TODAY'S GOAL:
 // 1. Scrape site and return markdown
@@ -44,6 +44,7 @@ export const SiteAnalyzerService = {
       const markdown = await ScrappingService.scrapeSite(siteUrl);
       const cleanedMarkdown = prepareMarkdown(markdown);
       await supabaseStorage.uploadFiles(siteUrl.getDomain(), cleanedMarkdown);
+      await EmbeddingsService.batchCreateSiteEmbedding(siteUrl, markdown.results);
       return markdown;
     } catch (error) {
       throw error;

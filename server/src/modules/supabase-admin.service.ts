@@ -1,4 +1,4 @@
-import { supabase } from '@/libs/supabaseClient';
+import { supabase } from '@/libs/supabase.client';
 
 export interface CreateUserData {
   email: string;

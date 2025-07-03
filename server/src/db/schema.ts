@@ -180,16 +180,12 @@ export const siteEmbeddingDomains = appSchema.table(
       .$defaultFn(() => createId()),
     domain: text('domain').notNull(), // e.g., "example.com"
     scrapedAt: timestamp('scraped_at').notNull(),
-    tenantId: text('tenant_id')
-      .notNull()
-      .references(() => tenants.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
-    index('site_domain_tenant_idx').on(table.domain, table.tenantId),
     index('site_scraped_at_idx').on(table.scrapedAt),
-    index('tenant_domain_idx').on(table.tenantId, table.domain),
+    index('site_domain_idx').on(table.domain),
   ]
 );
 
@@ -224,11 +220,7 @@ export const siteEmbeddings = appSchema.table(
 );
 
 // Relations for scraping tables
-export const siteEmbeddingDomainsRelations = relations(siteEmbeddingDomains, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [siteEmbeddingDomains.tenantId],
-    references: [tenants.id],
-  }),
+export const siteEmbeddingDomainsRelations = relations(siteEmbeddingDomains, ({ many }) => ({
   embeddings: many(siteEmbeddings),
 }));
 

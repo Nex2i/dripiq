@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
 import { ForbiddenError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
-import { supabase } from '@/libs/supabaseClient';
+import { supabase } from '@/libs/supabase.client';
 import { UserService } from '@/modules/user.service';
 
 export interface IUser {

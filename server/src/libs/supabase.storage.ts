@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase.client';
 
 const bucket = process.env.SITE_STORAGE_BUCKET;
 
