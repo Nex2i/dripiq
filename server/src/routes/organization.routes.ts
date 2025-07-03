@@ -1,6 +1,6 @@
 import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
-import { reportGeneratorService } from '@/modules/ai/reportGenerator.service';
+import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 
 const basePath = '/organizations';
 
@@ -104,14 +104,11 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
             .send({ message: 'You are not authorized to resync this organization' });
         }
 
-        // const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(tenantId);
-        const result = await reportGeneratorService.summarizeSite('https://www.filevine.com');
-        console.log(result);
-        // For now, just return a 200 status
+        const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(tenantId);
         return reply.status(200).send({
           message: 'Organization details resynced successfully',
           id: tenantId,
-          result,
+          siteAnalyzerResult,
         });
       } catch (error: any) {
         fastify.log.error(error);

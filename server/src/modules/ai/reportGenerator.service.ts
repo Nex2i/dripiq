@@ -1,18 +1,13 @@
 import { zodTextFormat } from 'openai/helpers/zod';
+import { ResponseInputItem, Tool } from 'openai/resources/responses/responses';
 import { openAiClient } from '@/libs/openai.client';
+import { promptHelper } from '@/prompts/prompt.helper';
 import reportOutputSchema from './schemas/reportOutputSchema';
 import {
   GetInformationAboutDomainTool,
   DomainInformation,
   getDomainInformationTool,
 } from './tools/GetInformationAboutDomain';
-import { promptHelper } from '@/prompts/prompt.helper';
-import {
-  ResponseCreateParamsNonStreaming,
-  ResponseInputItem,
-  Tool,
-} from 'openai/resources/responses/responses';
-import { SiteEmbeddingDomain } from '@/db';
 import {
   listDomainPagesTool,
   ListDomainPagesTool,
@@ -347,7 +342,7 @@ export class ReportGeneratorService {
       console.log(`Executing function: ${functionName}`);
 
       switch (functionName) {
-        case 'GetInformationAboutDomainTool':
+        case 'GetInformationAboutDomainTool': {
           const domainInfo: DomainInformation = await GetInformationAboutDomainTool(
             args?.domain,
             args?.query_text,
@@ -357,20 +352,23 @@ export class ReportGeneratorService {
             success: true,
             data: domainInfo,
           };
+        }
 
-        case 'ListDomainPagesTool':
+        case 'ListDomainPagesTool': {
           const pages: ListDomainPagesToolResponse = await ListDomainPagesTool(args?.domain);
           return {
             success: true,
             data: pages,
           };
+        }
 
-        case 'RetrieveFullPageTool':
+        case 'RetrieveFullPageTool': {
           const fullPage: RetrieveFullPageToolResponse = await RetrieveFullPageTool(args?.url);
           return {
             success: true,
             data: fullPage,
           };
+        }
 
         default:
           return {

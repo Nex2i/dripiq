@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db, siteEmbeddingDomains, siteEmbeddings } from '@/db';
 import { Tool } from 'openai/resources/responses/responses';
+import { db, siteEmbeddingDomains, siteEmbeddings } from '@/db';
 
 export const listDomainPagesTool: Tool = {
   type: 'function' as const,

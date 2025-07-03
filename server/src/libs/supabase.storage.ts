@@ -1,3 +1,4 @@
+import { logger } from './logger';
 import { supabase } from './supabase.client';
 
 const bucket = process.env.SITE_STORAGE_BUCKET;
@@ -28,7 +29,7 @@ export const supabaseStorage = {
         });
 
         if (error) {
-          throw error;
+          logger.error(`Error uploading file ${key}`, error);
         }
 
         return data;
@@ -39,11 +40,11 @@ export const supabaseStorage = {
       });
 
       if (error) {
-        throw error;
+        logger.error(`Error uploading file ${key}`, error);
       }
       return data;
     } catch (error) {
-      throw error;
+      logger.error(`Error uploading file ${key}`, error);
     }
   },
 
@@ -53,7 +54,7 @@ export const supabaseStorage = {
       const results = await Promise.allSettled(promises);
       return results;
     } catch (error) {
-      throw error;
+      logger.error(`Error uploading files ${key}`, error);
     }
   },
 };

@@ -1,5 +1,4 @@
 import { supabase } from '@/libs/supabase.client';
-import { allowedStorageMimeTypes } from './allowedStorageMimeTypes';
 
 const supaBaseBucket = process.env.SITE_STORAGE_BUCKET;
 

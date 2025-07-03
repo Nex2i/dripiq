@@ -1,13 +1,13 @@
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
+import { openAiClient } from '@/libs/openai.client';
+import db from '@/libs/drizzleClient';
+import { siteEmbeddingDomains, siteEmbeddings } from '@/db';
+import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
 import {
   ScrapingResultItem,
   ScrapingResultMarkdown,
   ScrapingResultMetadata,
 } from './scraping.service';
-import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
-import { openAiClient } from '@/libs/openai.client';
-import db from '@/libs/drizzleClient';
-import { siteEmbeddingDomains, siteEmbeddings } from '@/db';
 
 export const EmbeddingsService = {
   batchCreateSiteEmbedding: async (url: string, scrapingResultItems: ScrapingResultItem[]) => {

@@ -1,5 +1,5 @@
-import { openAiClient } from './openai.client';
 import { Embeddings } from 'openai/resources/embeddings';
+import { openAiClient } from './openai.client';
 
 export const openAiEmbeddingClient = {
   createEmbedding: async (text: string): Promise<Embeddings.CreateEmbeddingResponse> => {

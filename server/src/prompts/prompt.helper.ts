@@ -1,3 +1,4 @@
+import { logger } from '@/libs/logger';
 import summarizeSite from './summarize_site';
 
 export type PromptTypes = 'summarize_lead' | 'summarize_organization' | 'summarize_site';
@@ -32,7 +33,7 @@ export const promptHelper = {
 
       return promptHelper.injectInputVariables(prompt, inputVariables);
     } catch (error) {
-      throw error;
+      logger.error(`Error getting prompt and injecting input variables`, error);
     }
   },
 };

@@ -29,6 +29,8 @@ module.exports = [
         clearTimeout: true,
         setImmediate: true,
         clearImmediate: true,
+        fetch: true,
+        Blob: true,
       },
     },
     plugins: {
@@ -98,6 +100,23 @@ module.exports = [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-interface': 'off',
       'no-empty-pattern': 'off',
+    },
+  },
+  // Jest test files configuration
+  {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
+      },
     },
   },
 ];

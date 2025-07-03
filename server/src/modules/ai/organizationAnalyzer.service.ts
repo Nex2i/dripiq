@@ -1,4 +1,5 @@
 import { TenantService } from '../tenant.service';
+import { reportGeneratorService } from './reportGenerator.service';
 import { SiteAnalyzerDto, SiteAnalyzerService, tenantSiteKey } from './siteAnalyzer.service';
 
 export const OrganizationAnalyzerService = {
@@ -15,6 +16,7 @@ export const OrganizationAnalyzerService = {
     };
 
     const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
+    await reportGeneratorService.summarizeSite(organizationWebsite.getDomain());
 
     return siteAnalyzerResult;
   },
