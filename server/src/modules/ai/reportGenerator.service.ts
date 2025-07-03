@@ -12,18 +12,9 @@ import reportOutputSchema from './schemas/reportOutputSchema';
 import {
   GetInformationAboutDomainTool,
   DomainInformation,
-  getDomainInformationTool,
 } from './tools/GetInformationAboutDomain';
-import {
-  listDomainPagesTool,
-  ListDomainPagesTool,
-  ListDomainPagesToolResponse,
-} from './tools/ListDomainPages';
-import {
-  retrieveFullPageTool,
-  RetrieveFullPageTool,
-  RetrieveFullPageToolResponse,
-} from './tools/RetrieveFullPage';
+import { ListDomainPagesTool, ListDomainPagesToolResponse } from './tools/ListDomainPages';
+import { RetrieveFullPageTool, RetrieveFullPageToolResponse } from './tools/RetrieveFullPage';
 
 interface FunctionCallResult {
   success: boolean;
