@@ -15,7 +15,7 @@ export const OrganizationAnalyzerService = {
       siteUrl: website,
     };
 
-    const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
+    // const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
     const aiOutput = await reportGeneratorService.summarizeSite(website.getDomain());
 
     if (!aiOutput?.finalResponseParsed) {
@@ -33,7 +33,5 @@ export const OrganizationAnalyzerService = {
       targetMarket: targetMarket,
       tone: tone,
     });
-
-    return siteAnalyzerResult;
   },
 };

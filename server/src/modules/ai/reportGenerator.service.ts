@@ -53,7 +53,8 @@ export class ReportGeneratorService {
   private maxIterations: number;
 
   constructor(maxIterations: number = 10) {
-    this.tools = [getDomainInformationTool, listDomainPagesTool, retrieveFullPageTool];
+    // this.tools = [getDomainInformationTool, listDomainPagesTool, retrieveFullPageTool];
+    this.tools = [];
     this.maxIterations = maxIterations;
   }
 
