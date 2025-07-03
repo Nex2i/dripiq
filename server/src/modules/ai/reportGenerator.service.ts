@@ -1,5 +1,9 @@
 import { zodTextFormat } from 'openai/helpers/zod';
-import { ResponseInputItem, Tool } from 'openai/resources/responses/responses';
+import {
+  ResponseCreateParamsNonStreaming,
+  ResponseInputItem,
+  Tool,
+} from 'openai/resources/responses/responses';
 import { openAiClient } from '@/libs/openai.client';
 import { promptHelper } from '@/prompts/prompt.helper';
 import reportOutputSchema from './schemas/reportOutputSchema';
@@ -18,6 +22,8 @@ import {
   RetrieveFullPageTool,
   RetrieveFullPageToolResponse,
 } from './tools/RetrieveFullPage';
+import { logger } from '@/libs/logger';
+import z from 'zod';
 
 interface FunctionCallResult {
   success: boolean;
@@ -27,6 +33,7 @@ interface FunctionCallResult {
 
 interface FunctionCallLoopResult {
   finalResponse: string;
+  finalResponseParsed?: z.infer<typeof reportOutputSchema>;
   totalIterations: number;
   functionCalls: Array<{
     functionName: string;
@@ -74,9 +81,6 @@ export class ReportGeneratorService {
         if (error?.status === 429 && attempt < maxRetries) {
           // Rate limit error - extract wait time from error message or use exponential backoff
           const waitTime = this.extractWaitTimeFromError(error) || Math.pow(2, attempt) * 1000;
-          console.log(
-            `Rate limit hit, waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`
-          );
           await this.delay(waitTime);
           continue;
         }
@@ -107,9 +111,9 @@ export class ReportGeneratorService {
       isFirstRequest?: boolean;
     } = {}
   ) {
-    const { model = 'gpt-4o-mini', toolChoice = 'auto', isFirstRequest = false } = options;
+    const { model = 'gpt-4.1-nano', toolChoice = 'auto', isFirstRequest = false } = options;
 
-    const requestParams: any = {
+    const requestParams: ResponseCreateParamsNonStreaming = {
       model: model,
       input,
       tools: this.tools,
@@ -149,7 +153,14 @@ export class ReportGeneratorService {
       },
     ];
 
-    return await this.executeFunctionCallLoop(input);
+    const output = await this.executeFunctionCallLoop(input);
+
+    // map final output to reportOutputSchema
+    const finalOutput = reportOutputSchema.parse(output.finalResponse);
+    return {
+      ...output,
+      finalResponseParsed: finalOutput,
+    };
   }
 
   private async executeFunctionCallLoop(
@@ -163,8 +174,6 @@ export class ReportGeneratorService {
       iteration++;
 
       try {
-        console.log(`Function call loop iteration ${iteration}`);
-
         // Make the API call to OpenAI using Responses API (only for first iteration)
         if (iteration === 1) {
           currentResponse = await this.makeOpenAIRequestWithRetry(initialInput, {
@@ -178,7 +187,6 @@ export class ReportGeneratorService {
           currentResponse?.output?.filter((item: any) => item.type === 'function_call') || [];
 
         if (functionCalls.length > 0) {
-          console.log(`Processing ${functionCalls.length} function calls`);
           pendingFunctionCalls = functionCalls; // Store pending calls for error handling
 
           // Execute all function calls in parallel
@@ -186,8 +194,6 @@ export class ReportGeneratorService {
             functionCalls.map(async (toolCall: any) => {
               const functionName = toolCall.name;
               const functionArgs = JSON.parse(toolCall.arguments || '{}');
-
-              console.log(`Executing function: ${functionName} with args:`, functionArgs);
 
               const result = await this.executeFunction(functionName, functionArgs);
 
@@ -221,7 +227,7 @@ export class ReportGeneratorService {
             if (result.status === 'fulfilled') {
               newInputItems.push(...result.value);
             } else {
-              console.error('Tool execution failed:', result.reason);
+              logger.error('Tool execution failed:', result.reason);
               // Add error message with proper call_id if available
               const failedCall = pendingFunctionCalls.find(() => true); // Get first pending call as fallback
               newInputItems.push({
@@ -244,10 +250,6 @@ export class ReportGeneratorService {
             // Model is satisfied - EARLY EXIT
             const finalResponse = currentResponse.output_text || 'No response generated';
 
-            console.log(
-              `Function call loop completed after ${iteration} iterations (model satisfied)`
-            );
-
             return {
               finalResponse,
               totalIterations: iteration,
@@ -256,17 +258,10 @@ export class ReportGeneratorService {
           }
 
           // Continue the loop - model wants to make more function calls
-          console.log(
-            `Model wants to make ${moreFunctionCalls.length} more function calls, continuing...`
-          );
           continue;
         } else {
           // No function calls - model provided final response immediately
           const finalResponse = currentResponse.output_text || 'No response generated';
-
-          console.log(
-            `Function call loop completed after ${iteration} iterations (no tools needed)`
-          );
 
           return {
             finalResponse,
@@ -275,12 +270,11 @@ export class ReportGeneratorService {
           };
         }
       } catch (error) {
-        console.error(`Error in function call loop iteration ${iteration}:`, error);
+        logger.error(`Error in function call loop iteration ${iteration}:`, error);
 
         // If we have pending function calls that failed due to rate limit,
         // don't try to make another request that would also fail
         if (pendingFunctionCalls.length > 0 && (error as any)?.status === 429) {
-          console.log('Rate limit error with pending function calls, ending gracefully');
           return {
             finalResponse:
               'Summary generation interrupted due to rate limits. Please try again later.',
@@ -302,16 +296,13 @@ export class ReportGeneratorService {
               functionCalls: this.functionCallHistory,
             };
           } catch (finalError) {
-            console.error('Final response generation failed:', finalError);
+            logger.error('Final response generation failed:', finalError);
           }
         }
 
         throw error;
       }
     }
-
-    // Max iterations reached
-    console.warn(`Function call loop reached maximum iterations (${this.maxIterations})`);
 
     // Get final response without tools (only if no pending function calls)
     if (pendingFunctionCalls.length === 0) {
@@ -326,7 +317,7 @@ export class ReportGeneratorService {
           functionCalls: this.functionCallHistory,
         };
       } catch (error) {
-        console.error('Final summary generation failed:', error);
+        logger.error('Final summary generation failed:', error);
       }
     }
 
@@ -339,8 +330,6 @@ export class ReportGeneratorService {
 
   private async executeFunction(functionName: string, args: any): Promise<FunctionCallResult> {
     try {
-      console.log(`Executing function: ${functionName}`);
-
       switch (functionName) {
         case 'GetInformationAboutDomainTool': {
           const domainInfo: DomainInformation = await GetInformationAboutDomainTool(
@@ -377,7 +366,7 @@ export class ReportGeneratorService {
           };
       }
     } catch (error) {
-      console.error(`Error executing function ${functionName}:`, error);
+      logger.error(`Error executing function ${functionName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

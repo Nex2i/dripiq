@@ -23,7 +23,7 @@ export const promptHelper = {
       return inputVariables[p1] || match;
     });
   },
-  getPromptAndInject: (promptType: PromptTypes, inputVariables: Record<string, string>) => {
+  getPromptAndInject: (promptType: PromptTypes, inputVariables: Record<string, string>): string => {
     try {
       const prompt = prompts[promptType];
 
@@ -34,6 +34,7 @@ export const promptHelper = {
       return promptHelper.injectInputVariables(prompt, inputVariables);
     } catch (error) {
       logger.error(`Error getting prompt and injecting input variables`, error);
+      throw error;
     }
   },
 };

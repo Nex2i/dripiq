@@ -3,20 +3,33 @@ import { reportGeneratorService } from './reportGenerator.service';
 import { SiteAnalyzerDto, SiteAnalyzerService, tenantSiteKey } from './siteAnalyzer.service';
 
 export const OrganizationAnalyzerService = {
-  analyzeOrganization: async (tenantId: string) => {
-    const { id, organizationWebsite } = await TenantService.getTenantById(tenantId);
+  analyzeOrganization: async (tenantId: string, userId: string) => {
+    const { id, website } = await TenantService.getTenantById(tenantId);
 
-    if (!organizationWebsite) {
+    if (!website) {
       throw new Error('Organization website is required');
     }
 
     const siteAnalyzerDto: SiteAnalyzerDto = {
       storageKey: tenantSiteKey(id),
-      siteUrl: organizationWebsite,
+      siteUrl: website,
     };
 
     const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
-    await reportGeneratorService.summarizeSite(organizationWebsite.getDomain());
+    const aiOutput = await reportGeneratorService.summarizeSite(website.getDomain());
+
+    if (!aiOutput?.finalResponseParsed) {
+      throw new Error('AI output is required');
+    }
+
+    const { summary, products, services, differentiators } = aiOutput.finalResponseParsed;
+    // save on tenant
+    await TenantService.updateTenant(userId, id, {
+      organizationSummary: summary,
+      products: products,
+      services: services,
+      differentiators: differentiators,
+    });
 
     return siteAnalyzerResult;
   },

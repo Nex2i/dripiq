@@ -38,7 +38,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           id: tenant.id,
           tenantName: tenant.name,
           organizationName: tenant.organizationName || '',
-          organizationWebsite: tenant.organizationWebsite || '',
+          organizationWebsite: tenant.website || '',
         });
       } catch (error: any) {
         fastify.log.error(error);
@@ -71,7 +71,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           id: updatedTenant.id,
           tenantName: updatedTenant.name,
           organizationName: updatedTenant.organizationName || '',
-          organizationWebsite: updatedTenant.organizationWebsite || '',
+          organizationWebsite: updatedTenant.website || '',
         });
       } catch (error: any) {
         fastify.log.error(error);
@@ -96,6 +96,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
+        const user = (request as any).user;
         const tenantId = (request as any).tenantId;
 
         if (tenantId !== id) {
@@ -104,7 +105,10 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
             .send({ message: 'You are not authorized to resync this organization' });
         }
 
-        const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(tenantId);
+        const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(
+          tenantId,
+          user.id
+        );
         return reply.status(200).send({
           message: 'Organization details resynced successfully',
           id: tenantId,

@@ -16,7 +16,6 @@ Avoid repeating boilerplate or vague statements. Focus on real, specific value t
 If no concrete product or service is mentioned, state that explicitly.
 
 Domain: **{{domain}}**
-
 `;
 
 export default prompt;

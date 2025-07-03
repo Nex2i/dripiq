@@ -15,6 +15,12 @@ export interface CreateTenantData {
   name: string;
   organizationName?: string;
   organizationWebsite?: string;
+  organizationSummary?: string;
+  products?: string[];
+  services?: string[];
+  differentiators?: string[];
+  targetMarket?: string;
+  tone?: string;
 }
 
 export interface TenantWithUsers extends Tenant {

@@ -36,8 +36,13 @@ export const tenants = appSchema.table('tenants', {
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
   organizationName: text('organization_name'),
-  organizationWebsite: text('organization_website'),
-  organizationSummary: text('organization_summary'),
+  website: text('organization_website'),
+  summary: text('organization_summary'),
+  products: jsonb('products'), // Array of products the company offers
+  services: jsonb('services'), // Array of services the company offers
+  differentiators: jsonb('differentiators'), // Array of differentiators the company has
+  targetMarket: text('target_market'), // The target market the company is trying to serve
+  tone: text('tone'), // The tone of the company
   siteEmbeddingDomainId: text('site_embedding_domain_id').references(
     () => siteEmbeddingDomains.id,
     { onDelete: 'set null' }
@@ -175,6 +180,11 @@ export const leads = appSchema.table('leads', {
   phone: text('phone'),
   status: text('status').notNull().default('new'),
   summary: text('summary'),
+  products: jsonb('products'), // Array of products the company offers
+  services: jsonb('services'), // Array of services the company offers
+  differentiators: jsonb('differentiators'), // Array of differentiators the company has
+  targetMarket: text('target_market'), // The target market the company is trying to serve
+  tone: text('tone'), // The tone of the company
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
