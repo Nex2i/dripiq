@@ -6,6 +6,7 @@ interface String {
   isNullOrEmpty(): boolean;
   getUrlSlug(): string;
   getDomain(): string;
+  cleanWebsiteUrl(): string;
 }
 
 String.prototype.isValidEmail = function (): boolean {
@@ -59,7 +60,7 @@ String.prototype.getUrlSlug = function (): string {
   // Combine domain parts and path parts
   const allParts = [...domainParts, ...pathParts].filter((part) => part && part.trim() !== '');
 
-  return allParts.join('-');
+  return allParts.join('-')?.toLowerCase() || '';
 };
 
 String.prototype.getDomain = function (): string {
@@ -67,5 +68,29 @@ String.prototype.getDomain = function (): string {
   url = url.replace(/^https?:\/\//, '');
   url = url.replace(/^www\./, '');
   url = url.replace(/\.[^.]+$/, '');
-  return url;
+  return url?.toLowerCase() || '';
+};
+
+String.prototype.cleanWebsiteUrl = function (): string {
+  let url = this.toString().trim();
+
+  // Add https:// if missing
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'https://' + url;
+  }
+
+  // Add www. if missing
+  const protocolMatch = url.match(/^(https?:\/\/)/i);
+  const protocol = protocolMatch ? protocolMatch[1] : '';
+  let host = url.slice(protocol?.length);
+  if (!host.startsWith('www.')) {
+    host = 'www.' + host;
+  }
+
+  // Remove trailing slash
+  if (host.endsWith('/')) {
+    host = host.slice(0, -1);
+  }
+
+  return (protocol + host)?.toLowerCase() || '';
 };

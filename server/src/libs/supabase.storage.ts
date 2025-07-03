@@ -49,9 +49,7 @@ export const supabaseStorage = {
 
   uploadFiles: async (key: string, files: IUploadFile[]) => {
     try {
-      const promises = files.map((file) =>
-        supabaseStorage.uploadFile(key + '/' + file.fileName, file)
-      );
+      const promises = files.map((file) => supabaseStorage.uploadFile(key + '/' + file.slug, file));
       const results = await Promise.allSettled(promises);
       return results;
     } catch (error) {

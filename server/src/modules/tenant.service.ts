@@ -168,8 +168,7 @@ export class TenantService {
     await validateUserTenantAccess(userId, tenantId);
 
     if (updateData.organizationWebsite) {
-      // Remove trailing slash
-      updateData.organizationWebsite = updateData.organizationWebsite.replace(/\/$/, '');
+      updateData.organizationWebsite = updateData.organizationWebsite?.cleanWebsiteUrl();
     }
 
     const [tenant] = await db

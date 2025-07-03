@@ -126,4 +126,17 @@ describe('String Extensions', () => {
       expect('www.example.com'.getDomain()).toBe('example');
     });
   });
+
+  describe('cleanWebsiteUrl', () => {
+    it.each([
+      ['https://www.google.com/', 'https://www.google.com'],
+      ['http://www.facebook.com/', 'http://www.facebook.com'],
+      ['https://twitter.com', 'https://www.twitter.com'],
+      ['www.example.com', 'https://www.example.com'],
+      ['http://www.example.com', 'http://www.example.com'],
+      ['www.example.com/path', 'https://www.example.com/path'],
+    ])('should clean website URL', (url, expected) => {
+      expect(url.cleanWebsiteUrl()).toBe(expected);
+    });
+  });
 });
