@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+--> statement-breakpoint
 CREATE SCHEMA "dripiq_app";
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "dripiq_app"."leads" (
