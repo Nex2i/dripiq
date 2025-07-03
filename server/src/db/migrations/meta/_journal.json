@@ -71,6 +71,13 @@
       "when": 1751562439556,
       "tag": "0009_site_vectors_remove_tenant",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1751571811671,
+      "tag": "0010_tenant_and_lead_summary",
+      "breakpoints": true
     }
   ]
 }

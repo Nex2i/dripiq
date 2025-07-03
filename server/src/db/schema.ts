@@ -37,6 +37,11 @@ export const tenants = appSchema.table('tenants', {
   name: text('name').notNull(),
   organizationName: text('organization_name'),
   organizationWebsite: text('organization_website'),
+  organizationSummary: text('organization_summary'),
+  siteEmbeddingDomainId: text('site_embedding_domain_id').references(
+    () => siteEmbeddingDomains.id,
+    { onDelete: 'set null' }
+  ),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -114,8 +119,13 @@ export const usersRelations = relations(users, ({ many }) => ({
   tenants: many(userTenants),
 }));
 
-export const tenantsRelations = relations(tenants, ({ many }) => ({
+export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(userTenants),
+  leads: many(leads),
+  siteEmbeddingDomain: one(siteEmbeddingDomains, {
+    fields: [tenants.siteEmbeddingDomainId],
+    references: [siteEmbeddingDomains.id],
+  }),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -164,12 +174,28 @@ export const leads = appSchema.table('leads', {
   company: text('company'),
   phone: text('phone'),
   status: text('status').notNull().default('new'),
+  summary: text('summary'),
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
+  siteEmbeddingDomainId: text('site_embedding_domain_id').references(
+    () => siteEmbeddingDomains.id,
+    { onDelete: 'set null' }
+  ),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+export const leadsRelations = relations(leads, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [leads.tenantId],
+    references: [tenants.id],
+  }),
+  siteEmbeddingDomain: one(siteEmbeddingDomains, {
+    fields: [leads.siteEmbeddingDomainId],
+    references: [siteEmbeddingDomains.id],
+  }),
+}));
 
 // Site embedding domains table - stores domain/page metadata (1-to-many with embeddings)
 export const siteEmbeddingDomains = appSchema.table(
