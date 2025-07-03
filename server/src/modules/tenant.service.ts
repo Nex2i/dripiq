@@ -37,8 +37,11 @@ export class TenantService {
    * @throws Throws an error if the tenant creation fails.
    */
   static async createTenant(tenantData: CreateTenantData): Promise<Tenant> {
+    // Auto-format tenant name: lowercase and replace spaces with hyphens
+    const formattedName = tenantData.name.toLowerCase().replace(/\s+/g, '-');
+
     const newTenant: NewTenant = {
-      name: tenantData.name,
+      name: formattedName,
     };
 
     const [tenant] = await db.insert(tenants).values(newTenant).returning();
@@ -175,6 +178,11 @@ export class TenantService {
 
     if (updateData.website) {
       updateData.website = updateData.website?.cleanWebsiteUrl();
+    }
+
+    // Auto-format tenant name: lowercase and replace spaces with hyphens
+    if (updateData.name) {
+      updateData.name = updateData.name.toLowerCase().replace(/\s+/g, '-');
     }
 
     const [tenant] = await db

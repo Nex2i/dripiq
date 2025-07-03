@@ -68,9 +68,16 @@ export default function OrganizationPage() {
   }, [organization])
 
   const handleInputChange = (field: string, value: string) => {
+    let processedValue = value
+
+    // Auto-format tenant name: lowercase and replace spaces with hyphens
+    if (field === 'tenantName') {
+      processedValue = value.toLowerCase().replace(/\s+/g, '-')
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: processedValue,
     }))
     setIsDirty(true)
   }
