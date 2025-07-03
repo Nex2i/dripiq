@@ -16,12 +16,12 @@ export const initSupabaseStorage = async () => {
     if (!bucket?.data) {
       await supabase.storage.createBucket(supaBaseBucket, {
         public: false,
-        fileSizeLimit: 5 * 1024 * 1024 * 1024, // 5gb
-        allowedMimeTypes: allowedStorageMimeTypes,
+        // fileSizeLimit: 5 * 1024 * 1024 * 1024, // 5gb
+        // allowedMimeTypes: allowedStorageMimeTypes,
       });
-      console.log('Bucket created');
+      console.log(`${supaBaseBucket} bucket created`);
     } else {
-      console.log('Bucket exists');
+      console.log(`${supaBaseBucket} bucket exists`);
     }
   } catch (error) {
     console.error(error);

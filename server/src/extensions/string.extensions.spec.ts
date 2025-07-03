@@ -52,69 +52,78 @@ describe('String Extensions', () => {
     });
   });
 
-  describe('getUrlPath', () => {
+  describe('getUrlSlug', () => {
     it('should extract domain from simple URLs', () => {
-      expect('https://www.google.com/'.getUrlPath()).toBe('google');
-      expect('http://www.facebook.com/'.getUrlPath()).toBe('facebook');
-      expect('https://twitter.com'.getUrlPath()).toBe('twitter');
-      expect('www.example.com'.getUrlPath()).toBe('example');
+      expect('https://www.google.com/'.getUrlSlug()).toBe('google');
+      expect('http://www.facebook.com/'.getUrlSlug()).toBe('facebook');
+      expect('https://twitter.com'.getUrlSlug()).toBe('twitter');
+      expect('www.example.com'.getUrlSlug()).toBe('example');
     });
 
     it('should handle URLs with search params as documented', () => {
       // Given https://www.google.com/search?q=test&oq=test&sourceid=chrome&ie=UTF-8
       // should return google/search -> google-search
       expect(
-        'https://www.google.com/search?q=test&oq=test&sourceid=chrome&ie=UTF-8'.getUrlPath()
+        'https://www.google.com/search?q=test&oq=test&sourceid=chrome&ie=UTF-8'.getUrlSlug()
       ).toBe('google-search');
     });
 
     it('should handle complex paths as documented', () => {
       // given https://www.google.com/search/internet/tree
       // should return google-search-internet-tree
-      expect('https://www.google.com/search/internet/tree'.getUrlPath()).toBe(
+      expect('https://www.google.com/search/internet/tree'.getUrlSlug()).toBe(
         'google-search-internet-tree'
       );
     });
 
     it('should handle various URL formats', () => {
-      expect('https://subdomain.example.com/path/to/page'.getUrlPath()).toBe(
+      expect('https://subdomain.example.com/path/to/page'.getUrlSlug()).toBe(
         'subdomain-example-path-to-page'
       );
-      expect('http://www.site.org/about'.getUrlPath()).toBe('site-about');
-      expect('https://api.service.net/v1/users'.getUrlPath()).toBe('api-service-v1-users');
+      expect('http://www.site.org/about'.getUrlSlug()).toBe('site-about');
+      expect('https://api.service.net/v1/users'.getUrlSlug()).toBe('api-service-v1-users');
     });
 
     it('should handle URLs without paths', () => {
-      expect('https://example.com'.getUrlPath()).toBe('example');
-      expect('http://www.test.org'.getUrlPath()).toBe('test');
-      expect('subdomain.example.net'.getUrlPath()).toBe('subdomain-example');
+      expect('https://example.com'.getUrlSlug()).toBe('example');
+      expect('http://www.test.org'.getUrlSlug()).toBe('test');
+      expect('subdomain.example.net'.getUrlSlug()).toBe('subdomain-example');
     });
 
     it('should handle URLs with trailing slashes', () => {
-      expect('https://www.example.com/'.getUrlPath()).toBe('example');
-      expect('https://www.example.com/path/'.getUrlPath()).toBe('example-path');
+      expect('https://www.example.com/'.getUrlSlug()).toBe('example');
+      expect('https://www.example.com/path/'.getUrlSlug()).toBe('example-path');
     });
 
     it('should handle URLs with complex query parameters', () => {
-      expect('https://www.example.com/search?q=test%20query&sort=date&page=1'.getUrlPath()).toBe(
+      expect('https://www.example.com/search?q=test%20query&sort=date&page=1'.getUrlSlug()).toBe(
         'example-search'
       );
       expect(
-        'https://shop.example.com/products?category=electronics&price=100-500'.getUrlPath()
+        'https://shop.example.com/products?category=electronics&price=100-500'.getUrlSlug()
       ).toBe('shop-example-products');
     });
 
     it('should handle edge cases', () => {
-      expect(''.getUrlPath()).toBe('');
-      expect('https://'.getUrlPath()).toBe('');
-      expect('http://'.getUrlPath()).toBe('');
-      expect('www.'.getUrlPath()).toBe('');
+      expect(''.getUrlSlug()).toBe('');
+      expect('https://'.getUrlSlug()).toBe('');
+      expect('http://'.getUrlSlug()).toBe('');
+      expect('www.'.getUrlSlug()).toBe('');
     });
 
     it('should remove various TLDs correctly', () => {
-      expect('https://example.com/path'.getUrlPath()).toBe('example-path');
-      expect('https://example.org/path'.getUrlPath()).toBe('example-path');
-      expect('https://example.net/path'.getUrlPath()).toBe('example-path');
+      expect('https://example.com/path'.getUrlSlug()).toBe('example-path');
+      expect('https://example.org/path'.getUrlSlug()).toBe('example-path');
+      expect('https://example.net/path'.getUrlSlug()).toBe('example-path');
+    });
+  });
+
+  describe('getDomain', () => {
+    it('should extract domain from simple URLs', () => {
+      expect('https://www.google.com/'.getDomain()).toBe('google');
+      expect('http://www.facebook.com/'.getDomain()).toBe('facebook');
+      expect('https://twitter.com'.getDomain()).toBe('twitter');
+      expect('www.example.com'.getDomain()).toBe('example');
     });
   });
 });

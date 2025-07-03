@@ -5,14 +5,15 @@ import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabaseClient';
 import { UserService } from '@/modules/user.service';
 
+export interface IUser {
+  id: string; // Database user ID
+  supabaseId: string; // Supabase user ID
+  email: string; // Supabase user email
+  name?: string; // Supabase user name
+}
+
 export interface AuthenticatedRequest extends FastifyRequest {
-  user: {
-    id: string; // Database user ID
-    supabaseId: string;
-    email: string;
-    name?: string;
-    avatar?: string;
-  };
+  user: IUser;
   tenantId: string; // Primary/current tenant ID (automatically determined)
   userTenants: Array<{
     id: string;
@@ -26,13 +27,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
 // Simple in-memory cache with TTL for authentication data
 interface CacheEntry {
   data: {
-    user: {
-      id: string;
-      supabaseId: string;
-      email: string;
-      name?: string;
-      avatar?: string;
-    };
+    user: IUser;
     userTenants: Array<{
       id: string;
       name: string;
@@ -151,8 +146,7 @@ export default fastifyPlugin(
               supabaseId: dbResult.user.supabaseId,
               email: dbResult.user.email,
               name: dbResult.user.name || undefined,
-              avatar: dbResult.user.avatar || undefined,
-            },
+            } as IUser,
             userTenants: dbResult.userTenants,
           };
 

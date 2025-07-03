@@ -132,8 +132,8 @@ export default function OrganizationPage() {
             <RotateCcw
               className={`h-4 w-4 mr-2 transition-transform duration-600 ${
                 resyncOrganizationMutation.isPending
-                  ? 'animate-spin'
-                  : 'group-hover:rotate-180'
+                  ? 'animate-[spin_1s_linear_infinite_reverse]'
+                  : 'group-hover:-rotate-180'
               }`}
             />
             {resyncOrganizationMutation.isPending ? 'Resyncing...' : 'Resync'}

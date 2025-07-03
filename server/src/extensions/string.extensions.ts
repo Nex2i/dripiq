@@ -4,7 +4,8 @@
 interface String {
   isValidEmail(): boolean;
   isNullOrEmpty(): boolean;
-  getUrlPath(): string;
+  getUrlSlug(): string;
+  getDomain(): string;
 }
 
 String.prototype.isValidEmail = function (): boolean {
@@ -19,7 +20,7 @@ String.prototype.isNullOrEmpty = function (): boolean {
   );
 };
 
-String.prototype.getUrlPath = function (): string {
+String.prototype.getUrlSlug = function (): string {
   let url = this.toString();
 
   // Handle empty or invalid URLs
@@ -59,4 +60,12 @@ String.prototype.getUrlPath = function (): string {
   const allParts = [...domainParts, ...pathParts].filter((part) => part && part.trim() !== '');
 
   return allParts.join('-');
+};
+
+String.prototype.getDomain = function (): string {
+  let url = this.toString();
+  url = url.replace(/^https?:\/\//, '');
+  url = url.replace(/^www\./, '');
+  url = url.replace(/\.[^.]+$/, '');
+  return url;
 };

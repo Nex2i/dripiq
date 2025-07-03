@@ -49,7 +49,7 @@ export class TenantService {
    * @param tenantId - The ID of the tenant to retrieve.
    * @returns A promise that resolves to the tenant object with its users, or null if not found.
    */
-  static async getTenantById(tenantId: string): Promise<TenantWithUsers | null> {
+  static async getTenantById(tenantId: string): Promise<TenantWithUsers> {
     const tenant = await db
       .select()
       .from(tenants)
@@ -58,7 +58,7 @@ export class TenantService {
       .then((result) => result[0]);
 
     if (!tenant) {
-      return null;
+      throw new Error('Tenant not found');
     }
 
     // Get users for this tenant
@@ -166,6 +166,11 @@ export class TenantService {
     // Validate user has access to this tenant
     const { validateUserTenantAccess } = await import('../utils/tenantValidation');
     await validateUserTenantAccess(userId, tenantId);
+
+    if (updateData.organizationWebsite) {
+      // Remove trailing slash
+      updateData.organizationWebsite = updateData.organizationWebsite.replace(/\/$/, '');
+    }
 
     const [tenant] = await db
       .update(tenants)

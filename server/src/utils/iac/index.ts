@@ -1,4 +1,4 @@
-import * as SupabaseStorage from './SupabaseStorage';
+import * as SupabaseStorage from './SupabaseStorageSetup';
 
 const initIac = async () => {
   await SupabaseStorage.initSupabaseStorage();

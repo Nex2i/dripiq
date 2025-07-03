@@ -1,6 +1,6 @@
 import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
-import { UserService } from '@/modules/user.service';
+import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 
 const basePath = '/organizations';
 
@@ -96,19 +96,19 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const user = (request as any).user;
+        const tenantId = (request as any).tenantId;
 
-        // Verify user has access to this organization
-        const tenant = await TenantService.getTenantByIdSecure(user.id, id);
-        if (!tenant) {
-          return reply.status(404).send({ message: 'Organization not found' });
+        if (tenantId !== id) {
+          return reply
+            .status(403)
+            .send({ message: 'You are not authorized to resync this organization' });
         }
 
-        // TODO: Implement actual resync logic here
+        const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(tenantId);
         // For now, just return a 200 status
         return reply.status(200).send({
           message: 'Organization details resynced successfully',
-          id: tenant.id,
+          id: tenantId,
         });
       } catch (error: any) {
         fastify.log.error(error);
