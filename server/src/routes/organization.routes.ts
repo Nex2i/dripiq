@@ -106,7 +106,8 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
         }
 
         // const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(tenantId);
-        await ReportGeneratorService.summarizeSite('https://www.filevine.com');
+        const result = await ReportGeneratorService.summarizeSite('https://www.filevine.com');
+        console.log(result);
         // For now, just return a 200 status
         return reply.status(200).send({
           message: 'Organization details resynced successfully',
