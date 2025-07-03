@@ -63,10 +63,14 @@ async function seed() {
 
 async function createSeedUser() {
   // Check if seed user already exists
+  const supabaseId =
+    process.env.NODE_ENV === 'production'
+      ? 'fee55c3d-5077-41ba-8e42-a2f97c64cd92'
+      : '91d39f85-07b7-4ae7-8da9-b4e4e675ce55';
   const existingSeedUser = await db
     .select()
     .from(users)
-    .where(eq(users.supabaseId, 'fee55c3d-5077-41ba-8e42-a2f97c64cd92'))
+    .where(eq(users.supabaseId, supabaseId))
     .limit(1);
 
   if (existingSeedUser.length > 0) {
@@ -79,11 +83,8 @@ async function createSeedUser() {
     .insert(users)
     .values({
       // supabaseId should be different if not prod
-      supabaseId:
-        process.env.NODE_ENV === 'production'
-          ? 'fee55c3d-5077-41ba-8e42-a2f97c64cd92'
-          : '91d39f85-07b7-4ae7-8da9-b4e4e675ce55',
-      email: 'ryanzhutch@gmail.com',
+      supabaseId,
+      email: `ryanzhutch+${process.env.NODE_ENV}@gmail.com`,
       name: 'Ryan Hutchison',
       createdAt: new Date('2025-06-30T03:46:22.185Z'),
       updatedAt: new Date('2025-06-30T16:58:18.567Z'),
