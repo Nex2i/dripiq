@@ -7,7 +7,6 @@ import {
   RotateCcw,
   FileText,
   Package,
-  Users,
   Lightbulb,
   Target,
   MessageCircle,
@@ -72,44 +71,6 @@ export default function OrganizationPage() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }))
-    setIsDirty(true)
-  }
-
-  const handleArrayChange = (field: string, values: string[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: values,
-    }))
-    setIsDirty(true)
-  }
-
-  const addArrayItem = (field: string) => {
-    const currentArray = formData[field as keyof typeof formData] as string[]
-    setFormData((prev) => ({
-      ...prev,
-      [field]: [...currentArray, ''],
-    }))
-    setIsDirty(true)
-  }
-
-  const removeArrayItem = (field: string, index: number) => {
-    const currentArray = formData[field as keyof typeof formData] as string[]
-    const newArray = currentArray.filter((_, i) => i !== index)
-    setFormData((prev) => ({
-      ...prev,
-      [field]: newArray,
-    }))
-    setIsDirty(true)
-  }
-
-  const updateArrayItem = (field: string, index: number, value: string) => {
-    const currentArray = formData[field as keyof typeof formData] as string[]
-    const newArray = [...currentArray]
-    newArray[index] = value
-    setFormData((prev) => ({
-      ...prev,
-      [field]: newArray,
     }))
     setIsDirty(true)
   }
@@ -196,26 +157,83 @@ export default function OrganizationPage() {
             </h2>
           </div>
 
-          {/* Resync Button */}
-          <button
-            onClick={handleResync}
-            disabled={resyncOrganizationMutation.isPending}
-            className="group relative inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer transition-all duration-200"
-            title="Resync organization details"
-          >
-            <RotateCcw
-              className={`h-4 w-4 mr-2 transition-transform duration-600 ${
-                resyncOrganizationMutation.isPending
-                  ? 'animate-[spin_1s_linear_infinite_reverse]'
-                  : 'group-hover:-rotate-180'
-              }`}
-            />
-            {resyncOrganizationMutation.isPending ? 'Resyncing...' : 'Resync'}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-3">
+            {/* Resync Button */}
+            <button
+              onClick={handleResync}
+              disabled={resyncOrganizationMutation.isPending}
+              className="group relative inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer transition-all duration-200"
+              title="Resync organization details"
+            >
+              <RotateCcw
+                className={`h-4 w-4 mr-2 transition-transform duration-600 ${
+                  resyncOrganizationMutation.isPending
+                    ? 'animate-[spin_1s_linear_infinite_reverse]'
+                    : 'group-hover:-rotate-180'
+                }`}
+              />
+              {resyncOrganizationMutation.isPending ? 'Resyncing...' : 'Resync'}
+            </button>
+
+            {/* Save Button */}
+            <button
+              onClick={handleSave}
+              disabled={!isDirty || updateOrganizationMutation.isPending}
+              className="group relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold text-white 
+                       bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-700)] 
+                       rounded-xl shadow-lg shadow-[var(--color-primary-200)]/50
+                       hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-800)] 
+                       hover:shadow-xl hover:shadow-[var(--color-primary-300)]/60
+                       hover:-translate-y-0.5 
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]
+                       disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-lg
+                       transition-all duration-200 ease-in-out transform"
+            >
+              {updateOrganizationMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-3"></div>
+                  Saving Changes...
+                </>
+              ) : (
+                <>
+                  <Building className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
         </div>
-        <p className="text-gray-600">
-          Manage your organization's core details and information.
-        </p>
+
+        {/* Status Indicators */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-gray-600">
+            Manage your organization's core details and information.
+          </p>
+
+          <div className="flex items-center">
+            {isDirty && !updateOrganizationMutation.isPending && (
+              <div className="flex items-center text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                <AlertCircle className="h-3 w-3 mr-1.5" />
+                <span className="text-xs font-medium">Unsaved changes</span>
+              </div>
+            )}
+            {!isDirty && !updateOrganizationMutation.isPending && (
+              <div className="flex items-center text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
+                <div className="w-3 h-3 mr-1.5 flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                </div>
+                <span className="text-xs font-medium">All changes saved</span>
+              </div>
+            )}
+            {updateOrganizationMutation.isPending && (
+              <div className="flex items-center text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+                <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-500 border-t-transparent mr-1.5"></div>
+                <span className="text-xs font-medium">Saving changes...</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Organization Details */}
@@ -245,8 +263,7 @@ export default function OrganizationPage() {
                   className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
                            placeholder:text-gray-400 
                            hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
                   placeholder="Enter your tenant name"
                 />
               </div>
@@ -278,8 +295,7 @@ export default function OrganizationPage() {
                   className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
                            placeholder:text-gray-400 
                            hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
                   placeholder="Enter your organization name"
                 />
               </div>
@@ -311,8 +327,7 @@ export default function OrganizationPage() {
                   className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
                            placeholder:text-gray-400 
                            hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
                   placeholder="https://your-company.com"
                 />
               </div>
@@ -325,26 +340,22 @@ export default function OrganizationPage() {
             <div className="group">
               <label
                 htmlFor="summary"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                className="block text-sm font-semibold text-gray-800 mb-2"
               >
                 Summary
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FileText className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                  <FileText className="h-4 w-4 text-gray-400" />
                 </div>
-                <input
-                  type="text"
+                <textarea
                   name="summary"
                   id="summary"
                   value={formData.summary}
-                  onChange={(e) => handleInputChange('summary', e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Enter a brief summary of your organization"
+                  readOnly
+                  rows={20}
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
+                           text-gray-700 cursor-not-allowed resize-none overflow-y-auto"
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">
@@ -354,109 +365,90 @@ export default function OrganizationPage() {
 
             {/* Products */}
             <div className="group">
-              <label
-                htmlFor="products"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
-              >
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
                 Products
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Package className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                  <Package className="h-4 w-4 text-gray-400" />
                 </div>
-                <input
-                  type="text"
-                  name="products"
-                  id="products"
-                  value={formData.products.join(', ')}
-                  onChange={(e) =>
-                    handleArrayChange(
-                      'products',
-                      e.target.value.split(',').map((p) => p.trim()),
-                    )
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Enter your products separated by commas"
-                />
+                <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
+                  {formData.products.length > 0 ? (
+                    <ul className="space-y-1 text-gray-700">
+                      {formData.products.map((product, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                          {product}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-500">No products listed</span>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                List your organization's products
+                List of your organization's products
               </p>
             </div>
 
             {/* Services */}
             <div className="group">
-              <label
-                htmlFor="services"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
-              >
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
                 Services
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Package className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                  <Package className="h-4 w-4 text-gray-400" />
                 </div>
-                <input
-                  type="text"
-                  name="services"
-                  id="services"
-                  value={formData.services.join(', ')}
-                  onChange={(e) =>
-                    handleArrayChange(
-                      'services',
-                      e.target.value.split(',').map((s) => s.trim()),
-                    )
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Enter your services separated by commas"
-                />
+                <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
+                  {formData.services.length > 0 ? (
+                    <ul className="space-y-1 text-gray-700">
+                      {formData.services.map((service, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                          {service}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-500">No services listed</span>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                List your organization's services
+                List of your organization's services
               </p>
             </div>
 
             {/* Differentiators */}
             <div className="group">
-              <label
-                htmlFor="differentiators"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
-              >
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
                 Differentiators
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lightbulb className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lightbulb className="h-4 w-4 text-gray-400" />
                 </div>
-                <input
-                  type="text"
-                  name="differentiators"
-                  id="differentiators"
-                  value={formData.differentiators.join(', ')}
-                  onChange={(e) =>
-                    handleArrayChange(
-                      'differentiators',
-                      e.target.value.split(',').map((d) => d.trim()),
-                    )
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Enter your differentiators separated by commas"
-                />
+                <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
+                  {formData.differentiators.length > 0 ? (
+                    <ul className="space-y-1 text-gray-700">
+                      {formData.differentiators.map((differentiator, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                          {differentiator}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-500">
+                      No differentiators listed
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                List your organization's differentiators
+                List of your organization's differentiators
               </p>
             </div>
 
@@ -464,32 +456,26 @@ export default function OrganizationPage() {
             <div className="group">
               <label
                 htmlFor="target-market"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                className="block text-sm font-semibold text-gray-800 mb-2"
               >
                 Target Market
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Target className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                  <Target className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
                   name="target-market"
                   id="target-market"
                   value={formData.targetMarket}
-                  onChange={(e) =>
-                    handleInputChange('targetMarket', e.target.value)
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Enter your target market"
+                  readOnly
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
+                           text-gray-700 cursor-not-allowed"
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Describe your organization's target market
+                Your organization's target market
               </p>
             </div>
 
@@ -497,86 +483,30 @@ export default function OrganizationPage() {
             <div className="group">
               <label
                 htmlFor="tone"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                className="block text-sm font-semibold text-gray-800 mb-2"
               >
                 Tone
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MessageCircle className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                  <MessageCircle className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
                   name="tone"
                   id="tone"
                   value={formData.tone}
-                  onChange={(e) => handleInputChange('tone', e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
-                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Enter your tone"
+                  readOnly
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
+                           text-gray-700 cursor-not-allowed"
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Describe your organization's tone
+                Your organization's tone
               </p>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Save Button */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        {isDirty && !updateOrganizationMutation.isPending && (
-          <div className="flex items-center text-amber-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">
-              You have unsaved changes
-            </span>
-          </div>
-        )}
-        {!isDirty && !updateOrganizationMutation.isPending && (
-          <div className="flex items-center text-green-600 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
-            <div className="w-4 h-4 mr-2 flex items-center justify-center">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            </div>
-            <span className="text-sm font-medium">All changes saved</span>
-          </div>
-        )}
-        {updateOrganizationMutation.isPending && (
-          <div className="flex items-center text-blue-600 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent mr-2"></div>
-            <span className="text-sm font-medium">Saving changes...</span>
-          </div>
-        )}
-
-        <button
-          onClick={handleSave}
-          disabled={!isDirty || updateOrganizationMutation.isPending}
-          className="group relative inline-flex items-center justify-center px-6 py-2.5 text-sm font-semibold text-white 
-                   bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-700)] 
-                   rounded-xl shadow-lg shadow-[var(--color-primary-200)]/50
-                   hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-800)] 
-                   hover:shadow-xl hover:shadow-[var(--color-primary-300)]/60
-                   hover:-translate-y-0.5 
-                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]
-                   disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-lg
-                   transition-all duration-200 ease-in-out transform"
-        >
-          {updateOrganizationMutation.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-3"></div>
-              Saving Changes...
-            </>
-          ) : (
-            <>
-              <Building className="h-4 w-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </button>
       </div>
     </div>
   )

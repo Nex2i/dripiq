@@ -4,8 +4,10 @@ import {
   ResponseInputItem,
   Tool,
 } from 'openai/resources/responses/responses';
+import z from 'zod';
 import { openAiClient } from '@/libs/openai.client';
 import { promptHelper } from '@/prompts/prompt.helper';
+import { logger } from '@/libs/logger';
 import reportOutputSchema from './schemas/reportOutputSchema';
 import {
   GetInformationAboutDomainTool,
@@ -22,8 +24,6 @@ import {
   RetrieveFullPageTool,
   RetrieveFullPageToolResponse,
 } from './tools/RetrieveFullPage';
-import { logger } from '@/libs/logger';
-import z from 'zod';
 
 interface FunctionCallResult {
   success: boolean;
