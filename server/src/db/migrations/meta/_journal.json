@@ -57,6 +57,13 @@
       "when": 1751491992008,
       "tag": "0007_add_organization_fields_to_tenants",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1751561416605,
+      "tag": "0008_site_vectors",
+      "breakpoints": true
     }
   ]
 }
