@@ -22,13 +22,16 @@ export const OrganizationAnalyzerService = {
       throw new Error('AI output is required');
     }
 
-    const { summary, products, services, differentiators } = aiOutput.finalResponseParsed;
+    const { summary, products, services, differentiators, targetMarket, tone } =
+      aiOutput.finalResponseParsed;
     // save on tenant
     await TenantService.updateTenant(userId, id, {
-      organizationSummary: summary,
+      summary: summary,
       products: products,
       services: services,
       differentiators: differentiators,
+      targetMarket: targetMarket,
+      tone: tone,
     });
 
     return siteAnalyzerResult;

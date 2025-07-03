@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Building, AlertCircle, Globe, Tag, RotateCcw } from 'lucide-react'
+import {
+  Building,
+  AlertCircle,
+  Globe,
+  Tag,
+  RotateCcw,
+  FileText,
+  Package,
+  Users,
+  Lightbulb,
+  Target,
+  MessageCircle,
+} from 'lucide-react'
 import {
   useOrganization,
   useUpdateOrganization,
@@ -23,6 +35,12 @@ export default function OrganizationPage() {
     tenantName: '',
     organizationName: '',
     organizationWebsite: '',
+    summary: '',
+    products: [] as string[],
+    services: [] as string[],
+    differentiators: [] as string[],
+    targetMarket: '',
+    tone: '',
   })
 
   const [isDirty, setIsDirty] = useState(false)
@@ -34,6 +52,18 @@ export default function OrganizationPage() {
         tenantName: organization.tenantName || '',
         organizationName: organization.organizationName || '',
         organizationWebsite: organization.organizationWebsite || '',
+        summary: organization.summary || '',
+        products: Array.isArray(organization.products)
+          ? organization.products
+          : [],
+        services: Array.isArray(organization.services)
+          ? organization.services
+          : [],
+        differentiators: Array.isArray(organization.differentiators)
+          ? organization.differentiators
+          : [],
+        targetMarket: organization.targetMarket || '',
+        tone: organization.tone || '',
       })
     }
   }, [organization])
@@ -42,6 +72,44 @@ export default function OrganizationPage() {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
+    }))
+    setIsDirty(true)
+  }
+
+  const handleArrayChange = (field: string, values: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: values,
+    }))
+    setIsDirty(true)
+  }
+
+  const addArrayItem = (field: string) => {
+    const currentArray = formData[field as keyof typeof formData] as string[]
+    setFormData((prev) => ({
+      ...prev,
+      [field]: [...currentArray, ''],
+    }))
+    setIsDirty(true)
+  }
+
+  const removeArrayItem = (field: string, index: number) => {
+    const currentArray = formData[field as keyof typeof formData] as string[]
+    const newArray = currentArray.filter((_, i) => i !== index)
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newArray,
+    }))
+    setIsDirty(true)
+  }
+
+  const updateArrayItem = (field: string, index: number, value: string) => {
+    const currentArray = formData[field as keyof typeof formData] as string[]
+    const newArray = [...currentArray]
+    newArray[index] = value
+    setFormData((prev) => ({
+      ...prev,
+      [field]: newArray,
     }))
     setIsDirty(true)
   }
@@ -56,6 +124,12 @@ export default function OrganizationPage() {
           name: formData.tenantName,
           organizationName: formData.organizationName,
           organizationWebsite: formData.organizationWebsite,
+          summary: formData.summary,
+          products: formData.products,
+          services: formData.services,
+          differentiators: formData.differentiators,
+          targetMarket: formData.targetMarket,
+          tone: formData.tone,
         },
       })
       setIsDirty(false)
@@ -244,6 +318,209 @@ export default function OrganizationPage() {
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 Your organization's main website URL
+              </p>
+            </div>
+
+            {/* Summary */}
+            <div className="group">
+              <label
+                htmlFor="summary"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+              >
+                Summary
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FileText className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                </div>
+                <input
+                  type="text"
+                  name="summary"
+                  id="summary"
+                  value={formData.summary}
+                  onChange={(e) => handleInputChange('summary', e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                           placeholder:text-gray-400 
+                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
+                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  placeholder="Enter a brief summary of your organization"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                A concise description of your organization
+              </p>
+            </div>
+
+            {/* Products */}
+            <div className="group">
+              <label
+                htmlFor="products"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+              >
+                Products
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Package className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                </div>
+                <input
+                  type="text"
+                  name="products"
+                  id="products"
+                  value={formData.products.join(', ')}
+                  onChange={(e) =>
+                    handleArrayChange(
+                      'products',
+                      e.target.value.split(',').map((p) => p.trim()),
+                    )
+                  }
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                           placeholder:text-gray-400 
+                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
+                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  placeholder="Enter your products separated by commas"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                List your organization's products
+              </p>
+            </div>
+
+            {/* Services */}
+            <div className="group">
+              <label
+                htmlFor="services"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+              >
+                Services
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Package className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                </div>
+                <input
+                  type="text"
+                  name="services"
+                  id="services"
+                  value={formData.services.join(', ')}
+                  onChange={(e) =>
+                    handleArrayChange(
+                      'services',
+                      e.target.value.split(',').map((s) => s.trim()),
+                    )
+                  }
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                           placeholder:text-gray-400 
+                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
+                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  placeholder="Enter your services separated by commas"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                List your organization's services
+              </p>
+            </div>
+
+            {/* Differentiators */}
+            <div className="group">
+              <label
+                htmlFor="differentiators"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+              >
+                Differentiators
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lightbulb className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                </div>
+                <input
+                  type="text"
+                  name="differentiators"
+                  id="differentiators"
+                  value={formData.differentiators.join(', ')}
+                  onChange={(e) =>
+                    handleArrayChange(
+                      'differentiators',
+                      e.target.value.split(',').map((d) => d.trim()),
+                    )
+                  }
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                           placeholder:text-gray-400 
+                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
+                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  placeholder="Enter your differentiators separated by commas"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                List your organization's differentiators
+              </p>
+            </div>
+
+            {/* Target Market */}
+            <div className="group">
+              <label
+                htmlFor="target-market"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+              >
+                Target Market
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Target className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                </div>
+                <input
+                  type="text"
+                  name="target-market"
+                  id="target-market"
+                  value={formData.targetMarket}
+                  onChange={(e) =>
+                    handleInputChange('targetMarket', e.target.value)
+                  }
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                           placeholder:text-gray-400 
+                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
+                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  placeholder="Enter your target market"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Describe your organization's target market
+              </p>
+            </div>
+
+            {/* Tone */}
+            <div className="group">
+              <label
+                htmlFor="tone"
+                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+              >
+                Tone
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MessageCircle className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                </div>
+                <input
+                  type="text"
+                  name="tone"
+                  id="tone"
+                  value={formData.tone}
+                  onChange={(e) => handleInputChange('tone', e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                           placeholder:text-gray-400 
+                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50
+                           disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  placeholder="Enter your tone"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Describe your organization's tone
               </p>
             </div>
           </div>

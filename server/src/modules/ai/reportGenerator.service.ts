@@ -111,12 +111,24 @@ export class ReportGeneratorService {
       isFirstRequest?: boolean;
     } = {}
   ) {
-    const { model = 'gpt-4.1-nano', toolChoice = 'auto', isFirstRequest = false } = options;
+    const { model = 'gpt-4.1', toolChoice = 'auto', isFirstRequest = false } = options;
 
     const requestParams: ResponseCreateParamsNonStreaming = {
       model: model,
       input,
-      tools: this.tools,
+      // Add the native web search tool with high context
+      tools: [
+        ...this.tools,
+        {
+          type: 'web_search_preview',
+          search_context_size: 'high',
+          user_location: {
+            type: 'approximate',
+            city: 'United States',
+            country: 'US',
+          },
+        },
+      ],
       tool_choice: toolChoice,
       text: {
         format: zodTextFormat(reportOutputSchema, 'event'),
@@ -145,7 +157,9 @@ export class ReportGeneratorService {
       {
         role: 'system' as const,
         content:
-          'You are a helpful assistant that summarizes companies when provided their websites. Use the available tools to gather information about the domain and provide a comprehensive summary.',
+          'You are a helpful assistant that summarizes companies when provided their websites. \n' +
+          'Use the available tools to gather information about the domain and provide a comprehensive summary. \n' +
+          'For your final response you must return JSON. The JSON must be valid and match the schema provided.',
       },
       {
         role: 'user' as const,
@@ -156,7 +170,7 @@ export class ReportGeneratorService {
     const output = await this.executeFunctionCallLoop(input);
 
     // map final output to reportOutputSchema
-    const finalOutput = reportOutputSchema.parse(output.finalResponse);
+    const finalOutput = reportOutputSchema.parse(JSON.parse(output.finalResponse));
     return {
       ...output,
       finalResponseParsed: finalOutput,

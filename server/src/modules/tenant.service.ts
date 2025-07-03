@@ -14,8 +14,8 @@ import {
 export interface CreateTenantData {
   name: string;
   organizationName?: string;
-  organizationWebsite?: string;
-  organizationSummary?: string;
+  website?: string;
+  summary?: string;
   products?: string[];
   services?: string[];
   differentiators?: string[];
@@ -173,8 +173,8 @@ export class TenantService {
     const { validateUserTenantAccess } = await import('../utils/tenantValidation');
     await validateUserTenantAccess(userId, tenantId);
 
-    if (updateData.organizationWebsite) {
-      updateData.organizationWebsite = updateData.organizationWebsite?.cleanWebsiteUrl();
+    if (updateData.website) {
+      updateData.website = updateData.website?.cleanWebsiteUrl();
     }
 
     const [tenant] = await db

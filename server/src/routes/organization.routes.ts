@@ -12,6 +12,12 @@ interface UpdateOrganizationBody {
   name?: string;
   organizationName?: string;
   organizationWebsite?: string;
+  summary?: string;
+  products?: string[];
+  services?: string[];
+  differentiators?: string[];
+  targetMarket?: string;
+  tone?: string;
 }
 
 export default async function OrganizationRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
@@ -39,6 +45,12 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           tenantName: tenant.name,
           organizationName: tenant.organizationName || '',
           organizationWebsite: tenant.website || '',
+          summary: tenant.summary || '',
+          products: tenant.products || [],
+          services: tenant.services || [],
+          differentiators: tenant.differentiators || [],
+          targetMarket: tenant.targetMarket || '',
+          tone: tenant.tone || '',
         });
       } catch (error: any) {
         fastify.log.error(error);
@@ -64,7 +76,14 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
         const user = (request as any).user;
         const updateData = request.body;
 
-        const updatedTenant = await TenantService.updateTenant(user.id, id, updateData);
+        // Map frontend field names to database field names
+        const mappedUpdateData = {
+          ...updateData,
+          organizationWebsite: undefined, // Remove frontend field name
+          website: updateData.organizationWebsite, // Map to database field name
+        };
+
+        const updatedTenant = await TenantService.updateTenant(user.id, id, mappedUpdateData);
 
         // Return updated organization data
         return reply.send({
@@ -72,6 +91,12 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           tenantName: updatedTenant.name,
           organizationName: updatedTenant.organizationName || '',
           organizationWebsite: updatedTenant.website || '',
+          summary: updatedTenant.summary || '',
+          products: updatedTenant.products || [],
+          services: updatedTenant.services || [],
+          differentiators: updatedTenant.differentiators || [],
+          targetMarket: updatedTenant.targetMarket || '',
+          tone: updatedTenant.tone || '',
         });
       } catch (error: any) {
         fastify.log.error(error);

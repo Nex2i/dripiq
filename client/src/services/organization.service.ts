@@ -5,12 +5,24 @@ export interface Organization {
   tenantName: string
   organizationName: string
   organizationWebsite: string
+  summary: string
+  products: string[]
+  services: string[]
+  differentiators: string[]
+  targetMarket: string
+  tone: string
 }
 
 export interface UpdateOrganizationData {
   name?: string
   organizationName?: string
   organizationWebsite?: string
+  summary?: string
+  products?: string[]
+  services?: string[]
+  differentiators?: string[]
+  targetMarket?: string
+  tone?: string
 }
 
 class OrganizationService {
