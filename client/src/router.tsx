@@ -16,6 +16,8 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import SetupPassword from './pages/auth/SetupPassword'
 import LeadsPage from './pages/LeadsPage'
+import NewLeadPage from './pages/NewLeadPage'
+import LeadDetailPage from './pages/LeadDetailPage'
 import SettingsLayout from './pages/settings/SettingsLayout'
 import TenantSettingsPage from './pages/settings/TenantSettingsPage'
 import UsersPage from './pages/settings/UsersPage'
@@ -122,6 +124,18 @@ const leadsRoute = createRoute({
   component: () => <LeadsPage />,
 })
 
+const newLeadRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/leads/new',
+  component: () => <NewLeadPage />,
+})
+
+const leadDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/leads/$leadId',
+  component: () => <LeadDetailPage />,
+})
+
 // Settings routes with layout
 const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -215,6 +229,8 @@ const settingsRouteTree = settingsRoute.addChildren([
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   leadsRoute,
+  newLeadRoute,
+  leadDetailRoute,
   settingsRouteTree,
   formSimpleRoute,
   formAddressRoute,

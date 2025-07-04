@@ -3,13 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
 import { Settings } from 'lucide-react'
-import AddLeadModal from './AddLeadModal'
 
 export default function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef<HTMLDivElement>(null)
 
@@ -92,27 +90,6 @@ export default function Header() {
             </div>
 
             <div className="flex items-center space-x-4">
-              {/* Add Lead Button */}
-              <button
-                onClick={() => setIsAddLeadModalOpen(true)}
-                className="p-2 rounded-full text-[var(--color-surface-950)] hover:text-[var(--color-primary-600)] hover:bg-[var(--color-primary-50)] transition-all duration-200 hover:shadow-md transform hover:scale-105 cursor-pointer"
-                aria-label="Add new lead"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </button>
               {/* Mobile Menu Button */}
               <button
                 onClick={toggleMobileMenu}
@@ -309,11 +286,6 @@ export default function Header() {
           onClick={closeMobileMenu}
         />
       )}
-
-      <AddLeadModal
-        isOpen={isAddLeadModalOpen}
-        onClose={() => setIsAddLeadModalOpen(false)}
-      />
     </>
   )
 }

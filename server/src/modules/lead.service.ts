@@ -56,6 +56,14 @@ export const createLead = async (tenantId: string, lead: Omit<NewLead, 'tenantId
     tenantId,
   };
 
+  if (leadWithTenant.url) {
+    leadWithTenant.url = leadWithTenant.url.cleanWebsiteUrl();
+  }
+
+  if (leadWithTenant.company) {
+    leadWithTenant.company = leadWithTenant.company.toLowerCase();
+  }
+
   const result = await db.insert(leads).values(leadWithTenant).returning();
   return result[0];
 };

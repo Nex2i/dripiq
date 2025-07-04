@@ -10,6 +10,7 @@ import type {
   RowSelectionState,
 } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
+import { useNavigate } from '@tanstack/react-router'
 import {
   useLeads,
   useInvalidateLeads,
@@ -59,6 +60,7 @@ function DebouncedInput({
 }
 
 const LeadsPage: React.FC = () => {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = React.useState('')
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
@@ -147,9 +149,12 @@ const LeadsPage: React.FC = () => {
         accessorKey: 'name',
         header: 'Name',
         cell: (info) => (
-          <div className="text-sm font-medium text-gray-900">
+          <button
+            onClick={() => navigate({ to: `/leads/${info.row.original.id}` })}
+            className="text-sm font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors cursor-pointer text-left"
+          >
             {info.getValue() as string}
-          </div>
+          </button>
         ),
       },
       {
@@ -293,6 +298,25 @@ const LeadsPage: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate({ to: '/leads/new' })}
+              className="inline-flex items-center px-4 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
+            >
+              <svg
+                className="h-4 w-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              New Lead
+            </button>
             <button
               onClick={handleRefresh}
               disabled={isLoading}

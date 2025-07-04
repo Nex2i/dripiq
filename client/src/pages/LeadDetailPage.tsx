@@ -1,0 +1,282 @@
+import React from 'react'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { useLead } from '../hooks/useLeadsQuery'
+import {
+  ArrowLeft,
+  Edit,
+  Globe,
+  Mail,
+  Phone,
+  Building,
+  Calendar,
+  User,
+} from 'lucide-react'
+
+const LeadDetailPage: React.FC = () => {
+  const navigate = useNavigate()
+  const { leadId } = useParams({ from: '/protected/leads/$leadId' })
+  const { data: lead, isLoading, error } = useLead(leadId)
+
+  const handleBack = () => {
+    navigate({ to: '/leads' })
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const getStatusBadge = (status: string) => {
+    const statusColors = {
+      new: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
+      contacted: 'bg-yellow-100 text-yellow-800',
+      qualified: 'bg-green-100 text-green-800',
+      lost: 'bg-red-100 text-red-800',
+    }
+
+    const displayStatus = status || 'new'
+
+    return (
+      <span
+        className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${statusColors[displayStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}
+      >
+        {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+      </span>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary-600)] mx-auto"></div>
+              <p className="mt-4 text-gray-500">Loading lead details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-8 text-center">
+              <div className="w-12 h-12 mx-auto mb-4 text-red-500">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <p className="text-gray-900 font-medium mb-2">
+                Error loading lead
+              </p>
+              <p className="text-gray-500 mb-4">
+                {error?.message || String(error)}
+              </p>
+              <button
+                onClick={handleBack}
+                className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Back to Leads
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!lead) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-8 text-center">
+              <p className="text-gray-500">Lead not found</p>
+              <button
+                onClick={handleBack}
+                className="mt-4 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Back to Leads
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Leads
+          </button>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{lead.name}</h1>
+              <p className="mt-2 text-gray-600">Lead Details</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              {getStatusBadge(lead.status)}
+              <button
+                onClick={() => {
+                  // TODO: Navigate to edit page when implemented
+                  console.log('Edit lead:', lead.id)
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Lead Details */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Contact Information
+                </h2>
+
+                <div className="flex items-center space-x-3">
+                  <User className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Name</p>
+                    <p className="text-sm text-gray-500">{lead.name}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Email</p>
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                    >
+                      {lead.email}
+                    </a>
+                  </div>
+                </div>
+
+                {lead.phone && (
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Phone</p>
+                      <a
+                        href={`tel:${lead.phone}`}
+                        className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                      >
+                        {lead.phone}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {lead.company && (
+                  <div className="flex items-center space-x-3">
+                    <Building className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Company
+                      </p>
+                      <p className="text-sm text-gray-500">{lead.company}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-3">
+                  <Globe className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Website</p>
+                    <a
+                      href={lead.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                    >
+                      {lead.url}
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline & Status */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Timeline
+                </h2>
+
+                <div className="flex items-center space-x-3">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Created</p>
+                    <p className="text-sm text-gray-500">
+                      {formatDate(lead.createdAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Last Updated
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {formatDate(lead.updatedAt)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Information */}
+        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Additional Information
+            </h2>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-600">
+                This lead was created on {formatDate(lead.createdAt)} and is
+                currently in "{lead.status}" status.
+                {lead.company && ` They are associated with ${lead.company}.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default LeadDetailPage
