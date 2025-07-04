@@ -663,4 +663,107 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       }
     },
   });
+
+  // Resync lead route
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:id/resync`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      params: Type.Object({
+        id: Type.String({ description: 'Lead ID' }),
+      }),
+      tags: ['Leads'],
+      summary: 'Resync Lead',
+      description: 'Resync a lead by ID (tenant-scoped)',
+      response: {
+        200: Type.Object({
+          message: Type.String(),
+          leadId: Type.String(),
+        }),
+        400: Type.Object({
+          message: Type.String(),
+          error: Type.Optional(Type.String()),
+        }),
+        401: Type.Object({
+          message: Type.String(),
+          error: Type.Optional(Type.String()),
+        }),
+        403: Type.Object({
+          message: Type.String(),
+          error: Type.Optional(Type.String()),
+        }),
+        404: Type.Object({
+          message: Type.String(),
+          error: Type.Optional(Type.String()),
+        }),
+        500: Type.Object({
+          message: Type.String(),
+          error: Type.Optional(Type.String()),
+        }),
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { id } = request.params;
+
+        if (!id || !id.trim()) {
+          reply.status(400).send({
+            message: 'Lead ID is required',
+            error: 'Invalid ID',
+          });
+          return;
+        }
+
+        // Verify lead exists for the tenant
+        const lead = await getLeadById(authenticatedRequest.tenantId, id);
+
+        if (!lead) {
+          reply.status(404).send({
+            message: 'Lead not found',
+            error: `No lead found with ID: ${id} in tenant: ${authenticatedRequest.tenantId}`,
+          });
+          return;
+        }
+
+        // TODO: Add resync logic here
+        // For now, just return success
+
+        fastify.log.info(
+          `Lead resync requested for ID: ${id} for tenant: ${authenticatedRequest.tenantId}`
+        );
+
+        reply.status(200).send({
+          message: 'Lead resync initiated successfully',
+          leadId: id,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error resyncing lead: ${error.message}`);
+
+        if (
+          error.message?.includes('access to tenant') ||
+          error.message?.includes('ForbiddenError')
+        ) {
+          reply.status(403).send({
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          message: 'Failed to resync lead',
+          error: error.message,
+        });
+      }
+    },
+  });
 }

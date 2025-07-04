@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createLeadsService } from '../../services/leads.service'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,6 +20,9 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+// Initialize the leads service with the query client
+createLeadsService(queryClient)
 
 export function getContext() {
   return {

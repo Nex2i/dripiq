@@ -1,20 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { leadsService } from '../services/leads.service'
+import { leadsService, leadQueryKeys } from '../services/leads.service'
 import type {
   Lead,
   CreateLeadData,
   UpdateLeadData,
 } from '../services/leads.service'
-
-// Query keys for leads
-export const leadQueryKeys = {
-  all: ['leads'] as const,
-  lists: () => [...leadQueryKeys.all, 'list'] as const,
-  list: (filters?: Record<string, any>) =>
-    [...leadQueryKeys.lists(), filters] as const,
-  details: () => [...leadQueryKeys.all, 'detail'] as const,
-  detail: (id: string) => [...leadQueryKeys.details(), id] as const,
-}
 
 // Hook to get all leads
 export function useLeads(searchQuery?: string) {
@@ -179,6 +169,27 @@ export function useBulkDeleteLeads() {
   })
 }
 
+// Hook to resync a lead
+export function useResyncLead() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => leadsService.resyncLead(id),
+    onSuccess: (_, id) => {
+      // Invalidate and refetch lead data
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error resyncing lead:', error)
+    },
+  })
+}
+
 // Hook to invalidate leads data (useful for manual refresh)
 export function useInvalidateLeads() {
   const queryClient = useQueryClient()
@@ -189,3 +200,6 @@ export function useInvalidateLeads() {
     })
   }
 }
+
+// Re-export the query keys for use in other components
+export { leadQueryKeys }
