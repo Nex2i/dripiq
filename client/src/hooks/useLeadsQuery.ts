@@ -43,8 +43,11 @@ export function useCreateLead() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateLeadData) => leadsService.createLead(data),
-    onMutate: async (newLeadData: CreateLeadData) => {
+    mutationFn: async (data: CreateLeadData) => {
+      const lead = await leadsService.createLead(data)
+      return { lead }
+    },
+    onMutate: async (_newLeadData: CreateLeadData) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: leadQueryKeys.lists() })
 
@@ -70,7 +73,7 @@ export function useCreateLead() {
       queryClient.setQueryData(leadQueryKeys.detail(newLead.id), newLead)
     },
     onError: (error, newLeadData, context) => {
-      console.error('Error creating lead:', error, newLeadData)
+      console.error('Error creating lead:', error, newLeadData, context)
       // No need to rollback since we're not doing optimistic updates
     },
     onSettled: () => {

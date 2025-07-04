@@ -1,4 +1,3 @@
-import { GeneralSiteReportService, GeneralSiteReportConfig } from './generalSiteReport.service';
 import { OpenAIClient } from '../implementations/OpenAIClient';
 import { ToolRegistry } from '../implementations/ToolRegistry';
 
@@ -6,6 +5,7 @@ import { ToolRegistry } from '../implementations/ToolRegistry';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
+import { GeneralSiteReportService, GeneralSiteReportConfig } from './generalSiteReport.service';
 
 export class GeneralSiteReportServiceFactory {
   static createDefault(config?: GeneralSiteReportConfig): GeneralSiteReportService {

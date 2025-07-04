@@ -1,6 +1,6 @@
+import { logger } from '@/libs/logger';
 import { ITool, IToolResult, IToolDefinition } from '../interfaces/ITool';
 import { IToolRegistry } from '../interfaces/IToolRegistry';
-import { logger } from '@/libs/logger';
 
 export class ToolRegistry implements IToolRegistry {
   private tools: Map<string, ITool> = new Map();

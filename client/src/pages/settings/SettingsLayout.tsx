@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from '@tanstack/react-router'
-import { Users, Bell, Shield, CreditCard, Building } from 'lucide-react'
+import { Users, Shield, CreditCard, Building } from 'lucide-react'
 
 const navigation = [
   {

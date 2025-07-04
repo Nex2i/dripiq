@@ -5,7 +5,6 @@ import {
   Tool,
 } from 'openai/resources/responses/responses';
 import { openAiClient } from '@/libs/openai.client';
-import { logger } from '@/libs/logger';
 import { IAIClient, IAIMessage, IAIResponse, IAIRequestOptions } from '../interfaces/IAIClient';
 import { IToolDefinition, IToolCall } from '../interfaces/ITool';
 
