@@ -1,10 +1,8 @@
 import { OpenAIClient } from '../implementations/OpenAIClient';
 import { ToolRegistry } from '../implementations/ToolRegistry';
+import { ITool } from '../interfaces/ITool';
 
 // Import concrete tool implementations
-import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
-import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GeneralSiteReportService, GeneralSiteReportConfig } from './generalSiteReport.service';
 
 export class GeneralSiteReportServiceFactory {
@@ -16,10 +14,10 @@ export class GeneralSiteReportServiceFactory {
     const toolRegistry = new ToolRegistry();
 
     // Register default tools
-    const defaultTools = [
-      new GetInformationAboutDomainTool(),
-      new ListDomainPagesTool(),
-      new RetrieveFullPageTool(),
+    const defaultTools: ITool[] = [
+      // new GetInformationAboutDomainTool(),
+      // new ListDomainPagesTool(),
+      // new RetrieveFullPageTool(),
     ];
 
     defaultTools.forEach((tool) => toolRegistry.registerTool(tool));

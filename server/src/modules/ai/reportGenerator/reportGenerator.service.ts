@@ -81,6 +81,7 @@ export class ReportGeneratorService {
       model: this.config.model,
       tools: this.toolRegistry.getToolDefinitions(),
       toolChoice: 'required',
+      enableWebSearch: this.config.enableWebSearch,
       responseFormat: {
         type: 'json_object',
         schema: reportOutputSchema,

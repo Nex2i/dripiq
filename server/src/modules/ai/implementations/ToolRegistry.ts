@@ -8,7 +8,6 @@ export class ToolRegistry implements IToolRegistry {
   registerTool(tool: ITool): void {
     const definition = tool.getDefinition();
     this.tools.set(definition.name, tool);
-    logger.info(`Registered tool: ${definition.name}`);
   }
 
   unregisterTool(name: string): void {

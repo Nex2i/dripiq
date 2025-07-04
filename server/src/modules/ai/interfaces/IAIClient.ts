@@ -19,6 +19,7 @@ export interface IAIRequestOptions {
   maxTokens?: number;
   temperature?: number;
   tools?: IToolDefinition[];
+  enableWebSearch?: boolean;
   toolChoice?: 'auto' | 'required' | 'none';
   responseFormat?: {
     type: 'json_object' | 'text';

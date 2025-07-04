@@ -40,20 +40,21 @@ export class OpenAIClient implements IAIClient {
       model: options?.model || 'gpt-4.1',
       parallel_tool_calls: true,
       input,
-      tools: [
-        ...tools,
-        {
-          type: 'web_search_preview',
-          search_context_size: 'high',
-          user_location: {
-            type: 'approximate',
-            city: 'United States',
-            country: 'US',
-          },
-        },
-      ],
+      tools,
       tool_choice: options?.toolChoice || 'auto',
     };
+
+    if (options?.enableWebSearch) {
+      requestParams.tools?.push({
+        type: 'web_search_preview',
+        search_context_size: 'high',
+        user_location: {
+          type: 'approximate',
+          city: 'United States',
+          country: 'US',
+        },
+      });
+    }
 
     // Add response format if specified
     if (options?.responseFormat?.type === 'json_object' && options.responseFormat.schema) {

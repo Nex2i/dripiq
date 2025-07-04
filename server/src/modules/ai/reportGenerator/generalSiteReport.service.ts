@@ -23,6 +23,7 @@ interface FunctionCallLoopResult {
 export interface GeneralSiteReportConfig {
   maxIterations?: number;
   model?: string;
+  enableWebSearch?: boolean;
 }
 
 export class GeneralSiteReportService {
@@ -40,6 +41,7 @@ export class GeneralSiteReportService {
     this.config = {
       maxIterations: config.maxIterations || 10,
       model: config.model || 'gpt-4.1',
+      enableWebSearch: config.enableWebSearch ?? false,
     };
   }
 
@@ -79,6 +81,7 @@ export class GeneralSiteReportService {
       model: this.config.model,
       tools: this.toolRegistry.getToolDefinitions(),
       toolChoice: 'required',
+      enableWebSearch: this.config.enableWebSearch,
       responseFormat: {
         type: 'json_object',
         schema: reportOutputSchema,

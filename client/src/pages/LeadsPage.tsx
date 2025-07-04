@@ -139,6 +139,7 @@ const LeadsPage: React.FC = () => {
             className="rounded border-gray-300 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
+            onClick={(e) => e.stopPropagation()}
           />
         ),
         enableSorting: false,
@@ -149,12 +150,9 @@ const LeadsPage: React.FC = () => {
         accessorKey: 'name',
         header: 'Name',
         cell: (info) => (
-          <button
-            onClick={() => navigate({ to: `/leads/${info.row.original.id}` })}
-            className="text-sm font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors cursor-pointer text-left"
-          >
+          <div className="text-sm font-medium text-gray-900">
             {info.getValue() as string}
-          </button>
+          </div>
         ),
       },
       {
@@ -526,11 +524,14 @@ const LeadsPage: React.FC = () => {
                   {table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className={`hover:bg-gray-50 transition-colors ${
+                      className={`hover:bg-gray-50 transition-colors cursor-pointer ${
                         row.getIsSelected()
                           ? 'bg-[var(--color-primary-50)]'
                           : ''
                       }`}
+                      onClick={() =>
+                        navigate({ to: `/leads/${row.original.id}` })
+                      }
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
