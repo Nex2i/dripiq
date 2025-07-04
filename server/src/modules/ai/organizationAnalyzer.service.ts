@@ -1,5 +1,5 @@
 import { TenantService } from '../tenant.service';
-import { reportGeneratorService } from './reportGenerator.service';
+import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
 
 export const OrganizationAnalyzerService = {
   analyzeOrganization: async (tenantId: string, userId: string) => {
@@ -15,7 +15,7 @@ export const OrganizationAnalyzerService = {
     // };
 
     // const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
-    const aiOutput = await reportGeneratorService.summarizeSite(website.getDomain());
+    const aiOutput = await generalSiteReportService.summarizeSite(website.getDomain());
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');
