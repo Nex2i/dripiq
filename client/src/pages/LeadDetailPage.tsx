@@ -32,7 +32,7 @@ const LeadDetailPage: React.FC = () => {
     navigate({ to: '/leads' })
   }
 
-  const handleResync = async () => {
+  const handleResync = () => {
     if (!lead?.id) return
 
     setResyncMessage(null)

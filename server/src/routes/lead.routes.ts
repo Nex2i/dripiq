@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
+import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import {
   getLeads,
   createLead,
@@ -11,7 +12,6 @@ import {
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
-import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 
 const basePath = '/leads';
 
