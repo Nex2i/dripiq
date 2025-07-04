@@ -108,11 +108,6 @@ export class ReportGeneratorService {
       model: 'gpt-4.1',
       parallel_tool_calls: true,
       input,
-      // reasoning: {
-      //   // summary: 'concise',
-      //   effort: 'low',
-      // },
-      // Add the native web search tool with high context
       tools: [
         ...this.tools,
         {
