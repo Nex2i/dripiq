@@ -1,6 +1,13 @@
 import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import db from '../libs/drizzleClient';
-import { leads, NewLead, leadPointOfContacts, NewLeadPointOfContact } from '../db/schema';
+import {
+  leads,
+  NewLead,
+  leadPointOfContacts,
+  NewLeadPointOfContact,
+  Lead,
+  LeadPointOfContact,
+} from '../db/schema';
 
 /**
  * Retrieves a list of leads for a specific tenant, with optional search functionality.
@@ -110,7 +117,12 @@ export const createLead = async (
  * @param id - The ID of the lead to retrieve.
  * @returns A promise that resolves to the lead object with point of contacts, or undefined if not found.
  */
-export const getLeadById = async (tenantId: string, id: string) => {
+type LeadWithPointOfContacts = Lead & { pointOfContacts: LeadPointOfContact[] };
+export const getLeadById = async (
+  tenantId: string,
+  id: string,
+  includePointOfContacts = true
+): Promise<LeadWithPointOfContacts> => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
@@ -121,15 +133,18 @@ export const getLeadById = async (tenantId: string, id: string) => {
     .limit(1);
 
   if (!result[0]) {
-    return undefined;
+    throw new Error(`Lead not found with ID: ${id}`);
   }
 
   // Get associated point of contacts
-  const contacts = await db
-    .select()
-    .from(leadPointOfContacts)
-    .where(eq(leadPointOfContacts.leadId, id))
-    .orderBy(desc(leadPointOfContacts.createdAt));
+  let contacts: any[] = [];
+  if (includePointOfContacts) {
+    contacts = await db
+      .select()
+      .from(leadPointOfContacts)
+      .where(eq(leadPointOfContacts.leadId, id))
+      .orderBy(desc(leadPointOfContacts.createdAt));
+  }
 
   return {
     ...result[0],

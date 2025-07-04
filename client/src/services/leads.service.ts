@@ -17,6 +17,12 @@ export interface Lead {
   name: string
   url: string
   status: string
+  summary?: string
+  products?: string[]
+  services?: string[]
+  differentiators?: string[]
+  targetMarket?: string
+  tone?: string
   primaryContactId?: string
   createdAt: string
   updatedAt: string

@@ -15,12 +15,12 @@ export const OrganizationAnalyzerService = {
     // };
 
     // const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
-    const aiOutput = await generalSiteReportService.summarizeSite(website.getDomain());
+    const aiOutput = await generalSiteReportService.summarizeSite(website.cleanWebsiteUrl());
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');
     }
-
+    ``;
     const { summary, products, services, differentiators, targetMarket, tone } =
       aiOutput.finalResponseParsed;
     // save on tenant

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useLead, useResyncLead } from '../hooks/useLeadsQuery'
+import ReactMarkdown from 'react-markdown'
 import {
   ArrowLeft,
   Edit,
@@ -13,6 +14,11 @@ import {
   Crown,
   Users,
   RefreshCw,
+  FileText,
+  Package,
+  Lightbulb,
+  Target,
+  MessageCircle,
 } from 'lucide-react'
 
 const LeadDetailPage: React.FC = () => {
@@ -153,7 +159,7 @@ const LeadDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -208,175 +214,362 @@ const LeadDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Lead Details */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Manual Input Details */}
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   Basic Information
                 </h2>
-
-                <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Lead Name
-                    </p>
-                    <p className="text-sm text-gray-500">{lead.name}</p>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <User className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Lead Name
+                      </p>
+                      <p className="text-sm text-gray-500">{lead.name}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center space-x-3">
-                  <Globe className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Website</p>
-                    <a
-                      href={lead.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                    >
-                      {lead.url}
-                    </a>
+                  <div className="flex items-center space-x-3">
+                    <Globe className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Website
+                      </p>
+                      <a
+                        href={lead.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                      >
+                        {lead.url}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Created
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(lead.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Last Updated
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(lead.updatedAt)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Timeline & Status */}
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Timeline
-                </h2>
-
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Created</p>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(lead.createdAt)}
-                    </p>
-                  </div>
+            {/* Point of Contacts */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6">
+                <div className="flex items-center mb-4">
+                  <Users className="h-5 w-5 text-gray-400 mr-2" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Point of Contacts
+                  </h2>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Last Updated
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(lead.updatedAt)}
-                    </p>
+                {!lead.pointOfContacts || lead.pointOfContacts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>No contacts associated with this lead.</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {lead.pointOfContacts.map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="border border-gray-200 rounded-lg p-4"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <h3 className="text-sm font-medium text-gray-900">
+                              {contact.name}
+                            </h3>
+                            {lead.primaryContactId === contact.id && (
+                              <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <Crown className="h-3 w-3 mr-1" />
+                                Primary
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-3">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                            <div>
+                              <p className="text-xs font-medium text-gray-900">
+                                Email
+                              </p>
+                              <a
+                                href={`mailto:${contact.email}`}
+                                className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                              >
+                                {contact.email}
+                              </a>
+                            </div>
+                          </div>
+
+                          {contact.phone && (
+                            <div className="flex items-center space-x-3">
+                              <Phone className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <p className="text-xs font-medium text-gray-900">
+                                  Phone
+                                </p>
+                                <a
+                                  href={`tel:${contact.phone}`}
+                                  className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                                >
+                                  {contact.phone}
+                                </a>
+                              </div>
+                            </div>
+                          )}
+
+                          {contact.title && (
+                            <div className="flex items-center space-x-3">
+                              <User className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <p className="text-xs font-medium text-gray-900">
+                                  Title
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {contact.title}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {contact.company && (
+                            <div className="flex items-center space-x-3">
+                              <Building className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <p className="text-xs font-medium text-gray-900">
+                                  Company
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {contact.company}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Point of Contacts */}
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <div className="flex items-center mb-4">
-              <Users className="h-5 w-5 text-gray-400 mr-2" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Point of Contacts
-              </h2>
+          {/* Right Column - AI Summary Details */}
+          <div className="space-y-6">
+            <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
+              <div className="px-6 py-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  AI Summary
+                </h2>
+                <div className="space-y-5">
+                  {/* Summary */}
+                  {lead.summary && (
+                    <div className="group">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Summary
+                      </label>
+                      <div className="relative">
+                        <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                          <FileText className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm text-gray-700 cursor-default overflow-y-auto min-h-[200px] max-h-[400px]">
+                          <div className="prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-semibold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-800 prose-strong:font-semibold prose-em:text-gray-600 prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700 prose-code:text-gray-800 prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-300 prose-blockquote:text-gray-600 prose-blockquote:border-gray-300 prose-hr:border-gray-300">
+                            <ReactMarkdown>{lead.summary}</ReactMarkdown>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        A concise description of the lead's organization
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Products */}
+                  {lead.products && lead.products.length > 0 && (
+                    <div className="group">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Products
+                      </label>
+                      <div className="relative">
+                        <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                          <Package className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
+                          <ul className="space-y-1 text-gray-700">
+                            {lead.products.map((product, index) => (
+                              <li key={index} className="flex items-center">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                                {product}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        List of the lead's products
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Services */}
+                  {lead.services && lead.services.length > 0 && (
+                    <div className="group">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Services
+                      </label>
+                      <div className="relative">
+                        <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                          <Package className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
+                          <ul className="space-y-1 text-gray-700">
+                            {lead.services.map((service, index) => (
+                              <li key={index} className="flex items-center">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                                {service}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        List of the lead's services
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Differentiators */}
+                  {lead.differentiators && lead.differentiators.length > 0 && (
+                    <div className="group">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Differentiators
+                      </label>
+                      <div className="relative">
+                        <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                          <Lightbulb className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
+                          <ul className="space-y-1 text-gray-700">
+                            {lead.differentiators.map(
+                              (differentiator, index) => (
+                                <li key={index} className="flex items-center">
+                                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                                  {differentiator}
+                                </li>
+                              ),
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        List of the lead's differentiators
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Target Market */}
+                  {lead.targetMarket && (
+                    <div className="group">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Target Market
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Target className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm text-gray-700 cursor-default">
+                          {lead.targetMarket}
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        The lead's target market
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Tone */}
+                  {lead.tone && (
+                    <div className="group">
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        Tone
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <MessageCircle className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm text-gray-700 cursor-default">
+                          {lead.tone}
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        The lead's tone
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Empty State for AI Summary */}
+                  {!lead.summary &&
+                    (!lead.products || lead.products.length === 0) &&
+                    (!lead.services || lead.services.length === 0) &&
+                    (!lead.differentiators ||
+                      lead.differentiators.length === 0) &&
+                    !lead.targetMarket &&
+                    !lead.tone && (
+                      <div className="text-center py-12 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p className="text-lg font-medium text-gray-900 mb-2">
+                          No AI Summary Available
+                        </p>
+                        <p className="text-sm text-gray-500 mb-4">
+                          Run a resync to generate AI insights for this lead.
+                        </p>
+                        <button
+                          onClick={handleResync}
+                          disabled={resyncLead.isPending}
+                          className="inline-flex items-center px-4 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <RefreshCw
+                            className={`h-4 w-4 mr-2 ${resyncLead.isPending ? 'animate-spin' : ''}`}
+                          />
+                          {resyncLead.isPending
+                            ? 'Resyncing...'
+                            : 'Generate AI Summary'}
+                        </button>
+                      </div>
+                    )}
+                </div>
+              </div>
             </div>
-
-            {!lead.pointOfContacts || lead.pointOfContacts.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p>No contacts associated with this lead.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {lead.pointOfContacts.map((contact) => (
-                  <div
-                    key={contact.id}
-                    className="border border-gray-200 rounded-lg p-4"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center">
-                        <h3 className="text-sm font-medium text-gray-900">
-                          {contact.name}
-                        </h3>
-                        {lead.primaryContactId === contact.id && (
-                          <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            <Crown className="h-3 w-3 mr-1" />
-                            Primary
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-3">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <p className="text-xs font-medium text-gray-900">
-                            Email
-                          </p>
-                          <a
-                            href={`mailto:${contact.email}`}
-                            className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                          >
-                            {contact.email}
-                          </a>
-                        </div>
-                      </div>
-
-                      {contact.phone && (
-                        <div className="flex items-center space-x-3">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">
-                              Phone
-                            </p>
-                            <a
-                              href={`tel:${contact.phone}`}
-                              className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                            >
-                              {contact.phone}
-                            </a>
-                          </div>
-                        </div>
-                      )}
-
-                      {contact.title && (
-                        <div className="flex items-center space-x-3">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">
-                              Title
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {contact.title}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {contact.company && (
-                        <div className="flex items-center space-x-3">
-                          <Building className="h-4 w-4 text-gray-400" />
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">
-                              Company
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {contact.company}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 

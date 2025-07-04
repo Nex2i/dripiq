@@ -11,6 +11,7 @@ import {
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
+import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 
 const basePath = '/leads';
 
@@ -59,6 +60,14 @@ const leadResponseSchema = Type.Object({
   name: Type.String({ description: 'Lead name' }),
   url: Type.String({ description: 'Lead website URL' }),
   status: Type.String({ description: 'Lead status' }),
+  summary: Type.Optional(Type.String({ description: 'Lead summary' })),
+  products: Type.Optional(Type.Array(Type.String(), { description: 'Lead products' })),
+  services: Type.Optional(Type.Array(Type.String(), { description: 'Lead services' })),
+  differentiators: Type.Optional(
+    Type.Array(Type.String(), { description: 'Lead differentiators' })
+  ),
+  targetMarket: Type.Optional(Type.String({ description: 'Lead target market' })),
+  tone: Type.Optional(Type.String({ description: 'Lead tone' })),
   primaryContactId: Type.Optional(Type.String({ description: 'Primary contact ID' })),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
@@ -223,9 +232,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        fastify.log.info(
-          `Lead created successfully with ID: ${newLead.id} for tenant: ${authenticatedRequest.tenantId}`
-        );
+        // analyze lead
+        await LeadAnalyzerService.analyzeLead(authenticatedRequest.tenantId, newLead.id);
 
         reply.status(201).send({
           message: 'Lead created successfully',
@@ -723,23 +731,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Verify lead exists for the tenant
-        const lead = await getLeadById(authenticatedRequest.tenantId, id);
-
-        if (!lead) {
-          reply.status(404).send({
-            message: 'Lead not found',
-            error: `No lead found with ID: ${id} in tenant: ${authenticatedRequest.tenantId}`,
-          });
-          return;
-        }
-
-        // TODO: Add resync logic here
-        // For now, just return success
-
-        fastify.log.info(
-          `Lead resync requested for ID: ${id} for tenant: ${authenticatedRequest.tenantId}`
-        );
+        // analyze lead
+        await LeadAnalyzerService.analyzeLead(authenticatedRequest.tenantId, id);
 
         reply.status(200).send({
           message: 'Lead resync initiated successfully',
