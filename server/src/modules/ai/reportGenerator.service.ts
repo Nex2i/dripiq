@@ -15,6 +15,7 @@ import {
 } from './tools/GetInformationAboutDomain';
 import { ListDomainPagesTool, ListDomainPagesToolResponse } from './tools/ListDomainPages';
 import { RetrieveFullPageTool, RetrieveFullPageToolResponse } from './tools/RetrieveFullPage';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 interface FunctionCallResult {
   success: boolean;
@@ -98,16 +99,19 @@ export class ReportGeneratorService {
   private async makeOpenAIRequest(
     input: Array<ResponseInputItem> | string,
     options: {
-      model?: string;
-      toolChoice?: 'auto' | 'required';
       isFirstRequest?: boolean;
     } = {}
   ) {
-    const { model = 'gpt-4.1', toolChoice = 'auto', isFirstRequest = false } = options;
+    const { isFirstRequest = false } = options;
 
     const requestParams: ResponseCreateParamsNonStreaming = {
-      model: model,
+      model: 'gpt-4.1',
+      parallel_tool_calls: true,
       input,
+      // reasoning: {
+      //   // summary: 'concise',
+      //   effort: 'low',
+      // },
       // Add the native web search tool with high context
       tools: [
         ...this.tools,
@@ -121,7 +125,7 @@ export class ReportGeneratorService {
           },
         },
       ],
-      tool_choice: toolChoice,
+      tool_choice: 'required',
       text: {
         format: zodTextFormat(reportOutputSchema, 'event'),
       },
@@ -140,9 +144,11 @@ export class ReportGeneratorService {
     // Reset state for new summarization
     this.previousResponseId = undefined;
     this.functionCallHistory = [];
+    const outputSchema = zodToJsonSchema(reportOutputSchema, 'reportOutputSchema');
 
     const initialPrompt = promptHelper.getPromptAndInject('summarize_site', {
       domain: siteUrl,
+      output_schema: JSON.stringify(outputSchema, null, 2),
     });
 
     const input: Array<ResponseInputItem> = [

@@ -11,6 +11,7 @@ import {
   Target,
   MessageCircle,
 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import {
   useOrganization,
   useUpdateOrganization,
@@ -355,15 +356,30 @@ export default function OrganizationPage() {
                 <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
                   <FileText className="h-4 w-4 text-gray-400" />
                 </div>
-                <textarea
-                  name="summary"
-                  id="summary"
-                  value={formData.summary}
-                  readOnly
-                  rows={20}
+                <div
                   className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
-                           text-gray-700 cursor-not-allowed resize-none overflow-y-auto"
-                />
+                               text-gray-700 cursor-default overflow-y-auto min-h-[500px] max-h-[600px]"
+                >
+                  {formData.summary ? (
+                    <div
+                      className="prose prose-sm max-w-none 
+                                   prose-headings:text-gray-800 prose-headings:font-semibold
+                                   prose-p:text-gray-700 prose-p:leading-relaxed
+                                   prose-strong:text-gray-800 prose-strong:font-semibold
+                                   prose-em:text-gray-600
+                                   prose-ul:text-gray-700 prose-ol:text-gray-700
+                                   prose-li:text-gray-700
+                                   prose-code:text-gray-800 prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                                   prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-300
+                                   prose-blockquote:text-gray-600 prose-blockquote:border-gray-300
+                                   prose-hr:border-gray-300"
+                    >
+                      <ReactMarkdown>{formData.summary}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <span className="text-gray-500">No summary available</span>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 A concise description of your organization
