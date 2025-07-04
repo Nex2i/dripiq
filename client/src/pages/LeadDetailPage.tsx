@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useLead, useResyncLead } from '../hooks/useLeadsQuery'
-import ReactMarkdown from 'react-markdown'
 import {
   ArrowLeft,
   Edit,
@@ -14,14 +13,9 @@ import {
   Crown,
   Users,
   RefreshCw,
-  FileText,
-  Package,
-  Lightbulb,
-  Target,
-  MessageCircle,
-  Image,
-  Palette,
 } from 'lucide-react'
+import AIAnalysisSummary from '../components/AIAnalysisSummary'
+import BrandIdentity from '../components/BrandIdentity'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -281,6 +275,14 @@ const LeadDetailPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Brand Identity */}
+            <BrandIdentity
+              logo={lead.logo}
+              brandColors={lead.brandColors}
+              entityName={lead.name}
+              entityType="lead"
+            />
+
             {/* Point of Contacts */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6">
@@ -388,280 +390,15 @@ const LeadDetailPage: React.FC = () => {
 
           {/* Right Column - AI Summary Details */}
           <div className="space-y-6">
-            {/* Brand Identity Section */}
-            {(lead.logo ||
-              (lead.brandColors && lead.brandColors.length > 0)) && (
-              <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
-                <div className="px-6 py-6">
-                  <div className="flex items-center mb-4">
-                    <Palette className="h-5 w-5 text-gray-400 mr-2" />
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Brand Identity
-                    </h2>
-                  </div>
-
-                  <div className="space-y-5">
-                    {/* Logo */}
-                    {lead.logo && (
-                      <div className="group">
-                        <label className="block text-sm font-semibold text-gray-800 mb-3">
-                          Logo
-                        </label>
-                        <div className="relative">
-                          <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                            <Image className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
-                            <div className="flex items-center justify-center min-h-[80px]">
-                              <img
-                                src={lead.logo}
-                                alt={`${lead.name} logo`}
-                                className="max-h-16 max-w-full object-contain"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement
-                                  target.style.display = 'none'
-                                  target.nextElementSibling?.classList.remove(
-                                    'hidden',
-                                  )
-                                }}
-                              />
-                              <div className="hidden text-gray-500 text-sm">
-                                Logo could not be loaded
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <p className="mt-1 text-xs text-gray-500">
-                          Primary company logo
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Brand Colors */}
-                    {lead.brandColors && lead.brandColors.length > 0 && (
-                      <div className="group">
-                        <label className="block text-sm font-semibold text-gray-800 mb-3">
-                          Brand Colors
-                        </label>
-                        <div className="relative">
-                          <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                            <Palette className="h-4 w-4 text-gray-400" />
-                          </div>
-                          <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
-                            <div className="flex flex-wrap gap-3">
-                              {lead.brandColors.map((color, index) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <div
-                                    className="w-8 h-8 rounded-lg border-2 border-white shadow-sm"
-                                    style={{ backgroundColor: color }}
-                                    title={color}
-                                  />
-                                  <span className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
-                                    {color}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <p className="mt-1 text-xs text-gray-500">
-                          Primary brand color palette
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* AI Summary Section */}
-            <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
-              <div className="px-6 py-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  AI Summary
-                </h2>
-                <div className="space-y-5">
-                  {/* Summary */}
-                  {lead.summary && (
-                    <div className="group">
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Summary
-                      </label>
-                      <div className="relative">
-                        <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                          <FileText className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm text-gray-700 cursor-default overflow-y-auto min-h-[200px] max-h-[400px]">
-                          <div className="prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-semibold prose-p:text-gray-700 prose-p:leading-relaxed prose-strong:text-gray-800 prose-strong:font-semibold prose-em:text-gray-600 prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700 prose-code:text-gray-800 prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-300 prose-blockquote:text-gray-600 prose-blockquote:border-gray-300 prose-hr:border-gray-300">
-                            <ReactMarkdown>{lead.summary}</ReactMarkdown>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        A concise description of the lead's organization
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Products */}
-                  {lead.products && lead.products.length > 0 && (
-                    <div className="group">
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Products
-                      </label>
-                      <div className="relative">
-                        <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                          <Package className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
-                          <ul className="space-y-1 text-gray-700">
-                            {lead.products.map((product, index) => (
-                              <li key={index} className="flex items-center">
-                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
-                                {product}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        List of the lead's products
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Services */}
-                  {lead.services && lead.services.length > 0 && (
-                    <div className="group">
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Services
-                      </label>
-                      <div className="relative">
-                        <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                          <Package className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
-                          <ul className="space-y-1 text-gray-700">
-                            {lead.services.map((service, index) => (
-                              <li key={index} className="flex items-center">
-                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
-                                {service}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        List of the lead's services
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Differentiators */}
-                  {lead.differentiators && lead.differentiators.length > 0 && (
-                    <div className="group">
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Differentiators
-                      </label>
-                      <div className="relative">
-                        <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                          <Lightbulb className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
-                          <ul className="space-y-1 text-gray-700">
-                            {lead.differentiators.map(
-                              (differentiator, index) => (
-                                <li key={index} className="flex items-center">
-                                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
-                                  {differentiator}
-                                </li>
-                              ),
-                            )}
-                          </ul>
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        List of the lead's differentiators
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Target Market */}
-                  {lead.targetMarket && (
-                    <div className="group">
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Target Market
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Target className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm text-gray-700 cursor-default">
-                          {lead.targetMarket}
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        The lead's target market
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Tone */}
-                  {lead.tone && (
-                    <div className="group">
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Tone
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <MessageCircle className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm text-gray-700 cursor-default">
-                          {lead.tone}
-                        </div>
-                      </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        The lead's tone
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Empty State for AI Summary */}
-                  {!lead.summary &&
-                    (!lead.products || lead.products.length === 0) &&
-                    (!lead.services || lead.services.length === 0) &&
-                    (!lead.differentiators ||
-                      lead.differentiators.length === 0) &&
-                    !lead.targetMarket &&
-                    !lead.tone && (
-                      <div className="text-center py-12 text-gray-500">
-                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                        <p className="text-lg font-medium text-gray-900 mb-2">
-                          No AI Summary Available
-                        </p>
-                        <p className="text-sm text-gray-500 mb-4">
-                          Run a resync to generate AI insights for this lead.
-                        </p>
-                        <button
-                          onClick={handleResync}
-                          disabled={resyncLead.isPending}
-                          className="inline-flex items-center px-4 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <RefreshCw
-                            className={`h-4 w-4 mr-2 ${resyncLead.isPending ? 'animate-spin' : ''}`}
-                          />
-                          {resyncLead.isPending
-                            ? 'Resyncing...'
-                            : 'Generate AI Summary'}
-                        </button>
-                      </div>
-                    )}
-                </div>
-              </div>
-            </div>
+            {/* AI Summary */}
+            <AIAnalysisSummary
+              data={lead}
+              entityName={lead.name}
+              entityType="lead"
+              isEditable={false}
+              onResync={handleResync}
+              isResyncing={resyncLead.isPending}
+            />
           </div>
         </div>
 

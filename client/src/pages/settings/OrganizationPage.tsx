@@ -6,12 +6,6 @@ import {
   Tag,
   RotateCcw,
   FileText,
-  Package,
-  Lightbulb,
-  Target,
-  MessageCircle,
-  Image,
-  Palette,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import {
@@ -20,6 +14,8 @@ import {
   useResyncOrganization,
 } from '../../hooks/useOrganizationQuery'
 import { useAuth } from '../../contexts/AuthContext'
+import AIAnalysisSummary from '../../components/AIAnalysisSummary'
+import BrandIdentity from '../../components/BrandIdentity'
 
 export default function OrganizationPage() {
   const { user } = useAuth()
@@ -254,379 +250,135 @@ export default function OrganizationPage() {
         </div>
       </div>
 
-      {/* Brand Identity Section */}
-      {(formData.logo || formData.brandColors.length > 0) && (
-        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
-          <div className="px-6 py-6">
-            <div className="flex items-center mb-4">
-              <Palette className="h-5 w-5 text-gray-400 mr-2" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Brand Identity
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Organization Details */}
+        <div className="space-y-6">
+          <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
+            <div className="px-6 py-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Organization Details
               </h2>
-            </div>
-
-            <div className="space-y-5">
-              {/* Logo */}
-              {formData.logo && (
+              <div className="space-y-5">
+                {/* Tenant Name */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Logo
+                  <label
+                    htmlFor="tenant-name"
+                    className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                  >
+                    Tenant Name
                   </label>
                   <div className="relative">
-                    <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                      <Image className="h-4 w-4 text-gray-400" />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Tag className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
                     </div>
-                    <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
-                      <div className="flex items-center justify-center min-h-[80px]">
-                        <img
-                          src={formData.logo}
-                          alt={`${formData.organizationName || 'Organization'} logo`}
-                          className="max-h-16 max-w-full object-contain"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            target.nextElementSibling?.classList.remove(
-                              'hidden',
-                            )
-                          }}
-                        />
-                        <div className="hidden text-gray-500 text-sm">
-                          Logo could not be loaded
-                        </div>
-                      </div>
-                    </div>
+                    <input
+                      type="text"
+                      name="tenant-name"
+                      id="tenant-name"
+                      value={formData.tenantName}
+                      onChange={(e) =>
+                        handleInputChange('tenantName', e.target.value)
+                      }
+                      className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                               placeholder:text-gray-400 
+                               hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                               focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
+                      placeholder="Enter your tenant name"
+                    />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    Primary organization logo
+                    The internal name for your workspace
                   </p>
                 </div>
-              )}
 
-              {/* Brand Colors */}
-              {formData.brandColors.length > 0 && (
+                {/* Organization Name */}
                 <div className="group">
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Brand Colors
+                  <label
+                    htmlFor="org-name"
+                    className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                  >
+                    Organization Name
                   </label>
                   <div className="relative">
-                    <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                      <Palette className="h-4 w-4 text-gray-400" />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Building className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
                     </div>
-                    <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
-                      <div className="flex flex-wrap gap-3">
-                        {formData.brandColors.map((color, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center space-x-2"
-                          >
-                            <div
-                              className="w-8 h-8 rounded-lg border-2 border-white shadow-sm"
-                              style={{ backgroundColor: color }}
-                              title={color}
-                            />
-                            <span className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
-                              {color}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <input
+                      type="text"
+                      name="org-name"
+                      id="org-name"
+                      value={formData.organizationName}
+                      onChange={(e) =>
+                        handleInputChange('organizationName', e.target.value)
+                      }
+                      className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                               placeholder:text-gray-400 
+                               hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                               focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
+                      placeholder="Enter your organization name"
+                    />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    Primary brand color palette
+                    Your company or organization's public name
                   </p>
                 </div>
-              )}
+
+                {/* Organization Website */}
+                <div className="group">
+                  <label
+                    htmlFor="org-website"
+                    className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
+                  >
+                    Organization Website
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Globe className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
+                    </div>
+                    <input
+                      type="url"
+                      name="org-website"
+                      id="org-website"
+                      value={formData.organizationWebsite}
+                      onChange={(e) =>
+                        handleInputChange('organizationWebsite', e.target.value)
+                      }
+                      className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
+                               placeholder:text-gray-400 
+                               hover:border-gray-300 hover:shadow-sm hover:bg-white/80
+                               focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
+                      placeholder="https://your-company.com"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Your organization's main website URL
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+          {/* Brand Identity */}
+          <BrandIdentity
+            logo={formData.logo}
+            brandColors={formData.brandColors}
+            entityName={formData.organizationName}
+            entityType="organization"
+          />
         </div>
-      )}
 
-      {/* Organization Details */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
-        <div className="px-6 py-6">
-          <div className="space-y-5">
-            {/* Tenant Name */}
-            <div className="group">
-              <label
-                htmlFor="tenant-name"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
-              >
-                Tenant Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Tag className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
-                </div>
-                <input
-                  type="text"
-                  name="tenant-name"
-                  id="tenant-name"
-                  value={formData.tenantName}
-                  onChange={(e) =>
-                    handleInputChange('tenantName', e.target.value)
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
-                  placeholder="Enter your tenant name"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                The internal name for your workspace
-              </p>
-            </div>
-
-            {/* Organization Name */}
-            <div className="group">
-              <label
-                htmlFor="org-name"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
-              >
-                Organization Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
-                </div>
-                <input
-                  type="text"
-                  name="org-name"
-                  id="org-name"
-                  value={formData.organizationName}
-                  onChange={(e) =>
-                    handleInputChange('organizationName', e.target.value)
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
-                  placeholder="Enter your organization name"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Your company or organization's public name
-              </p>
-            </div>
-
-            {/* Organization Website */}
-            <div className="group">
-              <label
-                htmlFor="org-website"
-                className="block text-sm font-semibold text-gray-800 mb-2 transition-colors group-focus-within:text-[var(--color-primary-600)]"
-              >
-                Organization Website
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Globe className="h-4 w-4 text-gray-400 transition-colors group-focus-within:text-[var(--color-primary-500)]" />
-                </div>
-                <input
-                  type="url"
-                  name="org-website"
-                  id="org-website"
-                  value={formData.organizationWebsite}
-                  onChange={(e) =>
-                    handleInputChange('organizationWebsite', e.target.value)
-                  }
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 ease-in-out
-                           placeholder:text-gray-400 
-                           hover:border-gray-300 hover:shadow-sm hover:bg-white/80
-                           focus:outline-none focus:ring-0 focus:border-[var(--color-primary-500)] focus:bg-white focus:shadow-lg focus:shadow-[var(--color-primary-100)]/50"
-                  placeholder="https://your-company.com"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Your organization's main website URL
-              </p>
-            </div>
-
-            {/* Summary */}
-            <div className="group">
-              <label
-                htmlFor="summary"
-                className="block text-sm font-semibold text-gray-800 mb-2"
-              >
-                Summary
-              </label>
-              <div className="relative">
-                <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
-                  <FileText className="h-4 w-4 text-gray-400" />
-                </div>
-                <div
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
-                               text-gray-700 cursor-default overflow-y-auto min-h-[500px] max-h-[600px]"
-                >
-                  {formData.summary ? (
-                    <div
-                      className="prose prose-sm max-w-none 
-                                   prose-headings:text-gray-800 prose-headings:font-semibold
-                                   prose-p:text-gray-700 prose-p:leading-relaxed
-                                   prose-strong:text-gray-800 prose-strong:font-semibold
-                                   prose-em:text-gray-600
-                                   prose-ul:text-gray-700 prose-ol:text-gray-700
-                                   prose-li:text-gray-700
-                                   prose-code:text-gray-800 prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                                   prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-300
-                                   prose-blockquote:text-gray-600 prose-blockquote:border-gray-300
-                                   prose-hr:border-gray-300"
-                    >
-                      <ReactMarkdown>{formData.summary}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <span className="text-gray-500">No summary available</span>
-                  )}
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                A concise description of your organization
-              </p>
-            </div>
-
-            {/* Products */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Products
-              </label>
-              <div className="relative">
-                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                  <Package className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
-                  {formData.products.length > 0 ? (
-                    <ul className="space-y-1 text-gray-700">
-                      {formData.products.map((product, index) => (
-                        <li key={index} className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
-                          {product}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-gray-500">No products listed</span>
-                  )}
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                List of your organization's products
-              </p>
-            </div>
-
-            {/* Services */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Services
-              </label>
-              <div className="relative">
-                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                  <Package className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
-                  {formData.services.length > 0 ? (
-                    <ul className="space-y-1 text-gray-700">
-                      {formData.services.map((service, index) => (
-                        <li key={index} className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
-                          {service}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-gray-500">No services listed</span>
-                  )}
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                List of your organization's services
-              </p>
-            </div>
-
-            {/* Differentiators */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-800 mb-2">
-                Differentiators
-              </label>
-              <div className="relative">
-                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lightbulb className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm min-h-[42px]">
-                  {formData.differentiators.length > 0 ? (
-                    <ul className="space-y-1 text-gray-700">
-                      {formData.differentiators.map((differentiator, index) => (
-                        <li key={index} className="flex items-center">
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
-                          {differentiator}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-gray-500">
-                      No differentiators listed
-                    </span>
-                  )}
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                List of your organization's differentiators
-              </p>
-            </div>
-
-            {/* Target Market */}
-            <div className="group">
-              <label
-                htmlFor="target-market"
-                className="block text-sm font-semibold text-gray-800 mb-2"
-              >
-                Target Market
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Target className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  name="target-market"
-                  id="target-market"
-                  value={formData.targetMarket}
-                  readOnly
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
-                           text-gray-700 cursor-not-allowed"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Your organization's target market
-              </p>
-            </div>
-
-            {/* Tone */}
-            <div className="group">
-              <label
-                htmlFor="tone"
-                className="block text-sm font-semibold text-gray-800 mb-2"
-              >
-                Tone
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MessageCircle className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  name="tone"
-                  id="tone"
-                  value={formData.tone}
-                  readOnly
-                  className="block w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm
-                           text-gray-700 cursor-not-allowed"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Your organization's tone
-              </p>
-            </div>
-          </div>
+        {/* Right Column - AI Analysis */}
+        <div className="space-y-6">
+          {/* AI Summary */}
+          <AIAnalysisSummary
+            data={organization || {}}
+            entityName={formData.organizationName}
+            entityType="organization"
+            isEditable={false}
+            onResync={handleResync}
+            isResyncing={resyncOrganizationMutation.isPending}
+            formData={formData}
+          />
         </div>
       </div>
     </div>
