@@ -11,7 +11,7 @@ Using all available data from this domain—including product pages, marketing c
 4. **Target market and positioning** – Who the company is trying to serve, and how it positions itself competitively.
 5. **Tone** – Professional, informative, and objective.
 
-Avoid repeating boilerplate or vague statements. Focus on real, specific value the company communicates through its site content. Keep the summary under 500 words.
+Avoid repeating boilerplate or vague statements. Focus on real, specific value the company communicates through its site content. Keep the summary around 2500 words.
 
 If no concrete product or service is mentioned, state that explicitly.
 
