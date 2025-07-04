@@ -1,6 +1,6 @@
 import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import db from '../libs/drizzleClient';
-import { leads, NewLead } from '../db/schema';
+import { leads, NewLead, leadPointOfContacts, NewLeadPointOfContact } from '../db/schema';
 
 /**
  * Retrieves a list of leads for a specific tenant, with optional search functionality.
@@ -21,17 +21,7 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
     const result = await db
       .select()
       .from(leads)
-      .where(
-        and(
-          baseWhere,
-          or(
-            ilike(leads.name, searchTerm),
-            ilike(leads.email, searchTerm),
-            ilike(leads.company, searchTerm),
-            ilike(leads.phone, searchTerm)
-          )
-        )
-      )
+      .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
       .orderBy(desc(leads.createdAt));
     return result;
   }
@@ -41,12 +31,17 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
 };
 
 /**
- * Creates a new lead for a specific tenant.
+ * Creates a new lead for a specific tenant with optional point of contacts.
  * @param tenantId - The ID of the tenant the lead will belong to.
  * @param lead - The data for the new lead.
- * @returns A promise that resolves to the newly created lead object.
+ * @param pointOfContacts - Optional array of point of contacts to create for the lead.
+ * @returns A promise that resolves to the newly created lead object with point of contacts.
  */
-export const createLead = async (tenantId: string, lead: Omit<NewLead, 'tenantId'>) => {
+export const createLead = async (
+  tenantId: string,
+  lead: Omit<NewLead, 'tenantId'>,
+  pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
+) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
   // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
 
@@ -60,19 +55,60 @@ export const createLead = async (tenantId: string, lead: Omit<NewLead, 'tenantId
     leadWithTenant.url = leadWithTenant.url.cleanWebsiteUrl();
   }
 
-  if (leadWithTenant.company) {
-    leadWithTenant.company = leadWithTenant.company.toLowerCase();
-  }
+  // Use transaction to create lead and point of contacts
+  const result = await db.transaction(async (tx) => {
+    // Create the lead first
+    const createdLeads = await tx.insert(leads).values(leadWithTenant).returning();
+    const createdLead = createdLeads[0];
 
-  const result = await db.insert(leads).values(leadWithTenant).returning();
-  return result[0];
+    if (!createdLead) {
+      throw new Error('Failed to create lead');
+    }
+
+    // Create point of contacts if provided
+    let createdContacts: any[] = [];
+    if (pointOfContacts && pointOfContacts.length > 0) {
+      const contactsWithLeadId = pointOfContacts.map((contact) => ({
+        ...contact,
+        leadId: createdLead.id,
+      }));
+
+      createdContacts = await tx.insert(leadPointOfContacts).values(contactsWithLeadId).returning();
+
+      // Set the first contact as primary contact if no primary contact is set
+      if (createdContacts.length > 0 && !createdLead.primaryContactId) {
+        const updatedLeads = await tx
+          .update(leads)
+          .set({ primaryContactId: createdContacts[0].id })
+          .where(eq(leads.id, createdLead.id))
+          .returning();
+
+        const updatedLead = updatedLeads[0];
+        if (!updatedLead) {
+          throw new Error('Failed to update lead with primary contact');
+        }
+
+        return {
+          ...updatedLead,
+          pointOfContacts: createdContacts,
+        };
+      }
+    }
+
+    return {
+      ...createdLead,
+      pointOfContacts: createdContacts,
+    };
+  });
+
+  return result;
 };
 
 /**
- * Retrieves a single lead by its ID, ensuring it belongs to the specified tenant.
+ * Retrieves a single lead by its ID with associated point of contacts, ensuring it belongs to the specified tenant.
  * @param tenantId - The ID of the tenant the lead belongs to.
  * @param id - The ID of the lead to retrieve.
- * @returns A promise that resolves to the lead object, or undefined if not found.
+ * @returns A promise that resolves to the lead object with point of contacts, or undefined if not found.
  */
 export const getLeadById = async (tenantId: string, id: string) => {
   // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
@@ -83,7 +119,22 @@ export const getLeadById = async (tenantId: string, id: string) => {
     .from(leads)
     .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
     .limit(1);
-  return result[0];
+
+  if (!result[0]) {
+    return undefined;
+  }
+
+  // Get associated point of contacts
+  const contacts = await db
+    .select()
+    .from(leadPointOfContacts)
+    .where(eq(leadPointOfContacts.leadId, id))
+    .orderBy(desc(leadPointOfContacts.createdAt));
+
+  return {
+    ...result[0],
+    pointOfContacts: contacts,
+  };
 };
 
 /**

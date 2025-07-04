@@ -10,6 +10,8 @@ import {
   Building,
   Calendar,
   User,
+  Crown,
+  Users,
 } from 'lucide-react'
 
 const LeadDetailPage: React.FC = () => {
@@ -157,59 +159,21 @@ const LeadDetailPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Contact Information */}
+              {/* Basic Information */}
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Contact Information
+                  Basic Information
                 </h2>
 
                 <div className="flex items-center space-x-3">
                   <User className="h-5 w-5 text-gray-400" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Name</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      Lead Name
+                    </p>
                     <p className="text-sm text-gray-500">{lead.name}</p>
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Email</p>
-                    <a
-                      href={`mailto:${lead.email}`}
-                      className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                    >
-                      {lead.email}
-                    </a>
-                  </div>
-                </div>
-
-                {lead.phone && (
-                  <div className="flex items-center space-x-3">
-                    <Phone className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Phone</p>
-                      <a
-                        href={`tel:${lead.phone}`}
-                        className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                      >
-                        {lead.phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {lead.company && (
-                  <div className="flex items-center space-x-3">
-                    <Building className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Company
-                      </p>
-                      <p className="text-sm text-gray-500">{lead.company}</p>
-                    </div>
-                  </div>
-                )}
 
                 <div className="flex items-center space-x-3">
                   <Globe className="h-5 w-5 text-gray-400" />
@@ -259,6 +223,110 @@ const LeadDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Point of Contacts */}
+        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <Users className="h-5 w-5 text-gray-400 mr-2" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Point of Contacts
+              </h2>
+            </div>
+
+            {!lead.pointOfContacts || lead.pointOfContacts.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p>No contacts associated with this lead.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {lead.pointOfContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className="border border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {contact.name}
+                        </h3>
+                        {lead.primaryContactId === contact.id && (
+                          <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Primary
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <p className="text-xs font-medium text-gray-900">
+                            Email
+                          </p>
+                          <a
+                            href={`mailto:${contact.email}`}
+                            className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                          >
+                            {contact.email}
+                          </a>
+                        </div>
+                      </div>
+
+                      {contact.phone && (
+                        <div className="flex items-center space-x-3">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-xs font-medium text-gray-900">
+                              Phone
+                            </p>
+                            <a
+                              href={`tel:${contact.phone}`}
+                              className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                            >
+                              {contact.phone}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {contact.title && (
+                        <div className="flex items-center space-x-3">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-xs font-medium text-gray-900">
+                              Title
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {contact.title}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {contact.company && (
+                        <div className="flex items-center space-x-3">
+                          <Building className="h-4 w-4 text-gray-400" />
+                          <div>
+                            <p className="text-xs font-medium text-gray-900">
+                              Company
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {contact.company}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Additional Information */}
         <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-6">
@@ -269,7 +337,9 @@ const LeadDetailPage: React.FC = () => {
               <p className="text-sm text-gray-600">
                 This lead was created on {formatDate(lead.createdAt)} and is
                 currently in "{lead.status}" status.
-                {lead.company && ` They are associated with ${lead.company}.`}
+                {lead.pointOfContacts &&
+                  lead.pointOfContacts.length > 0 &&
+                  ` It has ${lead.pointOfContacts.length} associated contact${lead.pointOfContacts.length > 1 ? 's' : ''}.`}
               </p>
             </div>
           </div>

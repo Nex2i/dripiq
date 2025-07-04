@@ -1,32 +1,43 @@
 import { authService } from './auth.service'
 
-export interface Lead {
+export interface LeadPointOfContact {
   id: string
   name: string
   email: string
-  url: string
-  company?: string
   phone?: string
-  status: string
+  title?: string
+  company?: string
   createdAt: string
   updatedAt: string
 }
 
+export interface Lead {
+  id: string
+  name: string
+  url: string
+  status: string
+  primaryContactId?: string
+  createdAt: string
+  updatedAt: string
+  pointOfContacts?: LeadPointOfContact[]
+}
+
 export interface CreateLeadData {
   name: string
-  email: string
   url: string
-  company?: string
-  phone?: string
   status?: string
+  pointOfContacts?: Array<{
+    name: string
+    email: string
+    phone?: string
+    title?: string
+    company?: string
+  }>
 }
 
 export interface UpdateLeadData {
   name?: string
-  email?: string
   url?: string
-  company?: string
-  phone?: string
   status?: string
 }
 

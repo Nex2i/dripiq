@@ -174,10 +174,7 @@ export const leads = appSchema.table('leads', {
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
-  email: text('email').notNull(),
   url: text('url').notNull(),
-  company: text('company'),
-  phone: text('phone'),
   status: text('status').notNull().default('new'),
   summary: text('summary'),
   products: jsonb('products'), // Array of products the company offers
@@ -185,6 +182,7 @@ export const leads = appSchema.table('leads', {
   differentiators: jsonb('differentiators'), // Array of differentiators the company has
   targetMarket: text('target_market'), // The target market the company is trying to serve
   tone: text('tone'), // The tone of the company
+  primaryContactId: text('primary_contact_id'), // Reference to primary contact (nullable)
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
@@ -196,7 +194,24 @@ export const leads = appSchema.table('leads', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const leadsRelations = relations(leads, ({ one }) => ({
+// Lead Point of Contacts table
+export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  leadId: text('lead_id')
+    .notNull()
+    .references(() => leads.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  title: text('title'), // Job title
+  company: text('company'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const leadsRelations = relations(leads, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [leads.tenantId],
     references: [tenants.id],
@@ -204,6 +219,18 @@ export const leadsRelations = relations(leads, ({ one }) => ({
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [leads.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],
+  }),
+  pointOfContacts: many(leadPointOfContacts),
+  primaryContact: one(leadPointOfContacts, {
+    fields: [leads.primaryContactId],
+    references: [leadPointOfContacts.id],
+  }),
+}));
+
+export const leadPointOfContactsRelations = relations(leadPointOfContacts, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadPointOfContacts.leadId],
+    references: [leads.id],
   }),
 }));
 
@@ -282,6 +309,8 @@ export type RolePermission = typeof rolePermissions.$inferSelect;
 export type NewRolePermission = typeof rolePermissions.$inferInsert;
 export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
+export type LeadPointOfContact = typeof leadPointOfContacts.$inferSelect;
+export type NewLeadPointOfContact = typeof leadPointOfContacts.$inferInsert;
 export type SiteEmbedding = typeof siteEmbeddings.$inferSelect;
 export type NewSiteEmbedding = typeof siteEmbeddings.$inferInsert;
 export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;

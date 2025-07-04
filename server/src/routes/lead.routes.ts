@@ -14,18 +14,41 @@ import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 
 const basePath = '/leads';
 
+// Schema for point of contact
+const pointOfContactSchema = Type.Object({
+  name: Type.String({ minLength: 1, description: 'Contact name' }),
+  email: Type.String({ format: 'email', description: 'Contact email address' }),
+  phone: Type.Optional(Type.String({ description: 'Contact phone number' })),
+  title: Type.Optional(Type.String({ description: 'Contact job title' })),
+  company: Type.Optional(Type.String({ description: 'Contact company' })),
+});
+
+// Schema for point of contact response
+const pointOfContactResponseSchema = Type.Object({
+  id: Type.String({ description: 'Contact ID' }),
+  name: Type.String({ description: 'Contact name' }),
+  email: Type.String({ description: 'Contact email' }),
+  phone: Type.Optional(Type.String({ description: 'Contact phone' })),
+  title: Type.Optional(Type.String({ description: 'Contact job title' })),
+  company: Type.Optional(Type.String({ description: 'Contact company' })),
+  createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
+  updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
+});
+
 // Schema for create lead endpoint
 const createLeadBodySchema = Type.Object({
   name: Type.String({ minLength: 1, description: 'Lead name' }),
-  email: Type.String({ format: 'email', description: 'Lead email address' }),
   url: Type.String({ format: 'uri', minLength: 1, description: 'Lead website URL' }),
-  company: Type.Optional(Type.String({ description: 'Lead company' })),
-  phone: Type.Optional(Type.String({ description: 'Lead phone number' })),
   status: Type.Optional(
     Type.String({
       enum: ['new', 'contacted', 'qualified', 'lost'],
       default: 'new',
       description: 'Lead status',
+    })
+  ),
+  pointOfContacts: Type.Optional(
+    Type.Array(pointOfContactSchema, {
+      description: 'Array of point of contacts for the lead',
     })
   ),
 });
@@ -34,13 +57,16 @@ const createLeadBodySchema = Type.Object({
 const leadResponseSchema = Type.Object({
   id: Type.String({ description: 'Lead ID' }),
   name: Type.String({ description: 'Lead name' }),
-  email: Type.String({ description: 'Lead email' }),
   url: Type.String({ description: 'Lead website URL' }),
-  company: Type.Optional(Type.String({ description: 'Lead company' })),
-  phone: Type.Optional(Type.String({ description: 'Lead phone' })),
   status: Type.String({ description: 'Lead status' }),
+  primaryContactId: Type.Optional(Type.String({ description: 'Primary contact ID' })),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
+  pointOfContacts: Type.Optional(
+    Type.Array(pointOfContactResponseSchema, {
+      description: 'Array of point of contacts for the lead',
+    })
+  ),
 });
 
 export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
@@ -118,7 +144,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       body: createLeadBodySchema,
       tags: ['Leads'],
       summary: 'Create New Lead',
-      description: 'Create a new lead in the database (tenant-scoped)',
+      description:
+        'Create a new lead in the database with optional point of contacts (tenant-scoped)',
       response: {
         201: Type.Object({
           message: Type.String(),
@@ -146,32 +173,28 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       request: FastifyRequest<{
         Body: {
           name: string;
-          email: string;
           url: string;
-          company?: string;
-          phone?: string;
           status?: string;
+          pointOfContacts?: Array<{
+            name: string;
+            email: string;
+            phone?: string;
+            title?: string;
+            company?: string;
+          }>;
         };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const leadData = request.body;
+        const { pointOfContacts, ...leadData } = request.body;
 
         // Validate required fields (additional validation beyond schema)
         if (!leadData.name?.trim()) {
           reply.status(400).send({
             message: 'Lead name is required',
             error: 'Name cannot be empty',
-          });
-          return;
-        }
-
-        if (!leadData.email?.trim()) {
-          reply.status(400).send({
-            message: 'Lead email is required',
-            error: 'Email cannot be empty',
           });
           return;
         }
@@ -184,10 +207,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Create the lead with tenant context
+        // Create the lead with tenant context and point of contacts
         const newLead = await createLead(
           authenticatedRequest.tenantId,
-          leadData as Omit<NewLead, 'tenantId'>
+          leadData as Omit<NewLead, 'tenantId'>,
+          pointOfContacts
         );
 
         if (!newLead) {
@@ -225,8 +249,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         // Check for specific database errors
         if (error.message?.includes('duplicate') || error.code === '23505') {
           reply.status(400).send({
-            message: 'Lead with this email already exists',
-            error: 'Duplicate email address',
+            message: 'Lead with this information already exists',
+            error: 'Duplicate data',
           });
           return;
         }
@@ -250,7 +274,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       }),
       tags: ['Leads'],
       summary: 'Get Lead by ID',
-      description: 'Get a single lead by ID (tenant-scoped)',
+      description: 'Get a single lead by ID with associated point of contacts (tenant-scoped)',
       response: {
         200: leadResponseSchema,
         401: Type.Object({
@@ -371,11 +395,15 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         };
         Body: Partial<{
           name: string;
-          email: string;
           url: string;
-          company?: string;
-          phone?: string;
           status?: string;
+          pointOfContacts?: Array<{
+            name: string;
+            email: string;
+            phone?: string;
+            title?: string;
+            company?: string;
+          }>;
         }>;
       }>,
       reply: FastifyReply
@@ -383,7 +411,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
-        const updateData = request.body;
+        const { ...updateData } = request.body;
 
         if (!id || !id.trim()) {
           reply.status(400).send({
@@ -393,6 +421,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        // For now, just update the lead data (not handling point of contacts updates in this route)
         const updatedLead = await updateLead(authenticatedRequest.tenantId, id, updateData);
 
         if (!updatedLead) {
@@ -403,13 +432,16 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        // Get the updated lead with point of contacts
+        const leadWithContacts = await getLeadById(authenticatedRequest.tenantId, id);
+
         fastify.log.info(
           `Lead updated successfully with ID: ${id} for tenant: ${authenticatedRequest.tenantId}`
         );
 
         reply.send({
           message: 'Lead updated successfully',
-          lead: updatedLead,
+          lead: leadWithContacts,
         });
       } catch (error: any) {
         fastify.log.error(`Error updating lead: ${error.message}`);

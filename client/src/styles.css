@@ -300,6 +300,10 @@ code {
     transition-all duration-300;
 }
 
+button:hover {
+  cursor: pointer;
+}
+
 /* Glassmorphism */
 .glass {
   background: rgba(255, 255, 255, 0.25);
