@@ -1,4 +1,5 @@
 import {
+  Navigate,
   Outlet,
   createRootRoute,
   createRoute,
@@ -131,13 +132,7 @@ const settingsRoute = createRoute({
 const settingsIndexRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: '/',
-  component: () => <TenantSettingsPage />,
-})
-
-const settingsGeneralRoute = createRoute({
-  getParentRoute: () => settingsRoute,
-  path: '/general',
-  component: () => <TenantSettingsPage />,
+  component: () => <Navigate to="/settings/organization" />,
 })
 
 const settingsUsersRoute = createRoute({
@@ -210,7 +205,6 @@ const notFoundRoute = createRoute({
 
 const settingsRouteTree = settingsRoute.addChildren([
   settingsIndexRoute,
-  settingsGeneralRoute,
   settingsUsersRoute,
   settingsNotificationsRoute,
   settingsSecurityRoute,

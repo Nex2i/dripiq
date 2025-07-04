@@ -1,31 +1,18 @@
 import { Outlet, Link, useLocation } from '@tanstack/react-router'
-import {
-  Users,
-  Settings as SettingsIcon,
-  Bell,
-  Shield,
-  CreditCard,
-  Building,
-} from 'lucide-react'
+import { Users, Bell, Shield, CreditCard, Building } from 'lucide-react'
 
 const navigation = [
+  {
+    name: 'Organization',
+    path: '/settings/organization',
+    icon: Building,
+    description: 'Organization details and branding',
+  },
   {
     name: 'Users',
     path: '/settings/users',
     icon: Users,
     description: 'Manage team members and permissions',
-  },
-  {
-    name: 'General',
-    path: '/settings/general',
-    icon: SettingsIcon,
-    description: 'Basic workspace settings',
-  },
-  {
-    name: 'Notifications',
-    path: '/settings/notifications',
-    icon: Bell,
-    description: 'Configure email and push notifications',
   },
   {
     name: 'Security',
@@ -39,12 +26,6 @@ const navigation = [
     icon: CreditCard,
     description: 'Subscription and payment settings',
   },
-  {
-    name: 'Organization',
-    path: '/settings/organization',
-    icon: Building,
-    description: 'Organization details and branding',
-  },
 ]
 
 export default function SettingsLayout() {
@@ -56,7 +37,7 @@ export default function SettingsLayout() {
         {/* Header */}
         <div className="md:flex md:items-center md:justify-between mb-8">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            <h1 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl sm:leading-9 sm:truncate">
               Settings
             </h1>
             <p className="mt-1 text-sm text-gray-500">
