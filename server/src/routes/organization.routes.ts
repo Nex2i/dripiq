@@ -18,6 +18,8 @@ interface UpdateOrganizationBody {
   differentiators?: string[];
   targetMarket?: string;
   tone?: string;
+  logo?: string | null;
+  brandColors?: string[];
 }
 
 export default async function OrganizationRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
@@ -51,6 +53,8 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           differentiators: tenant.differentiators || [],
           targetMarket: tenant.targetMarket || '',
           tone: tenant.tone || '',
+          logo: tenant.logo || null,
+          brandColors: tenant.brandColors || [],
         });
       } catch (error: any) {
         fastify.log.error(error);
@@ -97,6 +101,8 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           differentiators: updatedTenant.differentiators || [],
           targetMarket: updatedTenant.targetMarket || '',
           tone: updatedTenant.tone || '',
+          logo: updatedTenant.logo || null,
+          brandColors: updatedTenant.brandColors || [],
         });
       } catch (error: any) {
         fastify.log.error(error);

@@ -10,6 +10,8 @@ import {
   Lightbulb,
   Target,
   MessageCircle,
+  Image,
+  Palette,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import {
@@ -41,6 +43,8 @@ export default function OrganizationPage() {
     differentiators: [] as string[],
     targetMarket: '',
     tone: '',
+    logo: null as string | null,
+    brandColors: [] as string[],
   })
 
   const [isDirty, setIsDirty] = useState(false)
@@ -64,6 +68,10 @@ export default function OrganizationPage() {
           : [],
         targetMarket: organization.targetMarket || '',
         tone: organization.tone || '',
+        logo: organization.logo || null,
+        brandColors: Array.isArray(organization.brandColors)
+          ? organization.brandColors
+          : [],
       })
     }
   }, [organization])
@@ -99,6 +107,8 @@ export default function OrganizationPage() {
           differentiators: formData.differentiators,
           targetMarket: formData.targetMarket,
           tone: formData.tone,
+          logo: formData.logo,
+          brandColors: formData.brandColors,
         },
       })
       setIsDirty(false)
@@ -243,6 +253,94 @@ export default function OrganizationPage() {
           </div>
         </div>
       </div>
+
+      {/* Brand Identity Section */}
+      {(formData.logo || formData.brandColors.length > 0) && (
+        <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">
+          <div className="px-6 py-6">
+            <div className="flex items-center mb-4">
+              <Palette className="h-5 w-5 text-gray-400 mr-2" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Brand Identity
+              </h2>
+            </div>
+
+            <div className="space-y-5">
+              {/* Logo */}
+              {formData.logo && (
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-800 mb-3">
+                    Logo
+                  </label>
+                  <div className="relative">
+                    <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                      <Image className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
+                      <div className="flex items-center justify-center min-h-[80px]">
+                        <img
+                          src={formData.logo}
+                          alt={`${formData.organizationName || 'Organization'} logo`}
+                          className="max-h-16 max-w-full object-contain"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            target.nextElementSibling?.classList.remove(
+                              'hidden',
+                            )
+                          }}
+                        />
+                        <div className="hidden text-gray-500 text-sm">
+                          Logo could not be loaded
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Primary organization logo
+                  </p>
+                </div>
+              )}
+
+              {/* Brand Colors */}
+              {formData.brandColors.length > 0 && (
+                <div className="group">
+                  <label className="block text-sm font-semibold text-gray-800 mb-3">
+                    Brand Colors
+                  </label>
+                  <div className="relative">
+                    <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                      <Palette className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
+                      <div className="flex flex-wrap gap-3">
+                        {formData.brandColors.map((color, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-2"
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg border-2 border-white shadow-sm"
+                              style={{ backgroundColor: color }}
+                              title={color}
+                            />
+                            <span className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
+                              {color}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Primary brand color palette
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Organization Details */}
       <div className="bg-white/80 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100/50">

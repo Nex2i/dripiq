@@ -23,6 +23,8 @@ export interface Lead {
   differentiators?: string[]
   targetMarket?: string
   tone?: string
+  logo?: string | null
+  brandColors?: string[]
   primaryContactId?: string
   createdAt: string
   updatedAt: string

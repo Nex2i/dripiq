@@ -11,6 +11,8 @@ export interface Organization {
   differentiators: string[]
   targetMarket: string
   tone: string
+  logo?: string | null
+  brandColors?: string[]
 }
 
 export interface UpdateOrganizationData {
@@ -23,6 +25,8 @@ export interface UpdateOrganizationData {
   differentiators?: string[]
   targetMarket?: string
   tone?: string
+  logo?: string | null
+  brandColors?: string[]
 }
 
 class OrganizationService {

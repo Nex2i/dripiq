@@ -68,6 +68,8 @@ const leadResponseSchema = Type.Object({
   ),
   targetMarket: Type.Optional(Type.String({ description: 'Lead target market' })),
   tone: Type.Optional(Type.String({ description: 'Lead tone' })),
+  logo: Type.Optional(Type.Union([Type.String(), Type.Null()], { description: 'Lead logo URL' })),
+  brandColors: Type.Optional(Type.Array(Type.String(), { description: 'Lead brand colors' })),
   primaryContactId: Type.Optional(Type.String({ description: 'Primary contact ID' })),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),

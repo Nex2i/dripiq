@@ -21,6 +21,8 @@ export interface CreateTenantData {
   differentiators?: string[];
   targetMarket?: string;
   tone?: string;
+  logo?: string | null;
+  brandColors?: string[];
 }
 
 export interface TenantWithUsers extends Tenant {

@@ -43,6 +43,8 @@ export const tenants = appSchema.table('tenants', {
   differentiators: jsonb('differentiators'), // Array of differentiators the company has
   targetMarket: text('target_market'), // The target market the company is trying to serve
   tone: text('tone'), // The tone of the company
+  logo: text('logo'), // URL or path to the primary site logo
+  brandColors: jsonb('brand_colors'), // Array of hex color codes representing the brand color palette
   siteEmbeddingDomainId: text('site_embedding_domain_id').references(
     () => siteEmbeddingDomains.id,
     { onDelete: 'set null' }
@@ -182,6 +184,8 @@ export const leads = appSchema.table('leads', {
   differentiators: jsonb('differentiators'), // Array of differentiators the company has
   targetMarket: text('target_market'), // The target market the company is trying to serve
   tone: text('tone'), // The tone of the company
+  logo: text('logo'), // URL or path to the primary site logo
+  brandColors: jsonb('brand_colors'), // Array of hex color codes representing the brand color palette
   primaryContactId: text('primary_contact_id'), // Reference to primary contact (nullable)
   tenantId: text('tenant_id')
     .notNull()

@@ -17,6 +17,8 @@ export const LeadAnalyzerService = {
       products: aiOutput.finalResponseParsed.products,
       services: aiOutput.finalResponseParsed.services,
       differentiators: aiOutput.finalResponseParsed.differentiators,
+      logo: aiOutput.finalResponseParsed.logo,
+      brandColors: aiOutput.finalResponseParsed.brandColors,
     });
   },
 };
