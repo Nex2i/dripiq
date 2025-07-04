@@ -44,8 +44,8 @@ export function useCreateLead() {
 
   return useMutation({
     mutationFn: async (data: CreateLeadData) => {
-      const lead = await leadsService.createLead(data)
-      return { lead }
+      const { lead } = await leadsService.createLead(data)
+      return lead
     },
     onMutate: async (_newLeadData: CreateLeadData) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -62,8 +62,7 @@ export function useCreateLead() {
       // Return a context object with the snapshotted value
       return { previousLeads }
     },
-    onSuccess: (leadResponse: { lead: Lead }) => {
-      const { lead: newLead } = leadResponse
+    onSuccess: (newLead) => {
       // Simply invalidate all leads queries to refresh the data
       queryClient.invalidateQueries({
         queryKey: leadQueryKeys.lists(),

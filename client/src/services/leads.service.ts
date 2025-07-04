@@ -88,7 +88,7 @@ class LeadsService {
   }
 
   // Create a new lead
-  async createLead(data: CreateLeadData): Promise<Lead> {
+  async createLead(data: CreateLeadData): Promise<{ lead: Lead }> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 

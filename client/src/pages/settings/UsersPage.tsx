@@ -39,8 +39,6 @@ export default function UsersPage() {
   // Check if current user is admin
   const isAdmin = user?.tenants?.[0]?.role?.name === 'Admin'
 
-  console.log(user)
-
   const getStatusBadge = (status: string) => {
     const baseClasses = 'px-2 py-1 text-xs font-medium rounded-full'
     switch (status) {

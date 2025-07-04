@@ -28,9 +28,10 @@ const NewLeadPage: React.FC = () => {
     setError(null)
 
     createLeadMutation.mutate(formData, {
-      onSuccess: (newLead) => {
+      onSuccess: (newLeadResponse) => {
+        console.log(newLeadResponse)
         // Redirect to the new lead detail page
-        navigate({ to: `/leads/${newLead.lead.id}` })
+        navigate({ to: `/leads/${newLeadResponse.id}` })
       },
       onError: (err) => {
         setError(err instanceof Error ? err.message : 'Failed to create lead')
