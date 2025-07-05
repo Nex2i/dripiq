@@ -8,34 +8,14 @@ import reportOutputSchema from '../schemas/reportOutputSchema';
 import { IAIClient, IAIMessage, IAIRequestOptions } from '../interfaces/IAIClient';
 import { IToolRegistry } from '../interfaces/IToolRegistry';
 import { ITool, IToolCall } from '../interfaces/ITool';
-
-interface FunctionCallLoopResult {
-  finalResponse: string;
-  finalResponseParsed?: z.infer<typeof reportOutputSchema>;
-  totalIterations: number;
-  functionCalls: Array<{
-    functionName: string;
-    arguments: any;
-    result: any;
-  }>;
-}
-
-export interface GeneralSiteReportConfig {
-  maxIterations?: number;
-  model?: string;
-  enableWebSearch?: boolean;
-}
+import { ReportConfig, FunctionCallLoopResult } from '../interfaces/IReport';
 
 export class GeneralSiteReportService {
   private aiClient: IAIClient;
   private toolRegistry: IToolRegistry;
-  private config: Required<GeneralSiteReportConfig>;
+  private config: Required<ReportConfig>;
 
-  constructor(
-    aiClient: IAIClient,
-    toolRegistry: IToolRegistry,
-    config: GeneralSiteReportConfig = {}
-  ) {
+  constructor(aiClient: IAIClient, toolRegistry: IToolRegistry, config: ReportConfig = {}) {
     this.aiClient = aiClient;
     this.toolRegistry = toolRegistry;
     this.config = {
@@ -55,7 +35,9 @@ export class GeneralSiteReportService {
     tools.forEach((tool) => this.registerTool(tool));
   }
 
-  async summarizeSite(siteUrl: string): Promise<FunctionCallLoopResult> {
+  async summarizeSite(
+    siteUrl: string
+  ): Promise<FunctionCallLoopResult<z.infer<typeof reportOutputSchema>>> {
     const outputSchema = zodToJsonSchema(reportOutputSchema, 'reportOutputSchema');
 
     const initialPrompt = promptHelper.getPromptAndInject('summarize_site', {
@@ -106,7 +88,7 @@ export class GeneralSiteReportService {
   private async executeFunctionCallLoop(
     initialMessages: IAIMessage[],
     options: IAIRequestOptions
-  ): Promise<FunctionCallLoopResult> {
+  ): Promise<FunctionCallLoopResult<z.infer<typeof reportOutputSchema>>> {
     let iteration = 0;
     let currentResponse: any = null;
     const functionCallHistory: Array<{

@@ -201,5 +201,26 @@ export function useInvalidateLeads() {
   }
 }
 
+// Hook to vendor fit a lead
+export function useVendorFitLead() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => leadsService.vendorFitLead(id),
+    onSuccess: (_, id) => {
+      // Invalidate and refetch lead data
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error running vendor fit:', error)
+    },
+  })
+}
+
 // Re-export the query keys for use in other components
 export { leadQueryKeys }

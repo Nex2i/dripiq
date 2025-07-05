@@ -1,6 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useLead, useResyncLead } from '../hooks/useLeadsQuery'
+import {
+  useLead,
+  useResyncLead,
+  useVendorFitLead,
+} from '../hooks/useLeadsQuery'
 import {
   ArrowLeft,
   Edit,
@@ -16,13 +20,18 @@ import {
 } from 'lucide-react'
 import AIAnalysisSummary from '../components/AIAnalysisSummary'
 import BrandIdentity from '../components/BrandIdentity'
+import VendorFitModal from '../components/VendorFitModal'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
   const { leadId } = useParams({ from: '/protected/leads/$leadId' })
   const { data: lead, isLoading, error } = useLead(leadId)
   const resyncLead = useResyncLead()
+  const vendorFitLead = useVendorFitLead()
   const [resyncMessage, setResyncMessage] = useState<string | null>(null)
+  const [vendorFitMessage, setVendorFitMessage] = useState<string | null>(null)
+  const [vendorFitModalOpen, setVendorFitModalOpen] = useState(false)
+  const [vendorFitData, setVendorFitData] = useState<any>(null)
 
   const handleBack = () => {
     navigate({ to: '/leads' })
@@ -49,6 +58,30 @@ const LeadDetailPage: React.FC = () => {
         // Clear the message after 3 seconds
         setTimeout(() => {
           setResyncMessage(null)
+        }, 3000)
+      },
+    })
+  }
+
+  const handleVendorFit = () => {
+    if (!lead?.id) return
+
+    setVendorFitMessage(null)
+
+    vendorFitLead.mutate(lead.id, {
+      onSuccess: (result) => {
+        setVendorFitMessage(result.message || 'Vendor fit completed')
+        setVendorFitData(result)
+        setVendorFitModalOpen(true)
+        setTimeout(() => {
+          setVendorFitMessage(null)
+        }, 3000)
+      },
+      onError: (error) => {
+        console.error('Error running vendor fit:', error)
+        setVendorFitMessage('Failed to run vendor fit')
+        setTimeout(() => {
+          setVendorFitMessage(null)
         }, 3000)
       },
     })
@@ -183,6 +216,16 @@ const LeadDetailPage: React.FC = () => {
                 {resyncLead.isPending ? 'Resyncing...' : 'Resync'}
               </button>
               <button
+                onClick={handleVendorFit}
+                disabled={vendorFitLead.isPending}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Users
+                  className={`h-4 w-4 mr-2 ${vendorFitLead.isPending ? 'animate-spin' : ''}`}
+                />
+                {vendorFitLead.isPending ? 'Running...' : 'Vendor Fit'}
+              </button>
+              <button
                 onClick={() => {
                   // TODO: Navigate to edit page when implemented
                   console.log('Edit lead:', lead.id)
@@ -207,6 +250,20 @@ const LeadDetailPage: React.FC = () => {
             }`}
           >
             <p className="text-sm font-medium">{resyncMessage}</p>
+          </div>
+        )}
+
+        {/* Vendor Fit Message */}
+        {vendorFitMessage && (
+          <div
+            className={`mb-6 p-4 rounded-lg border ${
+              vendorFitMessage.includes('Failed') ||
+              vendorFitMessage.includes('Error')
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-green-50 border-green-200 text-green-700'
+            }`}
+          >
+            <p className="text-sm font-medium">{vendorFitMessage}</p>
           </div>
         )}
 
@@ -423,6 +480,13 @@ const LeadDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Vendor Fit Modal */}
+        <VendorFitModal
+          isOpen={vendorFitModalOpen}
+          onClose={() => setVendorFitModalOpen(false)}
+          data={vendorFitData}
+        />
       </div>
     </div>
   )

@@ -3,11 +3,11 @@ import { ToolRegistry } from '../implementations/ToolRegistry';
 import { ITool } from '../interfaces/ITool';
 
 // Import concrete tool implementations
-import { GeneralSiteReportService } from './generalSiteReport.service';
 import { ReportConfig } from '../interfaces/IReport';
+import { VendorFitReportService } from './vendorFitReport.service';
 
-export class GeneralSiteReportServiceFactory {
-  static createDefault(config?: ReportConfig): GeneralSiteReportService {
+export class VendorFitReportServiceFactory {
+  static createDefault(config?: ReportConfig): VendorFitReportService {
     // Create AI client
     const aiClient = new OpenAIClient();
 
@@ -24,10 +24,10 @@ export class GeneralSiteReportServiceFactory {
     defaultTools.forEach((tool) => toolRegistry.registerTool(tool));
 
     // Create and return service
-    return new GeneralSiteReportService(aiClient, toolRegistry, config);
+    return new VendorFitReportService(aiClient, toolRegistry, config);
   }
 
-  static createWithCustomTools(tools: any[], config?: ReportConfig): GeneralSiteReportService {
+  static createWithCustomTools(tools: any[], config?: ReportConfig): VendorFitReportService {
     // Create AI client
     const aiClient = new OpenAIClient();
 
@@ -38,10 +38,10 @@ export class GeneralSiteReportServiceFactory {
     tools.forEach((tool) => toolRegistry.registerTool(tool));
 
     // Create and return service
-    return new GeneralSiteReportService(aiClient, toolRegistry, config);
+    return new VendorFitReportService(aiClient, toolRegistry, config);
   }
 
-  static createEmpty(config?: ReportConfig): GeneralSiteReportService {
+  static createEmpty(config?: ReportConfig): VendorFitReportService {
     // Create AI client
     const aiClient = new OpenAIClient();
 
@@ -49,12 +49,12 @@ export class GeneralSiteReportServiceFactory {
     const toolRegistry = new ToolRegistry();
 
     // Create and return service with no tools registered
-    return new GeneralSiteReportService(aiClient, toolRegistry, config);
+    return new VendorFitReportService(aiClient, toolRegistry, config);
   }
 }
 
 // Export a default configured instance for backward compatibility
-export const generalSiteReportService = GeneralSiteReportServiceFactory.createDefault({
+export const vendorFitReportService = VendorFitReportServiceFactory.createDefault({
   maxIterations: 5,
   model: 'gpt-4.1',
   enableWebSearch: true,

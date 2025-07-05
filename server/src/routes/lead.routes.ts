@@ -12,6 +12,8 @@ import {
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
+import { defaultRouteResponse } from '@/types/response';
+import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 
 const basePath = '/leads';
 
@@ -94,19 +96,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         search: Type.Optional(Type.String({ description: 'Search term to filter leads' })),
       }),
       response: {
+        ...defaultRouteResponse(),
         200: Type.Array(leadResponseSchema, { description: 'List of leads for the tenant' }),
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
       },
     },
     handler: async (
@@ -158,25 +149,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       description:
         'Create a new lead in the database with optional point of contacts (tenant-scoped)',
       response: {
+        ...defaultRouteResponse(),
         201: Type.Object({
           message: Type.String(),
           lead: leadResponseSchema,
-        }),
-        400: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
         }),
       },
     },
@@ -286,23 +262,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       summary: 'Get Lead by ID',
       description: 'Get a single lead by ID with associated point of contacts (tenant-scoped)',
       response: {
+        ...defaultRouteResponse(),
         200: leadResponseSchema,
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        404: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
       },
     },
     handler: async (
@@ -372,29 +333,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       summary: 'Update Lead',
       description: 'Update a lead by ID (tenant-scoped)',
       response: {
+        ...defaultRouteResponse(),
         200: Type.Object({
           message: Type.String(),
           lead: leadResponseSchema,
-        }),
-        400: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        404: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
         }),
       },
     },
@@ -488,29 +430,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       summary: 'Delete Lead',
       description: 'Delete a single lead by ID (tenant-scoped)',
       response: {
+        ...defaultRouteResponse(),
         200: Type.Object({
           message: Type.String(),
           deletedLead: leadResponseSchema,
-        }),
-        400: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        404: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
         }),
       },
     },
@@ -587,26 +510,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       summary: 'Bulk Delete Leads',
       description: 'Delete multiple leads by their IDs (tenant-scoped)',
       response: {
+        ...defaultRouteResponse(),
         200: Type.Object({
           message: Type.String(),
-          deletedCount: Type.Number(),
           deletedLeads: Type.Array(leadResponseSchema),
-        }),
-        400: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
         }),
       },
     },
@@ -674,6 +581,49 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
+  // Generate vendor fit report route
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:id/vendor-fit`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      params: Type.Object({
+        id: Type.String({ description: 'Lead ID' }),
+      }),
+      tags: ['Leads'],
+      summary: 'Generate Vendor Fit Report',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { id } = request.params;
+
+        const vendorFitReport = await LeadVendorFitService.generateVendorFitReport(
+          authenticatedRequest.tenantId,
+          id
+        );
+
+        reply.status(200).send({
+          message: 'Vendor fit report generated successfully',
+          vendorFitReport,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error generating vendor fit report: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to generate vendor fit report',
+          error: error.message,
+        });
+      }
+    },
+  });
+
   // Resync lead route
   fastify.route({
     method: HttpMethods.POST,
@@ -687,29 +637,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       summary: 'Resync Lead',
       description: 'Resync a lead by ID (tenant-scoped)',
       response: {
+        ...defaultRouteResponse(),
         200: Type.Object({
           message: Type.String(),
           leadId: Type.String(),
-        }),
-        400: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        401: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        403: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        404: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
-        }),
-        500: Type.Object({
-          message: Type.String(),
-          error: Type.Optional(Type.String()),
         }),
       },
     },

@@ -2,46 +2,27 @@ import z from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 import { logger } from '@/libs/logger';
 import { promptHelper } from '@/prompts/prompt.helper';
-import reportOutputSchema from '../schemas/reportOutputSchema';
 
 // Import interfaces
 import { IAIClient, IAIMessage, IAIRequestOptions } from '../interfaces/IAIClient';
 import { IToolRegistry } from '../interfaces/IToolRegistry';
 import { ITool, IToolCall } from '../interfaces/ITool';
+import { ReportConfig, FunctionCallLoopResult } from '../interfaces/IReport';
+import vendorFitOutputSchema from '../schemas/vendorFitOutputSchema';
+import vendorFitInputSchema from '../schemas/vendorFitInputSchema';
 
-interface FunctionCallLoopResult {
-  finalResponse: string;
-  finalResponseParsed?: z.infer<typeof reportOutputSchema>;
-  totalIterations: number;
-  functionCalls: Array<{
-    functionName: string;
-    arguments: any;
-    result: any;
-  }>;
-}
-
-export interface ReportGeneratorConfig {
-  maxIterations?: number;
-  model?: string;
-  enableWebSearch?: boolean;
-}
-
-export class ReportGeneratorService {
+export class VendorFitReportService {
   private aiClient: IAIClient;
   private toolRegistry: IToolRegistry;
-  private config: Required<ReportGeneratorConfig>;
+  private config: Required<ReportConfig>;
 
-  constructor(
-    aiClient: IAIClient,
-    toolRegistry: IToolRegistry,
-    config: ReportGeneratorConfig = {}
-  ) {
+  constructor(aiClient: IAIClient, toolRegistry: IToolRegistry, config: ReportConfig = {}) {
     this.aiClient = aiClient;
     this.toolRegistry = toolRegistry;
     this.config = {
       maxIterations: config.maxIterations || 10,
       model: config.model || 'gpt-4.1',
-      enableWebSearch: config.enableWebSearch ?? true,
+      enableWebSearch: config.enableWebSearch ?? false,
     };
   }
 
@@ -55,20 +36,25 @@ export class ReportGeneratorService {
     tools.forEach((tool) => this.registerTool(tool));
   }
 
-  async summarizeSite(siteUrl: string): Promise<FunctionCallLoopResult> {
-    const outputSchema = zodToJsonSchema(reportOutputSchema, 'reportOutputSchema');
+  async generateVendorFitReport(
+    partnerDetails: z.infer<typeof vendorFitInputSchema>,
+    opportunityDetails: z.infer<typeof vendorFitInputSchema>
+  ): Promise<FunctionCallLoopResult<z.infer<typeof vendorFitOutputSchema>>> {
+    const outputSchema = zodToJsonSchema(vendorFitOutputSchema, 'vendorFitOutputSchema');
 
-    const initialPrompt = promptHelper.getPromptAndInject('summarize_site', {
-      domain: siteUrl,
+    const initialPrompt = promptHelper.getPromptAndInject('vendor_fit', {
+      input_schema: JSON.stringify(vendorFitInputSchema, null, 2),
       output_schema: JSON.stringify(outputSchema, null, 2),
+      partner_details: JSON.stringify(partnerDetails, null, 2),
+      opportunity_details: JSON.stringify(opportunityDetails, null, 2),
     });
 
     const messages: IAIMessage[] = [
       {
         role: 'system',
         content:
-          'You are a helpful assistant that summarizes companies when provided their websites. \n' +
-          'Use the available tools to gather information about the domain and provide a comprehensive summary. \n' +
+          'You are a helpful assistant that generates a vendor fit report for a given partner and opportunity. \n' +
+          'Use the available tools to gather information about the partner and opportunity and provide a comprehensive report. \n' +
           'For your final response you must return JSON. The JSON must be valid and match the schema provided.',
       },
       {
@@ -84,15 +70,15 @@ export class ReportGeneratorService {
       enableWebSearch: this.config.enableWebSearch,
       responseFormat: {
         type: 'json_object',
-        schema: reportOutputSchema,
+        schema: vendorFitOutputSchema,
       },
     };
 
     const output = await this.executeFunctionCallLoop(messages, options);
 
-    // Parse final output to reportOutputSchema
+    // Parse final output to vendorFitOutputSchema
     try {
-      const finalOutput = reportOutputSchema.parse(JSON.parse(output.finalResponse));
+      const finalOutput = vendorFitOutputSchema.parse(JSON.parse(output.finalResponse));
       return {
         ...output,
         finalResponseParsed: finalOutput,
@@ -106,7 +92,7 @@ export class ReportGeneratorService {
   private async executeFunctionCallLoop(
     initialMessages: IAIMessage[],
     options: IAIRequestOptions
-  ): Promise<FunctionCallLoopResult> {
+  ): Promise<FunctionCallLoopResult<z.infer<typeof vendorFitOutputSchema>>> {
     let iteration = 0;
     let currentResponse: any = null;
     const functionCallHistory: Array<{
