@@ -3,7 +3,6 @@ import { supabase } from '@/libs/supabase.client';
 
 const bucket = process.env.SITE_STORAGE_BUCKET!;
 
-const uploadUrlExpiry = 60 * 60 * 1; // 1 hour
 const getSignedUrlExpiry = 60 * 60 * 24 * 30; // 30 days
 
 export const storageService = {

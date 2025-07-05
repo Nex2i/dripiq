@@ -1,8 +1,6 @@
-import { URL } from 'url';
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
-import { supabase } from '@/libs/supabase.client';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { storageService } from '@/modules/storage/storage.service';
 

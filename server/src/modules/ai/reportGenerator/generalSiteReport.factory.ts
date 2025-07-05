@@ -3,8 +3,8 @@ import { ToolRegistry } from '../implementations/ToolRegistry';
 import { ITool } from '../interfaces/ITool';
 
 // Import concrete tool implementations
-import { GeneralSiteReportService } from './generalSiteReport.service';
 import { ReportConfig } from '../interfaces/IReport';
+import { GeneralSiteReportService } from './generalSiteReport.service';
 
 export class GeneralSiteReportServiceFactory {
   static createDefault(config?: ReportConfig): GeneralSiteReportService {

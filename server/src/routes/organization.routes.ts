@@ -1,9 +1,6 @@
-import { URL } from 'url';
 import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
-import { supabase } from '@/libs/supabase.client';
-import { logger } from '@/libs/logger';
 import { storageService } from '@/modules/storage/storage.service';
 
 const basePath = '/organizations';

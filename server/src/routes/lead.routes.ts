@@ -2,6 +2,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
+import { defaultRouteResponse } from '@/types/response';
+import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import {
   getLeads,
   createLead,
@@ -12,8 +14,6 @@ import {
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
-import { defaultRouteResponse } from '@/types/response';
-import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 
 const basePath = '/leads';
 
