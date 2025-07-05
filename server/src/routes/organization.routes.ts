@@ -162,6 +162,6 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
   async function generateOrganizationLogoSignedUrl(tenantId: string, domain?: string | null) {
     const storagePath = storageService.getTenantDomainLogoKey(tenantId, domain);
 
-    return await storageService.getUploadSigned(storagePath);
+    return await storageService.getSignedUrl(storagePath);
   }
 }

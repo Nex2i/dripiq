@@ -17,6 +17,7 @@ const logoUploadBodySchema = Type.Object({
 // Schema for logo upload response
 const logoUploadResponseSchema = Type.Object({
   signedUploadUrl: Type.String({ description: 'Signed URL for uploading the logo' }),
+  publicUrl: Type.String({ description: 'Public URL of the uploaded logo' }),
 });
 
 export default async function LogoRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
@@ -69,9 +70,11 @@ export default async function LogoRoutes(fastify: FastifyInstance, _opts: RouteO
             domain
           );
           const signedUrl = await storageService.getUploadSigned(storagePath);
+          const publicUrl = await storageService.getSignedUrl(storagePath);
 
           reply.send({
             signedUploadUrl: signedUrl,
+            publicUrl: publicUrl,
           });
         } catch (_urlError) {
           return reply.status(400).send({

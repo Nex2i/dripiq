@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Image, Palette, Upload, Check, AlertCircle } from 'lucide-react'
 import { logoService } from '../services/logo.service'
 
@@ -25,6 +25,10 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [currentLogo, setCurrentLogo] = useState<string | null>(logo || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setCurrentLogo(logo || null)
+  }, [logo])
 
   const hasLogo = currentLogo && currentLogo.trim() !== ''
   const hasColors = brandColors && brandColors.length > 0
