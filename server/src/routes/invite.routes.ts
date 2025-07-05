@@ -4,6 +4,7 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { InviteService, InviteDto, CreateInviteData } from '@/modules/invite.service';
 import { SupabaseAdminService } from '@/modules/supabase-admin.service';
 import { handleExistingSupabaseUser, createNewUserInvite } from '@/modules/invite.handlers';
+import { UserService } from '@/modules/user.service';
 
 const basePath = '';
 
@@ -209,10 +210,9 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         const { userTenant } = await InviteService.resendInvite(userId, tenantId);
 
         // Use Supabase's invite functionality to resend
-        const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/setup-password`;
+        const redirectUrl = `${process.env.FRONTEND_ORIGIN}/setup-password`;
 
         // Note: We'll need to get user email from the user record
-        const { UserService } = await import('@/modules/user.service');
         const user = await UserService.getUserById(userId);
 
         if (!user) {
@@ -220,7 +220,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           return;
         }
 
-        await SupabaseAdminService.inviteUserByEmail({
+        await SupabaseAdminService.resendInvite({
           email: user.email,
           redirectTo: redirectUrl,
           data: {

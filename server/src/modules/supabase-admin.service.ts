@@ -160,4 +160,26 @@ export class SupabaseAdminService {
       throw error;
     }
   }
+
+  static async resendInvite(data: InviteUserData): Promise<any> {
+    try {
+      const result = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: data.redirectTo,
+          data: data.data || {},
+        },
+      });
+
+      if (result.error) {
+        throw new Error(`Supabase admin resendInvite error: ${result.error.message}`);
+      }
+
+      return result.data.user;
+    } catch (error: any) {
+      console.error('Error resending invite via Supabase:', error);
+      throw error;
+    }
+  }
 }
