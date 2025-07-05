@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "npm run clear:dist && vite --port 3000",
+    "clear:dist": "rm -rf dist",
     "start": "vite --port 3000",
-    "build": "vite build && tsc",
+    "build": "npm run clear:dist && vite build && tsc",
     "serve": "vite preview",
     "test": "vitest run",
     "lint": "eslint",
