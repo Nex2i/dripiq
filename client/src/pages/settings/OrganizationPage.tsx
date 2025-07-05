@@ -357,8 +357,8 @@ export default function OrganizationPage() {
             entityName={formData.organizationName}
             entityType="organization"
             entityWebsite={formData.organizationWebsite}
-            onLogoUpdate={(newLogoUrl) => {
-              setFormData((prev) => ({ ...prev, logo: newLogoUrl }))
+            onBrandColorsUpdate={(newBrandColors) => {
+              setFormData((prev) => ({ ...prev, brandColors: newBrandColors }))
               setIsDirty(true)
             }}
           />

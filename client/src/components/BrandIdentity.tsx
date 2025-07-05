@@ -8,7 +8,7 @@ interface BrandIdentityProps {
   entityName?: string
   entityType?: 'lead' | 'organization'
   entityWebsite?: string // Add website URL for domain extraction
-  onLogoUpdate?: (newLogoUrl: string) => void // Callback for logo updates
+  onBrandColorsUpdate?: (newBrandColors: string[]) => void // Callback for brand colors updates
 }
 
 const BrandIdentity: React.FC<BrandIdentityProps> = ({
@@ -17,7 +17,7 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
   entityName,
   entityType = 'organization',
   entityWebsite,
-  onLogoUpdate,
+  onBrandColorsUpdate,
 }) => {
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -25,6 +25,9 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [currentLogo, setCurrentLogo] = useState<string | null>(logo || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [newColor, setNewColor] = useState<string>('#000000')
+  const [hexInput, setHexInput] = useState<string>('')
+  const [colorError, setColorError] = useState<string | null>(null)
 
   useEffect(() => {
     setCurrentLogo(logo || null)
@@ -75,11 +78,6 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
       setCurrentLogo(publicUrl)
       setUploadSuccess(true)
 
-      // Call the callback if provided
-      if (onLogoUpdate) {
-        onLogoUpdate(publicUrl)
-      }
-
       // Clear success message after 3 seconds
       setTimeout(() => setUploadSuccess(false), 3000)
     } catch (error) {
@@ -125,6 +123,32 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
   // Handle click to open file picker
   const handleClick = () => {
     fileInputRef.current?.click()
+  }
+
+  // Validate hex color
+  const isValidHex = (hex: string) => /^#([0-9A-Fa-f]{6})$/.test(hex)
+
+  // Add color to palette
+  const handleAddColor = () => {
+    const color = hexInput || newColor
+    if (!isValidHex(color)) {
+      setColorError('Invalid hex code. Use format #RRGGBB.')
+      return
+    }
+    if (brandColors?.includes(color)) {
+      setColorError('Color already in palette.')
+      return
+    }
+    setColorError(null)
+    const updated = [...(brandColors || []), color]
+    onBrandColorsUpdate?.(updated)
+    setHexInput('')
+  }
+
+  // Remove color from palette
+  const handleRemoveColor = (color: string) => {
+    const updated = (brandColors || []).filter((c) => c !== color)
+    onBrandColorsUpdate?.(updated)
   }
 
   // Don't render if no brand identity data and no website for uploads
@@ -239,18 +263,18 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
           </div>
 
           {/* Brand Colors */}
-          {hasColors && (
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-800 mb-3">
-                Brand Colors
-              </label>
-              <div className="relative">
-                <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
-                  <Palette className="h-4 w-4 text-gray-400" />
-                </div>
-                <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
-                  <div className="flex flex-wrap gap-3">
-                    {brandColors.map((color, index) => (
+          <div className="group">
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              Brand Colors
+            </label>
+            <div className="relative">
+              <div className="absolute top-3 left-0 pl-3 flex items-center pointer-events-none">
+                <Palette className="h-4 w-4 text-gray-400" />
+              </div>
+              <div className="block w-full pl-10 pr-3 py-4 text-sm border-2 border-gray-200 rounded-xl bg-gray-50 backdrop-blur-sm">
+                <div className="flex flex-wrap gap-3 mb-4">
+                  {brandColors && brandColors.length > 0 ? (
+                    brandColors.map((color, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <div
                           className="w-8 h-8 rounded-lg border-2 border-white shadow-sm"
@@ -260,16 +284,67 @@ const BrandIdentity: React.FC<BrandIdentityProps> = ({
                         <span className="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded border">
                           {color}
                         </span>
+                        <button
+                          type="button"
+                          className="ml-1 text-red-500 hover:text-red-700 focus:outline-none"
+                          aria-label={`Remove color ${color}`}
+                          onClick={() => handleRemoveColor(color)}
+                        >
+                          &times;
+                        </button>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-400">
+                      No colors yet. Add your first brand color below.
+                    </span>
+                  )}
                 </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="color"
+                    value={newColor}
+                    onChange={(e) => {
+                      setNewColor(e.target.value)
+                      setHexInput('')
+                      setColorError(null)
+                    }}
+                    className="w-10 h-10 border rounded-lg cursor-pointer"
+                    aria-label="Color picker"
+                  />
+                  <input
+                    type="text"
+                    value={hexInput}
+                    onChange={(e) => {
+                      setHexInput(e.target.value)
+                      setColorError(null)
+                    }}
+                    placeholder="#RRGGBB"
+                    maxLength={7}
+                    className="w-28 px-2 py-1 border rounded font-mono text-xs"
+                    aria-label="Hex code input"
+                  />
+                  <button
+                    type="button"
+                    className="px-3 py-1 bg-[var(--color-primary-600)] text-white rounded hover:bg-[var(--color-primary-700)] disabled:opacity-50"
+                    onClick={handleAddColor}
+                    disabled={
+                      !isValidHex(hexInput || newColor) ||
+                      (brandColors || []).includes(hexInput || newColor)
+                    }
+                  >
+                    Add
+                  </button>
+                </div>
+                {colorError && (
+                  <div className="text-xs text-red-600 mb-1">{colorError}</div>
+                )}
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Primary brand color palette
-              </p>
             </div>
-          )}
+            <p className="mt-1 text-xs text-gray-500">
+              Primary brand color palette
+            </p>
+          </div>
         </div>
       </div>
     </div>

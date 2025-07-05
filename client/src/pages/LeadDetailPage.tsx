@@ -282,9 +282,8 @@ const LeadDetailPage: React.FC = () => {
               entityName={lead.name}
               entityType="lead"
               entityWebsite={lead.url}
-              onLogoUpdate={(newLogoUrl) => {
-                // TODO: Update the lead data in the cache/state
-                console.log('Logo updated:', newLogoUrl)
+              onBrandColorsUpdate={(newBrandColors) => {
+                console.log('newBrandColors', newBrandColors)
               }}
             />
 
