@@ -21,7 +21,7 @@ export const OrganizationAnalyzerService = {
       throw new Error('AI output is required');
     }
     ``;
-    const { summary, products, services, differentiators, targetMarket, tone, logo, brandColors } =
+    const { summary, products, services, differentiators, targetMarket, tone, brandColors } =
       aiOutput.finalResponseParsed;
     // save on tenant
     await TenantService.updateTenant(userId, id, {
@@ -31,7 +31,6 @@ export const OrganizationAnalyzerService = {
       differentiators: differentiators,
       targetMarket: targetMarket,
       tone: tone,
-      logo: logo,
       brandColors: brandColors,
     });
   },

@@ -3,7 +3,7 @@ import { generalSiteReportService } from './reportGenerator/generalSiteReport.fa
 
 export const LeadAnalyzerService = {
   analyzeLead: async (tenantId: string, leadId: string) => {
-    const { url } = await getLeadById(tenantId, leadId, false);
+    const { url } = await getLeadById(tenantId, leadId);
 
     const aiOutput = await generalSiteReportService.summarizeSite(url.cleanWebsiteUrl());
 
@@ -17,7 +17,6 @@ export const LeadAnalyzerService = {
       products: aiOutput.finalResponseParsed.products,
       services: aiOutput.finalResponseParsed.services,
       differentiators: aiOutput.finalResponseParsed.differentiators,
-      logo: aiOutput.finalResponseParsed.logo,
       brandColors: aiOutput.finalResponseParsed.brandColors,
     });
   },

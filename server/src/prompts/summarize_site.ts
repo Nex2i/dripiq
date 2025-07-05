@@ -28,9 +28,8 @@ Follow these detailed steps to gather accurate information:
 6. **Company Tone**:
    - Analyze the language, style, and presentation used across blogs, marketing pages, and social media to describe the company's overall tone (e.g., professional, casual, innovative, authoritative).
 
-7. **Brand Visual Identity**:
-   - **Logo**: Locate the primary company logo, typically found in the header, footer, or about page. Look for img tags with src attributes containing the logo. Prioritize high-quality versions and full URLs when possible.
-   - **Brand Colors**: Identify the primary brand color palette by examining:
+7. **Brand Colors**:
+   - Identify the primary brand color palette by examining:
      - Header and navigation colors
      - Button colors and call-to-action elements
      - Brand accent colors used throughout the site
@@ -39,7 +38,7 @@ Follow these detailed steps to gather accurate information:
      - Include 3-6 primary colors that represent the brand identity
 
 Avoid boilerplate language. Focus explicitly on specifics derived from the content.
-If products/services, clear differentiation points, logo, or brand colors are not explicitly available, explicitly note their absence.
+If products/services, clear differentiation points, or brand colors are not explicitly available, explicitly note their absence.
 
 Your response must be structured as JSON, matching this schema: {{output_schema}}
 `;

@@ -1,3 +1,4 @@
+import { URL } from 'url';
 import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
 import db from '../libs/drizzleClient';
 import {
@@ -8,6 +9,19 @@ import {
   Lead,
   LeadPointOfContact,
 } from '../db/schema';
+import { logger } from '../libs/logger';
+import { storageService } from './storage/storage.service';
+
+// Helper function to transform lead data with signed URLs
+const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
+  const storagePath = storageService.getTenantDomainLogoKey(tenantId, lead.url);
+  const signedLogoUrl = await storageService.getSignedUrl(storagePath);
+
+  return {
+    ...lead,
+    logo: signedLogoUrl,
+  };
+};
 
 /**
  * Retrieves a list of leads for a specific tenant, with optional search functionality.
@@ -16,24 +30,22 @@ import {
  * @returns A promise that resolves to an array of lead objects.
  */
 export const getLeads = async (tenantId: string, searchQuery?: string) => {
-  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
-  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
-
   // Build base query with tenant filter
   const baseWhere = eq(leads.tenantId, tenantId);
 
   // Add search functionality if searchQuery is provided
+  let result;
   if (searchQuery && searchQuery.trim()) {
     const searchTerm = `%${searchQuery.trim()}%`;
-    const result = await db
+    result = await db
       .select()
       .from(leads)
       .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
       .orderBy(desc(leads.createdAt));
-    return result;
+  } else {
+    result = await db.select().from(leads).where(baseWhere).orderBy(desc(leads.createdAt));
   }
 
-  const result = await db.select().from(leads).where(baseWhere).orderBy(desc(leads.createdAt));
   return result;
 };
 
@@ -49,9 +61,6 @@ export const createLead = async (
   lead: Omit<NewLead, 'tenantId'>,
   pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
 ) => {
-  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
-  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
-
   // Add tenantId to the lead data
   const leadWithTenant: NewLead = {
     ...lead,
@@ -66,9 +75,9 @@ export const createLead = async (
   const result = await db.transaction(async (tx) => {
     // Create the lead first
     const createdLeads = await tx.insert(leads).values(leadWithTenant).returning();
-    const createdLead = createdLeads[0];
+    let createdLead = createdLeads[0];
 
-    if (!createdLead) {
+    if (!createdLead || !createdLead.id) {
       throw new Error('Failed to create lead');
     }
 
@@ -77,7 +86,7 @@ export const createLead = async (
     if (pointOfContacts && pointOfContacts.length > 0) {
       const contactsWithLeadId = pointOfContacts.map((contact) => ({
         ...contact,
-        leadId: createdLead.id,
+        leadId: createdLead!.id,
       }));
 
       createdContacts = await tx.insert(leadPointOfContacts).values(contactsWithLeadId).returning();
@@ -90,20 +99,15 @@ export const createLead = async (
           .where(eq(leads.id, createdLead.id))
           .returning();
 
-        const updatedLead = updatedLeads[0];
-        if (!updatedLead) {
-          throw new Error('Failed to update lead with primary contact');
-        }
-
-        return {
-          ...updatedLead,
-          pointOfContacts: createdContacts,
-        };
+        createdLead = updatedLeads[0]!;
       }
     }
 
+    // Transform lead with signed URLs
+    const transformedLead = await transformLeadWithSignedUrls(tenantId, createdLead);
+
     return {
-      ...createdLead,
+      ...transformedLead,
       pointOfContacts: createdContacts,
     };
   });
@@ -120,36 +124,39 @@ export const createLead = async (
 type LeadWithPointOfContacts = Lead & { pointOfContacts: LeadPointOfContact[] };
 export const getLeadById = async (
   tenantId: string,
-  id: string,
-  includePointOfContacts = true
+  id: string
 ): Promise<LeadWithPointOfContacts> => {
-  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
-  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
+  try {
+    const lead = await db
+      .select()
+      .from(leads)
+      .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
+      .limit(1);
 
-  const result = await db
-    .select()
-    .from(leads)
-    .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
-    .limit(1);
+    if (lead.length === 0) {
+      throw new Error(`Lead not found with ID: ${id}`);
+    }
 
-  if (!result[0]) {
-    throw new Error(`Lead not found with ID: ${id}`);
-  }
+    const leadData = lead[0];
 
-  // Get associated point of contacts
-  let contacts: any[] = [];
-  if (includePointOfContacts) {
-    contacts = await db
+    // Get point of contacts for this lead
+    const contacts = await db
       .select()
       .from(leadPointOfContacts)
       .where(eq(leadPointOfContacts.leadId, id))
-      .orderBy(desc(leadPointOfContacts.createdAt));
-  }
+      .orderBy(leadPointOfContacts.createdAt);
 
-  return {
-    ...result[0],
-    pointOfContacts: contacts,
-  };
+    // Transform lead with signed URLs using existing function
+    const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
+
+    return {
+      ...transformedLead,
+      pointOfContacts: contacts,
+    } as LeadWithPointOfContacts;
+  } catch (error) {
+    logger.error('Error getting lead by ID:', error);
+    throw error;
+  }
 };
 
 /**
@@ -164,9 +171,6 @@ export const updateLead = async (
   id: string,
   leadData: Partial<Omit<NewLead, 'tenantId'>>
 ) => {
-  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
-  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
-
   const result = await db
     .update(leads)
     .set({ ...leadData, updatedAt: new Date() })
@@ -182,13 +186,15 @@ export const updateLead = async (
  * @returns A promise that resolves to the deleted lead object.
  */
 export const deleteLead = async (tenantId: string, id: string) => {
-  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
-  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
-
   const result = await db
     .delete(leads)
     .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
     .returning();
+
+  if (result.length === 0) {
+    return null;
+  }
+
   return result[0];
 };
 
@@ -203,12 +209,10 @@ export const bulkDeleteLeads = async (tenantId: string, ids: string[]) => {
     return [];
   }
 
-  // Note: Tenant validation is now handled in authentication plugin to avoid redundant DB queries
-  // validateUserTenantAccess is skipped here since auth plugin already verified tenant access
-
   const result = await db
     .delete(leads)
     .where(and(inArray(leads.id, ids), eq(leads.tenantId, tenantId)))
     .returning();
+
   return result;
 };

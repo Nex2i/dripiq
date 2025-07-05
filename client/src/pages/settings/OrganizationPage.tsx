@@ -1,13 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  Building,
-  AlertCircle,
-  Globe,
-  Tag,
-  RotateCcw,
-  FileText,
-} from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
+import { Building, AlertCircle, Globe, Tag, RotateCcw } from 'lucide-react'
 import {
   useOrganization,
   useUpdateOrganization,
@@ -364,6 +356,11 @@ export default function OrganizationPage() {
             brandColors={formData.brandColors}
             entityName={formData.organizationName}
             entityType="organization"
+            entityWebsite={formData.organizationWebsite}
+            onLogoUpdate={(newLogoUrl) => {
+              setFormData((prev) => ({ ...prev, logo: newLogoUrl }))
+              setIsDirty(true)
+            }}
           />
         </div>
 

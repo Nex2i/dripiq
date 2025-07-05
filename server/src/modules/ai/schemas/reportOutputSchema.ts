@@ -11,12 +11,6 @@ const reportOutputSchema = z.object({
   differentiators: z.array(z.string()).describe('A list of differentiators the company has'),
   targetMarket: z.string().describe('The target market the company is trying to serve'),
   tone: z.string().describe('The tone of the company'),
-  logo: z
-    .string()
-    .nullable()
-    .describe(
-      'The URL or path to the primary site logo. Should be a full URL if possible, otherwise a relative path. Return null if no logo is found.'
-    ),
   brandColors: z
     .array(z.string())
     .describe(

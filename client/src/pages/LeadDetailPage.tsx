@@ -281,6 +281,11 @@ const LeadDetailPage: React.FC = () => {
               brandColors={lead.brandColors}
               entityName={lead.name}
               entityType="lead"
+              entityWebsite={lead.url}
+              onLogoUpdate={(newLogoUrl) => {
+                // TODO: Update the lead data in the cache/state
+                console.log('Logo updated:', newLogoUrl)
+              }}
             />
 
             {/* Point of Contacts */}

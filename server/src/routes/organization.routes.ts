@@ -1,6 +1,10 @@
+import { URL } from 'url';
 import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
+import { supabase } from '@/libs/supabase.client';
+import { logger } from '@/libs/logger';
+import { storageService } from '@/modules/storage/storage.service';
 
 const basePath = '/organizations';
 
@@ -53,7 +57,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           differentiators: tenant.differentiators || [],
           targetMarket: tenant.targetMarket || '',
           tone: tenant.tone || '',
-          logo: tenant.logo || null,
+          logo: await generateOrganizationLogoSignedUrl(id, tenant.website),
           brandColors: tenant.brandColors || [],
         });
       } catch (error: any) {
@@ -101,7 +105,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           differentiators: updatedTenant.differentiators || [],
           targetMarket: updatedTenant.targetMarket || '',
           tone: updatedTenant.tone || '',
-          logo: updatedTenant.logo || null,
+          logo: await generateOrganizationLogoSignedUrl(id, updatedTenant.website),
           brandColors: updatedTenant.brandColors || [],
         });
       } catch (error: any) {
@@ -154,4 +158,10 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
       }
     },
   });
+
+  async function generateOrganizationLogoSignedUrl(tenantId: string, domain?: string | null) {
+    const storagePath = storageService.getTenantDomainLogoKey(tenantId, domain);
+
+    return await storageService.getUploadSigned(storagePath);
+  }
 }
