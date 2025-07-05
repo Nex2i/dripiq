@@ -157,7 +157,6 @@ class InvitesService {
       const response = await fetch(`${this.baseUrl}/users/${userId}/resend`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           ...authHeaders,
         },
       })
