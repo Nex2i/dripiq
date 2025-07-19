@@ -7,6 +7,8 @@ import {
   NewLeadPointOfContact,
   Lead,
   LeadPointOfContact,
+  userTenants,
+  users,
 } from '../db/schema';
 import { logger } from '../libs/logger';
 import { storageService } from './storage/storage.service';
@@ -26,7 +28,7 @@ const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
  * Retrieves a list of leads for a specific tenant, with optional search functionality.
  * @param tenantId - The ID of the tenant to retrieve leads for.
  * @param searchQuery - An optional string to search for in the lead's name, email, company, or phone number.
- * @returns A promise that resolves to an array of lead objects.
+ * @returns A promise that resolves to an array of lead objects with owner information.
  */
 export const getLeads = async (tenantId: string, searchQuery?: string) => {
   // Build base query with tenant filter
@@ -37,12 +39,62 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
   if (searchQuery && searchQuery.trim()) {
     const searchTerm = `%${searchQuery.trim()}%`;
     result = await db
-      .select()
+      .select({
+        // Lead fields
+        id: leads.id,
+        name: leads.name,
+        url: leads.url,
+        status: leads.status,
+        summary: leads.summary,
+        products: leads.products,
+        services: leads.services,
+        differentiators: leads.differentiators,
+        targetMarket: leads.targetMarket,
+        tone: leads.tone,
+        brandColors: leads.brandColors,
+        primaryContactId: leads.primaryContactId,
+        ownerId: leads.ownerId,
+        tenantId: leads.tenantId,
+        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
+        createdAt: leads.createdAt,
+        updatedAt: leads.updatedAt,
+        // Owner fields (nullable)
+        ownerName: users.name,
+        ownerEmail: users.email,
+      })
       .from(leads)
+      .leftJoin(users, eq(leads.ownerId, users.id))
       .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
       .orderBy(desc(leads.createdAt));
   } else {
-    result = await db.select().from(leads).where(baseWhere).orderBy(desc(leads.createdAt));
+    result = await db
+      .select({
+        // Lead fields
+        id: leads.id,
+        name: leads.name,
+        url: leads.url,
+        status: leads.status,
+        summary: leads.summary,
+        products: leads.products,
+        services: leads.services,
+        differentiators: leads.differentiators,
+        targetMarket: leads.targetMarket,
+        tone: leads.tone,
+        brandColors: leads.brandColors,
+        primaryContactId: leads.primaryContactId,
+        ownerId: leads.ownerId,
+        tenantId: leads.tenantId,
+        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
+        createdAt: leads.createdAt,
+        updatedAt: leads.updatedAt,
+        // Owner fields (nullable)
+        ownerName: users.name,
+        ownerEmail: users.email,
+      })
+      .from(leads)
+      .leftJoin(users, eq(leads.ownerId, users.id))
+      .where(baseWhere)
+      .orderBy(desc(leads.createdAt));
   }
 
   return result;
@@ -127,8 +179,31 @@ export const getLeadById = async (
 ): Promise<LeadWithPointOfContacts> => {
   try {
     const lead = await db
-      .select()
+      .select({
+        // Lead fields
+        id: leads.id,
+        name: leads.name,
+        url: leads.url,
+        status: leads.status,
+        summary: leads.summary,
+        products: leads.products,
+        services: leads.services,
+        differentiators: leads.differentiators,
+        targetMarket: leads.targetMarket,
+        tone: leads.tone,
+        brandColors: leads.brandColors,
+        primaryContactId: leads.primaryContactId,
+        ownerId: leads.ownerId,
+        tenantId: leads.tenantId,
+        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
+        createdAt: leads.createdAt,
+        updatedAt: leads.updatedAt,
+        // Owner fields (nullable)
+        ownerName: users.name,
+        ownerEmail: users.email,
+      })
       .from(leads)
+      .leftJoin(users, eq(leads.ownerId, users.id))
       .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
       .limit(1);
 
@@ -214,4 +289,90 @@ export const bulkDeleteLeads = async (tenantId: string, ids: string[]) => {
     .returning();
 
   return result;
+};
+
+/**
+ * Assigns an owner to a lead, ensuring both the lead and user belong to the same tenant.
+ * @param tenantId - The ID of the tenant the lead belongs to.
+ * @param leadId - The ID of the lead to assign an owner to.
+ * @param userId - The ID of the user to assign as owner.
+ * @returns A promise that resolves to the updated lead object with owner information.
+ */
+export const assignLeadOwner = async (tenantId: string, leadId: string, userId: string) => {
+  try {
+    // First, verify that the lead exists and belongs to the tenant
+    const lead = await db
+      .select()
+      .from(leads)
+      .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
+      .limit(1);
+
+    if (lead.length === 0) {
+      throw new Error(`Lead not found with ID: ${leadId} in tenant: ${tenantId}`);
+    }
+
+    // Then, verify that the user exists and belongs to the same tenant
+    const userTenant = await db
+      .select()
+      .from(userTenants)
+      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
+      .limit(1);
+
+    if (userTenant.length === 0) {
+      throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
+    }
+
+    // Update the lead with the new owner
+    const result = await db
+      .update(leads)
+      .set({ ownerId: userId, updatedAt: new Date() })
+      .where(eq(leads.id, leadId))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error('Failed to update lead owner');
+    }
+
+    // Get the updated lead with owner information (similar to getLeads)
+    const updatedLeadWithOwner = await db
+      .select({
+        // Lead fields
+        id: leads.id,
+        name: leads.name,
+        url: leads.url,
+        status: leads.status,
+        summary: leads.summary,
+        products: leads.products,
+        services: leads.services,
+        differentiators: leads.differentiators,
+        targetMarket: leads.targetMarket,
+        tone: leads.tone,
+        brandColors: leads.brandColors,
+        primaryContactId: leads.primaryContactId,
+        ownerId: leads.ownerId,
+        tenantId: leads.tenantId,
+        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
+        createdAt: leads.createdAt,
+        updatedAt: leads.updatedAt,
+        // Owner fields (nullable)
+        ownerName: users.name,
+        ownerEmail: users.email,
+      })
+      .from(leads)
+      .leftJoin(users, eq(leads.ownerId, users.id))
+      .where(eq(leads.id, leadId))
+      .limit(1);
+
+    if (updatedLeadWithOwner.length === 0) {
+      throw new Error('Failed to retrieve updated lead with owner information');
+    }
+
+    // Transform lead with signed URLs
+    const transformedLead = await transformLeadWithSignedUrls(tenantId, updatedLeadWithOwner[0]);
+
+    return transformedLead;
+  } catch (error) {
+    logger.error('Error assigning lead owner:', error);
+    throw error;
+  }
 };

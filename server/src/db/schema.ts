@@ -233,6 +233,10 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     fields: [leads.tenantId],
     references: [tenants.id],
   }),
+  owner: one(users, {
+    fields: [leads.ownerId],
+    references: [users.id],
+  }),
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [leads.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],

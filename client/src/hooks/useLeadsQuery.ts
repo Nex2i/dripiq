@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsService, leadQueryKeys } from '../services/leads.service'
+import { invitesService } from '../services/invites.service'
 import type {
   Lead,
   CreateLeadData,
@@ -190,6 +191,36 @@ export function useResyncLead() {
   })
 }
 
+// Hook to assign owner to a lead
+export function useAssignLeadOwner() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      leadsService.assignLeadOwner(id, userId),
+    onSuccess: (data) => {
+      // Update the individual lead cache
+      queryClient.setQueryData(leadQueryKeys.detail(data.lead.id), data.lead)
+
+      // Update the leads list cache
+      queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
+        if (!oldLeads) return [data.lead]
+        return oldLeads.map((lead) =>
+          lead.id === data.lead.id ? data.lead : lead,
+        )
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error assigning lead owner:', error)
+    },
+  })
+}
+
 // Hook to invalidate leads data (useful for manual refresh)
 export function useInvalidateLeads() {
   const queryClient = useQueryClient()
@@ -219,6 +250,18 @@ export function useVendorFitLead() {
     onError: (error) => {
       console.error('Error running vendor fit:', error)
     },
+  })
+}
+
+// Hook to get users for the current tenant
+export function useUsers(page = 1, limit = 25) {
+  return useQuery({
+    queryKey: ['users', { page, limit }],
+    queryFn: () => invitesService.getUsers(page, limit),
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }
 

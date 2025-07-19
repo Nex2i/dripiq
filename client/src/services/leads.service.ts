@@ -26,6 +26,9 @@ export interface Lead {
   logo?: string | null
   brandColors?: string[]
   primaryContactId?: string
+  ownerId?: string
+  ownerName?: string
+  ownerEmail?: string
   createdAt: string
   updatedAt: string
   pointOfContacts?: LeadPointOfContact[]
@@ -337,6 +340,53 @@ class LeadsService {
       this.queryClient.invalidateQueries({
         queryKey: leadQueryKeys.detail(id),
       })
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
+
+  // Assign owner to a lead
+  async assignLeadOwner(
+    id: string,
+    userId: string,
+  ): Promise<{ message: string; lead: Lead }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(`${this.baseUrl}/leads/${id}/assign-owner`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ userId }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to assign lead owner')
+    }
+
+    const result = await response.json()
+
+    // Update cache after successful assignment if queryClient is available
+    if (this.queryClient) {
+      this.queryClient.setQueryData(leadQueryKeys.detail(id), result.lead)
+
+      // Update leads list cache
+      this.queryClient.setQueryData<Lead[]>(
+        leadQueryKeys.list(),
+        (oldLeads) => {
+          if (!oldLeads) return [result.lead]
+          return oldLeads.map((lead) =>
+            lead.id === result.lead.id ? result.lead : lead,
+          )
+        },
+      )
+
+      // Invalidate leads list to ensure consistency
       this.queryClient.invalidateQueries({
         queryKey: leadQueryKeys.lists(),
       })
