@@ -27,8 +27,6 @@ export interface Lead {
   brandColors?: string[]
   primaryContactId?: string
   ownerId?: string
-  ownerName?: string
-  ownerEmail?: string
   createdAt: string
   updatedAt: string
   pointOfContacts?: LeadPointOfContact[]

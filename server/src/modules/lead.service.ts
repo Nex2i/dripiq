@@ -58,12 +58,8 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
         siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
         createdAt: leads.createdAt,
         updatedAt: leads.updatedAt,
-        // Owner fields (nullable)
-        ownerName: users.name,
-        ownerEmail: users.email,
       })
       .from(leads)
-      .leftJoin(users, eq(leads.ownerId, users.id))
       .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
       .orderBy(desc(leads.createdAt));
   } else {
@@ -87,12 +83,8 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
         siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
         createdAt: leads.createdAt,
         updatedAt: leads.updatedAt,
-        // Owner fields (nullable)
-        ownerName: users.name,
-        ownerEmail: users.email,
       })
       .from(leads)
-      .leftJoin(users, eq(leads.ownerId, users.id))
       .where(baseWhere)
       .orderBy(desc(leads.createdAt));
   }

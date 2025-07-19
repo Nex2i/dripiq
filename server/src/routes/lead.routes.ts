@@ -75,8 +75,6 @@ const leadResponseSchema = Type.Object({
   brandColors: Type.Optional(Type.Array(Type.String(), { description: 'Lead brand colors' })),
   primaryContactId: Type.Optional(Type.String({ description: 'Primary contact ID' })),
   ownerId: Type.Optional(Type.String({ description: 'Lead owner ID' })),
-  ownerName: Type.Optional(Type.String({ description: 'Lead owner name' })),
-  ownerEmail: Type.Optional(Type.String({ description: 'Lead owner email' })),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
   pointOfContacts: Type.Optional(

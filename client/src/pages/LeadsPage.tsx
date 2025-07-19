@@ -145,7 +145,13 @@ const LeadsPage: React.FC = () => {
   }
 
   const getOwnerDisplay = (lead: Lead) => {
-    const currentOwnerName = lead.ownerName || lead.ownerEmail || 'Unassigned'
+    // Find the owner user from the users list
+    const ownerUser = users.find((user) => user.id === lead.ownerId)
+    const currentOwnerName = ownerUser
+      ? ownerUser.firstName && ownerUser.lastName
+        ? `${ownerUser.firstName} ${ownerUser.lastName}`
+        : ownerUser.email
+      : 'Unassigned'
 
     return (
       <div className="relative group">
@@ -302,7 +308,7 @@ const LeadsPage: React.FC = () => {
         ),
       },
     ],
-    [],
+    [users, usersLoading, usersError, assigningOwner],
   )
 
   // Create table instance
