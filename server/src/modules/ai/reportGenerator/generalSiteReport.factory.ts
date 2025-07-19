@@ -3,6 +3,9 @@ import { ToolRegistry } from '../implementations/ToolRegistry';
 import { ITool } from '../interfaces/ITool';
 
 // Import concrete tool implementations
+import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
+import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
+import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { ReportConfig } from '../interfaces/IReport';
 import { GeneralSiteReportService } from './generalSiteReport.service';
 
@@ -16,9 +19,9 @@ export class GeneralSiteReportServiceFactory {
 
     // Register default tools
     const defaultTools: ITool[] = [
-      // new GetInformationAboutDomainTool(),
-      // new ListDomainPagesTool(),
-      // new RetrieveFullPageTool(),
+      new GetInformationAboutDomainTool(),
+      new ListDomainPagesTool(),
+      new RetrieveFullPageTool(),
     ];
 
     defaultTools.forEach((tool) => toolRegistry.registerTool(tool));
