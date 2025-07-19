@@ -8,13 +8,13 @@ export class ListDomainPagesTool implements ITool {
   getDefinition(): IToolDefinition {
     return {
       name: 'ListDomainPagesTool',
-      description: 'List all pages found for a specific domain',
+      description: 'Retrieves a list of all the pages on a domain that have been vectorized',
       parameters: {
         type: 'object',
         properties: {
           domain: {
             type: 'string',
-            description: 'The domain to list pages for',
+            description: 'The website domain to list pages for (e.g., example.com).',
           },
         },
         required: ['domain'],

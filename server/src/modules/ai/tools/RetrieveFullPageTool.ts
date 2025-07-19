@@ -8,13 +8,14 @@ export class RetrieveFullPageTool implements ITool {
   getDefinition(): IToolDefinition {
     return {
       name: 'RetrieveFullPageTool',
-      description: 'Retrieve the full content of a specific page',
+      description:
+        'Fetches the HTML content from a given URL and converts it to clean Markdown format.',
       parameters: {
         type: 'object',
         properties: {
           url: {
             type: 'string',
-            description: 'The URL of the page to retrieve',
+            description: 'The full URL to fetch and convert (e.g., https://example.com/about).',
           },
         },
         required: ['url'],

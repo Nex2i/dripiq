@@ -41,7 +41,7 @@ export class GeneralSiteReportService {
     const outputSchema = zodToJsonSchema(reportOutputSchema, 'reportOutputSchema');
 
     const initialPrompt = promptHelper.getPromptAndInject('summarize_site', {
-      domain: siteUrl,
+      domain: siteUrl.cleanWebsiteUrl(),
       output_schema: JSON.stringify(outputSchema, null, 2),
     });
 

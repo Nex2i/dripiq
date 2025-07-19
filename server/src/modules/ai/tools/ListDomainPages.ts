@@ -1,23 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { Tool } from 'openai/resources/responses/responses';
 import { db, siteEmbeddingDomains, siteEmbeddings } from '@/db';
-
-export const listDomainPagesTool: Tool = {
-  type: 'function' as const,
-  name: 'ListDomainPagesTool',
-  description: 'Retrieve a list of all the pages on a domain that have been vectorized',
-  parameters: {
-    type: 'object',
-    properties: {
-      domain: {
-        type: 'string',
-        description: 'The domain to list the pages of',
-      },
-    },
-    required: ['domain'],
-  },
-  strict: null,
-};
 
 export interface ListDomainPagesToolResponse {
   domain: string;
