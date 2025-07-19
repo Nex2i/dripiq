@@ -1,6 +1,5 @@
-import { IUploadFile, supabaseStorage } from '@/libs/supabase.storage';
+import { supabaseStorage } from '@/libs/supabase.storage';
 import { EmbeddingsService } from './embeddings.service';
-import { ScrapingResult } from './scraping.service';
 import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { LeadAnalyzerService } from './leadAnalyzer.service';

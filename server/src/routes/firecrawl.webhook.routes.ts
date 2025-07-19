@@ -77,10 +77,6 @@ export default async function FirecrawlWebhookRoutes(
 
           case 'crawl.failed':
             logger.error(`Crawl job ${id} encountered an error`, { data });
-            // TODO: Handle crawl errors
-            // - Update job status to failed
-            // - Store error details
-            // - Notify administrators
             break;
 
           default:

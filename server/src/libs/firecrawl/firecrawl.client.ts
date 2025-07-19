@@ -42,7 +42,7 @@ const firecrawlClient = {
   },
   createFirecrawlMarkdownFile(crawlId: string, pageData: PageData): IUploadFile {
     const { markdown, metadata } = pageData;
-    const { title, url } = metadata;
+    const { url } = metadata;
 
     const slug = url.getUrlSlug();
 
