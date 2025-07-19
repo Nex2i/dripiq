@@ -262,15 +262,12 @@ export const siteEmbeddingDomains = appSchema.table(
     id: text('id')
       .primaryKey()
       .$defaultFn(() => createId()),
-    domain: text('domain').notNull(), // e.g., "example.com"
+    domain: text('domain').notNull().unique(), // e.g., "google OR facebook" - Unique provides index
     scrapedAt: timestamp('scraped_at').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [
-    index('site_scraped_at_idx').on(table.scrapedAt),
-    index('site_domain_idx').on(table.domain),
-  ]
+  (table) => [index('site_scraped_at_idx').on(table.scrapedAt)]
 );
 
 // Site embeddings table - stores embeddings that belong to domains
@@ -292,6 +289,7 @@ export const siteEmbeddings = appSchema.table(
     embedding: vector('embedding', { dimensions: 1536 }), // OpenAI embedding vector
     tokenCount: integer('token_count'), // Number of tokens in the content
     metadata: jsonb('metadata'), // Additional flexible metadata (e.g., section type, headers)
+    firecrawlId: text('firecrawl_id'), // Firecrawl job ID
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

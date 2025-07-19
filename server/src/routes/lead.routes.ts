@@ -213,7 +213,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // analyze lead
-        await LeadAnalyzerService.analyzeLead(authenticatedRequest.tenantId, newLead.id);
+        await LeadAnalyzerService.analyze(authenticatedRequest.tenantId, newLead.id);
 
         reply.status(201).send({
           message: 'Lead created successfully',
@@ -667,7 +667,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // analyze lead
-        await LeadAnalyzerService.analyzeLead(authenticatedRequest.tenantId, id);
+        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, id);
 
         reply.status(200).send({
           message: 'Lead resync initiated successfully',
