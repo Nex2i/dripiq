@@ -11,6 +11,7 @@ import {
   deleteLead,
   bulkDeleteLeads,
   getLeadById,
+  assignLeadOwner,
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
@@ -73,6 +74,7 @@ const leadResponseSchema = Type.Object({
   logo: Type.Optional(Type.Union([Type.String(), Type.Null()], { description: 'Lead logo URL' })),
   brandColors: Type.Optional(Type.Array(Type.String(), { description: 'Lead brand colors' })),
   primaryContactId: Type.Optional(Type.String({ description: 'Primary contact ID' })),
+  ownerId: Type.Optional(Type.String({ description: 'Lead owner ID' })),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
   pointOfContacts: Type.Optional(
@@ -211,7 +213,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // analyze lead
-        await LeadAnalyzerService.analyzeLead(authenticatedRequest.tenantId, newLead.id);
+        await LeadAnalyzerService.analyze(authenticatedRequest.tenantId, newLead.id);
 
         reply.status(201).send({
           message: 'Lead created successfully',
@@ -665,7 +667,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // analyze lead
-        await LeadAnalyzerService.analyzeLead(authenticatedRequest.tenantId, id);
+        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, id);
 
         reply.status(200).send({
           message: 'Lead resync initiated successfully',
@@ -687,6 +689,110 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to resync lead',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Assign lead owner route
+  fastify.route({
+    method: HttpMethods.PUT,
+    url: `${basePath}/:id/assign-owner`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      params: Type.Object({
+        id: Type.String({ description: 'Lead ID' }),
+      }),
+      body: Type.Object({
+        userId: Type.String({ description: 'User ID to assign as owner' }),
+      }),
+      tags: ['Leads'],
+      summary: 'Assign Lead Owner',
+      description: 'Assign a user as the owner of a lead (tenant-scoped)',
+      response: {
+        ...defaultRouteResponse(),
+        200: Type.Object({
+          message: Type.String(),
+          lead: leadResponseSchema,
+        }),
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+        Body: {
+          userId: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { id } = request.params;
+        const { userId } = request.body;
+
+        if (!id || !id.trim()) {
+          reply.status(400).send({
+            message: 'Lead ID is required',
+            error: 'Invalid ID',
+          });
+          return;
+        }
+
+        if (!userId || !userId.trim()) {
+          reply.status(400).send({
+            message: 'User ID is required',
+            error: 'Invalid user ID',
+          });
+          return;
+        }
+
+        // Assign the owner to the lead
+        const updatedLead = await assignLeadOwner(authenticatedRequest.tenantId, id, userId);
+
+        fastify.log.info(
+          `Lead owner assigned successfully. Lead ID: ${id}, User ID: ${userId}, Tenant: ${authenticatedRequest.tenantId}`
+        );
+
+        reply.status(200).send({
+          message: 'Lead owner assigned successfully',
+          lead: updatedLead,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error assigning lead owner: ${error.message}`);
+
+        if (
+          error.message?.includes('access to tenant') ||
+          error.message?.includes('ForbiddenError')
+        ) {
+          reply.status(403).send({
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('Lead not found')) {
+          reply.status(404).send({
+            message: 'Lead not found',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('User not found')) {
+          reply.status(400).send({
+            message: 'User not found in this tenant',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          message: 'Failed to assign lead owner',
           error: error.message,
         });
       }

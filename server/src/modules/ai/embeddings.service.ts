@@ -1,75 +1,58 @@
+import { eq } from 'drizzle-orm';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
 import { openAiClient } from '@/libs/openai.client';
 import db from '@/libs/drizzleClient';
-import { siteEmbeddingDomains, siteEmbeddings } from '@/db';
+import { SiteEmbeddingDomain, siteEmbeddingDomains, siteEmbeddings } from '@/db';
 import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
-import {
-  ScrapingResultItem,
-  ScrapingResultMarkdown,
-  ScrapingResultMetadata,
-} from './scraping.service';
 
 export const EmbeddingsService = {
-  batchCreateSiteEmbedding: async (url: string, scrapingResultItems: ScrapingResultItem[]) => {
-    const siteEmbeddingDomainUpdate = await db
-      .insert(siteEmbeddingDomains)
-      .values({
-        domain: url.getDomain(),
-        scrapedAt: new Date(),
-      })
-      .returning();
-
-    if (!siteEmbeddingDomainUpdate || siteEmbeddingDomainUpdate.length === 0) {
-      throw new Error('Failed to create siteEmbeddingDomain');
-    }
-
-    const domainId = siteEmbeddingDomainUpdate[0]?.id;
+  createFirecrawlSiteEmbedding: async (
+    domain: SiteEmbeddingDomain,
+    markdown: string,
+    metadata: Record<string, any>
+  ) => {
+    const chunks = chunkMarkdownForEmbedding(markdown);
 
     await Promise.allSettled(
-      scrapingResultItems.map(async (scrapingResultItem) => {
-        await EmbeddingsService.createSiteEmbedding(scrapingResultItem, domainId);
+      chunks.map(async (chunk, chunkIndex) => {
+        await EmbeddingsService.embeddAndGetSummary(domain.id, chunkIndex, metadata, chunk);
       })
     );
   },
+  getOrCreateDomainByUrl: async (url: string): Promise<SiteEmbeddingDomain> => {
+    const result = await db.transaction(async (tx) => {
+      const existing = await tx
+        .select()
+        .from(siteEmbeddingDomains)
+        .where(eq(siteEmbeddingDomains.domain, url))
+        .limit(1);
 
-  createSiteEmbedding: async (scrapingResultItem: ScrapingResultItem, domainId?: string) => {
-    const { url, metadata, markdown } = scrapingResultItem;
+      if (existing.length > 0) {
+        return existing[0];
+      }
 
-    if (!domainId) {
-      const siteEmbeddingDomainUpdate = await db
+      const inserted = await tx
         .insert(siteEmbeddingDomains)
         .values({
-          domain: url.getDomain(),
+          domain: url,
           scrapedAt: new Date(),
         })
         .returning();
 
-      if (!siteEmbeddingDomainUpdate || siteEmbeddingDomainUpdate.length === 0) {
-        throw new Error('Failed to create siteEmbeddingDomain');
-      }
+      return inserted[0];
+    });
 
-      domainId = siteEmbeddingDomainUpdate[0]?.id;
+    if (!result) {
+      throw new Error('Failed to get or create domain');
     }
 
-    if (!domainId) {
-      throw new Error('Domain ID is required');
-    }
-
-    const chunks = chunkMarkdownForEmbedding(getMarkdownForEmbedding(markdown));
-
-    // in parallel, create embeddings for each chunk
-    await Promise.allSettled(
-      chunks.map(async (chunk, chunkIndex) => {
-        await EmbeddingsService.embeddAndGetSummary(domainId, chunkIndex, url, metadata, chunk);
-      })
-    );
+    return result;
   },
 
   embeddAndGetSummary: async (
     domainId: string,
     chunkIndex: number,
-    url: string,
-    metadata: ScrapingResultMetadata,
+    metadata: Record<string, any>,
     chunk: string
   ) => {
     const { title, description } = metadata;
@@ -84,11 +67,11 @@ export const EmbeddingsService = {
       throw new Error('Failed to get summary');
     }
 
-    const slug = url.getUrlSlug();
+    const slug = metadata.url.getUrlSlug();
 
     const embeddingDomain = await db.insert(siteEmbeddings).values({
       domainId,
-      url,
+      url: metadata.url,
       slug,
       title: metadata.title,
       content: chunk,
@@ -96,6 +79,7 @@ export const EmbeddingsService = {
       embedding: embedding.data[0]?.embedding,
       chunkIndex,
       tokenCount: chunk.length,
+      firecrawlId: metadata.firecrawlId,
       metadata: {
         title,
         description,
@@ -104,9 +88,3 @@ export const EmbeddingsService = {
     return embeddingDomain;
   },
 };
-
-function getMarkdownForEmbedding(markdown: ScrapingResultMarkdown) {
-  const { markdown_with_citations, raw_markdown, references_markdown } = markdown;
-  const markdownToEmbed = raw_markdown || markdown_with_citations || references_markdown;
-  return markdownToEmbed;
-}

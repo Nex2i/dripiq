@@ -1,5 +1,6 @@
 import { TenantService } from '../tenant.service';
 import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { SiteAnalyzerDto, SiteAnalyzerService, tenantSiteKey } from './siteAnalyzer.service';
 
 export const OrganizationAnalyzerService = {
   analyzeOrganization: async (tenantId: string, userId: string) => {
@@ -9,12 +10,12 @@ export const OrganizationAnalyzerService = {
       throw new Error('Organization website is required');
     }
 
-    // const siteAnalyzerDto: SiteAnalyzerDto = {
-    //   storageKey: tenantSiteKey(id),
-    //   siteUrl: website,
-    // };
+    const siteAnalyzerDto: SiteAnalyzerDto = {
+      storageKey: tenantSiteKey(id),
+      siteUrl: website,
+    };
 
-    // const siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
+    // const _siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
     const aiOutput = await generalSiteReportService.summarizeSite(website.cleanWebsiteUrl());
 
     if (!aiOutput?.finalResponseParsed) {

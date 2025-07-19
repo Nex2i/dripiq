@@ -5,6 +5,7 @@ import { schema } from '../utils/validateEnv';
 declare module 'fastify' {
   interface FastifyInstance {
     authPrehandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    firecrawlAuth: Record<string, any>;
     authCache: {
       clear: (supabaseId?: string) => void;
       cleanup: () => void;

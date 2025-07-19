@@ -1,0 +1,2 @@
+ALTER TABLE "dripiq_app"."site_embeddings" ADD COLUMN "firecrawl_id" text;--> statement-breakpoint
+ALTER TABLE "dripiq_app"."site_embedding_domains" ADD CONSTRAINT "site_embedding_domains_domain_unique" UNIQUE("domain");

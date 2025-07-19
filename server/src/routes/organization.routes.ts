@@ -14,8 +14,6 @@ interface UpdateOrganizationBody {
   organizationName?: string;
   organizationWebsite?: string;
   summary?: string;
-  products?: string[];
-  services?: string[];
   differentiators?: string[];
   targetMarket?: string;
   tone?: string;
@@ -49,8 +47,8 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           organizationName: tenant.organizationName || '',
           organizationWebsite: tenant.website || '',
           summary: tenant.summary || '',
-          products: tenant.products || [],
-          services: tenant.services || [],
+          products: [], // TODO: Get products from products table
+          services: [], // Services removed from schema
           differentiators: tenant.differentiators || [],
           targetMarket: tenant.targetMarket || '',
           tone: tenant.tone || '',
@@ -97,8 +95,8 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           organizationName: updatedTenant.organizationName || '',
           organizationWebsite: updatedTenant.website || '',
           summary: updatedTenant.summary || '',
-          products: updatedTenant.products || [],
-          services: updatedTenant.services || [],
+          products: [], // TODO: Get products from products table
+          services: [], // Services removed from schema
           differentiators: updatedTenant.differentiators || [],
           targetMarket: updatedTenant.targetMarket || '',
           tone: updatedTenant.tone || '',

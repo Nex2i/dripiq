@@ -38,8 +38,6 @@ export const tenants = appSchema.table('tenants', {
   organizationName: text('organization_name'),
   website: text('organization_website'),
   summary: text('organization_summary'),
-  products: jsonb('products'), // Array of products the company offers
-  services: jsonb('services'), // Array of services the company offers
   differentiators: jsonb('differentiators'), // Array of differentiators the company has
   targetMarket: text('target_market'), // The target market the company is trying to serve
   tone: text('tone'), // The tone of the company
@@ -48,6 +46,21 @@ export const tenants = appSchema.table('tenants', {
     () => siteEmbeddingDomains.id,
     { onDelete: 'set null' }
   ),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Products table
+export const products = appSchema.table('products', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  title: text('title').notNull(),
+  description: text('description'),
+  salesVoice: text('sales_voice'),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -128,6 +141,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(userTenants),
   leads: many(leads),
+  products: many(products),
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [tenants.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],
@@ -185,6 +199,7 @@ export const leads = appSchema.table('leads', {
   tone: text('tone'), // The tone of the company
   brandColors: jsonb('brand_colors'), // Array of hex color codes representing the brand color palette
   primaryContactId: text('primary_contact_id'), // Reference to primary contact (nullable)
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }), // Reference to lead owner (nullable)
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
@@ -218,6 +233,10 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     fields: [leads.tenantId],
     references: [tenants.id],
   }),
+  owner: one(users, {
+    fields: [leads.ownerId],
+    references: [users.id],
+  }),
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [leads.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],
@@ -243,15 +262,12 @@ export const siteEmbeddingDomains = appSchema.table(
     id: text('id')
       .primaryKey()
       .$defaultFn(() => createId()),
-    domain: text('domain').notNull(), // e.g., "example.com"
+    domain: text('domain').notNull().unique(), // e.g., "google OR facebook" - Unique provides index
     scrapedAt: timestamp('scraped_at').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (table) => [
-    index('site_scraped_at_idx').on(table.scrapedAt),
-    index('site_domain_idx').on(table.domain),
-  ]
+  (table) => [index('site_scraped_at_idx').on(table.scrapedAt)]
 );
 
 // Site embeddings table - stores embeddings that belong to domains
@@ -273,6 +289,7 @@ export const siteEmbeddings = appSchema.table(
     embedding: vector('embedding', { dimensions: 1536 }), // OpenAI embedding vector
     tokenCount: integer('token_count'), // Number of tokens in the content
     metadata: jsonb('metadata'), // Additional flexible metadata (e.g., section type, headers)
+    firecrawlId: text('firecrawl_id'), // Firecrawl job ID
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -296,11 +313,21 @@ export const siteEmbeddingsRelations = relations(siteEmbeddings, ({ one }) => ({
   }),
 }));
 
+// Relations for products table
+export const productsRelations = relations(products, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [products.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
 export type UserTenant = typeof userTenants.$inferSelect;
 export type NewUserTenant = typeof userTenants.$inferInsert;
 export type Role = typeof roles.$inferSelect;

@@ -1,8 +1,9 @@
+import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { getLeadById, updateLead } from '../lead.service';
 import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
 
 export const LeadAnalyzerService = {
-  analyzeLead: async (tenantId: string, leadId: string) => {
+  analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
 
     const aiOutput = await generalSiteReportService.summarizeSite(url.cleanWebsiteUrl());
@@ -19,5 +20,16 @@ export const LeadAnalyzerService = {
       differentiators: aiOutput.finalResponseParsed.differentiators,
       brandColors: aiOutput.finalResponseParsed.brandColors,
     });
+  },
+  indexSite: async (tenantId: string, leadId: string) => {
+    const { url } = await getLeadById(tenantId, leadId);
+
+    const metadata = {
+      leadId,
+      tenantId,
+      type: 'lead_site',
+    };
+
+    await firecrawlClient.crawlUrl(url.cleanWebsiteUrl(), metadata);
   },
 };

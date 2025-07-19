@@ -24,6 +24,7 @@ import NotificationsPage from './pages/settings/NotificationsPage'
 import SecurityPage from './pages/settings/SecurityPage'
 import BillingPage from './pages/settings/BillingPage'
 import OrganizationPage from './pages/settings/OrganizationPage'
+import ProductsPage from './pages/settings/ProductsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 // Import demo components directly
@@ -178,6 +179,12 @@ const settingsOrganizationRoute = createRoute({
   component: () => <OrganizationPage />,
 })
 
+const settingsProductsRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/products',
+  component: () => <ProductsPage />,
+})
+
 // Create all protected demo routes directly
 const formSimpleRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -223,6 +230,7 @@ const settingsRouteTree = settingsRoute.addChildren([
   settingsSecurityRoute,
   settingsBillingRoute,
   settingsOrganizationRoute,
+  settingsProductsRoute,
 ])
 
 const protectedRouteTree = protectedRoute.addChildren([

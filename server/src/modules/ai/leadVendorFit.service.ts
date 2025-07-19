@@ -45,8 +45,8 @@ export const LeadVendorFitService = {
 
     return {
       summary: tenant.summary ?? '',
-      products: tenant.products as string[],
-      services: tenant.services as string[],
+      products: [], // TODO: Get products from products table
+      services: [], // Services removed from schema
       differentiators: tenant.differentiators as string[],
       targetMarket: tenant.targetMarket ?? '',
       tone: tenant.tone ?? '',

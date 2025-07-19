@@ -60,5 +60,5 @@ export class GeneralSiteReportServiceFactory {
 export const generalSiteReportService = GeneralSiteReportServiceFactory.createDefault({
   maxIterations: 5,
   model: 'gpt-4.1',
-  enableWebSearch: true,
+  enableWebSearch: false,
 });
