@@ -38,8 +38,6 @@ export const tenants = appSchema.table('tenants', {
   organizationName: text('organization_name'),
   website: text('organization_website'),
   summary: text('organization_summary'),
-  products: jsonb('products'), // Array of products the company offers
-  services: jsonb('services'), // Array of services the company offers
   differentiators: jsonb('differentiators'), // Array of differentiators the company has
   targetMarket: text('target_market'), // The target market the company is trying to serve
   tone: text('tone'), // The tone of the company
@@ -48,6 +46,21 @@ export const tenants = appSchema.table('tenants', {
     () => siteEmbeddingDomains.id,
     { onDelete: 'set null' }
   ),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Products table
+export const products = appSchema.table('products', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  title: text('title').notNull(),
+  description: text('description'),
+  salesVoice: text('sales_voice'),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -128,6 +141,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(userTenants),
   leads: many(leads),
+  products: many(products),
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [tenants.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],
@@ -296,11 +310,21 @@ export const siteEmbeddingsRelations = relations(siteEmbeddings, ({ one }) => ({
   }),
 }));
 
+// Relations for products table
+export const productsRelations = relations(products, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [products.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
 export type UserTenant = typeof userTenants.$inferSelect;
 export type NewUserTenant = typeof userTenants.$inferInsert;
 export type Role = typeof roles.$inferSelect;

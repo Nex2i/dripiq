@@ -81,14 +81,22 @@ async function createSeedUser() {
   // Create the seed user
   const [seedUser] = await db
     .insert(users)
-    .values({
-      // supabaseId should be different if not prod
-      supabaseId,
-      email: `ryanzhutch+${process.env.NODE_ENV}@gmail.com`,
-      name: 'Ryan Hutchison',
-      createdAt: new Date('2025-06-30T03:46:22.185Z'),
-      updatedAt: new Date('2025-06-30T16:58:18.567Z'),
-    })
+    .values([
+      {
+        supabaseId: 'fee55c3d-5077-41ba-8e42-a2f97c64cd92',
+        email: `ryanzhutch+production@gmail.com`,
+        name: 'Ryan Prod',
+        createdAt: new Date('2025-06-30T03:46:22.185Z'),
+        updatedAt: new Date('2025-06-30T16:58:18.567Z'),
+      },
+      {
+        supabaseId: '91d39f85-07b7-4ae7-8da9-b4e4e675ce55',
+        email: `ryanzhutch+local@gmail.com`,
+        name: 'Ryan Local',
+        createdAt: new Date('2025-06-30T03:46:22.185Z'),
+        updatedAt: new Date('2025-06-30T16:58:18.567Z'),
+      },
+    ])
     .returning();
 
   if (!seedUser) {
