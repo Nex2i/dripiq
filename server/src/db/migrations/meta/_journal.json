@@ -106,6 +106,13 @@
       "when": 1751676293794,
       "tag": "0014_remove_logo_url",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1752939591599,
+      "tag": "0015_small_ogun",
+      "breakpoints": true
     }
   ]
 }

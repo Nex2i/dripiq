@@ -199,6 +199,7 @@ export const leads = appSchema.table('leads', {
   tone: text('tone'), // The tone of the company
   brandColors: jsonb('brand_colors'), // Array of hex color codes representing the brand color palette
   primaryContactId: text('primary_contact_id'), // Reference to primary contact (nullable)
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }), // Reference to lead owner (nullable)
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
