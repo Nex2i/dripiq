@@ -37,6 +37,7 @@ All tools have been converted to LangChain `DynamicTool` format:
 ### Agents
 - `SiteAnalysisAgent` - Uses `summarize_site` prompt for comprehensive website analysis
 - `VendorFitAgent` - Uses `vendor_fit` prompt for vendor-opportunity fit analysis
+- **Max Iterations Handling**: When agents hit iteration limits, they automatically perform a final summarization using gathered research
 
 ### Services
 - `GeneralSiteReportService` - Uses `withStructuredOutput()` with Zod-to-JSON Schema conversion
@@ -55,6 +56,7 @@ All tools have been converted to LangChain `DynamicTool` format:
 4. **Performance**: Optimized tool calling and memory management
 5. **Developer Experience**: Better debugging and error messages
 6. **Modern OpenAI Integration**: Uses OpenAI's Responses API for improved performance and capabilities
+7. **Graceful Max Iterations Handling**: Automatic summarization when agents hit iteration limits
 
 ## Usage
 

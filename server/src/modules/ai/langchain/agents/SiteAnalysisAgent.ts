@@ -39,6 +39,7 @@ export class SiteAnalysisAgent {
       tools,
       maxIterations: config.maxIterations,
       verbose: true,
+      returnIntermediateSteps: true,
     });
   }
 
@@ -54,6 +55,37 @@ export class SiteAnalysisAgent {
       system_prompt: systemPrompt,
     });
 
-    return result.output;
+    // Check if we reached max iterations and have intermediate steps but no final output
+    if (!result.output && result.intermediateSteps && result.intermediateSteps.length > 0) {
+      console.log('Agent hit max iterations, performing final summarization...');
+      
+      // Create a summarization prompt based on what the agent has gathered so far
+      const summaryModel = createChatModel({ model: 'gpt-4.1-mini' });
+      
+      // Build context from intermediate steps
+      const gatheredInfo = result.intermediateSteps.map((step: any) => {
+        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${step.observation || 'No result'}\n`;
+      }).join('\n---\n');
+      
+      const finalSummaryPrompt = `You are a website analysis expert. Based on the partial research conducted below, provide a comprehensive website analysis for ${domain}.
+
+Research conducted so far:
+${gatheredInfo}
+
+${systemPrompt}
+
+Even though the research may be incomplete, provide the best possible analysis based on the available information. Focus on what you were able to discover and clearly indicate areas where more research would be beneficial.`;
+
+      const finalResult = await summaryModel.invoke([
+        {
+          role: "system",
+          content: finalSummaryPrompt
+        }
+      ]);
+
+      return finalResult.content as string;
+    }
+
+    return result.output || 'Unable to generate analysis due to agent limitations.';
   }
 }
