@@ -62,7 +62,6 @@ export class SiteAnalysisAgent {
 
     try {
       const result = await this.agent.invoke({
-        domain,
         system_prompt: systemPrompt,
       });
 

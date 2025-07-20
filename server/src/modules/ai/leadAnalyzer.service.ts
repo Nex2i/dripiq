@@ -9,6 +9,12 @@ export const LeadAnalyzerService = {
     const { url } = await getLeadById(tenantId, leadId);
     const domain = url.getDomain();
 
+    await Promise.allSettled([
+      LeadAnalyzerService.summarizeSite(tenantId, leadId, domain),
+      LeadAnalyzerService.extractContacts(tenantId, leadId, domain),
+    ]);
+  },
+  summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
     // Run site analysis
     const aiOutput = await siteAnalysisAgent.analyze(domain);
 
@@ -23,20 +29,14 @@ export const LeadAnalyzerService = {
       services: aiOutput.finalResponseParsed.services,
       differentiators: aiOutput.finalResponseParsed.differentiators,
     });
-
-    // Extract and save contacts
-    try {
-      const contactResults = await ContactExtractionService.extractAndSaveContacts(
-        tenantId,
-        leadId,
-        domain
-      );
-      
-      console.log(`Contact extraction completed: ${contactResults.contactsCreated} contacts created`);
-    } catch (contactError) {
-      // Log contact extraction errors but don't fail the entire analysis
-      console.error('Contact extraction failed, but continuing with lead analysis:', contactError);
-    }
+  },
+  extractContacts: async (tenantId: string, leadId: string, domain: string) => {
+    const contactResults = await ContactExtractionService.extractAndSaveContacts(
+      tenantId,
+      leadId,
+      domain
+    );
+    return contactResults;
   },
   indexSite: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);

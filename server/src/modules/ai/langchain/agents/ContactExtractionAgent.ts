@@ -8,7 +8,9 @@ import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import contactExtractionOutputSchema, { ContactExtractionOutput } from '../../schemas/contactExtractionSchema';
+import contactExtractionOutputSchema, {
+  ContactExtractionOutput,
+} from '../../schemas/contactExtractionSchema';
 import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { getContentFromMessage } from '../utils/messageUtils';
 
@@ -53,46 +55,33 @@ export class ContactExtractionAgent {
   }
 
   async extractContacts(domain: string): Promise<ContactExtractionResult> {
+    const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
+      domain,
+      output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
+    });
+
     try {
-      logger.debug(`Starting contact extraction for domain: ${domain}`);
-
-      const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
-        domain,
-        output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
-      });
-
       const result = await this.agent.invoke({
-        input: `Extract comprehensive contact information from ${domain}. Focus on finding both individual contacts (named people) and office/department contacts. Use all available tools to search multiple pages including contact pages, about us, team pages, and office locations.`,
         system_prompt: systemPrompt,
       });
 
-      const functionCalls = (result.intermediateSteps || []).map((step: any) => ({
-        tool: step.action?.tool || 'unknown',
-        input: step.action?.toolInput || {},
-        output: step.observation || 'No result',
-      }));
+      let finalResponse = getContentFromMessage(result.output);
 
-      logger.debug(`Contact extraction completed for ${domain} in ${functionCalls.length} steps`);
-
-      let parsedResult: ContactExtractionOutput;
-      
-      if (result.output) {
-        parsedResult = parseWithSchema(result.output, domain);
-      } else {
-        // If no result, try to generate summary from intermediate steps
-        const summaryResult = await this.generateSummaryFromSteps(domain, result, systemPrompt);
-        parsedResult = parseWithSchema(summaryResult, domain);
+      if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
+        finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt);
       }
+
+      const parsedResult = parseWithSchema(finalResponse, domain);
 
       return {
         finalResponse: result.output || 'Contact extraction completed',
         finalResponseParsed: parsedResult,
-        totalIterations: functionCalls.length,
-        functionCalls,
+        totalIterations: result.intermediateSteps?.length ?? 0,
+        functionCalls: result.intermediateSteps,
       };
     } catch (error) {
       logger.error('Contact extraction failed:', error);
-      
+
       // Return fallback result
       const fallbackResult = getFallbackResult(domain, error);
       return {

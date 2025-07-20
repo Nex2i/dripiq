@@ -3,7 +3,12 @@ import z from 'zod';
 import { logger } from '@/libs/logger';
 import { promptHelper } from '@/prompts/prompt.helper';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { createChatModel } from './langchain/config/langchain.config';
+import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
+import { getContentFromMessage } from './langchain/utils/messageUtils';
+
+const smartFilterSiteMapSchema = z.object({
+  urls: z.array(z.string()).describe('The filtered list of URLs'),
+});
 
 export const SiteScrapeService = {
   scrapeSite: async (url: string, metadata: Record<string, any>) => {
@@ -23,27 +28,26 @@ export const SiteScrapeService = {
       return siteMap;
     }
 
-    const schema = z.object({
-      urls: z.array(z.string()).describe('The filtered list of URLs'),
-    });
-    const chatModel = createChatModel({ model: 'gpt-4.1-mini' }).withStructuredOutput(
-      z.toJSONSchema(schema)
-    );
-
-    const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
-      urls: siteMap.join('\n'),
-      output_schema: JSON.stringify(z.toJSONSchema(schema), null, 2),
-      min_urls: minUrls.toString(),
-      max_urls: maxUrls.toString(),
-    });
-
     try {
-      const parsedResponse = await chatModel.invoke([
+      const chatModel = createChatModel({
+        model: defaultLangChainConfig.model,
+      }).withStructuredOutput(z.toJSONSchema(smartFilterSiteMapSchema));
+
+      const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
+        urls: siteMap.join('\n'),
+        output_schema: JSON.stringify(z.toJSONSchema(smartFilterSiteMapSchema), null, 2),
+        min_urls: minUrls.toString(),
+        max_urls: maxUrls.toString(),
+      });
+
+      const response = await chatModel.invoke([
         {
           role: 'system',
           content: initialPrompt,
         },
       ]);
+
+      const parsedResponse = parseWithSchema(response);
 
       if (parsedResponse.urls.length < minUrls) {
         return siteMap;
@@ -60,6 +64,18 @@ export const SiteScrapeService = {
     }
   },
 };
+
+function parseWithSchema(response: any) {
+  try {
+    const content = getContentFromMessage(response);
+    // Remove markdown code fencing and whitespace if present
+    const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
+    return smartFilterSiteMapSchema.parse(JSON.parse(jsonText));
+  } catch (error) {
+    logger.warn('Parsing failed, returning fallback.', error);
+    throw error;
+  }
+}
 
 const excludePathPattern = [
   '^/blog(?:/.*)?$',
