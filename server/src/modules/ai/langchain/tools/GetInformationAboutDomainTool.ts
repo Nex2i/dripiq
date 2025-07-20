@@ -9,57 +9,36 @@ const TOP_K = 10;
 
 export const GetInformationAboutDomainTool = new DynamicTool({
   name: 'GetInformationAboutDomainTool',
-  description: 'Searches for specific information within a domain using semantic similarity. Requires two parameters: domain (the domain to search, e.g. "example.com") and queryText (what you want to search for). Returns the most relevant content chunks with similarity scores.',
+  description: 'Searches for specific information within a domain using semantic similarity. Call with arguments: domain (string) and queryText (string). Returns the most relevant content chunks with similarity scores.',
   func: async (input: string) => {
     try {
-      let domain: string;
-      let queryText: string;
+      let domain: string = '';
+      let queryText: string = '';
 
-      // Try to parse as JSON first
+      // Parse arguments - LangChain will pass them as JSON string like: '{"domain": "example.com", "queryText": "search term"}'
       try {
-        const parsedInput = JSON.parse(input);
-        domain = parsedInput.domain;
-        queryText = parsedInput.queryText;
+        const parsed = JSON.parse(input);
+        domain = parsed.domain || parsed.input || '';
+        queryText = parsed.queryText || '';
       } catch {
-        // If JSON parsing fails, try to parse as LangChain tool call format
-        try {
-          // LangChain might pass tool arguments as a stringified object
-          const toolMatch = input.match(/GetInformationAboutDomainTool\(\s*({[^}]+})\s*\)/);
-          if (toolMatch) {
-            const argsJson = toolMatch[1];
-            const args = JSON.parse(argsJson);
-            domain = args.input || args.domain;
-            queryText = args.queryText;
-          } else {
-            // Try to extract domain and queryText from the input string
-            const lines = input.split('\n');
-            for (const line of lines) {
-              if (line.includes('input') || line.includes('domain')) {
-                const domainMatch = line.match(/"([^"]+)"/);
-                if (domainMatch) domain = domainMatch[1];
-              }
-              if (line.includes('queryText')) {
-                const queryMatch = line.match(/"([^"]+)"/);
-                if (queryMatch) queryText = queryMatch[1];
-              }
-            }
-          }
-        } catch {
-          return JSON.stringify({ 
-            error: 'Could not parse input. Expected format: {"domain": "example.com", "queryText": "search term"}',
-            receivedInput: input 
-          });
-        }
+        // If direct JSON parsing fails, try extracting from the string
+        const domainMatch = input.match(/(?:domain|input)["\s]*:["\s]*([^",\s}]+)/i);
+        const queryMatch = input.match(/queryText["\s]*:["\s]*([^",}]+)/i);
+        
+        if (domainMatch && domainMatch[1]) domain = domainMatch[1].replace(/["]/g, '');
+        if (queryMatch && queryMatch[1]) queryText = queryMatch[1].replace(/["]/g, '');
       }
       
       if (!domain || !queryText) {
         return JSON.stringify({ 
           error: 'Both domain and queryText are required',
-          received: { domain, queryText }
+          received: { domain, queryText },
+          input_received: input
         });
       }
 
       const cleanDomain = domain.getDomain();
+      console.log(`Searching for "${queryText}" in domain: ${cleanDomain}`);
 
       const domainRecord = await db
         .select()

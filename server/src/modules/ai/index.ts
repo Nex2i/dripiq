@@ -1,13 +1,11 @@
 // Export LangChain-based AI system
 export {
-  GeneralSiteReportService,
-  VendorFitReportService,
-  GeneralSiteReportServiceFactory,
-  VendorFitReportServiceFactory,
-  generalSiteReportService,
-  vendorFitReportService,
   SiteAnalysisAgent,
   VendorFitAgent,
+  siteAnalysisAgent,
+  vendorFitAgent,
+  createSiteAnalysisAgent,
+  createVendorFitAgent,
   RetrieveFullPageTool,
   GetInformationAboutDomainTool,
   ListDomainPagesTool,

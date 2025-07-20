@@ -1,7 +1,7 @@
 import z from 'zod';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
-import { vendorFitReportService } from './langchain';
+import { vendorFitAgent } from './langchain';
 import vendorFitInputSchema from './schemas/vendorFitInputSchema';
 import vendorFitOutputSchema from './schemas/vendorFitOutputSchema';
 
@@ -23,7 +23,7 @@ Differentiators: ${opportunity.differentiators.join(', ')}
 Tone: ${opportunity.tone}
     `.trim();
 
-    const vendorFitReport = await vendorFitReportService.generateVendorFitReport(
+    const vendorFitReport = await vendorFitAgent.analyzeVendorFit(
       partner,
       opportunityDescription
     );

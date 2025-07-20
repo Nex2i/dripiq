@@ -12,28 +12,21 @@ export { RetrieveFullPageTool } from './tools/RetrieveFullPageTool';
 export { GetInformationAboutDomainTool } from './tools/GetInformationAboutDomainTool';
 export { ListDomainPagesTool } from './tools/ListDomainPagesTool';
 
-// Export agents
-export { SiteAnalysisAgent } from './agents/SiteAnalysisAgent';
-export { VendorFitAgent } from './agents/VendorFitAgent';
-
-// Export services
+// Export agents and their types
 export { 
-  GeneralSiteReportService,
+  SiteAnalysisAgent,
   type SiteAnalysisResult 
-} from './services/GeneralSiteReportService';
+} from './agents/SiteAnalysisAgent';
 
 export { 
-  VendorFitReportService,
+  VendorFitAgent,
   type VendorFitResult 
-} from './services/VendorFitReportService';
+} from './agents/VendorFitAgent';
 
-// Export factories
+// Export agent factories
 export { 
-  GeneralSiteReportServiceFactory,
-  generalSiteReportService 
-} from './services/GeneralSiteReportServiceFactory';
-
-export { 
-  VendorFitReportServiceFactory,
-  vendorFitReportService 
-} from './services/VendorFitReportServiceFactory';
+  siteAnalysisAgent,
+  vendorFitAgent,
+  createSiteAnalysisAgent,
+  createVendorFitAgent 
+} from './factories/AgentFactory';

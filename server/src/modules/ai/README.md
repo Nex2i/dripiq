@@ -41,14 +41,16 @@ All tools have been converted to LangChain `DynamicTool` format with proper para
 - `VendorFitAgent` - Uses `vendor_fit` prompt for vendor-opportunity fit analysis
 - **Max Iterations Handling**: When agents hit iteration limits, they automatically perform a final summarization using gathered research
 
-### Services
-- `GeneralSiteReportService` - Uses `withStructuredOutput()` with Zod-to-JSON Schema conversion
-- `VendorFitReportService` - Uses `withStructuredOutput()` with Zod-to-JSON Schema conversion
+### Direct Agent Usage
+- **No Service Layer**: Agents are used directly without intermediate service wrappers
+- **Structured Output**: Agents return both raw analysis and parsed structured data
+- **Factory Pattern**: Pre-configured agent instances available via `siteAnalysisAgent` and `vendorFitAgent`
 
 ### Structured Output
-- All services now use `model.withStructuredOutput(zodToJsonSchema(schema))`
+- Agents use `model.withStructuredOutput(zodToJsonSchema(schema))` for data formatting
 - Automatic JSON schema generation from Zod schemas
 - Built-in validation and type safety
+- Return format: `{ finalResponse: string, finalResponseParsed: ParsedData, totalIterations: number, functionCalls: any[] }`
 
 ## Migration Benefits
 
@@ -61,27 +63,26 @@ All tools have been converted to LangChain `DynamicTool` format with proper para
 7. **Graceful Max Iterations Handling**: Automatic summarization when agents hit iteration limits
 8. **Improved Tool Calling**: Fixed tool parameter passing with proper JSON schema validation and clear error messages
 9. **Reduced Logging**: Disabled verbose agent logging to prevent log clutter
+10. **Simplified Architecture**: Removed service layer - agents are used directly with structured output built-in
 
 ## Usage
 
 ```typescript
-import { generalSiteReportService, vendorFitReportService } from '@/modules/ai';
+import { siteAnalysisAgent, vendorFitAgent } from '@/modules/ai';
 
 // Site analysis with structured output
-const result = await generalSiteReportService.summarizeSite('https://example.com');
+const result = await siteAnalysisAgent.analyze('example.com');
 // result.finalResponseParsed contains typed data matching reportOutputSchema
+// result.finalResponse contains the raw analysis text
 
-// Vendor fit analysis with structured output
-const fitReport = await vendorFitReportService.generateVendorFitReport(partnerInfo, opportunityDesc);
+// Vendor fit analysis with structured output  
+const fitReport = await vendorFitAgent.analyzeVendorFit(partnerInfo, opportunityDesc);
 // fitReport.finalResponseParsed contains typed data matching vendorFitOutputSchema
+// fitReport.finalResponse contains the raw analysis text
 
-// Custom configuration
-import { GeneralSiteReportService } from '@/modules/ai';
-const customService = new GeneralSiteReportService({
-  model: 'gpt-4.1-mini',
-  temperature: 0.2,
-  maxIterations: 15
-});
+// Custom agent instances
+import { createSiteAnalysisAgent, createVendorFitAgent } from '@/modules/ai';
+const customAgent = createSiteAnalysisAgent({ model: 'gpt-4', maxIterations: 10 });
 ```
 
 ## API Compatibility
