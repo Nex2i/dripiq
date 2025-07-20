@@ -3,6 +3,7 @@ import { SiteAnalysisAgent } from '../agents/SiteAnalysisAgent';
 import { createChatModel, LangChainConfig, ReportConfig } from '../config/langchain.config';
 import reportOutputSchema from '../../schemas/reportOutputSchema';
 import { logger } from '@/libs/logger';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export interface SiteAnalysisResult {
   finalResponse: string;
@@ -36,55 +37,32 @@ export class GeneralSiteReportService {
     try {
       logger.info(`Starting site analysis for: ${url}`);
       
-      // Use a model for structured output generation
-      const structuredOutputModel = createChatModel(this.config);
+      // Use structured output with JSON schema
+      const structuredOutputModel = createChatModel(this.config).withStructuredOutput(
+        zodToJsonSchema(reportOutputSchema)
+      );
       
       // First, get the analysis from the agent
       const analysisResult = await this.agent.analyze(url);
       
       logger.info('Agent analysis completed, now generating structured output');
       
-      // Then format it into the required structure
-      const structuredResponse = await structuredOutputModel.invoke([
-        {
-          role: "system",
-          content: `You are a data formatter. Take the following website analysis and format it into a valid JSON structure that matches this schema:
-
-{
-  "summary": "A comprehensive 2500-word markdown summary",
-  "products": ["Array of products offered"],
-  "services": ["Array of services offered"],  
-  "differentiators": ["Array of key differentiators"],
-  "targetMarket": "Target market description",
-  "tone": "Company tone description",
-  "contacts": [
-    {
-      "type": "email|phone|address|form|other",
-      "value": "contact detail",
-      "context": "context or department",
-      "person": "person name",
-      "role": "person role"
-    }
-  ]
-}
-
-Respond with ONLY valid JSON that matches this structure. If any information is missing, make reasonable inferences.`
-        },
-        {
-          role: "user", 
-          content: `Website Analysis Results:\n\n${analysisResult}\n\nPlease format this into the required JSON structure.`
-        }
-      ]);
-
-      // Parse the JSON response
+      // Then format it into the required structure using the JSON schema
       let structuredResult;
       try {
-        const jsonContent = structuredResponse.content as string;
-        structuredResult = JSON.parse(jsonContent);
-        
+        structuredResult = await structuredOutputModel.invoke([
+          {
+            role: "system",
+            content: `You are a data formatter. Take the following website analysis and format it into a structured JSON response that matches the provided schema. Extract and organize all the relevant information including summary, products, services, differentiators, target market, tone, and contact information.`
+          },
+          {
+            role: "user", 
+            content: `Website Analysis Results:\n\n${analysisResult}\n\nPlease format this into the required JSON structure.`
+          }
+        ]);
+
         // Validate against schema
-        const validatedResult = reportOutputSchema.parse(structuredResult);
-        structuredResult = validatedResult;
+        structuredResult = reportOutputSchema.parse(structuredResult);
       } catch (parseError) {
         logger.warn('Failed to parse structured output, using fallback:', parseError);
         structuredResult = {

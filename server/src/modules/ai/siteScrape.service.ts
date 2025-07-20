@@ -3,6 +3,7 @@ import { promptHelper } from '@/prompts/prompt.helper';
 import z from 'zod';
 import { createChatModel } from './langchain/config/langchain.config';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export const SiteScrapeService = {
   scrapeSite: async (url: string, metadata: Record<string, any>) => {
@@ -26,24 +27,24 @@ export const SiteScrapeService = {
       urls: z.array(z.string()).describe('The filtered list of URLs'),
     });
 
-    const chatModel = createChatModel({ model: 'gpt-4.1-mini' });
+    const chatModel = createChatModel({ model: 'gpt-4.1-mini' }).withStructuredOutput(
+      zodToJsonSchema(schema)
+    );
 
     const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
       urls: siteMap.join('\n'),
-      output_schema: JSON.stringify(schema, null, 2),
+      output_schema: JSON.stringify(zodToJsonSchema(schema), null, 2),
       min_urls: minUrls.toString(),
       max_urls: maxUrls.toString(),
     });
 
     try {
-      const response = await chatModel.invoke([
+      const parsedResponse = await chatModel.invoke([
         {
           role: 'system',
-          content: initialPrompt + '\n\nRespond with ONLY valid JSON that matches the schema.',
+          content: initialPrompt,
         },
       ]);
-
-      const parsedResponse = JSON.parse(response.content as string);
 
       if (parsedResponse.urls.length < minUrls) {
         return siteMap;

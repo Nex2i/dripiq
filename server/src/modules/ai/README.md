@@ -19,6 +19,12 @@ The AI system now uses LangChain's robust agent and tool calling infrastructure,
 - Default model: `gpt-4.1-mini`
 - Configurable temperature, max tokens, iterations, and timeouts
 
+### Prompts
+All prompts are now managed centrally in the `/prompts` directory:
+- Uses `promptHelper.getPromptAndInject()` for dynamic variable injection
+- Converts Zod schemas to JSON Schema format using `zodToJsonSchema()`
+- No more inline prompts in the code
+
 ### Tools
 All tools have been converted to LangChain `DynamicTool` format:
 
@@ -27,12 +33,17 @@ All tools have been converted to LangChain `DynamicTool` format:
 - `ListDomainPagesTool` - Lists available pages for a domain
 
 ### Agents
-- `SiteAnalysisAgent` - Performs comprehensive website analysis
-- `VendorFitAgent` - Analyzes vendor-opportunity fit
+- `SiteAnalysisAgent` - Uses `summarize_site` prompt for comprehensive website analysis
+- `VendorFitAgent` - Uses `vendor_fit` prompt for vendor-opportunity fit analysis
 
 ### Services
-- `GeneralSiteReportService` - Simplified site analysis with structured output
-- `VendorFitReportService` - Simplified vendor fit analysis with structured output
+- `GeneralSiteReportService` - Uses `withStructuredOutput()` with Zod-to-JSON Schema conversion
+- `VendorFitReportService` - Uses `withStructuredOutput()` with Zod-to-JSON Schema conversion
+
+### Structured Output
+- All services now use `model.withStructuredOutput(zodToJsonSchema(schema))`
+- Automatic JSON schema generation from Zod schemas
+- Built-in validation and type safety
 
 ## Migration Benefits
 
@@ -45,14 +56,23 @@ All tools have been converted to LangChain `DynamicTool` format:
 ## Usage
 
 ```typescript
-import { generalSiteReportService } from '@/modules/ai';
+import { generalSiteReportService, vendorFitReportService } from '@/modules/ai';
 
-// Site analysis
+// Site analysis with structured output
 const result = await generalSiteReportService.summarizeSite('https://example.com');
+// result.finalResponseParsed contains typed data matching reportOutputSchema
 
-// Vendor fit analysis  
-import { vendorFitReportService } from '@/modules/ai';
+// Vendor fit analysis with structured output
 const fitReport = await vendorFitReportService.generateVendorFitReport(partnerInfo, opportunityDesc);
+// fitReport.finalResponseParsed contains typed data matching vendorFitOutputSchema
+
+// Custom configuration
+import { GeneralSiteReportService } from '@/modules/ai';
+const customService = new GeneralSiteReportService({
+  model: 'gpt-4.1-mini',
+  temperature: 0.2,
+  maxIterations: 15
+});
 ```
 
 ## API Compatibility
