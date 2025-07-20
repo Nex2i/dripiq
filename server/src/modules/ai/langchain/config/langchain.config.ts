@@ -25,9 +25,10 @@ export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpen
     timeout: finalConfig.timeout,
     apiKey: process.env.OPENAI_API_KEY,
     // Configure to use OpenAI's Responses API for better tool calling and structured output
-    useResponsesApi: true,
-    // Use the new response format for better content handling
-    outputVersion: "responses/v1",
+    // Note: This will be automatically enabled by LangChain when using compatible features
+    // useResponsesApi: true,
+    // Use the new response format for better content handling  
+    // outputVersion: "responses/v1",
   });
 }
 
