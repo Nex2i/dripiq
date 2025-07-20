@@ -17,13 +17,17 @@ export const defaultLangChainConfig: LangChainConfig = {
 
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
   const finalConfig = { ...defaultLangChainConfig, ...config };
-
+  
   return new ChatOpenAI({
     model: finalConfig.model,
     temperature: finalConfig.temperature,
     maxTokens: finalConfig.maxTokens,
     timeout: finalConfig.timeout,
     apiKey: process.env.OPENAI_API_KEY,
+    // Configure to use OpenAI's Responses API for better tool calling and structured output
+    useResponsesApi: true,
+    // Use the new response format for better content handling
+    outputVersion: "responses/v1",
   });
 }
 
