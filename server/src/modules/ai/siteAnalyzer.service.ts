@@ -1,7 +1,7 @@
 import { supabaseStorage } from '@/libs/supabase.storage';
-import { EmbeddingsService } from './embeddings.service';
 import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
+import { EmbeddingsService } from './embeddings.service';
 import { LeadAnalyzerService } from './leadAnalyzer.service';
 
 export interface SiteAnalyzerDto {

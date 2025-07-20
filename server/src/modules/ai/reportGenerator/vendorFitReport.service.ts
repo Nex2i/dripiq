@@ -10,6 +10,7 @@ import { ITool, IToolCall } from '../interfaces/ITool';
 import { ReportConfig, FunctionCallLoopResult } from '../interfaces/IReport';
 import vendorFitOutputSchema from '../schemas/vendorFitOutputSchema';
 import vendorFitInputSchema from '../schemas/vendorFitInputSchema';
+import { AI_MODELS } from './shared';
 
 export class VendorFitReportService {
   private aiClient: IAIClient;
@@ -19,10 +20,12 @@ export class VendorFitReportService {
   constructor(aiClient: IAIClient, toolRegistry: IToolRegistry, config: ReportConfig = {}) {
     this.aiClient = aiClient;
     this.toolRegistry = toolRegistry;
+    // Use object spread to merge config defaults with user-supplied config
     this.config = {
-      maxIterations: config.maxIterations || 10,
-      model: config.model || 'gpt-4.1',
-      enableWebSearch: config.enableWebSearch ?? false,
+      maxIterations: 10,
+      model: AI_MODELS.GPT_4_1,
+      enableWebSearch: false,
+      ...config,
     };
   }
 
@@ -33,6 +36,10 @@ export class VendorFitReportService {
 
   // Method to register multiple tools
   registerTools(tools: ITool[]): void {
+    if (!tools?.length) {
+      logger.warn('Attempted to register empty or null tool array');
+      return;
+    }
     tools.forEach((tool) => this.registerTool(tool));
   }
 

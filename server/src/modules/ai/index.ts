@@ -13,14 +13,37 @@ export type { IToolRegistry } from './interfaces/IToolRegistry';
 export { OpenAIClient } from './implementations/OpenAIClient';
 export { ToolRegistry } from './implementations/ToolRegistry';
 
-// Export new general site report service
+// Export shared utilities and constants
+export {
+  AI_MODELS,
+  createAIClientAndToolRegistry,
+  getDefaultTools,
+} from './reportGenerator/shared';
+export type {
+  ServiceResult,
+  ToolExecutionResult,
+  FunctionCallRecord,
+  ErrorResult,
+  SuccessResult,
+} from './reportGenerator/shared';
+
+// Export general site report service
 export { GeneralSiteReportService } from './reportGenerator/generalSiteReport.service';
 
-// Export new factory
+// Export general site report factory
 export {
   GeneralSiteReportServiceFactory,
   generalSiteReportService,
 } from './reportGenerator/generalSiteReport.factory';
+
+// Export vendor fit report service
+export { VendorFitReportService } from './reportGenerator/vendorFitReport.service';
+
+// Export vendor fit report factory
+export {
+  VendorFitReportServiceFactory,
+  vendorFitReportService,
+} from './reportGenerator/vendorFitReport.factory';
 
 // Export tool implementations
 export { GetInformationAboutDomainTool } from './tools/GetInformationAboutDomainTool';

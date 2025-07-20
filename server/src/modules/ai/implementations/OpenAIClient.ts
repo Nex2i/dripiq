@@ -7,6 +7,7 @@ import {
 import { openAiClient } from '@/libs/openai.client';
 import { IAIClient, IAIMessage, IAIResponse, IAIRequestOptions } from '../interfaces/IAIClient';
 import { IToolDefinition, IToolCall } from '../interfaces/ITool';
+import { AI_MODELS } from '../reportGenerator/shared';
 
 export class OpenAIClient implements IAIClient {
   private previousResponseId?: string;
@@ -37,7 +38,7 @@ export class OpenAIClient implements IAIClient {
     const tools = this.convertToolDefinitionsToOpenAI(options?.tools || []);
 
     const requestParams: ResponseCreateParamsNonStreaming = {
-      model: options?.model || 'gpt-4.1',
+      model: options?.model || AI_MODELS.GPT_4_1,
       parallel_tool_calls: true,
       input,
       tools,

@@ -8,17 +8,17 @@ export const LeadAnalyzerService = {
 
     const aiOutput = await generalSiteReportService.summarizeSite(url.cleanWebsiteUrl());
 
-    if (!aiOutput?.finalResponseParsed) {
+    if (!aiOutput.success || !aiOutput.data?.finalResponseParsed) {
       throw new Error('AI output is required');
     }
 
     // save on lead
     await updateLead(tenantId, leadId, {
-      summary: aiOutput.finalResponseParsed.summary,
-      products: aiOutput.finalResponseParsed.products,
-      services: aiOutput.finalResponseParsed.services,
-      differentiators: aiOutput.finalResponseParsed.differentiators,
-      brandColors: aiOutput.finalResponseParsed.brandColors,
+      summary: aiOutput.data.finalResponseParsed.summary,
+      products: aiOutput.data.finalResponseParsed.products,
+      services: aiOutput.data.finalResponseParsed.services,
+      differentiators: aiOutput.data.finalResponseParsed.differentiators,
+      brandColors: aiOutput.data.finalResponseParsed.brandColors,
     });
   },
   indexSite: async (tenantId: string, leadId: string) => {

@@ -60,7 +60,7 @@ export async function exampleUsage() {
   const service = GeneralSiteReportServiceFactory.createWithCustomTools([weatherTool]);
 
   // Or add to existing service
-  const defaultService = GeneralSiteReportServiceFactory.createDefault();
+  const defaultService = GeneralSiteReportServiceFactory.createWithDefaultTools();
   defaultService.registerTool(weatherTool);
 
   return service;

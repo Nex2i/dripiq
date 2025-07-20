@@ -1,64 +1,65 @@
-import { OpenAIClient } from '../implementations/OpenAIClient';
-import { ToolRegistry } from '../implementations/ToolRegistry';
 import { ITool } from '../interfaces/ITool';
-
-// Import concrete tool implementations
-import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
-import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { ReportConfig } from '../interfaces/IReport';
 import { GeneralSiteReportService } from './generalSiteReport.service';
+import { createAIClientAndToolRegistry, getDefaultTools, AI_MODELS } from './shared';
 
 export class GeneralSiteReportServiceFactory {
-  static createDefault(config?: ReportConfig): GeneralSiteReportService {
-    // Create AI client
-    const aiClient = new OpenAIClient();
+  /**
+   * Creates a GeneralSiteReportService with the default set of tools
+   * @param config Optional configuration overrides
+   * @returns Configured GeneralSiteReportService instance
+   */
+  static createWithDefaultTools(config?: ReportConfig): GeneralSiteReportService {
+    const defaultTools = getDefaultTools();
+    const { aiClient, toolRegistry } = createAIClientAndToolRegistry(defaultTools);
 
-    // Create tool registry
-    const toolRegistry = new ToolRegistry();
-
-    // Register default tools
-    const defaultTools: ITool[] = [
-      new GetInformationAboutDomainTool(),
-      new ListDomainPagesTool(),
-      new RetrieveFullPageTool(),
-    ];
-
-    defaultTools.forEach((tool) => toolRegistry.registerTool(tool));
-
-    // Create and return service
     return new GeneralSiteReportService(aiClient, toolRegistry, config);
   }
 
-  static createWithCustomTools(tools: any[], config?: ReportConfig): GeneralSiteReportService {
-    // Create AI client
-    const aiClient = new OpenAIClient();
+  /**
+   * Creates a GeneralSiteReportService with custom tools
+   * @param tools Array of ITool instances to register
+   * @param config Optional configuration overrides
+   * @returns Configured GeneralSiteReportService instance
+   */
+  static createWithCustomTools(tools: ITool[], config?: ReportConfig): GeneralSiteReportService {
+    if (!tools?.length) {
+      throw new Error('Custom tools array cannot be empty or null');
+    }
 
-    // Create tool registry
-    const toolRegistry = new ToolRegistry();
+    const { aiClient, toolRegistry } = createAIClientAndToolRegistry(tools);
 
-    // Register custom tools
-    tools.forEach((tool) => toolRegistry.registerTool(tool));
-
-    // Create and return service
     return new GeneralSiteReportService(aiClient, toolRegistry, config);
   }
 
+  /**
+   * Creates a GeneralSiteReportService with no tools registered
+   * Tools can be added later using registerTool() or registerTools()
+   * @param config Optional configuration overrides
+   * @returns Configured GeneralSiteReportService instance with empty tool registry
+   */
   static createEmpty(config?: ReportConfig): GeneralSiteReportService {
-    // Create AI client
-    const aiClient = new OpenAIClient();
+    const { aiClient, toolRegistry } = createAIClientAndToolRegistry([]);
 
-    // Create empty tool registry
-    const toolRegistry = new ToolRegistry();
-
-    // Create and return service with no tools registered
     return new GeneralSiteReportService(aiClient, toolRegistry, config);
+  }
+
+  /**
+   * @deprecated Use createWithDefaultTools instead
+   * @param config Optional configuration overrides
+   * @returns Configured GeneralSiteReportService instance
+   */
+  static createDefault(config?: ReportConfig): GeneralSiteReportService {
+    return this.createWithDefaultTools(config);
   }
 }
 
-// Export a default configured instance for backward compatibility
-export const generalSiteReportService = GeneralSiteReportServiceFactory.createDefault({
+/**
+ * Pre-configured default instance of GeneralSiteReportService
+ * Uses default tools and moderate configuration settings
+ */
+export const generalSiteReportService = GeneralSiteReportServiceFactory.createWithDefaultTools({
   maxIterations: 5,
-  model: 'gpt-4.1',
+  model: AI_MODELS.GPT_4_1,
   enableWebSearch: false,
 });
