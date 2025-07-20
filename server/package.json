@@ -7,7 +7,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "install:all": "npm install",
+    "install:all": "NODE_ENV=development npm install && NODE_ENV=production",
     "prod": "npm run install:all && npm run lint && npm run db:deploy && npm run build",
     "staging": "npm run install:all && npm run lint && npm run db:deploy && npm run build",
     "dev": "npm run install:all && npm run clear:dist && npm run db:deploy && npm run nodemon",
