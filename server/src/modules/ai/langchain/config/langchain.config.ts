@@ -17,7 +17,7 @@ export const defaultLangChainConfig: LangChainConfig = {
 
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
   const finalConfig = { ...defaultLangChainConfig, ...config };
-  
+
   return new ChatOpenAI({
     model: finalConfig.model,
     temperature: finalConfig.temperature,
