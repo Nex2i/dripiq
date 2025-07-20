@@ -16,9 +16,9 @@ export class SiteAnalysisAgent {
     const model = createChatModel(config);
     
     const tools: DynamicTool[] = [
-      new ListDomainPagesTool(),
-      new GetInformationAboutDomainTool(), 
-      new RetrieveFullPageTool()
+      ListDomainPagesTool,
+      GetInformationAboutDomainTool, 
+      RetrieveFullPageTool
     ];
 
     // Create a prompt template that will be populated at runtime
@@ -38,7 +38,7 @@ export class SiteAnalysisAgent {
       agent,
       tools,
       maxIterations: config.maxIterations,
-      verbose: true,
+      verbose: false,
       returnIntermediateSteps: true,
     });
   }
@@ -51,6 +51,7 @@ export class SiteAnalysisAgent {
     });
 
     const result = await this.agent.invoke({
+      input: `Analyze the website for domain: ${domain}`,
       domain: domain,
       system_prompt: systemPrompt,
     });

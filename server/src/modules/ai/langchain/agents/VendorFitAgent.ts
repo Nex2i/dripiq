@@ -17,9 +17,9 @@ export class VendorFitAgent {
     const model = createChatModel(config);
     
     const tools: DynamicTool[] = [
-      new ListDomainPagesTool(),
-      new GetInformationAboutDomainTool(), 
-      new RetrieveFullPageTool()
+      ListDomainPagesTool,
+      GetInformationAboutDomainTool, 
+      RetrieveFullPageTool
     ];
 
     // Create a prompt template that will be populated at runtime
@@ -39,7 +39,7 @@ export class VendorFitAgent {
       agent,
       tools,
       maxIterations: config.maxIterations,
-      verbose: true,
+      verbose: false,
       returnIntermediateSteps: true,
     });
   }
@@ -54,6 +54,7 @@ export class VendorFitAgent {
     });
 
     const result = await this.agent.invoke({
+      input: "Analyze the vendor fit between the Partner and Opportunity provided.",
       system_prompt: systemPrompt,
     });
 

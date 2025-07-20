@@ -28,11 +28,13 @@ All prompts are now managed centrally in the `/prompts` directory:
 - No more inline prompts in the code
 
 ### Tools
-All tools have been converted to LangChain `DynamicTool` format:
+All tools have been converted to LangChain `DynamicTool` format with proper parameter handling:
 
-- `RetrieveFullPageTool` - Downloads and converts HTML to Markdown
-- `GetInformationAboutDomainTool` - Semantic search within domain content  
-- `ListDomainPagesTool` - Lists available pages for a domain
+- `RetrieveFullPageTool` - Downloads and converts HTML to Markdown, expects JSON: `{"url": "https://example.com"}`
+- `GetInformationAboutDomainTool` - Semantic search within domain content, expects JSON: `{"domain": "example.com", "queryText": "search term"}`
+- `ListDomainPagesTool` - Lists available pages for a domain, expects JSON: `{"domain": "example.com"}`
+
+**Tool Input Format**: All tools accept JSON string inputs with clear parameter descriptions and error handling for malformed inputs.
 
 ### Agents
 - `SiteAnalysisAgent` - Uses `summarize_site` prompt for comprehensive website analysis
@@ -57,6 +59,8 @@ All tools have been converted to LangChain `DynamicTool` format:
 5. **Developer Experience**: Better debugging and error messages
 6. **Modern OpenAI Integration**: Uses OpenAI's Responses API for improved performance and capabilities
 7. **Graceful Max Iterations Handling**: Automatic summarization when agents hit iteration limits
+8. **Improved Tool Calling**: Fixed tool parameter passing with proper JSON schema validation and clear error messages
+9. **Reduced Logging**: Disabled verbose agent logging to prevent log clutter
 
 ## Usage
 
