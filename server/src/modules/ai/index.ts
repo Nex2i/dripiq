@@ -45,6 +45,19 @@ export {
   vendorFitReportService,
 } from './reportGenerator/vendorFitReport.factory';
 
+// Export LangChain implementations
+export { LangChainReportService } from './langchain/LangChainReportService';
+export {
+  LangChainReportServiceFactory,
+  langChainReportService,
+} from './langchain/LangChainReportServiceFactory';
+export { LangChainAIClient } from './langchain/LangChainAIClient';
+
+// Export LangChain tools
+export { GetInformationAboutDomainTool as LCGetInformationAboutDomainTool } from './langchain/tools/GetInformationAboutDomainTool';
+export { ListDomainPagesTool as LCListDomainPagesTool } from './langchain/tools/ListDomainPagesTool';
+export { RetrieveFullPageTool as LCRetrieveFullPageTool } from './langchain/tools/RetrieveFullPageTool';
+
 // Export tool implementations
 export { GetInformationAboutDomainTool } from './tools/GetInformationAboutDomainTool';
 export { ListDomainPagesTool } from './tools/ListDomainPagesTool';

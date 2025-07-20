@@ -1,5 +1,5 @@
 import { TenantService } from '../tenant.service';
-import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { langChainReportService } from './langchain/LangChainReportServiceFactory';
 
 export const OrganizationAnalyzerService = {
   analyzeOrganization: async (tenantId: string, userId: string) => {
@@ -15,7 +15,7 @@ export const OrganizationAnalyzerService = {
     // };
 
     // const _siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(_siteAnalyzerDto);
-    const aiOutput = await generalSiteReportService.summarizeSite(website.cleanWebsiteUrl());
+    const aiOutput = await langChainReportService.summarizeSite(website.cleanWebsiteUrl());
 
     if (!aiOutput.success || !aiOutput.data?.finalResponseParsed) {
       throw new Error('AI output is required');

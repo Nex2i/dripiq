@@ -1,12 +1,12 @@
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { getLeadById, updateLead } from '../lead.service';
-import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { langChainReportService } from './langchain/LangChainReportServiceFactory';
 
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
 
-    const aiOutput = await generalSiteReportService.summarizeSite(url.cleanWebsiteUrl());
+    const aiOutput = await langChainReportService.summarizeSite(url.cleanWebsiteUrl());
 
     if (!aiOutput.success || !aiOutput.data?.finalResponseParsed) {
       throw new Error('AI output is required');
