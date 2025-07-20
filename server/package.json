@@ -40,7 +40,6 @@
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.2.2",
     "@fastify/type-provider-typebox": "^5.1.0",
-    "@langchain/community": "^0.3.49",
     "@langchain/core": "^0.3.66",
     "@langchain/openai": "^0.6.2",
     "@mendable/firecrawl-js": "^1.29.1",
