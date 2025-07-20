@@ -10,7 +10,7 @@
     "install:all": "NODE_ENV=development npm install && NODE_ENV=production",
     "prod": "npm run install:all && npm run lint && npm run db:deploy && npm run build",
     "staging": "npm install && npm run lint && npm run db:deploy && npm run build",
-    "dev": "npm i && npm run clear:dist && npm run db:deploy && npm run nodemon",
+    "dev": "npm i --legacy-peer-deps && npm run clear:dist && npm run db:deploy && npm run nodemon",
     "clear:dist": "rm -rf dist",
     "dev:server": "npm run build && npm run start",
     "db:deploy": "npm run db:migrate && npm run db:seed",
@@ -61,8 +61,7 @@
     "postgres": "^3.4.5",
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0",
-    "zod": "^3.25.71",
-    "zod-to-json-schema": "^3.24.6"
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

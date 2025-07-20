@@ -1,16 +1,15 @@
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { DynamicTool } from '@langchain/core/tools';
+import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import { promptHelper } from '@/prompts/prompt.helper';
 import reportOutputSchema from '../../schemas/reportOutputSchema';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import { logger } from '@/libs/logger';
 import { z } from 'zod';
-import { getContentFromMessage } from '../factories/AgentFactory';
+import { getContentFromMessage } from '../utils/messageUtils';
 
 export type SiteAnalysisResult = {
   finalResponse: string;
@@ -28,7 +27,7 @@ export class SiteAnalysisAgent {
 
     const model = createChatModel(config);
 
-    const tools: DynamicTool[] = [
+    const tools: DynamicStructuredTool[] = [
       ListDomainPagesTool,
       GetInformationAboutDomainTool,
       RetrieveFullPageTool,
@@ -36,10 +35,6 @@ export class SiteAnalysisAgent {
 
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `{system_prompt}`],
-      [
-        'human',
-        'Analyze the website for domain: {domain} and return your answer as valid JSON according to the provided schema.',
-      ],
       ['placeholder', '{agent_scratchpad}'],
     ]);
 
@@ -51,15 +46,15 @@ export class SiteAnalysisAgent {
 
     this.agent = new AgentExecutor({
       agent,
-      tools,
       maxIterations: config.maxIterations,
+      tools,
       verbose: false,
       returnIntermediateSteps: true,
     });
   }
 
   async analyze(domain: string): Promise<SiteAnalysisResult> {
-    const outputSchemaJson = JSON.stringify(zodToJsonSchema(reportOutputSchema), null, 2);
+    const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
     const systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
       domain,
       output_schema: outputSchemaJson,
@@ -73,10 +68,7 @@ export class SiteAnalysisAgent {
 
       let finalResponse = getContentFromMessage(result.output);
 
-      if (
-        (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) ||
-        result.intermediateSteps.length >= this.config.maxIterations
-      ) {
+      if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
         finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt);
       }
 
@@ -91,7 +83,9 @@ export class SiteAnalysisAgent {
     } catch (error) {
       logger.error('Error in site analysis:', error);
       return {
-        finalResponse: `Error occurred during site analysis: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        finalResponse: `Error occurred during site analysis: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         totalIterations: 1,
         functionCalls: [],
         finalResponseParsed: getFallbackResult(domain, error),
@@ -99,9 +93,6 @@ export class SiteAnalysisAgent {
     }
   }
 
-  /**
-   * Always uses structured output model, always returns a valid JSON string
-   */
   private async summarizePartialSteps(
     result: any,
     domain: string,
@@ -109,11 +100,13 @@ export class SiteAnalysisAgent {
   ): Promise<string> {
     const structuredModel = createChatModel({
       model: this.config.model,
-    }).withStructuredOutput(zodToJsonSchema(reportOutputSchema));
+    }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
 
     const gatheredInfo = (result.intermediateSteps || [])
       .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${step.observation || 'No result'}\n`;
+        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
+          step.observation || 'No result'
+        }\n`;
       })
       .join('\n---\n');
 

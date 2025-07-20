@@ -1,39 +1,29 @@
-import { DynamicTool } from '@langchain/core/tools';
-import { z } from 'zod';
+import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
 import { sql, eq } from 'drizzle-orm';
 import db from '@/libs/drizzleClient';
 import { siteEmbeddings, siteEmbeddingDomains } from '@/db/schema';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
+import z from 'zod';
 
 const TOP_K = 10;
 
-export const GetInformationAboutDomainTool = new DynamicTool({
+export const GetInformationAboutDomainTool = new DynamicStructuredTool({
   name: 'GetInformationAboutDomainTool',
-  description: 'Searches for specific information within a domain using semantic similarity. Call with arguments: domain (string) and queryText (string). Returns the most relevant content chunks with similarity scores.',
-  func: async (input: string) => {
+  description:
+    'Searches for specific information within a domain using semantic similarity. Call with arguments: domain (string) and queryText (string). Returns the most relevant content chunks with similarity scores.',
+  schema: z.object({
+    domain: z.string().describe('The domain name to search for information about'),
+    queryText: z.string().describe('The text to search for within the domain'),
+  }),
+  func: async (input: { domain: string; queryText: string }) => {
     try {
-      let domain: string = '';
-      let queryText: string = '';
+      const { domain, queryText } = input;
 
-      // Parse arguments - LangChain will pass them as JSON string like: '{"domain": "example.com", "queryText": "search term"}'
-      try {
-        const parsed = JSON.parse(input);
-        domain = parsed.domain || parsed.input || '';
-        queryText = parsed.queryText || '';
-      } catch {
-        // If direct JSON parsing fails, try extracting from the string
-        const domainMatch = input.match(/(?:domain|input)["\s]*:["\s]*([^",\s}]+)/i);
-        const queryMatch = input.match(/queryText["\s]*:["\s]*([^",}]+)/i);
-        
-        if (domainMatch && domainMatch[1]) domain = domainMatch[1].replace(/["]/g, '');
-        if (queryMatch && queryMatch[1]) queryText = queryMatch[1].replace(/["]/g, '');
-      }
-      
       if (!domain || !queryText) {
-        return JSON.stringify({ 
+        return JSON.stringify({
           error: 'Both domain and queryText are required',
           received: { domain, queryText },
-          input_received: input
+          input_received: input,
         });
       }
 
@@ -104,5 +94,5 @@ export const GetInformationAboutDomainTool = new DynamicTool({
         error: `Failed to retrieve information for domain. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       });
     }
-  }
+  },
 });

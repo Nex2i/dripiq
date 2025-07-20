@@ -1,25 +1,28 @@
-import { DynamicTool } from '@langchain/core/tools';
+import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, siteEmbeddingDomains, siteEmbeddings } from '@/db';
 
-export const ListDomainPagesTool = new DynamicTool({
-  name: 'ListDomainPagesTool',
-  description: 'Lists all available pages/URLs for a given domain. Use this format: {"domain": "example.com"}. Provide a domain to get a list of all pages that have been crawled and are available for analysis.',
-  func: async (input: string) => {
-    try {
-      let parsedInput;
-      try {
-        parsedInput = JSON.parse(input);
-      } catch {
-        // If input is not JSON, treat as direct domain
-        parsedInput = { domain: input };
-      }
+export const ListDomainPagesTool = new DynamicStructuredTool({
+  name: 'ListDomainPages',
+  description:
+    'Lists all available pages/URLs for a given domain. Returns all pages that have been crawled and are available for analysis.',
+  schema: z.object({
+    domain: z
+      .string()
+      .describe('The domain name to list pages for (e.g., "example.com" - without protocol)'),
+  }),
+  func: async (input: { domain: string }) => {
+    const { domain } = input;
 
-      const { domain } = parsedInput;
-      
+    try {
       if (!domain) {
-        return JSON.stringify({ error: 'domain field is required' });
+        return JSON.stringify({
+          success: false,
+          error: 'Domain is required',
+          domain: '',
+          pages: [],
+        });
       }
 
       // Query that gets all unique page URLs for a given domain
@@ -30,7 +33,9 @@ export const ListDomainPagesTool = new DynamicTool({
 
       if (!domainId.length) {
         return JSON.stringify({
+          success: true,
           domain: domain,
+          message: 'No pages found for this domain',
           pages: [],
         });
       }
@@ -43,23 +48,18 @@ export const ListDomainPagesTool = new DynamicTool({
       const pageUrls = pages.map((page) => page.url);
 
       return JSON.stringify({
+        success: true,
         domain: domain,
+        totalPages: pageUrls.length,
         pages: pageUrls,
       });
     } catch (error) {
-      let inputDomain = 'unknown';
-      try {
-        const parsed = JSON.parse(input);
-        inputDomain = parsed.domain || input;
-      } catch {
-        inputDomain = input;
-      }
-      
       return JSON.stringify({
-        domain: inputDomain,
-        error: `Failed to list pages for domain. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        success: false,
+        domain: domain,
+        error: `Failed to list pages for domain: ${error instanceof Error ? error.message : 'Unknown error'}`,
         pages: [],
       });
     }
-  }
+  },
 });

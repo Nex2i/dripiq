@@ -1,23 +1,19 @@
-import { DynamicTool } from '@langchain/core/tools';
+import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, siteEmbeddings } from '@/db';
 
-export const RetrieveFullPageTool = new DynamicTool({
+export const RetrieveFullPageTool = new DynamicStructuredTool({
   name: 'RetrieveFullPageTool',
-  description: 'Downloads the HTML from any page URL, cleans and converts it to readable Markdown. Use this format: {"url": "https://example.com/about"}. Input the exact URL. The output is the full text of the page, formatted and ready for processing or embedding. When to use: You need the actual page content as Markdown, either to review, or debug.',
-  func: async (input: string) => {
+  description:
+    'Downloads the HTML from any page URL, cleans and converts it to readable Markdown. Use this format: {"url": "https://example.com/about"}. Input the exact URL. The output is the full text of the page, formatted and ready for processing or embedding. When to use: You need the actual page content as Markdown, either to review, or debug.',
+  schema: z.object({
+    url: z.string().describe('The URL of the page to retrieve'),
+  }),
+  func: async (input: { url: string }) => {
     try {
-      let parsedInput;
-      try {
-        parsedInput = JSON.parse(input);
-      } catch {
-        // If input is not JSON, treat as direct URL
-        parsedInput = { url: input };
-      }
+      const { url } = input;
 
-      const { url } = parsedInput;
-      
       if (!url) {
         return 'Error: url field is required';
       }
@@ -40,7 +36,9 @@ export const RetrieveFullPageTool = new DynamicTool({
         content: fullMarkdown,
       });
     } catch (error) {
-      return `Error retrieving page content: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      return `Error retrieving page content: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`;
     }
-  }
+  },
 });

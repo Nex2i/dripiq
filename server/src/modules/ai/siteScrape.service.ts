@@ -3,7 +3,6 @@ import { promptHelper } from '@/prompts/prompt.helper';
 import z from 'zod';
 import { createChatModel } from './langchain/config/langchain.config';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export const SiteScrapeService = {
   scrapeSite: async (url: string, metadata: Record<string, any>) => {
@@ -28,12 +27,12 @@ export const SiteScrapeService = {
     });
 
     const chatModel = createChatModel({ model: 'gpt-4.1-mini' }).withStructuredOutput(
-      zodToJsonSchema(schema)
+      z.toJSONSchema(schema)
     );
 
     const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
       urls: siteMap.join('\n'),
-      output_schema: JSON.stringify(zodToJsonSchema(schema), null, 2),
+      output_schema: JSON.stringify(z.toJSONSchema(schema), null, 2),
       min_urls: minUrls.toString(),
       max_urls: maxUrls.toString(),
     });

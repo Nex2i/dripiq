@@ -8,7 +8,6 @@ import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import { promptHelper } from '@/prompts/prompt.helper';
 import vendorFitOutputSchema from '../../schemas/vendorFitOutputSchema';
 import vendorFitInputSchema from '../../schemas/vendorFitInputSchema';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import { logger } from '@/libs/logger';
 import { z } from 'zod';
 
@@ -26,18 +25,18 @@ export class VendorFitAgent {
   constructor(config: LangChainConfig) {
     this.config = config;
     const model = createChatModel(config);
-    
+
     const tools: DynamicTool[] = [
-      ListDomainPagesTool,
-      GetInformationAboutDomainTool, 
-      RetrieveFullPageTool
+      // ListDomainPagesTool,
+      // GetInformationAboutDomainTool,
+      // RetrieveFullPageTool,
     ];
 
     // Create a prompt template that will be populated at runtime
     const prompt = ChatPromptTemplate.fromMessages([
-      ["system", "{system_prompt}"],
-      ["human", "Analyze the vendor fit between the Partner and Opportunity provided."],
-      ["placeholder", "{agent_scratchpad}"],
+      ['system', '{system_prompt}'],
+      ['human', 'Analyze the vendor fit between the Partner and Opportunity provided.'],
+      ['placeholder', '{agent_scratchpad}'],
     ]);
 
     const agent = createToolCallingAgent({
@@ -58,15 +57,15 @@ export class VendorFitAgent {
   async analyzeVendorFit(partnerInfo: any, opportunityContext: string): Promise<VendorFitResult> {
     // Generate the system prompt with injected variables at runtime
     const systemPrompt = promptHelper.getPromptAndInject('vendor_fit', {
-      input_schema: JSON.stringify(zodToJsonSchema(vendorFitInputSchema), null, 2),
+      input_schema: JSON.stringify(z.toJSONSchema(vendorFitInputSchema), null, 2),
       partner_details: JSON.stringify(partnerInfo, null, 2),
       opportunity_details: opportunityContext,
-      output_schema: JSON.stringify(zodToJsonSchema(vendorFitOutputSchema), null, 2)
+      output_schema: JSON.stringify(z.toJSONSchema(vendorFitOutputSchema), null, 2),
     });
 
     try {
       const result = await this.agent.invoke({
-        input: "Analyze the vendor fit between the Partner and Opportunity provided.",
+        input: 'Analyze the vendor fit between the Partner and Opportunity provided.',
         system_prompt: systemPrompt,
       });
 
@@ -75,15 +74,19 @@ export class VendorFitAgent {
       // Check if we reached max iterations and have intermediate steps but no final output
       if (!result.output && result.intermediateSteps && result.intermediateSteps.length > 0) {
         console.log('Agent hit max iterations, performing final summarization...');
-        
+
         // Create a summarization prompt based on what the agent has gathered so far
         const summaryModel = createChatModel({ model: 'gpt-4.1-mini' });
-        
+
         // Build context from intermediate steps
-        const gatheredInfo = result.intermediateSteps.map((step: any) => {
-          return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${step.observation || 'No result'}\n`;
-        }).join('\n---\n');
-        
+        const gatheredInfo = result.intermediateSteps
+          .map((step: any) => {
+            return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
+              step.observation || 'No result'
+            }\n`;
+          })
+          .join('\n---\n');
+
         const finalSummaryPrompt = `You are a vendor fit analysis expert. Based on the partial research conducted below, provide a comprehensive vendor fit analysis between the Partner and Opportunity.
 
 Research conducted so far:
@@ -95,9 +98,9 @@ Even though the research may be incomplete, provide the best possible vendor fit
 
         const finalResult = await summaryModel.invoke([
           {
-            role: "system",
-            content: finalSummaryPrompt
-          }
+            role: 'system',
+            content: finalSummaryPrompt,
+          },
         ]);
 
         analysisResult = finalResult.content as string;
@@ -109,7 +112,7 @@ Even though the research may be incomplete, provide the best possible vendor fit
 
       // Now create structured output from the analysis
       const structuredOutputModel = createChatModel({ model: 'gpt-4.1-mini' }).withStructuredOutput(
-        zodToJsonSchema(vendorFitOutputSchema)
+        z.toJSONSchema(vendorFitOutputSchema)
       );
 
       const finalSummaryPrompt = `You are a vendor fit report formatter. Take the following vendor fit analysis and format it into a valid JSON structure that matches the required schema.
@@ -121,9 +124,9 @@ Format this into a structured report with headline, subHeadline, summary, partne
 
       const structuredResult = await structuredOutputModel.invoke([
         {
-          role: "system",
-          content: finalSummaryPrompt
-        }
+          role: 'system',
+          content: finalSummaryPrompt,
+        },
       ]);
 
       const parsedResult = vendorFitOutputSchema.parse(structuredResult);
@@ -139,13 +142,17 @@ Format this into a structured report with headline, subHeadline, summary, partne
 
       // Return a fallback response
       return {
-        finalResponse: `Error occurred during vendor fit analysis: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        finalResponse: `Error occurred during vendor fit analysis: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         totalIterations: 1,
         functionCalls: [],
         finalResponseParsed: {
           headline: 'Analysis Unavailable',
           subHeadline: 'Unable to complete vendor fit analysis',
-          summary: `An error occurred while analyzing the vendor fit for ${partnerInfo.domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          summary: `An error occurred while analyzing the vendor fit for ${partnerInfo.domain}: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
           partnerProducts: partnerInfo.products || [],
           partnerServices: partnerInfo.services || [],
           keyDifferentiators: partnerInfo.differentiators || [],
