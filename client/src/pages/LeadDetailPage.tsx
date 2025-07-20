@@ -18,7 +18,10 @@ import {
 import VendorFitModal from '../components/VendorFitModal'
 import Tabs from '../components/Tabs'
 import Tooltip from '../components/Tooltip'
-import { ContactsTab, AIDetailsTab, BrandingTab, LeadDetailsTab } from '../components/tabs'
+import ContactsTab from '../components/tabs/ContactsTab'
+import AIDetailsTab from '../components/tabs/AIDetailsTab'
+import BrandingTab from '../components/tabs/BrandingTab'
+import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
