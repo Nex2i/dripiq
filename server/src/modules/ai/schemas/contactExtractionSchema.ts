@@ -4,28 +4,26 @@ const extractedContactSchema = z.object({
   // Basic Information
   name: z
     .string()
-    .describe('Name of the person or office/department. For offices, use format like "Sales Office", "Support Team", "Headquarters"'),
-  
+    .describe(
+      'Name of the person or office/department. For offices, use format like "Sales Office", "Support Team", "Headquarters"'
+    ),
+
   // Contact Methods
-  email: z
-    .string()
-    .nullable()
-    .describe('Email address if available, null if not found'),
-  phone: z
-    .string()
-    .nullable()
-    .describe('Phone number if available, null if not found'),
-  
+  email: z.string().nullable().describe('Email address if available, null if not found'),
+  phone: z.string().nullable().describe('Phone number if available, null if not found'),
+
   // Professional Information
   title: z
     .string()
     .nullable()
-    .describe('Job title for individuals (e.g., "CEO", "Head of Support"), or department type for offices (e.g., "Sales Department"), null if unknown'),
+    .describe(
+      'Job title for individuals (e.g., "CEO", "Head of Support"), or department type for offices (e.g., "Sales Department"), null if unknown'
+    ),
   company: z
     .string()
     .nullable()
     .describe('Company name if different from main company, null if same or unknown'),
-  
+
   // Contact Type and Context
   contactType: z
     .enum(['individual', 'office', 'department'])
@@ -33,13 +31,12 @@ const extractedContactSchema = z.object({
   context: z
     .string()
     .nullable()
-    .describe('Additional context like department, location, or source page (e.g., "About Us page", "Boston Office", "Customer Support")'),
-  
+    .describe(
+      'Additional context like department, location, or source page (e.g., "About Us page", "Boston Office", "Customer Support")'
+    ),
+
   // Additional Information
-  address: z
-    .string()
-    .nullable()
-    .describe('Physical address if available, null if not found'),
+  address: z.string().nullable().describe('Physical address if available, null if not found'),
   linkedinUrl: z
     .string()
     .nullable()
@@ -48,7 +45,7 @@ const extractedContactSchema = z.object({
     .string()
     .nullable()
     .describe('Personal or department website URL if available, null if not found'),
-  
+
   // Source Information
   sourceUrl: z
     .string()
@@ -62,7 +59,9 @@ const extractedContactSchema = z.object({
 const contactExtractionOutputSchema = z.object({
   contacts: z
     .array(extractedContactSchema)
-    .describe('Array of all extracted contact information, including both individuals and offices/departments'),
+    .describe(
+      'Array of all extracted contact information, including both individuals and offices/departments'
+    ),
   summary: z
     .string()
     .describe('Brief summary of contact extraction results and any notable findings'),

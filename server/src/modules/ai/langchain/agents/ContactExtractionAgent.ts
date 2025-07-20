@@ -4,6 +4,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
+import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -11,7 +12,6 @@ import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import contactExtractionOutputSchema, {
   ContactExtractionOutput,
 } from '../../schemas/contactExtractionSchema';
-import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { getContentFromMessage } from '../utils/messageUtils';
 
 export type ContactExtractionResult = {

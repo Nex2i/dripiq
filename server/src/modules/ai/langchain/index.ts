@@ -17,7 +17,10 @@ export { SiteAnalysisAgent, type SiteAnalysisResult } from './agents/SiteAnalysi
 
 export { VendorFitAgent, type VendorFitResult } from './agents/VendorFitAgent';
 
-export { ContactExtractionAgent, type ContactExtractionResult } from './agents/ContactExtractionAgent';
+export {
+  ContactExtractionAgent,
+  type ContactExtractionResult,
+} from './agents/ContactExtractionAgent';
 
 // Export agent factories
 export {

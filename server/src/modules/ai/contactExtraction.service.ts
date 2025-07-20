@@ -1,8 +1,8 @@
 import { logger } from '@/libs/logger';
-import { contactExtractionAgent } from './langchain';
-import { ExtractedContact, ContactExtractionOutput } from './schemas/contactExtractionSchema';
 import { NewLeadPointOfContact } from '@/db/schema';
 import { createContact } from '../lead.service';
+import { contactExtractionAgent } from './langchain';
+import { ExtractedContact } from './schemas/contactExtractionSchema';
 
 export const ContactExtractionService = {
   /**
@@ -14,7 +14,7 @@ export const ContactExtractionService = {
 
       // Extract contacts using the agent
       const extractionResult = await contactExtractionAgent.extractContacts(domain);
-      
+
       if (!extractionResult.finalResponseParsed?.contacts) {
         logger.warn(`No contacts found for domain: ${domain}`);
         return {
@@ -44,7 +44,9 @@ export const ContactExtractionService = {
       };
     } catch (error) {
       logger.error('Contact extraction failed:', error);
-      throw new Error(`Contact extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Contact extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   },
 
@@ -61,7 +63,7 @@ export const ContactExtractionService = {
     for (const contact of extractedContacts) {
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(contact);
-        
+
         // Create the contact
         const createdContact = await createContact(tenantId, leadId, leadContact);
         createdContacts.push(createdContact);
@@ -79,16 +81,23 @@ export const ContactExtractionService = {
   /**
    * Transform extracted contact to lead point of contact format
    */
-  transformToLeadContact: (extractedContact: ExtractedContact): Omit<NewLeadPointOfContact, 'leadId'> => {
+  transformToLeadContact: (
+    extractedContact: ExtractedContact
+  ): Omit<NewLeadPointOfContact, 'leadId'> => {
     // Determine the name based on contact type
     let name = extractedContact.name;
-    if (extractedContact.contactType === 'office' || extractedContact.contactType === 'department') {
+    if (
+      extractedContact.contactType === 'office' ||
+      extractedContact.contactType === 'department'
+    ) {
       // For offices/departments, ensure the name is descriptive
-      if (!name.toLowerCase().includes('office') && 
-          !name.toLowerCase().includes('department') && 
-          !name.toLowerCase().includes('team') &&
-          !name.toLowerCase().includes('support') &&
-          !name.toLowerCase().includes('sales')) {
+      if (
+        !name.toLowerCase().includes('office') &&
+        !name.toLowerCase().includes('department') &&
+        !name.toLowerCase().includes('team') &&
+        !name.toLowerCase().includes('support') &&
+        !name.toLowerCase().includes('sales')
+      ) {
         const suffix = extractedContact.contactType === 'office' ? ' Office' : ' Department';
         name = `${name}${suffix}`;
       }
@@ -137,8 +146,8 @@ export const ContactExtractionService = {
       contact.websiteUrl
     );
 
-    const isNamedIndividual = contact.contactType === 'individual' && 
-                              contact.name.split(' ').length >= 2; // Has first and last name
+    const isNamedIndividual =
+      contact.contactType === 'individual' && contact.name.split(' ').length >= 2; // Has first and last name
 
     return hasContactInfo || isNamedIndividual;
   },

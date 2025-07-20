@@ -394,10 +394,7 @@ export const createContact = async (
       leadId,
     };
 
-    const [createdContact] = await db
-      .insert(leadPointOfContacts)
-      .values(newContact)
-      .returning();
+    const [createdContact] = await db.insert(leadPointOfContacts).values(newContact).returning();
 
     if (!createdContact) {
       throw new Error('Failed to create contact');
