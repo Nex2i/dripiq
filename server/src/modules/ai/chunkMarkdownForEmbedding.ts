@@ -91,7 +91,7 @@ export function cleanMarkdown(pureMarkdown: string): string {
       // Remove images ![alt](url)
       .replace(/!\[.*?\]\(.*?\)/g, '')
       // Remove markdown social links: [text](url)
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, _text, url) => {
         return isSocialLink(url) ? '' : match;
       })
       // Remove plain social URLs (entire line if it's only a social URL)

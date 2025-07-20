@@ -1,9 +1,9 @@
-import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
+import { DynamicStructuredTool } from '@langchain/core/tools';
 import { sql, eq } from 'drizzle-orm';
+import z from 'zod';
 import db from '@/libs/drizzleClient';
 import { siteEmbeddings, siteEmbeddingDomains } from '@/db/schema';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
-import z from 'zod';
 
 const TOP_K = 10;
 

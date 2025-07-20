@@ -1,6 +1,5 @@
 import { TenantService } from '../tenant.service';
 import { siteAnalysisAgent } from './langchain';
-import { SiteAnalyzerDto, tenantSiteKey } from './siteAnalyzer.service';
 
 export const OrganizationAnalyzerService = {
   analyzeOrganization: async (tenantId: string, userId: string) => {
@@ -10,10 +9,10 @@ export const OrganizationAnalyzerService = {
       throw new Error('Organization website is required');
     }
 
-    const siteAnalyzerDto: SiteAnalyzerDto = {
-      storageKey: tenantSiteKey(id),
-      siteUrl: website,
-    };
+    // const siteAnalyzerDto: SiteAnalyzerDto = {
+    //   storageKey: tenantSiteKey(id),
+    //   siteUrl: website,
+    // };
 
     // const _siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
     const aiOutput = await siteAnalysisAgent.analyze(website.cleanWebsiteUrl());

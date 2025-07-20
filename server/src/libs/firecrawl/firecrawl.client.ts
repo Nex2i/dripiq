@@ -1,4 +1,4 @@
-import FirecrawlApp, { MapResponse } from '@mendable/firecrawl-js';
+import FirecrawlApp from '@mendable/firecrawl-js';
 import { createSignedJwt } from '../jwt';
 import { IUploadFile } from '../supabase.storage';
 import { PageData } from './firecrawl';

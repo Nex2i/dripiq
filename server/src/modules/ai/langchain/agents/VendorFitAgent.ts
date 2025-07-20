@@ -1,15 +1,15 @@
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
+import { DynamicStructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
+import { promptHelper } from '@/prompts/prompt.helper';
+import { logger } from '@/libs/logger';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import { promptHelper } from '@/prompts/prompt.helper';
 import vendorFitOutputSchema from '../../schemas/vendorFitOutputSchema';
 import vendorFitInputSchema from '../../schemas/vendorFitInputSchema';
-import { logger } from '@/libs/logger';
-import { z } from 'zod';
 import { getContentFromMessage } from '../utils/messageUtils';
 
 export type VendorFitResult = {
@@ -73,15 +73,10 @@ export class VendorFitAgent {
       let finalResponse = getContentFromMessage(result.output);
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.summarizePartialSteps(
-          result,
-          partnerInfo,
-          opportunityContext,
-          systemPrompt
-        );
+        finalResponse = await this.summarizePartialSteps(result, systemPrompt);
       }
 
-      const finalResponseParsed = parseWithSchema(finalResponse, partnerInfo, opportunityContext);
+      const finalResponseParsed = parseWithSchema(finalResponse, partnerInfo);
 
       return {
         finalResponse,
@@ -97,17 +92,12 @@ export class VendorFitAgent {
         }`,
         totalIterations: 1,
         functionCalls: [],
-        finalResponseParsed: getFallbackResult(partnerInfo, opportunityContext, error),
+        finalResponseParsed: getFallbackResult(partnerInfo, error),
       };
     }
   }
 
-  private async summarizePartialSteps(
-    result: any,
-    partnerInfo: any,
-    opportunityContext: string,
-    systemPrompt: string
-  ): Promise<string> {
+  private async summarizePartialSteps(result: any, systemPrompt: string): Promise<string> {
     const structuredModel = createChatModel({
       model: this.config.model,
     }).withStructuredOutput(z.toJSONSchema(vendorFitOutputSchema));
@@ -143,18 +133,18 @@ Return your answer as valid JSON matching the provided schema.
 }
 
 // -- Helpers --
-function parseWithSchema(content: string, partnerInfo: any, opportunityContext: string) {
+function parseWithSchema(content: string, partnerInfo: any) {
   try {
     // Remove markdown code fencing and whitespace if present
     const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
     return vendorFitOutputSchema.parse(JSON.parse(jsonText));
   } catch (error) {
     logger.warn('Parsing failed, returning fallback.', error);
-    return getFallbackResult(partnerInfo, opportunityContext, error);
+    return getFallbackResult(partnerInfo, error);
   }
 }
 
-function getFallbackResult(partnerInfo: any, opportunityContext: string, error: unknown) {
+function getFallbackResult(partnerInfo: any, error: unknown) {
   return {
     headline: 'Analysis Unavailable',
     subHeadline: 'Unable to complete vendor fit analysis',

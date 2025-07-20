@@ -1,8 +1,8 @@
 import { eq, desc } from 'drizzle-orm';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
-import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
 import db from '@/libs/drizzleClient';
 import { SiteEmbeddingDomain, siteEmbeddingDomains, siteEmbeddings } from '@/db';
+import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
 import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
 
 export const EmbeddingsService = {
