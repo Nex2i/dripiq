@@ -220,7 +220,7 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
     .notNull()
     .references(() => leads.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  email: text('email').notNull(),
+  email: text('email'), // Made nullable to allow contacts without email
   phone: text('phone'),
   title: text('title'), // Job title
   company: text('company'),

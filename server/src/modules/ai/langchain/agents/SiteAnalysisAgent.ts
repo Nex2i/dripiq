@@ -153,6 +153,5 @@ function getFallbackResult(domain: string, error: unknown) {
     differentiators: [],
     targetMarket: 'Unknown',
     tone: 'Unknown',
-    contacts: [],
   };
 }

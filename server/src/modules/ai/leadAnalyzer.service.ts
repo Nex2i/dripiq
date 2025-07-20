@@ -2,24 +2,41 @@ import { getLeadById, updateLead } from '../lead.service';
 import { siteAnalysisAgent } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
+import { ContactExtractionService } from './contactExtraction.service';
 
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
+    const domain = url.getDomain();
 
-    const aiOutput = await siteAnalysisAgent.analyze(url.getDomain());
+    // Run site analysis
+    const aiOutput = await siteAnalysisAgent.analyze(domain);
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');
     }
 
-    // save on lead
+    // Save site analysis results to lead
     await updateLead(tenantId, leadId, {
       summary: aiOutput.finalResponseParsed.summary,
       products: aiOutput.finalResponseParsed.products,
       services: aiOutput.finalResponseParsed.services,
       differentiators: aiOutput.finalResponseParsed.differentiators,
     });
+
+    // Extract and save contacts
+    try {
+      const contactResults = await ContactExtractionService.extractAndSaveContacts(
+        tenantId,
+        leadId,
+        domain
+      );
+      
+      console.log(`Contact extraction completed: ${contactResults.contactsCreated} contacts created`);
+    } catch (contactError) {
+      // Log contact extraction errors but don't fail the entire analysis
+      console.error('Contact extraction failed, but continuing with lead analysis:', contactError);
+    }
   },
   indexSite: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
