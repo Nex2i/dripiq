@@ -45,8 +45,7 @@ export const GetInformationAboutDomainTool = new DynamicStructuredTool({
 
       const domainId = domainRecord[0].id;
 
-      const queryEmbeddingResponse = await openAiEmbeddingClient.createEmbedding(queryText);
-      const queryEmbedding = queryEmbeddingResponse.data[0]?.embedding;
+      const queryEmbedding = await openAiEmbeddingClient.embedQuery(queryText);
 
       if (!queryEmbedding) {
         return JSON.stringify({

@@ -1,13 +1,7 @@
-import { Embeddings } from 'openai/resources/embeddings';
-import { openAiClient } from './openai.client';
+import { OpenAIEmbeddings } from '@langchain/openai';
 
-export const openAiEmbeddingClient = {
-  createEmbedding: async (text: string): Promise<Embeddings.CreateEmbeddingResponse> => {
-    const embedding = await openAiClient.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text,
-      encoding_format: 'float',
-    });
-    return embedding;
-  },
-};
+export const openAiEmbeddingClient = new OpenAIEmbeddings({
+  modelName: 'text-embedding-3-small',
+  openAIApiKey: process.env.OPENAI_API_KEY,
+  dimensions: 1536,
+});

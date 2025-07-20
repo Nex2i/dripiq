@@ -1,4 +1,4 @@
-import { DynamicStructuredTool, DynamicTool } from '@langchain/core/tools';
+import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, siteEmbeddings } from '@/db';

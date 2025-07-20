@@ -7,7 +7,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "install:all": "NODE_ENV=development npm install --legacy-peer-deps && NODE_ENV=production",
+    "install:all": "npm install",
     "prod": "npm run install:all && npm run lint && npm run db:deploy && npm run build",
     "staging": "npm run install:all && npm run lint && npm run db:deploy && npm run build",
     "dev": "npm run install:all && npm run clear:dist && npm run db:deploy && npm run nodemon",
@@ -55,7 +55,6 @@
     "humanloop": "^0.8.20",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.3.30",
-    "openai": "^5.8.2",
     "pino": "^9.7.0",
     "pino-pretty": "^13.0.0",
     "postgres": "^3.4.5",

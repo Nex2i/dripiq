@@ -1,8 +1,9 @@
+import { URL } from 'url';
 import { logger } from '@/libs/logger';
 import { promptHelper } from '@/prompts/prompt.helper';
 import z from 'zod';
-import { createChatModel } from './langchain/config/langchain.config';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
+import { createChatModel } from './langchain/config/langchain.config';
 
 export const SiteScrapeService = {
   scrapeSite: async (url: string, metadata: Record<string, any>) => {
@@ -25,7 +26,6 @@ export const SiteScrapeService = {
     const schema = z.object({
       urls: z.array(z.string()).describe('The filtered list of URLs'),
     });
-
     const chatModel = createChatModel({ model: 'gpt-4.1-mini' }).withStructuredOutput(
       z.toJSONSchema(schema)
     );

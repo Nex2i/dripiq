@@ -1,6 +1,6 @@
 import { eq, desc } from 'drizzle-orm';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
-import { openAiClient } from '@/libs/openai.client';
+import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
 import db from '@/libs/drizzleClient';
 import { SiteEmbeddingDomain, siteEmbeddingDomains, siteEmbeddings } from '@/db';
 import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
@@ -65,14 +65,14 @@ export const EmbeddingsService = {
     chunk: string
   ) => {
     const { title, description } = metadata;
-    const embedding = await openAiEmbeddingClient.createEmbedding(chunk);
+    const embedding = await openAiEmbeddingClient.embedQuery(chunk);
 
-    const summary = await openAiClient.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: 'Summarize the following text: \n' + chunk }],
-    });
+    const chatModel = createChatModel({ model: defaultLangChainConfig.model });
+    const summary = await chatModel.invoke([
+      { role: 'user', content: 'Summarize the following text: \n' + chunk },
+    ]);
 
-    if (!summary.choices[0]?.message.content) {
+    if (!summary.content) {
       throw new Error('Failed to get summary');
     }
 
@@ -84,8 +84,8 @@ export const EmbeddingsService = {
       slug,
       title: metadata.title,
       content: chunk,
-      contentSummary: summary.choices[0].message.content,
-      embedding: embedding.data[0]?.embedding,
+      contentSummary: summary.content as string,
+      embedding: embedding,
       chunkIndex,
       tokenCount: chunk.length,
       firecrawlId: metadata.firecrawlId,
