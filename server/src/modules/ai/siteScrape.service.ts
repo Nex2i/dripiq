@@ -1,9 +1,9 @@
 import { logger } from '@/libs/logger';
 import { promptHelper } from '@/prompts/prompt.helper';
 import z from 'zod';
-import { OpenAIClient } from './implementations/OpenAIClient';
-import { IAIMessage, IAIRequestOptions } from './interfaces/IAIClient';
+import { createChatModel } from './langchain/config/langchain.config';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export const SiteScrapeService = {
   scrapeSite: async (url: string, metadata: Record<string, any>) => {
@@ -27,34 +27,24 @@ export const SiteScrapeService = {
       urls: z.array(z.string()).describe('The filtered list of URLs'),
     });
 
-    const aiClient = new OpenAIClient();
+    const chatModel = createChatModel({ model: 'gpt-4.1-mini' }).withStructuredOutput(
+      zodToJsonSchema(schema)
+    );
 
     const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
       urls: siteMap.join('\n'),
-      output_schema: JSON.stringify(schema, null, 2),
+      output_schema: JSON.stringify(zodToJsonSchema(schema), null, 2),
       min_urls: minUrls.toString(),
       max_urls: maxUrls.toString(),
     });
 
-    const messages: IAIMessage[] = [
-      {
-        role: 'system',
-        content: initialPrompt,
-      },
-    ];
-
-    const options: IAIRequestOptions = {
-      model: 'gpt-4.1-mini',
-      responseFormat: {
-        type: 'json_object',
-        schema,
-      },
-    };
-
     try {
-      const response = await aiClient.generateResponse(messages, options);
-
-      const parsedResponse = JSON.parse(response.content ?? '[]');
+      const parsedResponse = await chatModel.invoke([
+        {
+          role: 'system',
+          content: initialPrompt,
+        },
+      ]);
 
       if (parsedResponse.urls.length < minUrls) {
         return siteMap;

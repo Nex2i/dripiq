@@ -1,5 +1,5 @@
 import { getLeadById, updateLead } from '../lead.service';
-import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { siteAnalysisAgent } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
 
@@ -7,7 +7,7 @@ export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
 
-    const aiOutput = await generalSiteReportService.summarizeSite(url.getDomain());
+    const aiOutput = await siteAnalysisAgent.analyze(url.getDomain());
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');
