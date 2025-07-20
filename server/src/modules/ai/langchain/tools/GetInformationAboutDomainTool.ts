@@ -9,20 +9,54 @@ const TOP_K = 10;
 
 export const GetInformationAboutDomainTool = new DynamicTool({
   name: 'GetInformationAboutDomainTool',
-  description: 'Searches for specific information within a domain using semantic similarity. Use this format: {"domain": "example.com", "queryText": "what you want to search for"}. Provide a domain and a query text to find the most relevant content from that domain. Returns the most relevant content chunks with similarity scores.',
+  description: 'Searches for specific information within a domain using semantic similarity. Requires two parameters: domain (the domain to search, e.g. "example.com") and queryText (what you want to search for). Returns the most relevant content chunks with similarity scores.',
   func: async (input: string) => {
     try {
-      let parsedInput;
-      try {
-        parsedInput = JSON.parse(input);
-      } catch {
-        return JSON.stringify({ error: 'Input must be valid JSON with domain and queryText fields. Example: {"domain": "example.com", "queryText": "search term"}' });
-      }
+      let domain: string;
+      let queryText: string;
 
-      const { domain, queryText } = parsedInput;
+      // Try to parse as JSON first
+      try {
+        const parsedInput = JSON.parse(input);
+        domain = parsedInput.domain;
+        queryText = parsedInput.queryText;
+      } catch {
+        // If JSON parsing fails, try to parse as LangChain tool call format
+        try {
+          // LangChain might pass tool arguments as a stringified object
+          const toolMatch = input.match(/GetInformationAboutDomainTool\(\s*({[^}]+})\s*\)/);
+          if (toolMatch) {
+            const argsJson = toolMatch[1];
+            const args = JSON.parse(argsJson);
+            domain = args.input || args.domain;
+            queryText = args.queryText;
+          } else {
+            // Try to extract domain and queryText from the input string
+            const lines = input.split('\n');
+            for (const line of lines) {
+              if (line.includes('input') || line.includes('domain')) {
+                const domainMatch = line.match(/"([^"]+)"/);
+                if (domainMatch) domain = domainMatch[1];
+              }
+              if (line.includes('queryText')) {
+                const queryMatch = line.match(/"([^"]+)"/);
+                if (queryMatch) queryText = queryMatch[1];
+              }
+            }
+          }
+        } catch {
+          return JSON.stringify({ 
+            error: 'Could not parse input. Expected format: {"domain": "example.com", "queryText": "search term"}',
+            receivedInput: input 
+          });
+        }
+      }
       
       if (!domain || !queryText) {
-        return JSON.stringify({ error: 'Both domain and queryText fields are required' });
+        return JSON.stringify({ 
+          error: 'Both domain and queryText are required',
+          received: { domain, queryText }
+        });
       }
 
       const cleanDomain = domain.getDomain();
