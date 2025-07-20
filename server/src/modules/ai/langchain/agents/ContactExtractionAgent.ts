@@ -4,21 +4,24 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
+import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import reportOutputSchema from '../../schemas/reportOutputSchema';
+import contactExtractionOutputSchema, {
+  ContactExtractionOutput,
+} from '../../schemas/contactExtractionSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
 
-export type SiteAnalysisResult = {
+export type ContactExtractionResult = {
   finalResponse: string;
-  finalResponseParsed: z.infer<typeof reportOutputSchema>;
+  finalResponseParsed: ContactExtractionOutput;
   totalIterations: number;
   functionCalls: any[];
 };
 
-export class SiteAnalysisAgent {
+export class ContactExtractionAgent {
   private agent: AgentExecutor;
   private config: LangChainConfig;
 
@@ -48,16 +51,13 @@ export class SiteAnalysisAgent {
       agent,
       maxIterations: config.maxIterations,
       tools,
-      verbose: false,
-      returnIntermediateSteps: true,
     });
   }
 
-  async analyze(domain: string): Promise<SiteAnalysisResult> {
-    const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-    const systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
+  async extractContacts(domain: string): Promise<ContactExtractionResult> {
+    const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
       domain,
-      output_schema: outputSchemaJson,
+      output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
     });
 
     try {
@@ -68,38 +68,39 @@ export class SiteAnalysisAgent {
       let finalResponse = getContentFromMessage(result.output);
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt);
+        finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt);
       }
 
-      const finalResponseParsed = parseWithSchema(finalResponse, domain);
+      const parsedResult = parseWithSchema(finalResponse, domain);
 
       return {
-        finalResponse,
-        finalResponseParsed,
+        finalResponse: result.output || 'Contact extraction completed',
+        finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
-        functionCalls: result.intermediateSteps ?? [],
+        functionCalls: result.intermediateSteps,
       };
     } catch (error) {
-      logger.error('Error in site analysis:', error);
+      logger.error('Contact extraction failed:', error);
+
+      // Return fallback result
+      const fallbackResult = getFallbackResult(domain, error);
       return {
-        finalResponse: `Error occurred during site analysis: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        totalIterations: 1,
+        finalResponse: `Contact extraction failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        finalResponseParsed: fallbackResult,
+        totalIterations: 0,
         functionCalls: [],
-        finalResponseParsed: getFallbackResult(domain, error),
       };
     }
   }
 
-  private async summarizePartialSteps(
-    result: any,
+  private async generateSummaryFromSteps(
     domain: string,
+    result: any,
     systemPrompt: string
   ): Promise<string> {
     const structuredModel = createChatModel({
       model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
+    }).withStructuredOutput(z.toJSONSchema(contactExtractionOutputSchema));
 
     const gatheredInfo = (result.intermediateSteps || [])
       .map((step: any) => {
@@ -110,13 +111,14 @@ export class SiteAnalysisAgent {
       .join('\n---\n');
 
     const summaryPrompt = `
-You are a website analysis expert. Based on the partial research conducted below, provide a comprehensive website analysis for ${domain}.
+You are a contact extraction expert. Based on the research conducted below, extract all available contact information for ${domain}.
+
 Research conducted so far:
 ${gatheredInfo}
 
 ${systemPrompt}
 
-Even though the research may be incomplete, provide the best possible analysis based on the available information.
+Even if the research is incomplete, extract all available contact information based on what was found.
 Return your answer as valid JSON matching the provided schema.
     `;
 
@@ -131,26 +133,22 @@ Return your answer as valid JSON matching the provided schema.
 }
 
 // -- Helpers --
-function parseWithSchema(content: string, domain: string) {
+function parseWithSchema(content: string, domain: string): ContactExtractionOutput {
   try {
     // Remove markdown code fencing and whitespace if present
     const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
-    return reportOutputSchema.parse(JSON.parse(jsonText));
+    return contactExtractionOutputSchema.parse(JSON.parse(jsonText));
   } catch (error) {
-    logger.warn('Parsing failed, returning fallback.', error);
+    logger.warn('Contact extraction parsing failed, returning fallback.', error);
     return getFallbackResult(domain, error);
   }
 }
 
-function getFallbackResult(domain: string, error: unknown) {
+function getFallbackResult(domain: string, error: unknown): ContactExtractionOutput {
   return {
-    summary: `Unable to analyze website ${domain} due to an error: ${
+    contacts: [],
+    summary: `Unable to extract contacts from ${domain} due to an error: ${
       error instanceof Error ? error.message : 'Unknown error'
     }`,
-    products: [],
-    services: [],
-    differentiators: [],
-    targetMarket: 'Unknown',
-    tone: 'Unknown',
   };
 }

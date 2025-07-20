@@ -59,10 +59,10 @@ const firecrawlClient = {
       urls,
       {
         formats: ['markdown'],
-        onlyMainContent: true,
+        onlyMainContent: false,
         parsePDF: false,
         maxAge: 14400000,
-        excludeTags: ['#ad', '#footer'],
+        excludeTags: ['#ad', 'header', 'footer'],
       },
       undefined,
       {

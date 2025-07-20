@@ -1,27 +1,26 @@
 const prompt = `
 You are given a list of URLs from a company's website.
 
-Your main goal is to **find all pages that contain contact information** for the company, its people, or its departments.
+Your goal is to select URLs most likely to contain **contact information** about the company, its team, departments, locations, or individual members.
 
-To do this, prioritize URLs that:
-- Contain segments like "/contact", "/team", "/staff", "/directory", "/people", "/employees", "/members", "/offices", "/locations", or similar.
-- Contain terms that indicate individual or group contact details (such as names, titles, roles, staff directories, profiles, departments, or office locations).
-- Match URL patterns likely to list or detail multiple people, such as "/team/**", "/staff/**", "/directory/**", "/people/**", "/members/**", or "/employees/**".
+Prioritize URLs that:
+- Include segments such as "/contact", "/team", "/staff", "/directory", "/people", "/employees", "/members", "/offices", "/locations".
+- Reference individual or departmental contact details (names, roles, titles, profiles, departments, locations).
+- Match patterns indicating lists or profiles of people, such as "/team/**", "/staff/**", "/directory/**", "/people/**", "/employees/**", or similar.
 
-**For professional services (like law firms, insurance agencies, consulting, accounting, real estate, and healthcare):**
-- Also prioritize URLs containing industry-specific patterns, such as "/attorney/", "/attorneys", "/lawyer/", "/lawyers", "/agent/", "/agents", "/advisor/", "/advisors", "/broker/", "/brokers", "/provider/", "/providers", "/doctor/", "/doctors", "/realtor/", "/realtors", or "/counselor/".
+Additionally, if the business belongs to professional services (law firms, insurance, consulting, accounting, real estate, healthcare), include URLs containing industry-specific terms like:
+- "/attorney/", "/lawyer/", "/agent/", "/advisor/", "/broker/", "/provider/", "/doctor/", "/realtor/", "/counselor/", and their plural forms.
 
-Select all URLs matching any of these criteria.
+If additional URLs are needed to reach {{min_urls}}, include URLs likely containing core business information (e.g., about, services, products, departments, company overview).
 
-If more URLs are needed to meet {{min_urls}}, then select those most likely to contain core business information (about, services, products, departments, divisions, or company overview).
-Do not pass the max URL count of {{max_urls}}.
+Do not exceed {{max_urls}} URLs but try to reach close to this maximum if relevant URLs are available.
 
 Given these URLs:
 {{urls}}
 
-Return at least {{min_urls}} URLs. If there are not enough, return as many as possible. If you find more, return more.
+Return at least {{min_urls}} URLs, but include as many relevant URLs as possible, up to {{max_urls}}.
 
-Output only a valid JSON array of strings containing the most relevant URLs, with contact and people/staff/industry-professional pages as the top priority.
+Output only a valid JSON array of strings, prioritizing contact pages, staff/team pages, and professional-industry-related URLs first.
 
 **Output Schema:**
 {{output_schema}}

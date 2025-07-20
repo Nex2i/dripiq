@@ -1,10 +1,12 @@
 import { SiteAnalysisAgent } from '../agents/SiteAnalysisAgent';
 import { VendorFitAgent } from '../agents/VendorFitAgent';
+import { ContactExtractionAgent } from '../agents/ContactExtractionAgent';
 import { defaultLangChainConfig } from '../config/langchain.config';
 
 // Create default agent instances
 export const siteAnalysisAgent = new SiteAnalysisAgent(defaultLangChainConfig);
 export const vendorFitAgent = new VendorFitAgent(defaultLangChainConfig);
+export const contactExtractionAgent = new ContactExtractionAgent(defaultLangChainConfig);
 
 // Factory functions
 export const createSiteAnalysisAgent = (config = defaultLangChainConfig) => {
@@ -13,4 +15,8 @@ export const createSiteAnalysisAgent = (config = defaultLangChainConfig) => {
 
 export const createVendorFitAgent = (config = defaultLangChainConfig) => {
   return new VendorFitAgent(config);
+};
+
+export const createContactExtractionAgent = (config = defaultLangChainConfig) => {
+  return new ContactExtractionAgent(config);
 };

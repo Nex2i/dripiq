@@ -368,3 +368,42 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
     throw error;
   }
 };
+
+/**
+ * Creates a new contact for a specific lead.
+ * @param tenantId - The ID of the tenant.
+ * @param leadId - The ID of the lead to create a contact for.
+ * @param contactData - The contact data to create.
+ * @returns A promise that resolves to the newly created contact.
+ */
+export const createContact = async (
+  tenantId: string,
+  leadId: string,
+  contactData: Omit<NewLeadPointOfContact, 'leadId'>
+): Promise<LeadPointOfContact> => {
+  try {
+    // Verify the lead exists and belongs to the tenant
+    const lead = await getLeadById(tenantId, leadId);
+    if (!lead) {
+      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
+    }
+
+    // Create the contact
+    const newContact: NewLeadPointOfContact = {
+      ...contactData,
+      leadId,
+    };
+
+    const [createdContact] = await db.insert(leadPointOfContacts).values(newContact).returning();
+
+    if (!createdContact) {
+      throw new Error('Failed to create contact');
+    }
+
+    logger.info(`Created contact ${createdContact.name} for lead ${leadId}`);
+    return createdContact;
+  } catch (error) {
+    logger.error('Error creating contact:', error);
+    throw error;
+  }
+};

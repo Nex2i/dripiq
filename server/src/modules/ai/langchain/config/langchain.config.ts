@@ -11,7 +11,7 @@ export interface LangChainConfig {
 export const defaultLangChainConfig: LangChainConfig = {
   model: 'gpt-4.1-mini',
   temperature: 0.8,
-  maxIterations: 10,
+  maxIterations: 20,
   timeout: 60000, // 60 seconds
 };
 

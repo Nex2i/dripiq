@@ -4,6 +4,7 @@ import db from '@/libs/drizzleClient';
 import { SiteEmbeddingDomain, siteEmbeddingDomains, siteEmbeddings } from '@/db';
 import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
 import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
+import { getContentFromMessage } from './langchain/utils/messageUtils';
 
 export const EmbeddingsService = {
   createFirecrawlSiteEmbedding: async (
@@ -62,18 +63,24 @@ export const EmbeddingsService = {
     domainId: string,
     chunkIndex: number,
     metadata: Record<string, any>,
-    chunk: string
+    chunk: string,
+    generateSummary: boolean = false
   ) => {
     const { title, description } = metadata;
     const embedding = await openAiEmbeddingClient.embedQuery(chunk);
 
-    const chatModel = createChatModel({ model: defaultLangChainConfig.model });
-    const summary = await chatModel.invoke([
-      { role: 'user', content: 'Summarize the following text: \n' + chunk },
-    ]);
+    let summary = '';
+    if (generateSummary) {
+      const chatModel = createChatModel({ model: defaultLangChainConfig.model });
+      const summaryResponse = await chatModel.invoke([
+        { role: 'user', content: 'Summarize the following text: \n' + chunk },
+      ]);
 
-    if (!summary.content) {
-      throw new Error('Failed to get summary');
+      if (!summaryResponse.content) {
+        throw new Error('Failed to get summary');
+      }
+
+      summary = getContentFromMessage(summaryResponse);
     }
 
     const slug = metadata.url.getUrlSlug();
@@ -84,7 +91,7 @@ export const EmbeddingsService = {
       slug,
       title: metadata.title,
       content: chunk,
-      contentSummary: summary.content as string,
+      contentSummary: summary,
       embedding: embedding,
       chunkIndex,
       tokenCount: chunk.length,
