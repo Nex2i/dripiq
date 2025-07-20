@@ -1,5 +1,5 @@
 import { getLeadById, updateLead } from '../lead.service';
-import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { generalSiteReportService } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
 

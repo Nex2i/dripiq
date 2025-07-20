@@ -1,5 +1,5 @@
 import { TenantService } from '../tenant.service';
-import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { generalSiteReportService } from './langchain';
 import { SiteAnalyzerDto, tenantSiteKey } from './siteAnalyzer.service';
 
 export const OrganizationAnalyzerService = {

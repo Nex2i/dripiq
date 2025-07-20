@@ -1,7 +1,7 @@
 import z from 'zod';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
-import { vendorFitReportService } from './reportGenerator/vendorFitReport.factory';
+import { vendorFitReportService } from './langchain';
 import vendorFitInputSchema from './schemas/vendorFitInputSchema';
 import vendorFitOutputSchema from './schemas/vendorFitOutputSchema';
 
@@ -13,9 +13,19 @@ export const LeadVendorFitService = {
     const opportunity = await LeadVendorFitService.getOpportunity(tenantId, leadId);
     const partner = await LeadVendorFitService.getPartner(tenantId);
 
+    const opportunityDescription = `
+Company: ${opportunity.domain}
+Summary: ${opportunity.summary}
+Products: ${opportunity.products.join(', ')}
+Services: ${opportunity.services.join(', ')}
+Target Market: ${opportunity.targetMarket}
+Differentiators: ${opportunity.differentiators.join(', ')}
+Tone: ${opportunity.tone}
+    `.trim();
+
     const vendorFitReport = await vendorFitReportService.generateVendorFitReport(
       partner,
-      opportunity
+      opportunityDescription
     );
 
     // TODO SAVE TO LEAD
