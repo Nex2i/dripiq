@@ -10,15 +10,14 @@ export interface LangChainConfig {
 
 export const defaultLangChainConfig: LangChainConfig = {
   model: 'gpt-4.1-mini',
-  temperature: 0.1,
-  maxTokens: 4000,
+  temperature: 0.8,
   maxIterations: 10,
   timeout: 60000, // 60 seconds
 };
 
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
   const finalConfig = { ...defaultLangChainConfig, ...config };
-  
+
   return new ChatOpenAI({
     model: finalConfig.model,
     temperature: finalConfig.temperature,

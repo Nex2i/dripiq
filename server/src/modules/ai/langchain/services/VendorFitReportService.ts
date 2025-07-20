@@ -24,45 +24,44 @@ export class VendorFitReportService {
   constructor(config: ReportConfig = {}) {
     this.config = {
       model: 'gpt-4.1-mini',
-      temperature: 0.1,
-      maxTokens: 4000,
+      temperature: 0.8,
       maxIterations: 10,
       timeout: 60000,
       ...config,
     };
-    
+
     this.agent = new VendorFitAgent(this.config);
   }
 
   async generateVendorFitReport(
     partnerInfo: z.infer<typeof vendorFitInputSchema>,
-    opportunityDescription: string = "potential business opportunity"
+    opportunityDescription: string = 'potential business opportunity'
   ): Promise<VendorFitResult> {
     try {
       logger.info(`Starting vendor fit analysis for domain: ${partnerInfo.domain}`);
-      
+
       // Use structured output with JSON schema
       const structuredOutputModel = createChatModel(this.config).withStructuredOutput(
         zodToJsonSchema(vendorFitOutputSchema)
       );
-      
+
       // First, get the analysis from the agent
       const analysisResult = await this.agent.analyzeVendorFit(partnerInfo, opportunityDescription);
-      
+
       logger.info('Agent vendor fit analysis completed, now generating structured output');
-      
+
       // Then format it into the required structure using the JSON schema
       let structuredResult;
       try {
         structuredResult = await structuredOutputModel.invoke([
           {
-            role: "system",
-            content: `You are a vendor fit report formatter. Take the following vendor fit analysis and format it into a structured JSON response that matches the provided schema. Create compelling, specific content about the partnership opportunity including headline, summary, products, services, differentiators, market alignment, brand tone match, and call-to-action.`
+            role: 'system',
+            content: `You are a vendor fit report formatter. Take the following vendor fit analysis and format it into a structured JSON response that matches the provided schema. Create compelling, specific content about the partnership opportunity including headline, summary, products, services, differentiators, market alignment, brand tone match, and call-to-action.`,
           },
           {
-            role: "user",
-            content: `Vendor Fit Analysis Results:\n\n${analysisResult}\n\nPartner Information:\n${JSON.stringify(partnerInfo, null, 2)}\n\nPlease format this into the required JSON structure for a vendor fit report.`
-          }
+            role: 'user',
+            content: `Vendor Fit Analysis Results:\n\n${analysisResult}\n\nPartner Information:\n${JSON.stringify(partnerInfo, null, 2)}\n\nPlease format this into the required JSON structure for a vendor fit report.`,
+          },
         ]);
 
         // Validate against schema
@@ -90,10 +89,9 @@ export class VendorFitReportService {
         functionCalls: [], // LangChain manages tool calls internally
         finalResponseParsed: structuredResult,
       };
-
     } catch (error) {
       logger.error('Error in vendor fit analysis:', error);
-      
+
       // Return a fallback response
       return {
         finalResponse: `Error occurred during vendor fit analysis: ${error instanceof Error ? error.message : 'Unknown error'}`,
