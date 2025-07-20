@@ -18,7 +18,8 @@ The AI system now uses LangChain's robust agent and tool calling infrastructure,
 - `langchain/config/langchain.config.ts` - Central configuration for LangChain models
 - Default model: `gpt-4.1-mini`
 - Configurable temperature, max tokens, iterations, and timeouts
-- Automatically uses OpenAI's Responses API when compatible features are used (tool calling, structured output)
+- **Responses API**: Explicitly configured with `useResponsesApi: true` to use OpenAI's modern Responses API
+- Ensures optimal performance for tool calling and structured output operations
 
 ### Prompts
 All prompts are now managed centrally in the `/prompts` directory:
