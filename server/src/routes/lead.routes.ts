@@ -213,7 +213,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // analyze lead
-        await LeadAnalyzerService.analyze(authenticatedRequest.tenantId, newLead.id);
+        // await LeadAnalyzerService.analyze(authenticatedRequest.tenantId, newLead.id);
 
         reply.status(201).send({
           message: 'Lead created successfully',

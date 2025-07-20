@@ -1,7 +1,7 @@
-import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { getLeadById, updateLead } from '../lead.service';
 import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
 import { EmbeddingsService } from './embeddings.service';
+import { SiteScrapeService } from './siteScrape.service';
 
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
@@ -35,8 +35,9 @@ export const LeadAnalyzerService = {
       type: 'lead_site',
     };
 
-    await firecrawlClient.crawlUrl(url.cleanWebsiteUrl(), metadata);
+    await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata);
   },
+
   wasLastScrapeTooRecent: async (url: string) => {
     const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
 

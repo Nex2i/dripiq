@@ -24,12 +24,11 @@ export default async function FirecrawlWebhookRoutes(
 ) {
   fastify.route({
     method: HttpMethods.POST,
-    url: `${basePath}/webhook/crawl`,
+    url: `${basePath}/webhook`,
     schema: {
       description: 'Firecrawl webhook endpoint for receiving crawl events',
       tags: ['Webhooks'],
       summary: 'Handle Firecrawl webhook events',
-      //   body: webhookEventSchema,
       response: {
         ...defaultRouteResponse(),
         200: webhookResponseSchema,
@@ -64,19 +63,19 @@ export default async function FirecrawlWebhookRoutes(
         const pageId = Guid();
 
         // Handle different event types
-        switch (type) {
-          case 'crawl.completed':
+        switch (type.split('.')[1]) {
+          case 'completed':
             await firecrawlJobStore.markComplete(id);
             await SiteAnalyzerService.completeFirecrawlCrawl(request.body);
             break;
 
-          case 'crawl.page':
+          case 'page':
             firecrawlJobStore.receivePage(id, pageId);
             await SiteAnalyzerService.analyzePageFromFirecrawl(request.body);
             firecrawlJobStore.completePage(id, pageId);
             break;
 
-          case 'crawl.failed':
+          case 'failed':
             logger.error(`Crawl job ${id} encountered an error`, { data });
             break;
 

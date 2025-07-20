@@ -1,12 +1,14 @@
 import { logger } from '@/libs/logger';
 import summarizeSite from './summarize_site.prompt';
 import vendorFit from './vendor_fit.prompt';
+import smartFilterSite from './smart_filter_site.prompt';
 
-export type PromptTypes = 'summarize_site' | 'vendor_fit';
+export type PromptTypes = 'summarize_site' | 'vendor_fit' | 'smart_filter_site';
 
 const prompts: Record<string, string> = {
   summarize_site: summarizeSite,
   vendor_fit: vendorFit,
+  smart_filter_site: smartFilterSite,
 };
 
 export const promptHelper = {
