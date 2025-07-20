@@ -59,6 +59,6 @@ export class GeneralSiteReportServiceFactory {
 // Export a default configured instance for backward compatibility
 export const generalSiteReportService = GeneralSiteReportServiceFactory.createDefault({
   maxIterations: 5,
-  model: 'gpt-4.1',
+  model: 'gpt-4.1-mini',
   enableWebSearch: false,
 });

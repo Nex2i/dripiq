@@ -1,6 +1,6 @@
 import { TenantService } from '../tenant.service';
 import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
-import { SiteAnalyzerDto, SiteAnalyzerService, tenantSiteKey } from './siteAnalyzer.service';
+import { SiteAnalyzerDto, tenantSiteKey } from './siteAnalyzer.service';
 
 export const OrganizationAnalyzerService = {
   analyzeOrganization: async (tenantId: string, userId: string) => {
@@ -22,7 +22,7 @@ export const OrganizationAnalyzerService = {
       throw new Error('AI output is required');
     }
     ``;
-    const { summary, products, services, differentiators, targetMarket, tone, brandColors } =
+    const { summary, products, services, differentiators, targetMarket, tone } =
       aiOutput.finalResponseParsed;
     // save on tenant
     await TenantService.updateTenant(userId, id, {
@@ -32,7 +32,6 @@ export const OrganizationAnalyzerService = {
       differentiators: differentiators,
       targetMarket: targetMarket,
       tone: tone,
-      brandColors: brandColors,
     });
   },
 };

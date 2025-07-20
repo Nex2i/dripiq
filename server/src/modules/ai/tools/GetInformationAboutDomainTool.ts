@@ -9,34 +9,28 @@ export class GetInformationAboutDomainTool implements ITool {
     return {
       name: 'GetInformationAboutDomainTool',
       description:
-        'Retrieves semantically relevant information about a given domain (e.g., acme.com) using vector similarity search. Searches an internal pgvector database of scraped and embedded web content for the most relevant matches to a given query.',
+        "Returns the most relevant pieces of content from a website by searching its embedded Markdown using vector similarity. Specify the domain (e.g., acme.com) and describe what you want to find in plain English. Results include the top N text chunks most related to your query. When to use: You want direct answers, facts, or summaries from a site's content (not just metadata or page lists).",
       parameters: {
         type: 'object',
         properties: {
           domain: {
             type: 'string',
-            description:
-              'The website domain to search for (e.g., example.com). This must be a valid domain present in the vector database.',
+            description: 'The root domain to search or list pages for. (e.g., acme.com)',
           },
           query_text: {
             type: 'string',
             description:
               'The natural language query used to find semantically similar content associated with the domain. Should be a well-formed sentence or paragraph describing what to look for.',
           },
-          top_k: {
-            type: 'number',
-            description: 'The number of top similar content chunks to return. Defaults to 10.',
-            default: 10,
-          },
         },
-        required: ['domain', 'query_text', 'top_k'],
+        required: ['domain', 'query_text'],
       },
     };
   }
 
   async execute(args: any): Promise<IToolResult> {
     try {
-      const { domain, query_text, top_k } = args;
+      const { domain, query_text } = args;
 
       if (!domain) {
         return {
@@ -52,14 +46,7 @@ export class GetInformationAboutDomainTool implements ITool {
         };
       }
 
-      if (!top_k) {
-        return {
-          success: false,
-          error: 'Top K is required',
-        };
-      }
-
-      const domainInfo: DomainInformation = await originalTool(domain, query_text, top_k);
+      const domainInfo: DomainInformation = await originalTool(domain, query_text);
 
       return {
         success: true,

@@ -1,7 +1,7 @@
 // src/libs/firecrawl/firecrawl.job.store.test.ts
-import { firecrawlJobStore } from './firecrawl.job.store';
 import { logger } from '../logger';
 import { Guid } from '../../utils/Guid';
+import { firecrawlJobStore } from './firecrawl.job.store';
 
 // Mock logger to check warning output
 jest.mock('../logger', () => ({

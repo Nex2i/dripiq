@@ -61,6 +61,8 @@ export default async function FirecrawlWebhookRoutes(
           return;
         }
 
+        const pageId = Guid();
+
         // Handle different event types
         switch (type) {
           case 'crawl.completed':
@@ -69,7 +71,6 @@ export default async function FirecrawlWebhookRoutes(
             break;
 
           case 'crawl.page':
-            const pageId = Guid();
             firecrawlJobStore.receivePage(id, pageId);
             await SiteAnalyzerService.analyzePageFromFirecrawl(request.body);
             firecrawlJobStore.completePage(id, pageId);

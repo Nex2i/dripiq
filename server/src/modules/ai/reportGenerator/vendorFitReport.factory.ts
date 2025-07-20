@@ -59,6 +59,6 @@ export class VendorFitReportServiceFactory {
 // Export a default configured instance for backward compatibility
 export const vendorFitReportService = VendorFitReportServiceFactory.createDefault({
   maxIterations: 5,
-  model: 'gpt-4.1',
+  model: 'gpt-4.1-mini',
   enableWebSearch: false,
 });

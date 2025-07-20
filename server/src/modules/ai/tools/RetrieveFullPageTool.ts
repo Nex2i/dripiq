@@ -9,7 +9,7 @@ export class RetrieveFullPageTool implements ITool {
     return {
       name: 'RetrieveFullPageTool',
       description:
-        'Fetches the HTML content from a given URL and converts it to clean Markdown format.',
+        'Downloads the HTML from any page URL, cleans and converts it to readable Markdown. Input the exact URL (e.g., https://acme.com/about). The output is the full text of the page, formatted and ready for processing or embedding. When to use: You need the actual page content as Markdown, either to review, or debug.',
       parameters: {
         type: 'object',
         properties: {
@@ -34,7 +34,7 @@ export class RetrieveFullPageTool implements ITool {
         };
       }
 
-      const fullPage: RetrieveFullPageToolResponse = await originalTool(url);
+      const fullPage: RetrieveFullPageToolResponse = await originalTool(url.cleanWebsiteUrl());
 
       return {
         success: true,

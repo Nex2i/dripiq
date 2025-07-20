@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
 import { openAiClient } from '@/libs/openai.client';
 import db from '@/libs/drizzleClient';
@@ -8,10 +8,10 @@ import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
 export const EmbeddingsService = {
   createFirecrawlSiteEmbedding: async (
     domain: SiteEmbeddingDomain,
-    markdown: string,
+    pureMarkdown: string,
     metadata: Record<string, any>
   ) => {
-    const chunks = chunkMarkdownForEmbedding(markdown);
+    const chunks = chunkMarkdownForEmbedding(pureMarkdown);
 
     await Promise.allSettled(
       chunks.map(async (chunk, chunkIndex) => {
@@ -48,7 +48,16 @@ export const EmbeddingsService = {
 
     return result;
   },
+  getDateOfLastDomainScrape: async (domain: string): Promise<Date | undefined> => {
+    const result = await db
+      .select({ scrapedAt: siteEmbeddingDomains.scrapedAt })
+      .from(siteEmbeddingDomains)
+      .where(eq(siteEmbeddingDomains.domain, domain))
+      .orderBy(desc(siteEmbeddingDomains.scrapedAt))
+      .limit(1);
 
+    return result[0]?.scrapedAt;
+  },
   embeddAndGetSummary: async (
     domainId: string,
     chunkIndex: number,
@@ -71,7 +80,7 @@ export const EmbeddingsService = {
 
     const embeddingDomain = await db.insert(siteEmbeddings).values({
       domainId,
-      url: metadata.url,
+      url: metadata.url.cleanWebsiteUrl(),
       slug,
       title: metadata.title,
       content: chunk,

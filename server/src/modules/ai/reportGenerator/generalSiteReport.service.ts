@@ -49,12 +49,12 @@ export class GeneralSiteReportService {
       {
         role: 'system',
         content:
-          'You are a helpful assistant that summarizes companies when provided their websites. \n' +
-          'Use the available tools to gather information about the domain and provide a comprehensive summary. \n' +
-          'For your final response you must return JSON. The JSON must be valid and match the schema provided.',
+          "You are a knowledgeable business analyst assistant. When given a company's website domain, your job is to extract and summarize all key information about the company. \n" +
+          'Use the available tools to search and gather detailed, relevant content about the domain, including company offerings, products, services, competitive differentiators, target market, company tone, brand colors, and all available contact information (emails, phone numbers, addresses, contact people, and their roles). \n' +
+          'Your final response must be a valid JSON object that strictly matches the provided schema. Do not include extra text or commentary—output only the JSON.',
       },
       {
-        role: 'user',
+        role: 'system',
         content: initialPrompt,
       },
     ];

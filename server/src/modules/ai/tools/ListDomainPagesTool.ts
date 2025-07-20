@@ -8,13 +8,14 @@ export class ListDomainPagesTool implements ITool {
   getDefinition(): IToolDefinition {
     return {
       name: 'ListDomainPagesTool',
-      description: 'Retrieves a list of all the pages on a domain that have been vectorized',
+      description:
+        'Lists all URLs on a website that have been scraped and embedded for semantic search. Provide the domain (e.g., acme.com). The tool returns every available page, ready for detailed querying. When to use: You want to see what parts of a site are available for semantic search, or need URLs for further querying.',
       parameters: {
         type: 'object',
         properties: {
           domain: {
             type: 'string',
-            description: 'The website domain to list pages for (e.g., example.com).',
+            description: 'The root domain to search or list pages for. (e.g., acme.com)',
           },
         },
         required: ['domain'],

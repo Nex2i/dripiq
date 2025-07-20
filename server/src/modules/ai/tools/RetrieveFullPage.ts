@@ -1,5 +1,4 @@
 import { eq } from 'drizzle-orm';
-import { Tool } from 'openai/resources/responses/responses';
 import { db, siteEmbeddings } from '@/db';
 
 export interface RetrieveFullPageToolResponse {

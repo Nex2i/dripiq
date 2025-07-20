@@ -12,21 +12,28 @@ const firecrawlClient = {
     const jwt = createSignedJwt(process.env.FIRECRAWL_API_KEY ?? '');
 
     const crawlResult = await app.asyncCrawlUrl(url, {
-      limit: 2,
+      limit: 50,
       allowExternalLinks: false,
       allowSubdomains: false,
       deduplicateSimilarURLs: true,
       ignoreQueryParameters: true,
       regexOnFullURL: true,
-      crawlEntireDomain: true,
       allowBackwardLinks: true,
       ignoreSitemap: true,
-      excludePaths: ['^/blog(?:/.*)?$', '^/support(?:/.*)?$'],
+      maxDepth: 3,
+      excludePaths: [
+        '^/blog(?:/.*)?$',
+        '^/support(?:/.*)?$',
+        '^/privacy(?:-policy)?(?:/.*)?$',
+        '^/terms(?:-of-(service|use|conditions))?(?:/.*)?$',
+        '^/(careers?|jobs)(?:/.*)?$',
+      ],
       scrapeOptions: {
         formats: ['markdown'],
         onlyMainContent: true,
         parsePDF: false,
         maxAge: 14400000,
+        excludeTags: ['#ad', '#footer'],
       },
       webhook: {
         url: `${apiUrl}/api/firecrawl/webhook/crawl`,
@@ -55,7 +62,7 @@ const firecrawlClient = {
       ),
       contentType: 'text/markdown',
       fileName: `${slug}.md`,
-      slug: slug,
+      slug: `${url.getDomain()}/${slug}`,
     };
   },
   cleanMetadata: (metadata: Record<string, any>) => {

@@ -9,7 +9,7 @@ const jobs: Record<string, JobData> = {};
 interface JobData {
   pages: Set<string>;
   completed: boolean;
-  timeout: NodeJS.Timeout | null;
+  timeout: any | null;
   _completionPromise?: Promise<void>;
 }
 

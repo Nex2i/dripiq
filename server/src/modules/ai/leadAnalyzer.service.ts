@@ -1,12 +1,13 @@
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { getLeadById, updateLead } from '../lead.service';
 import { generalSiteReportService } from './reportGenerator/generalSiteReport.factory';
+import { EmbeddingsService } from './embeddings.service';
 
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
 
-    const aiOutput = await generalSiteReportService.summarizeSite(url.cleanWebsiteUrl());
+    const aiOutput = await generalSiteReportService.summarizeSite(url.getDomain());
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');
@@ -18,11 +19,15 @@ export const LeadAnalyzerService = {
       products: aiOutput.finalResponseParsed.products,
       services: aiOutput.finalResponseParsed.services,
       differentiators: aiOutput.finalResponseParsed.differentiators,
-      brandColors: aiOutput.finalResponseParsed.brandColors,
     });
   },
   indexSite: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
+
+    if (await LeadAnalyzerService.wasLastScrapeTooRecent(url.getDomain())) {
+      await LeadAnalyzerService.analyze(tenantId, leadId);
+      return;
+    }
 
     const metadata = {
       leadId,
@@ -31,5 +36,15 @@ export const LeadAnalyzerService = {
     };
 
     await firecrawlClient.crawlUrl(url.cleanWebsiteUrl(), metadata);
+  },
+  wasLastScrapeTooRecent: async (url: string) => {
+    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
+
+    if (!lastScrape) {
+      return false;
+    }
+
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return lastScrape > oneWeekAgo;
   },
 };
