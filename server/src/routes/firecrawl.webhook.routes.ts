@@ -22,6 +22,65 @@ export default async function FirecrawlWebhookRoutes(
   fastify: FastifyInstance,
   _opts: RouteOptions
 ) {
+  // Debug endpoint to check job status
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/job/:jobId/status`,
+    schema: {
+      description: 'Get Firecrawl job status for debugging',
+      tags: ['Webhooks', 'Debug'],
+      summary: 'Get job processing status',
+      params: Type.Object({
+        jobId: Type.String({ description: 'The Firecrawl job ID' }),
+      }),
+      response: {
+        ...defaultRouteResponse(),
+        200: Type.Object({
+          jobId: Type.String(),
+          exists: Type.Boolean(),
+          status: Type.Optional(Type.Object({
+            receivedPages: Type.Number(),
+            processingPages: Type.Number(),
+            completed: Type.Boolean(),
+            hasTimeout: Type.Boolean(),
+          })),
+        }),
+        404: Type.Object({
+          error: Type.String(),
+          message: Type.String(),
+        }),
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: { jobId: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { jobId } = request.params;
+      const jobStatus = firecrawlJobStore.getJobStatus(jobId);
+
+      if (!jobStatus) {
+        reply.status(404).send({
+          error: 'Not Found',
+          message: `Job ${jobId} not found`,
+        });
+        return;
+      }
+
+      reply.status(200).send({
+        jobId,
+        exists: true,
+        status: {
+          receivedPages: jobStatus.receivedPages.size,
+          processingPages: jobStatus.processingPages.size,
+          completed: jobStatus.completed,
+          hasTimeout: jobStatus.timeout !== null,
+        },
+      });
+    },
+  });
+
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/webhook`,
