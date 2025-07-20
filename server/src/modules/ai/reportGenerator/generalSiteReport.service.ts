@@ -135,6 +135,7 @@ export class GeneralSiteReportService {
     let iteration = 0;
     let currentResponse: IAIResponse | null = null;
     const functionCallHistory: FunctionCallRecord[] = [];
+    const conversationHistory: IAIMessage[] = [...initialMessages]; // Track full conversation
 
     // First request
     const initialResult = await this.makeInitialRequest(initialMessages, options);
@@ -149,6 +150,15 @@ export class GeneralSiteReportService {
     currentResponse = initialResult.data;
     iteration++;
 
+    // Add assistant response to conversation history
+    if (currentResponse.content || currentResponse.toolCalls) {
+      conversationHistory.push({
+        role: 'assistant',
+        content: currentResponse.content || '',
+        toolCalls: currentResponse.toolCalls,
+      });
+    }
+
     while (iteration < this.config.maxIterations) {
       // Check if we have tool calls to execute
       if (currentResponse.toolCalls?.length) {
@@ -161,9 +171,19 @@ export class GeneralSiteReportService {
             options,
             iteration,
             functionCallHistory,
+            conversationHistory,
             toolResult.error
           );
         }
+
+        // Add tool call results to conversation history
+        toolResult.data.forEach((result) => {
+          conversationHistory.push({
+            role: 'tool',
+            content: result.result,
+            toolCallId: result.toolCallId,
+          });
+        });
 
         // Continue conversation with tool results
         const continueResult = await this.continueConversation(toolResult.data, options);
@@ -172,12 +192,22 @@ export class GeneralSiteReportService {
             options,
             iteration,
             functionCallHistory,
+            conversationHistory,
             continueResult.error
           );
         }
 
         currentResponse = continueResult.data;
         iteration++;
+
+        // Add assistant response to conversation history
+        if (currentResponse.content || currentResponse.toolCalls) {
+          conversationHistory.push({
+            role: 'assistant',
+            content: currentResponse.content || '',
+            toolCalls: currentResponse.toolCalls,
+          });
+        }
 
         // Check if this response has more tool calls
         if (!currentResponse.toolCalls?.length) {
@@ -208,7 +238,12 @@ export class GeneralSiteReportService {
     }
 
     // Max iterations reached - try to get a final summary
-    return await this.handleMaxIterationsReached(options, iteration, functionCallHistory);
+    return await this.handleMaxIterationsReached(
+      options,
+      iteration,
+      functionCallHistory,
+      conversationHistory
+    );
   }
 
   private async makeInitialRequest(
@@ -308,6 +343,7 @@ export class GeneralSiteReportService {
     options: IAIRequestOptions,
     iteration: number,
     functionCallHistory: FunctionCallRecord[],
+    conversationHistory: IAIMessage[],
     error: string
   ): Promise<ServiceResult<FunctionCallLoopResult<z.infer<typeof reportOutputSchema>>>> {
     logger.error(`Tool execution failed at iteration ${iteration}:`, error);
@@ -315,6 +351,7 @@ export class GeneralSiteReportService {
       options,
       iteration,
       functionCallHistory,
+      conversationHistory,
       'Tool execution failed'
     );
   }
@@ -323,6 +360,7 @@ export class GeneralSiteReportService {
     options: IAIRequestOptions,
     iteration: number,
     functionCallHistory: FunctionCallRecord[],
+    conversationHistory: IAIMessage[],
     error: string
   ): Promise<ServiceResult<FunctionCallLoopResult<z.infer<typeof reportOutputSchema>>>> {
     logger.error(`Conversation continuation failed at iteration ${iteration}:`, error);
@@ -330,6 +368,7 @@ export class GeneralSiteReportService {
       options,
       iteration,
       functionCallHistory,
+      conversationHistory,
       'Conversation continuation failed'
     );
   }
@@ -337,13 +376,15 @@ export class GeneralSiteReportService {
   private async handleMaxIterationsReached(
     options: IAIRequestOptions,
     iteration: number,
-    functionCallHistory: FunctionCallRecord[]
+    functionCallHistory: FunctionCallRecord[],
+    conversationHistory: IAIMessage[]
   ): Promise<ServiceResult<FunctionCallLoopResult<z.infer<typeof reportOutputSchema>>>> {
     logger.warn(`Maximum iterations (${this.config.maxIterations}) reached`);
     return await this.getFallbackResponse(
       options,
       iteration,
       functionCallHistory,
+      conversationHistory,
       'Maximum iterations reached'
     );
   }
@@ -352,13 +393,16 @@ export class GeneralSiteReportService {
     options: IAIRequestOptions,
     iteration: number,
     functionCallHistory: FunctionCallRecord[],
+    conversationHistory: IAIMessage[],
     reason: string
   ): Promise<ServiceResult<FunctionCallLoopResult<z.infer<typeof reportOutputSchema>>>> {
     try {
+      // Add a final request for summary to the existing conversation
       const finalMessages: IAIMessage[] = [
+        ...conversationHistory,
         {
           role: 'user',
-          content: 'Please provide a final summary based on all the information gathered so far.',
+          content: 'Please provide a final summary based on all the information gathered so far. Return the response in the required JSON format.',
         },
       ];
 
