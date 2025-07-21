@@ -22,13 +22,30 @@ Extract ALL available contact information from the company website, including:
 - **Title**: Job title for individuals OR department type for offices
 - **Contact Type**: Classify as 'individual', 'office', or 'department'
 - **Context**: Additional context like department, location, source page
+- **Is Priority Contact**: Mark as true ONLY for the single most important contact (see priority guidelines below)
 - **Address**: Physical address if available
 - **LinkedIn**: LinkedIn profile URL if available
 - **Website**: Personal or department website if available
 - **Source URL**: Page where information was found
 - **Confidence**: Rate confidence as 'high', 'medium', or 'low'
 
-**Prioritization:**
+**Priority Contact Selection:**
+You MUST identify the single most important contact for business engagement and mark them as the priority contact. Use this decision hierarchy:
+
+1. **Highest Priority**: C-level executives (CEO, CTO, CMO, etc.) with direct contact information
+2. **High Priority**: Department heads or VP-level contacts in relevant departments (Sales VP, Business Development Director, etc.)
+3. **Medium Priority**: Sales representatives, business development managers, or key account managers
+4. **Lower Priority**: General department contacts (sales@, info@) or support contacts
+5. **Lowest Priority**: Generic office numbers or info emails
+
+**Priority Contact Rules:**
+- Only ONE contact should be marked as isPriorityContact: true
+- If multiple high-priority contacts exist, choose the one most likely to handle business partnerships/sales
+- If no clear business contact exists, choose the highest-ranking executive
+- If only generic contacts exist, mark the most business-relevant one (e.g., sales@ over info@)
+- Set priorityContactId to the index (0-based) of the priority contact in your contacts array
+
+**Prioritization Guidelines:**
 1. **High Priority**: Named individuals with direct contact info (CEO, sales, support staff)
 2. **Medium Priority**: Department contacts with specific functions (sales@, support@)
 3. **Low Priority**: Generic contacts (info@, office numbers) - but still include them
@@ -43,6 +60,8 @@ Extract ALL available contact information from the company website, including:
 **Output Requirements:**
 - Return comprehensive results even if some fields are missing
 - Create contacts even with partial information (name only is acceptable)
+- Ensure exactly ONE contact is marked as isPriorityContact: true (or none if no contacts found)
+- Set priorityContactId to match the index of the priority contact
 - Include a summary of your extraction process and results
 - Ensure all data matches the provided JSON schema exactly
 

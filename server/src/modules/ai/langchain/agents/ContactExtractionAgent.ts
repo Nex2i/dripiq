@@ -147,6 +147,7 @@ function parseWithSchema(content: string, domain: string): ContactExtractionOutp
 function getFallbackResult(domain: string, error: unknown): ContactExtractionOutput {
   return {
     contacts: [],
+    priorityContactId: null,
     summary: `Unable to extract contacts from ${domain} due to an error: ${
       error instanceof Error ? error.message : 'Unknown error'
     }`,

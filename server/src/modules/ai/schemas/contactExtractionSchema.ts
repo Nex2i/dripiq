@@ -35,6 +35,11 @@ const extractedContactSchema = z.object({
       'Additional context like department, location, or source page (e.g., "About Us page", "Boston Office", "Customer Support")'
     ),
 
+  // Priority Information
+  isPriorityContact: z
+    .boolean()
+    .describe('True if this is the most important/primary contact for business engagement, false otherwise'),
+
   // Additional Information
   address: z.string().nullable().describe('Physical address if available, null if not found'),
   linkedinUrl: z
@@ -62,6 +67,10 @@ const contactExtractionOutputSchema = z.object({
     .describe(
       'Array of all extracted contact information, including both individuals and offices/departments'
     ),
+  priorityContactId: z
+    .number()
+    .nullable()
+    .describe('Index (0-based) of the most important contact in the contacts array, or null if no clear priority contact exists'),
   summary: z
     .string()
     .describe('Brief summary of contact extraction results and any notable findings'),

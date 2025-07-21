@@ -1,7 +1,7 @@
 import { compareTwoStrings } from 'string-similarity';
 import { eq } from 'drizzle-orm';
 import { logger } from '@/libs/logger';
-import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts } from '@/db/schema';
+import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts, leads } from '@/db/schema';
 import db from '@/libs/drizzleClient';
 import { createContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
@@ -28,6 +28,7 @@ export const ContactExtractionService = {
       }
 
       const contacts = extractionResult.finalResponseParsed.contacts;
+      const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
       logger.info(`Found ${contacts.length} contacts for domain: ${domain}`);
 
       // Get existing contacts for the lead
@@ -38,16 +39,24 @@ export const ContactExtractionService = {
         tenantId,
         leadId,
         contacts,
-        existingContacts
+        existingContacts,
+        priorityContactIndex
       );
 
       logger.info(
         `Successfully processed ${processedContacts.created} new and ${processedContacts.updated} updated contacts for leadId: ${leadId}`
       );
 
+      // Set primary contact if priority contact was identified
+      if (processedContacts.primaryContactId) {
+        await ContactExtractionService.updateLeadPrimaryContact(leadId, processedContacts.primaryContactId);
+        logger.info(`Set primary contact ${processedContacts.primaryContactId} for leadId: ${leadId}`);
+      }
+
       return {
         contactsCreated: processedContacts.created,
         contactsUpdated: processedContacts.updated,
+        primaryContactId: processedContacts.primaryContactId,
         summary: extractionResult.finalResponseParsed.summary,
         extractionResult,
         contacts: processedContacts.contacts,
@@ -57,6 +66,21 @@ export const ContactExtractionService = {
       throw new Error(
         `Contact extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+    }
+  },
+
+  /**
+   * Update the primary contact for a lead
+   */
+  updateLeadPrimaryContact: async (leadId: string, primaryContactId: string): Promise<void> => {
+    try {
+      await db
+        .update(leads)
+        .set({ primaryContactId })
+        .where(eq(leads.id, leadId));
+    } catch (error) {
+      logger.error('Error updating lead primary contact:', error);
+      throw error;
     }
   },
 
@@ -84,15 +108,18 @@ export const ContactExtractionService = {
     tenantId: string,
     leadId: string,
     extractedContacts: ExtractedContact[],
-    existingContacts: LeadPointOfContact[]
+    existingContacts: LeadPointOfContact[],
+    priorityContactIndex?: number | null
   ) => {
     const results = {
       created: 0,
       updated: 0,
       contacts: [] as LeadPointOfContact[],
+      primaryContactId: null as string | null,
     };
 
-    for (const extractedContact of extractedContacts) {
+    for (let i = 0; i < extractedContacts.length; i++) {
+      const extractedContact = extractedContacts[i];
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(extractedContact);
 
@@ -101,6 +128,8 @@ export const ContactExtractionService = {
           leadContact,
           existingContacts
         );
+
+        let contactId: string;
 
         if (similarContact) {
           // Merge and update existing contact
@@ -114,14 +143,28 @@ export const ContactExtractionService = {
           if (updatedContact) {
             results.updated++;
             results.contacts.push(updatedContact);
+            contactId = updatedContact.id;
             logger.debug(`Updated contact: ${extractedContact.name} for leadId: ${leadId}`);
+          } else {
+            continue;
           }
         } else {
           // Create new contact
           const createdContact = await createContact(tenantId, leadId, leadContact);
           results.created++;
           results.contacts.push(createdContact);
+          contactId = createdContact.id;
           logger.debug(`Created contact: ${extractedContact.name} for leadId: ${leadId}`);
+        }
+
+        // Check if this is the priority contact
+        if (
+          priorityContactIndex !== null &&
+          priorityContactIndex !== undefined &&
+          i === priorityContactIndex
+        ) {
+          results.primaryContactId = contactId;
+          logger.info(`Identified priority contact: ${extractedContact.name} (${contactId}) for leadId: ${leadId}`);
         }
       } catch (error) {
         logger.warn(
@@ -129,6 +172,18 @@ export const ContactExtractionService = {
           error
         );
         // Continue processing other contacts even if one fails
+      }
+    }
+
+    // Fallback: if no priority contact was explicitly identified, use the first contact with isPriorityContact=true
+    if (!results.primaryContactId && extractedContacts.length > 0) {
+      const priorityContact = extractedContacts.find(contact => contact.isPriorityContact);
+      if (priorityContact) {
+        const priorityIndex = extractedContacts.indexOf(priorityContact);
+        if (priorityIndex >= 0 && priorityIndex < results.contacts.length) {
+          results.primaryContactId = results.contacts[priorityIndex].id;
+          logger.info(`Fallback: Found priority contact by isPriorityContact flag: ${priorityContact.name} for leadId: ${leadId}`);
+        }
       }
     }
 
@@ -297,17 +352,30 @@ export const ContactExtractionService = {
   processAndSaveContacts: async (
     tenantId: string,
     leadId: string,
-    extractedContacts: ExtractedContact[]
+    extractedContacts: ExtractedContact[],
+    priorityContactIndex?: number | null
   ) => {
     const createdContacts = [];
+    let primaryContactId: string | null = null;
 
-    for (const contact of extractedContacts) {
+    for (let i = 0; i < extractedContacts.length; i++) {
+      const contact = extractedContacts[i];
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(contact);
 
         // Create the contact
         const createdContact = await createContact(tenantId, leadId, leadContact);
         createdContacts.push(createdContact);
+
+        // Check if this is the priority contact
+        if (
+          priorityContactIndex !== null &&
+          priorityContactIndex !== undefined &&
+          i === priorityContactIndex
+        ) {
+          primaryContactId = createdContact.id;
+          logger.info(`Identified priority contact: ${contact.name} (${createdContact.id}) for leadId: ${leadId}`);
+        }
 
         logger.debug(`Created contact: ${contact.name} for leadId: ${leadId}`);
       } catch (error) {
@@ -316,7 +384,25 @@ export const ContactExtractionService = {
       }
     }
 
-    return createdContacts;
+    // Fallback: if no priority contact was explicitly identified, use the first contact with isPriorityContact=true
+    if (!primaryContactId && extractedContacts.length > 0) {
+      const priorityContact = extractedContacts.find(contact => contact.isPriorityContact);
+      if (priorityContact) {
+        const priorityIndex = extractedContacts.indexOf(priorityContact);
+        if (priorityIndex >= 0 && priorityIndex < createdContacts.length) {
+          primaryContactId = createdContacts[priorityIndex].id;
+          logger.info(`Fallback: Found priority contact by isPriorityContact flag: ${priorityContact.name} for leadId: ${leadId}`);
+        }
+      }
+    }
+
+    // Set primary contact if identified
+    if (primaryContactId) {
+      await ContactExtractionService.updateLeadPrimaryContact(leadId, primaryContactId);
+      logger.info(`Set primary contact ${primaryContactId} for leadId: ${leadId}`);
+    }
+
+    return { contacts: createdContacts, primaryContactId };
   },
 
   /**
