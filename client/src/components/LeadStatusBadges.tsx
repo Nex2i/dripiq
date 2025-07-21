@@ -73,11 +73,11 @@ const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact =
         >
           <span className="text-xs">{getStatusIcon(mostImportantStatus.status)}</span>
           {mostImportantStatus.status}
-          {hasMultipleStatuses && (
-            <span className="ml-1 px-1 py-0.5 bg-black bg-opacity-20 rounded-full text-xs font-bold leading-none">
-              +{sortedStatuses.length - 1}
-            </span>
-          )}
+                     {hasMultipleStatuses && (
+             <span className="ml-1 px-1 py-0.5 bg-transparent rounded-full text-xs font-bold leading-none opacity-70">
+               +{sortedStatuses.length - 1}
+             </span>
+           )}
         </span>
         
         {hasMultipleStatuses && (
