@@ -125,25 +125,7 @@ const LeadsPage: React.FC = () => {
     })
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      new: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
-      contacted: 'bg-yellow-100 text-yellow-800',
-      qualified: 'bg-green-100 text-green-800',
-      lost: 'bg-red-100 text-red-800',
-    }
 
-    // Handle undefined, null, or empty status values
-    const displayStatus = status || 'new'
-
-    return (
-      <span
-        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[displayStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}
-      >
-        {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
-      </span>
-    )
-  }
 
   const getOwnerDisplay = (lead: Lead) => {
     // Find the owner user from the users list
@@ -292,7 +274,7 @@ const LeadsPage: React.FC = () => {
       {
         accessorKey: 'statuses',
         header: 'Status',
-        cell: (info) => <LeadStatusBadges statuses={info.row.original.statuses || []} />,
+        cell: (info) => <LeadStatusBadges statuses={info.row.original.statuses || []} compact />,
       },
       {
         accessorKey: 'ownerId',

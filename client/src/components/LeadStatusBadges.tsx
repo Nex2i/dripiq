@@ -3,6 +3,7 @@ import type { LeadStatus } from '../types/lead.types'
 
 interface LeadStatusBadgesProps {
   statuses: LeadStatus[]
+  compact?: boolean
 }
 
 const getStatusColor = (status: LeadStatus['status']) => {
@@ -39,15 +40,40 @@ const getStatusIcon = (status: LeadStatus['status']) => {
   }
 }
 
-const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses }) => {
+const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact = false }) => {
   if (!statuses || statuses.length === 0) {
-    return null
+    return <span className="text-gray-400 text-sm">No status</span>
   }
 
   // Sort statuses by creation date to show progression
   const sortedStatuses = [...statuses].sort((a, b) => 
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   )
+
+  if (compact) {
+    // For table view - show the most important status based on priority
+    const statusPriority = {
+      'Processed': 5,
+      'Extracting Contacts': 4,
+      'Analyzing Site': 3,
+      'Scraping Site': 2,
+      'New': 1
+    }
+    
+    const mostImportantStatus = sortedStatuses.reduce((prev, current) => 
+      statusPriority[current.status] > statusPriority[prev.status] ? current : prev
+    )
+    
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(mostImportantStatus.status)}`}
+        title={`All statuses: ${sortedStatuses.map(s => s.status).join(', ')}`}
+      >
+        <span className="text-xs">{getStatusIcon(mostImportantStatus.status)}</span>
+        {mostImportantStatus.status}
+      </span>
+    )
+  }
 
   return (
     <div className="flex flex-wrap gap-2">
