@@ -224,6 +224,7 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
   phone: text('phone'),
   title: text('title'), // Job title
   company: text('company'),
+  sourceUrl: text('source_url'), // URL where the contact information was found
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
