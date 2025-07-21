@@ -3,6 +3,7 @@ import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { EmbeddingsService } from './embeddings.service';
 import { LeadAnalyzerService } from './leadAnalyzer.service';
+import { updateLeadStatuses } from '../lead.service';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
@@ -42,6 +43,8 @@ export const SiteAnalyzerService = {
 
     switch (metadata.type) {
       case 'lead_site':
+        // Remove "Scraping Site" status when scraping is complete
+        await updateLeadStatuses(metadata.tenantId, metadata.leadId, [], ['Scraping Site']);
         LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
         break;
     }

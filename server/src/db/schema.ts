@@ -230,6 +230,26 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Lead Statuses table
+export const leadStatuses = appSchema.table('lead_statuses', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  leadId: text('lead_id')
+    .notNull()
+    .references(() => leads.id, { onDelete: 'cascade' }),
+  status: text('status')
+    .notNull()
+    .$type<'New' | 'Scraping Site' | 'Analyzing Site' | 'Extracting Contacts' | 'Processed'>(),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => [
+  unique('lead_status_unique').on(table.leadId, table.status)
+]);
+
 export const leadsRelations = relations(leads, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [leads.tenantId],
@@ -244,6 +264,7 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     references: [siteEmbeddingDomains.id],
   }),
   pointOfContacts: many(leadPointOfContacts),
+  statuses: many(leadStatuses),
   primaryContact: one(leadPointOfContacts, {
     fields: [leads.primaryContactId],
     references: [leadPointOfContacts.id],
@@ -254,6 +275,17 @@ export const leadPointOfContactsRelations = relations(leadPointOfContacts, ({ on
   lead: one(leads, {
     fields: [leadPointOfContacts.leadId],
     references: [leads.id],
+  }),
+}));
+
+export const leadStatusesRelations = relations(leadStatuses, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadStatuses.leadId],
+    references: [leads.id],
+  }),
+  tenant: one(tenants, {
+    fields: [leadStatuses.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -342,6 +374,8 @@ export type Lead = typeof leads.$inferSelect;
 export type NewLead = typeof leads.$inferInsert;
 export type LeadPointOfContact = typeof leadPointOfContacts.$inferSelect;
 export type NewLeadPointOfContact = typeof leadPointOfContacts.$inferInsert;
+export type LeadStatus = typeof leadStatuses.$inferSelect;
+export type NewLeadStatus = typeof leadStatuses.$inferInsert;
 export type SiteEmbedding = typeof siteEmbeddings.$inferSelect;
 export type NewSiteEmbedding = typeof siteEmbeddings.$inferInsert;
 export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;

@@ -22,6 +22,7 @@ import ContactsTab from '../components/tabs/ContactsTab'
 import AIDetailsTab from '../components/tabs/AIDetailsTab'
 import BrandingTab from '../components/tabs/BrandingTab'
 import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
+import LeadStatusBadges from '../components/LeadStatusBadges'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -245,7 +246,7 @@ const LeadDetailPage: React.FC = () => {
           <LeadDetailsTab
             status={lead.status}
             url={lead.url}
-            getStatusBadge={getStatusBadge}
+            statuses={lead.statuses}
           />
         )
       default:
@@ -299,11 +300,13 @@ const LeadDetailPage: React.FC = () => {
                     </a>
                   )}
                 </div>
+                <div className="mt-3">
+                  <LeadStatusBadges statuses={lead.statuses || []} />
+                </div>
                 <p className="mt-2 text-gray-600">Lead Details</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {getStatusBadge(lead.status)}
               <button
                 onClick={handleResync}
                 disabled={resyncLead.isPending}

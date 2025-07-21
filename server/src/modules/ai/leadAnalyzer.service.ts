@@ -1,4 +1,4 @@
-import { getLeadById, updateLead } from '../lead.service';
+import { getLeadById, updateLead, updateLeadStatuses } from '../lead.service';
 import { siteAnalysisAgent } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
@@ -9,10 +9,16 @@ export const LeadAnalyzerService = {
     const { url } = await getLeadById(tenantId, leadId);
     const domain = url.getDomain();
 
+    // Remove "New" status and add "Analyzing Site" status
+    await updateLeadStatuses(tenantId, leadId, ['Analyzing Site'], ['New']);
+
     await Promise.allSettled([
       LeadAnalyzerService.summarizeSite(tenantId, leadId, domain),
       LeadAnalyzerService.extractContacts(tenantId, leadId, domain),
     ]);
+
+    // Remove "Analyzing Site" status and add "Processed" status when complete
+    await updateLeadStatuses(tenantId, leadId, ['Processed'], ['Analyzing Site', 'Extracting Contacts']);
   },
   summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
     // Run site analysis
@@ -31,6 +37,9 @@ export const LeadAnalyzerService = {
     });
   },
   extractContacts: async (tenantId: string, leadId: string, domain: string) => {
+    // Add "Extracting Contacts" status
+    await updateLeadStatuses(tenantId, leadId, ['Extracting Contacts'], []);
+
     const contactResults = await ContactExtractionService.extractAndSaveContacts(
       tenantId,
       leadId,
@@ -45,6 +54,9 @@ export const LeadAnalyzerService = {
       await LeadAnalyzerService.analyze(tenantId, leadId);
       return;
     }
+
+    // Add "Scraping Site" status when starting to scrape
+    await updateLeadStatuses(tenantId, leadId, ['Scraping Site'], []);
 
     const metadata = {
       leadId,

@@ -19,6 +19,7 @@ import {
   useUsers,
 } from '../hooks/useLeadsQuery'
 import type { Lead } from '../services/leads.service'
+import LeadStatusBadges from '../components/LeadStatusBadges'
 
 // Define a simple fuzzy filter function (required by global module declaration)
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -289,9 +290,9 @@ const LeadsPage: React.FC = () => {
         ),
       },
       {
-        accessorKey: 'status',
+        accessorKey: 'statuses',
         header: 'Status',
-        cell: (info) => getStatusBadge(info.getValue() as string),
+        cell: (info) => <LeadStatusBadges statuses={info.row.original.statuses || []} />,
       },
       {
         accessorKey: 'ownerId',
