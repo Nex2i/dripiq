@@ -925,6 +925,4 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       }
     },
   });
-
-
 }

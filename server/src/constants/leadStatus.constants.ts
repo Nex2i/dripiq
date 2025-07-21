@@ -6,7 +6,7 @@ export const LEAD_STATUS = {
   PROCESSED: 'Processed',
 } as const;
 
-export type LeadStatusValue = typeof LEAD_STATUS[keyof typeof LEAD_STATUS];
+export type LeadStatusValue = (typeof LEAD_STATUS)[keyof typeof LEAD_STATUS];
 
 export const LEAD_STATUS_VALUES = Object.values(LEAD_STATUS);
 

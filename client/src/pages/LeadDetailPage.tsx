@@ -96,25 +96,6 @@ const LeadDetailPage: React.FC = () => {
     })
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      new: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
-      contacted: 'bg-yellow-100 text-yellow-800',
-      qualified: 'bg-green-100 text-green-800',
-      lost: 'bg-red-100 text-red-800',
-    }
-
-    const displayStatus = status || 'new'
-
-    return (
-      <span
-        className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${statusColors[displayStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}
-      >
-        {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
-      </span>
-    )
-  }
-
   const tabs = [
     {
       id: 'contacts',
@@ -296,7 +277,11 @@ const LeadDetailPage: React.FC = () => {
                       className="inline-flex items-center text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
                     >
                       <Globe className="h-5 w-5 mr-1" />
-                      <span className="text-lg">{lead.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                      <span className="text-lg">
+                        {lead.url
+                          .replace(/^https?:\/\//, '')
+                          .replace(/\/$/, '')}
+                      </span>
                     </a>
                   )}
                 </div>

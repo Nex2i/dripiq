@@ -9,11 +9,7 @@ interface LeadDetailsTabProps {
   statuses?: LeadStatus[]
 }
 
-const LeadDetailsTab: React.FC<LeadDetailsTabProps> = ({
-  status,
-  url,
-  statuses,
-}) => {
+const LeadDetailsTab: React.FC<LeadDetailsTabProps> = ({ url, statuses }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-6">
@@ -25,14 +21,16 @@ const LeadDetailsTab: React.FC<LeadDetailsTabProps> = ({
             <div className="flex items-center space-x-3">
               <User className="h-5 w-5 text-gray-400" />
               <div>
-                <p className="text-sm font-medium text-gray-900">Processing Status</p>
+                <p className="text-sm font-medium text-gray-900">
+                  Processing Status
+                </p>
                 <div className="mt-1">
                   <LeadStatusBadges statuses={statuses || []} />
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <Globe className="h-5 w-5 text-gray-400" />

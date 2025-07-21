@@ -231,23 +231,24 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
 });
 
 // Lead Statuses table
-export const leadStatuses = appSchema.table('lead_statuses', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  leadId: text('lead_id')
-    .notNull()
-    .references(() => leads.id, { onDelete: 'cascade' }),
-  status: text('status')
-    .notNull(),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  unique('lead_status_unique').on(table.leadId, table.status)
-]);
+export const leadStatuses = appSchema.table(
+  'lead_statuses',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    status: text('status').notNull(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique('lead_status_unique').on(table.leadId, table.status)]
+);
 
 export const leadsRelations = relations(leads, ({ one, many }) => ({
   tenant: one(tenants, {
