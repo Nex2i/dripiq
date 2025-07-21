@@ -9,7 +9,9 @@ interface LeadStatusBadgesProps {
 
 const getStatusColor = (status: LeadStatus['status']) => {
   switch (status) {
-    case LEAD_STATUS.NEW:
+    case LEAD_STATUS.UNPROCESSED:
+      return 'bg-gray-100 text-gray-800 border-gray-200'
+    case LEAD_STATUS.SYNCING_SITE:
       return 'bg-blue-100 text-blue-800 border-blue-200'
     case LEAD_STATUS.SCRAPING_SITE:
       return 'bg-yellow-100 text-yellow-800 border-yellow-200'
@@ -26,8 +28,10 @@ const getStatusColor = (status: LeadStatus['status']) => {
 
 const getStatusIcon = (status: LeadStatus['status']) => {
   switch (status) {
-    case LEAD_STATUS.NEW:
-      return '✨'
+    case LEAD_STATUS.UNPROCESSED:
+      return '⏳'
+    case LEAD_STATUS.SYNCING_SITE:
+      return '🔄'
     case LEAD_STATUS.SCRAPING_SITE:
       return '🔍'
     case LEAD_STATUS.ANALYZING_SITE:

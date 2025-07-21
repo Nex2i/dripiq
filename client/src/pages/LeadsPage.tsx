@@ -20,6 +20,7 @@ import {
 } from '../hooks/useLeadsQuery'
 import type { Lead } from '../types/lead.types'
 import LeadStatusBadges from '../components/LeadStatusBadges'
+import { LEAD_STATUS_DEFINITIONS, LEAD_STATUS_ORDERED } from '../constants/leadStatusDefinitions'
 
 // Define a simple fuzzy filter function (required by global module declaration)
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -59,6 +60,52 @@ function DebouncedInput({
       value={value}
       onChange={(e) => setValue(e.target.value)}
     />
+  )
+}
+
+// Status Header Component with Info Tooltip
+function StatusHeader() {
+  const [showTooltip, setShowTooltip] = React.useState(false)
+
+  return (
+    <div className="flex items-center gap-1">
+      <span>Status</span>
+      <div 
+        className="relative"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        <svg
+          className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        
+        {showTooltip && (
+          <div className="absolute z-50 top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-lg min-w-64 max-w-80">
+            <div className="font-semibold mb-2">Lead Status Definitions:</div>
+            <div className="space-y-1">
+              {LEAD_STATUS_ORDERED.map((status) => (
+                <div key={status} className="flex flex-col">
+                  <span className="font-medium text-gray-200">{status}:</span>
+                  <span className="text-gray-300 ml-2">{LEAD_STATUS_DEFINITIONS[status]}</span>
+                </div>
+              ))}
+            </div>
+            {/* Tooltip arrow */}
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -273,7 +320,7 @@ const LeadsPage: React.FC = () => {
       },
       {
         accessorKey: 'statuses',
-        header: 'Status',
+        header: () => <StatusHeader />,
         cell: (info) => <LeadStatusBadges statuses={info.row.original.statuses || []} compact />,
       },
       {
