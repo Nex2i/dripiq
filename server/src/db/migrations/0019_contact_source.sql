@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."lead_point_of_contacts" ADD COLUMN "source_url" text;

@@ -260,6 +260,10 @@ export const ContactExtractionService = {
       merged.company = newContact.company;
     }
 
+    if (newContact.sourceUrl && newContact.sourceUrl.trim() !== '') {
+      merged.sourceUrl = newContact.sourceUrl;
+    }
+
     // Always update the updatedAt timestamp
     merged.updatedAt = new Date();
 
@@ -362,6 +366,7 @@ export const ContactExtractionService = {
       phone: extractedContact.phone || null,
       title: title || null,
       company,
+      sourceUrl: extractedContact.sourceUrl || null,
     };
   },
 

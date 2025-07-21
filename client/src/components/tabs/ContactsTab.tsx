@@ -1,18 +1,10 @@
 import React from 'react'
-import { Users, User, Crown, Mail, Phone, Building } from 'lucide-react'
+import { Users, User, Crown, Mail, Phone, Building, ExternalLink } from 'lucide-react'
 import CopyButton from '../CopyButton'
-
-interface Contact {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  title?: string
-  company?: string
-}
+import type { LeadPointOfContact } from '../../services/leads.service'
 
 interface ContactsTabProps {
-  contacts: Contact[]
+  contacts: LeadPointOfContact[]
   primaryContactId?: string
 }
 
@@ -106,6 +98,26 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId })
                         <p className="text-sm font-medium text-gray-900">Company</p>
                         <p className="text-base text-gray-700">{contact.company}</p>
                       </div>
+                    </div>
+                  )}
+
+                  {contact.sourceUrl && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <ExternalLink className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Source</p>
+                          <a
+                            href={contact.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors underline"
+                          >
+                            View source page
+                          </a>
+                        </div>
+                      </div>
+                      <CopyButton text={contact.sourceUrl} label="source URL" />
                     </div>
                   )}
                 </div>

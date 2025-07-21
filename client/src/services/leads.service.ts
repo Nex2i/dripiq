@@ -8,6 +8,7 @@ export interface LeadPointOfContact {
   phone?: string
   title?: string
   company?: string
+  sourceUrl?: string
   createdAt: string
   updatedAt: string
 }
