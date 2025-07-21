@@ -9,18 +9,19 @@ import {
   ArrowLeft,
   Edit,
   Globe,
-  Mail,
-  Phone,
-  Building,
-  Calendar,
-  User,
-  Crown,
   Users,
   RefreshCw,
+  Info,
+  Palette,
+  Brain,
 } from 'lucide-react'
-import AIAnalysisSummary from '../components/AIAnalysisSummary'
-import BrandIdentity from '../components/BrandIdentity'
 import VendorFitModal from '../components/VendorFitModal'
+import Tabs from '../components/Tabs'
+import Tooltip from '../components/Tooltip'
+import ContactsTab from '../components/tabs/ContactsTab'
+import AIDetailsTab from '../components/tabs/AIDetailsTab'
+import BrandingTab from '../components/tabs/BrandingTab'
+import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -32,6 +33,7 @@ const LeadDetailPage: React.FC = () => {
   const [vendorFitMessage, setVendorFitMessage] = useState<string | null>(null)
   const [vendorFitModalOpen, setVendorFitModalOpen] = useState(false)
   const [vendorFitData, setVendorFitData] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState('contacts')
 
   const handleBack = () => {
     navigate({ to: '/leads' })
@@ -45,8 +47,6 @@ const LeadDetailPage: React.FC = () => {
     resyncLead.mutate(lead.id, {
       onSuccess: (result) => {
         setResyncMessage(result.message)
-
-        // Clear the message after 3 seconds
         setTimeout(() => {
           setResyncMessage(null)
         }, 3000)
@@ -54,8 +54,6 @@ const LeadDetailPage: React.FC = () => {
       onError: (error) => {
         console.error('Error resyncing lead:', error)
         setResyncMessage('Failed to resync lead')
-
-        // Clear the message after 3 seconds
         setTimeout(() => {
           setResyncMessage(null)
         }, 3000)
@@ -115,6 +113,29 @@ const LeadDetailPage: React.FC = () => {
       </span>
     )
   }
+
+  const tabs = [
+    {
+      id: 'contacts',
+      label: 'Contacts',
+      icon: <Users />,
+    },
+    {
+      id: 'ai-details',
+      label: 'AI Details',
+      icon: <Brain />,
+    },
+    {
+      id: 'branding',
+      label: 'Branding',
+      icon: <Palette />,
+    },
+    {
+      id: 'lead-details',
+      label: 'Lead Details',
+      icon: <Info />,
+    },
+  ]
 
   if (isLoading) {
     return (
@@ -186,9 +207,59 @@ const LeadDetailPage: React.FC = () => {
     )
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'contacts':
+        return (
+          <ContactsTab
+            contacts={lead.pointOfContacts || []}
+            primaryContactId={lead.primaryContactId}
+          />
+        )
+      case 'ai-details':
+        return (
+          <AIDetailsTab
+            data={lead}
+            entityName={lead.name}
+            entityType="lead"
+            onResync={handleResync}
+            isResyncing={resyncLead.isPending}
+          />
+        )
+      case 'branding':
+        return (
+          <BrandingTab
+            logo={lead.logo}
+            brandColors={lead.brandColors}
+            entityName={lead.name}
+            entityType="lead"
+            entityWebsite={lead.url}
+            onBrandColorsUpdate={(newBrandColors) => {
+              console.log('newBrandColors', newBrandColors)
+            }}
+          />
+        )
+      case 'lead-details':
+        return (
+          <LeadDetailsTab
+            status={lead.status}
+            url={lead.url}
+            getStatusBadge={getStatusBadge}
+          />
+        )
+      default:
+        return (
+          <ContactsTab
+            contacts={lead.pointOfContacts || []}
+            primaryContactId={lead.primaryContactId}
+          />
+        )
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -199,9 +270,35 @@ const LeadDetailPage: React.FC = () => {
             Back to Leads
           </button>
           <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{lead.name}</h1>
-              <p className="mt-2 text-gray-600">Lead Details</p>
+            <div className="flex items-center space-x-4">
+              <div>
+                <div className="flex items-center space-x-3">
+                  <Tooltip
+                    content={
+                      <div className="text-left">
+                        <div>Created: {formatDate(lead.createdAt)}</div>
+                        <div>Updated: {formatDate(lead.updatedAt)}</div>
+                      </div>
+                    }
+                  >
+                    <h1 className="text-3xl font-bold text-gray-900 cursor-help">
+                      {lead.name}
+                    </h1>
+                  </Tooltip>
+                  {lead.url && (
+                    <a
+                      href={lead.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                    >
+                      <Globe className="h-5 w-5 mr-1" />
+                      <span className="text-lg">{lead.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                    </a>
+                  )}
+                </div>
+                <p className="mt-2 text-gray-600">Lead Details</p>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               {getStatusBadge(lead.status)}
@@ -227,7 +324,6 @@ const LeadDetailPage: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  // TODO: Navigate to edit page when implemented
                   console.log('Edit lead:', lead.id)
                 }}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
@@ -239,7 +335,7 @@ const LeadDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Resync Message */}
+        {/* Messages */}
         {resyncMessage && (
           <div
             className={`mb-6 p-4 rounded-lg border ${
@@ -253,7 +349,6 @@ const LeadDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Vendor Fit Message */}
         {vendorFitMessage && (
           <div
             className={`mb-6 p-4 rounded-lg border ${
@@ -267,219 +362,10 @@ const LeadDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Manual Input Details */}
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Basic Information
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <User className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Lead Name
-                      </p>
-                      <p className="text-sm text-gray-500">{lead.name}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <Globe className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Website
-                      </p>
-                      <a
-                        href={lead.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                      >
-                        {lead.url}
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Created
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(lead.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Last Updated
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {formatDate(lead.updatedAt)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Brand Identity */}
-            <BrandIdentity
-              logo={lead.logo}
-              brandColors={lead.brandColors}
-              entityName={lead.name}
-              entityType="lead"
-              entityWebsite={lead.url}
-              onBrandColorsUpdate={(newBrandColors) => {
-                console.log('newBrandColors', newBrandColors)
-              }}
-            />
-
-            {/* Point of Contacts */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <Users className="h-5 w-5 text-gray-400 mr-2" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Point of Contacts
-                  </h2>
-                </div>
-
-                {!lead.pointOfContacts || lead.pointOfContacts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <User className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p>No contacts associated with this lead.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {lead.pointOfContacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <h3 className="text-sm font-medium text-gray-900">
-                              {contact.name}
-                            </h3>
-                            {lead.primaryContactId === contact.id && (
-                              <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <Crown className="h-3 w-3 mr-1" />
-                                Primary
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-center space-x-3">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            <div>
-                              <p className="text-xs font-medium text-gray-900">
-                                Email
-                              </p>
-                              <a
-                                href={`mailto:${contact.email}`}
-                                className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                              >
-                                {contact.email}
-                              </a>
-                            </div>
-                          </div>
-
-                          {contact.phone && (
-                            <div className="flex items-center space-x-3">
-                              <Phone className="h-4 w-4 text-gray-400" />
-                              <div>
-                                <p className="text-xs font-medium text-gray-900">
-                                  Phone
-                                </p>
-                                <a
-                                  href={`tel:${contact.phone}`}
-                                  className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                                >
-                                  {contact.phone}
-                                </a>
-                              </div>
-                            </div>
-                          )}
-
-                          {contact.title && (
-                            <div className="flex items-center space-x-3">
-                              <User className="h-4 w-4 text-gray-400" />
-                              <div>
-                                <p className="text-xs font-medium text-gray-900">
-                                  Title
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {contact.title}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {contact.company && (
-                            <div className="flex items-center space-x-3">
-                              <Building className="h-4 w-4 text-gray-400" />
-                              <div>
-                                <p className="text-xs font-medium text-gray-900">
-                                  Company
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {contact.company}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - AI Summary Details */}
-          <div className="space-y-6">
-            {/* AI Summary */}
-            <AIAnalysisSummary
-              data={lead}
-              entityName={lead.name}
-              entityType="lead"
-              isEditable={false}
-              onResync={handleResync}
-              isResyncing={resyncLead.isPending}
-            />
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Additional Information
-            </h2>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">
-                This lead was created on {formatDate(lead.createdAt)} and is
-                currently in "{lead.status}" status.
-                {lead.pointOfContacts &&
-                  lead.pointOfContacts.length > 0 &&
-                  ` It has ${lead.pointOfContacts.length} associated contact${lead.pointOfContacts.length > 1 ? 's' : ''}.`}
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Tabs */}
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab}>
+          {renderTabContent()}
+        </Tabs>
 
         {/* Vendor Fit Modal */}
         <VendorFitModal
