@@ -1,9 +1,9 @@
 export const LEAD_STATUS = {
   UNPROCESSED: 'Unprocessed',
-  SYNCING_SITE: 'Syncing site',
-  SCRAPING_SITE: 'Scraping site',
-  ANALYZING_SITE: 'Analyzing site',
-  EXTRACTING_CONTACTS: 'Extracting contacts',
+  SYNCING_SITE: 'Syncing Site',
+  SCRAPING_SITE: 'Scraping Site',
+  ANALYZING_SITE: 'Analyzing Site',
+  EXTRACTING_CONTACTS: 'Extracting Contacts',
   PROCESSED: 'Processed',
 } as const;
 
