@@ -42,7 +42,14 @@ const getStatusIcon = (status: LeadStatus['status']) => {
 
 const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact = false }) => {
   if (!statuses || statuses.length === 0) {
-    return <span className="text-gray-400 text-sm">No status</span>
+    return (
+      <span 
+        className="text-gray-400 text-sm" 
+        title="No status found - database migration may be needed"
+      >
+        No status
+      </span>
+    )
   }
 
   // Sort statuses by creation date to show progression

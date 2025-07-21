@@ -13,6 +13,7 @@ import {
   getLeadById,
   assignLeadOwner,
   toggleContactManuallyReviewed,
+  ensureAllLeadsHaveDefaultStatus,
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
@@ -920,6 +921,38 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to update contact manually reviewed status',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Fix existing leads route - ensure all leads have default status
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/fix-statuses`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Leads'],
+      summary: 'Fix Lead Statuses',
+      description: 'Ensure all leads have default statuses (useful after migration)',
+      response: {
+        200: Type.Object({
+          message: Type.String({ description: 'Success message' }),
+        }),
+        500: defaultRouteResponse,
+      },
+    },
+    handler: async (request: AuthenticatedRequest, reply) => {
+      try {
+        await ensureAllLeadsHaveDefaultStatus(request.tenantId);
+
+        reply.status(200).send({
+          message: 'Successfully ensured all leads have default statuses',
+        });
+      } catch (error: any) {
+        reply.status(500).send({
+          message: 'Failed to fix lead statuses',
           error: error.message,
         });
       }

@@ -38,10 +38,10 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
   const baseWhere = eq(leads.tenantId, tenantId);
 
   // Add search functionality if searchQuery is provided
-  let result;
+  let leadResults;
   if (searchQuery && searchQuery.trim()) {
     const searchTerm = `%${searchQuery.trim()}%`;
-    result = await db
+    leadResults = await db
       .select({
         // Lead fields
         id: leads.id,
@@ -66,7 +66,7 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
       .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
       .orderBy(desc(leads.createdAt));
   } else {
-    result = await db
+    leadResults = await db
       .select({
         // Lead fields
         id: leads.id,
@@ -91,6 +91,42 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
       .where(baseWhere)
       .orderBy(desc(leads.createdAt));
   }
+
+  // Get statuses for all leads in a single query for better performance
+  const leadIds = leadResults.map(lead => lead.id);
+  let allStatuses: any[] = [];
+  
+  if (leadIds.length > 0) {
+    try {
+      allStatuses = await db
+        .select()
+        .from(leadStatuses)
+        .where(and(
+          inArray(leadStatuses.leadId, leadIds),
+          eq(leadStatuses.tenantId, tenantId)
+        ))
+        .orderBy(leadStatuses.createdAt);
+    } catch (error) {
+      // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
+      logger.warn('Could not fetch lead statuses, this may be expected if migration has not been run yet:', error);
+      allStatuses = [];
+    }
+  }
+
+  // Group statuses by leadId
+  const statusesByLeadId = allStatuses.reduce((acc, status) => {
+    if (!acc[status.leadId]) {
+      acc[status.leadId] = [];
+    }
+    acc[status.leadId].push(status);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // Add statuses to each lead
+  const result = leadResults.map(lead => ({
+    ...lead,
+    statuses: statusesByLeadId[lead.id] || []
+  }));
 
   return result;
 };
@@ -550,7 +586,11 @@ export const hasStatus = async (
  */
 export const ensureDefaultStatus = async (tenantId: string, leadId: string): Promise<void> => {
   try {
-    const existingStatuses = await getLeadStatuses(tenantId, leadId);
+    const existingStatuses = await db
+      .select()
+      .from(leadStatuses)
+      .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
+      .limit(1);
     
     if (existingStatuses.length === 0) {
       await db.insert(leadStatuses).values({
@@ -563,7 +603,50 @@ export const ensureDefaultStatus = async (tenantId: string, leadId: string): Pro
     }
   } catch (error) {
     logger.error('Error ensuring default status:', error);
-    throw error;
+    // Don't throw error to avoid breaking lead operations if status table doesn't exist yet
+    logger.warn(`Could not ensure default status for lead ${leadId}, this may be expected if migration hasn't run yet`);
+  }
+};
+
+/**
+ * Helper function to add default statuses to all leads that don't have any
+ * This can be used for data migration or fixing existing leads
+ * @param tenantId - The ID of the tenant
+ * @returns A promise that resolves when all leads have default statuses
+ */
+export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise<void> => {
+  try {
+    // Get all leads for the tenant
+    const allLeads = await db
+      .select({ id: leads.id })
+      .from(leads)
+      .where(eq(leads.tenantId, tenantId));
+
+    // Get all existing statuses for this tenant
+    const existingStatuses = await db
+      .select({ leadId: leadStatuses.leadId })
+      .from(leadStatuses)
+      .where(eq(leadStatuses.tenantId, tenantId));
+
+    const leadsWithStatuses = new Set(existingStatuses.map(s => s.leadId));
+
+    // Find leads without any status
+    const leadsWithoutStatus = allLeads.filter(lead => !leadsWithStatuses.has(lead.id));
+
+    if (leadsWithoutStatus.length > 0) {
+      // Create default statuses for leads without any
+      const defaultStatuses = leadsWithoutStatus.map(lead => ({
+        leadId: lead.id,
+        tenantId,
+        status: 'New' as const,
+      }));
+
+      await db.insert(leadStatuses).values(defaultStatuses);
+      logger.info(`Added default "New" status to ${leadsWithoutStatus.length} leads`);
+    }
+  } catch (error) {
+    logger.error('Error ensuring all leads have default status:', error);
+    // Don't throw to avoid breaking the application
   }
 };
 
