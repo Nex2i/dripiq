@@ -443,9 +443,9 @@ export const toggleContactManuallyReviewed = async (
     // Update the contact's manually reviewed status
     const [updatedContact] = await db
       .update(leadPointOfContacts)
-      .set({ 
+      .set({
         manuallyReviewed: manuallyReviewed,
-        updatedAt: new Date() 
+        updatedAt: new Date(),
       })
       .where(eq(leadPointOfContacts.id, contactId))
       .returning();

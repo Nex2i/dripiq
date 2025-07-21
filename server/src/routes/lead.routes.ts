@@ -813,7 +813,9 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         contactId: Type.String({ description: 'Contact ID' }),
       }),
       body: Type.Object({
-        manuallyReviewed: Type.Boolean({ description: 'Whether the contact has been manually reviewed' }),
+        manuallyReviewed: Type.Boolean({
+          description: 'Whether the contact has been manually reviewed',
+        }),
       }),
       tags: ['Leads'],
       summary: 'Toggle Contact Manually Reviewed Status',
@@ -889,7 +891,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        if (error.message?.includes('Lead not found') || error.message?.includes('Contact not found')) {
+        if (
+          error.message?.includes('Lead not found') ||
+          error.message?.includes('Contact not found')
+        ) {
           reply.status(404).send({
             message: 'Lead or contact not found',
             error: error.message,
