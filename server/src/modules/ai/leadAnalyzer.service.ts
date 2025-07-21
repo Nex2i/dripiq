@@ -9,18 +9,22 @@ export const LeadAnalyzerService = {
     const { url } = await getLeadById(tenantId, leadId);
     const domain = url.getDomain();
 
-    // Remove "New" status and add "Analyzing Site" status
-    await updateLeadStatuses(tenantId, leadId, ['Analyzing Site'], ['New']);
-
     await Promise.allSettled([
       LeadAnalyzerService.summarizeSite(tenantId, leadId, domain),
       LeadAnalyzerService.extractContacts(tenantId, leadId, domain),
     ]);
 
     // Remove "Analyzing Site" status and add "Processed" status when complete
-    await updateLeadStatuses(tenantId, leadId, ['Processed'], ['Analyzing Site', 'Extracting Contacts']);
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      ['Processed'],
+      ['Analyzing Site', 'Extracting Contacts']
+    );
   },
   summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
+    await updateLeadStatuses(tenantId, leadId, ['Analyzing Site'], ['New']);
+
     // Run site analysis
     const aiOutput = await siteAnalysisAgent.analyze(domain);
 
