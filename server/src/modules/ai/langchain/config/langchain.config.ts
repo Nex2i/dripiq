@@ -37,46 +37,55 @@ class ChatOpenAIWithFallback extends ChatOpenAI {
     for (let i = this.currentModelIndex; i < this.fallbackModels.length; i++) {
       try {
         // Update the model name for this attempt
-        this.model = this.fallbackModels[i];
-        
+        this.model = this.getFallbackModel(i);
+
         if (i > this.currentModelIndex) {
           console.log(`[LangChain] Trying fallback model: ${this.model}`);
         } else if (i === 0) {
           console.log(`[LangChain] Using primary model: ${this.model}`);
         }
-        
+
         const result = await super.invoke(input, options);
-        
+
         // If successful, remember this model for future calls
         if (i > this.currentModelIndex) {
           console.log(`[LangChain] Successfully using fallback model: ${this.model}`);
           this.currentModelIndex = i;
         }
-        
+
         return result;
       } catch (error: any) {
         const errorMessage = error?.message || error?.toString() || 'Unknown error';
-        
+
         // Check if it's a model not found error (404) or other model availability issues
-        if (errorMessage.includes('404') || 
-            errorMessage.includes('Model not found') || 
-            errorMessage.includes('model_not_found') ||
-            errorMessage.includes('does not exist') ||
-            errorMessage.includes('invalid_request_error') ||
-            error?.status === 404 ||
-            error?.code === 'model_not_found') {
-          console.warn(`[LangChain] Model ${this.fallbackModels[i]} not available (404), trying next fallback...`);
-          
+        if (
+          errorMessage.includes('404') ||
+          errorMessage.includes('Model not found') ||
+          errorMessage.includes('model_not_found') ||
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('invalid_request_error') ||
+          error?.status === 404 ||
+          error?.code === 'model_not_found'
+        ) {
+          console.warn(
+            `[LangChain] Model ${this.fallbackModels[i]} not available (404), trying next fallback...`
+          );
+
           // If this is the last model, throw the error
           if (i === this.fallbackModels.length - 1) {
-            throw new Error(`[LangChain] All fallback models failed: ${this.fallbackModels.join(', ')}. Last error: ${errorMessage}`);
+            throw new Error(
+              `[LangChain] All fallback models failed: ${this.fallbackModels.join(', ')}. Last error: ${errorMessage}`
+            );
           }
-          
+
           continue; // Try next model
         }
-        
+
         // If it's not a model availability issue, don't try fallbacks
-        console.error(`[LangChain] Error with model ${this.fallbackModels[i]} (not a 404):`, errorMessage);
+        console.error(
+          `[LangChain] Error with model ${this.fallbackModels[i]} (not a 404):`,
+          errorMessage
+        );
         throw error;
       }
     }
@@ -86,40 +95,49 @@ class ChatOpenAIWithFallback extends ChatOpenAI {
     // For streaming, we'll use the same fallback logic
     for (let i = this.currentModelIndex; i < this.fallbackModels.length; i++) {
       try {
-        this.model = this.fallbackModels[i];
-        
+        this.model = this.getFallbackModel(i);
+
         if (i > this.currentModelIndex) {
           console.log(`[LangChain] Trying fallback model for streaming: ${this.model}`);
         }
-        
+
         const result = await super.stream(input, options);
-        
+
         if (i > this.currentModelIndex) {
           console.log(`[LangChain] Successfully using fallback model for streaming: ${this.model}`);
           this.currentModelIndex = i;
         }
-        
+
         return result;
       } catch (error: any) {
         const errorMessage = error?.message || error?.toString() || 'Unknown error';
-        
-        if (errorMessage.includes('404') || 
-            errorMessage.includes('Model not found') || 
-            errorMessage.includes('model_not_found') ||
-            errorMessage.includes('does not exist') ||
-            errorMessage.includes('invalid_request_error') ||
-            error?.status === 404 ||
-            error?.code === 'model_not_found') {
-          console.warn(`[LangChain] Model ${this.fallbackModels[i]} not available for streaming (404), trying next fallback...`);
-          
+
+        if (
+          errorMessage.includes('404') ||
+          errorMessage.includes('Model not found') ||
+          errorMessage.includes('model_not_found') ||
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('invalid_request_error') ||
+          error?.status === 404 ||
+          error?.code === 'model_not_found'
+        ) {
+          console.warn(
+            `[LangChain] Model ${this.fallbackModels[i]} not available for streaming (404), trying next fallback...`
+          );
+
           if (i === this.fallbackModels.length - 1) {
-            throw new Error(`[LangChain] All fallback models failed for streaming: ${this.fallbackModels.join(', ')}. Last error: ${errorMessage}`);
+            throw new Error(
+              `[LangChain] All fallback models failed for streaming: ${this.fallbackModels.join(', ')}. Last error: ${errorMessage}`
+            );
           }
-          
+
           continue;
         }
-        
-        console.error(`[LangChain] Error with model ${this.fallbackModels[i]} for streaming (not a 404):`, errorMessage);
+
+        console.error(
+          `[LangChain] Error with model ${this.fallbackModels[i]} for streaming (not a 404):`,
+          errorMessage
+        );
         throw error;
       }
     }
@@ -129,43 +147,60 @@ class ChatOpenAIWithFallback extends ChatOpenAI {
     // Legacy method support with fallback
     for (let i = this.currentModelIndex; i < this.fallbackModels.length; i++) {
       try {
-        this.model = this.fallbackModels[i];
-        
+        this.model = this.getFallbackModel(i);
+
         if (i > this.currentModelIndex) {
           console.log(`[LangChain] Trying fallback model for call: ${this.model}`);
         }
-        
+
         const result = await super.call(messages, options);
-        
+
         if (i > this.currentModelIndex) {
           console.log(`[LangChain] Successfully using fallback model for call: ${this.model}`);
           this.currentModelIndex = i;
         }
-        
+
         return result;
       } catch (error: any) {
         const errorMessage = error?.message || error?.toString() || 'Unknown error';
-        
-        if (errorMessage.includes('404') || 
-            errorMessage.includes('Model not found') || 
-            errorMessage.includes('model_not_found') ||
-            errorMessage.includes('does not exist') ||
-            errorMessage.includes('invalid_request_error') ||
-            error?.status === 404 ||
-            error?.code === 'model_not_found') {
-          console.warn(`[LangChain] Model ${this.fallbackModels[i]} not available for call (404), trying next fallback...`);
-          
+
+        if (
+          errorMessage.includes('404') ||
+          errorMessage.includes('Model not found') ||
+          errorMessage.includes('model_not_found') ||
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('invalid_request_error') ||
+          error?.status === 404 ||
+          error?.code === 'model_not_found'
+        ) {
+          console.warn(
+            `[LangChain] Model ${this.fallbackModels[i]} not available for call (404), trying next fallback...`
+          );
+
           if (i === this.fallbackModels.length - 1) {
-            throw new Error(`[LangChain] All fallback models failed for call: ${this.fallbackModels.join(', ')}. Last error: ${errorMessage}`);
+            throw new Error(
+              `[LangChain] All fallback models failed for call: ${this.fallbackModels.join(', ')}. Last error: ${errorMessage}`
+            );
           }
-          
+
           continue;
         }
-        
-        console.error(`[LangChain] Error with model ${this.fallbackModels[i]} for call (not a 404):`, errorMessage);
+
+        console.error(
+          `[LangChain] Error with model ${this.fallbackModels[i]} for call (not a 404):`,
+          errorMessage
+        );
         throw error;
       }
     }
+  }
+
+  getFallbackModel(index: number): string {
+    const fallbackModel = this.fallbackModels[index];
+    if (!fallbackModel) {
+      throw new Error(`Fallback model not found at index ${index}`);
+    }
+    return fallbackModel;
   }
 }
 
@@ -184,8 +219,6 @@ export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpen
     fallbackModels: MODEL_FALLBACKS,
   });
 }
-
-
 
 export interface ReportConfig {
   maxIterations?: number;
