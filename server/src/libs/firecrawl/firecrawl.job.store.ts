@@ -26,22 +26,26 @@ function receivePage(jobId: string, pageId: string) {
       timeout: null,
     };
   }
-  
+
   const job = jobs[jobId];
   job.receivedPages.add(pageId);
   job.processingPages.add(pageId);
-  
-  logger.debug(`Job ${jobId}: Received page ${pageId}. Received: ${job.receivedPages.size}, Processing: ${job.processingPages.size}`);
+
+  logger.debug(
+    `Job ${jobId}: Received page ${pageId}. Received: ${job.receivedPages.size}, Processing: ${job.processingPages.size}`
+  );
 }
 
 function completePage(jobId: string, pageId: string) {
   const job = jobs[jobId];
   if (!job) return;
-  
+
   job.processingPages.delete(pageId);
-  
-  logger.debug(`Job ${jobId}: Completed page ${pageId}. Received: ${job.receivedPages.size}, Processing: ${job.processingPages.size}`);
-  
+
+  logger.debug(
+    `Job ${jobId}: Completed page ${pageId}. Received: ${job.receivedPages.size}, Processing: ${job.processingPages.size}`
+  );
+
   // Only cleanup if job is marked complete AND all pages are done processing
   if (job.completed && job.processingPages.size === 0) {
     // If there's a completion promise waiting, resolve it immediately
@@ -61,8 +65,10 @@ function markComplete(jobId: string): Promise<void> {
   if (!job) return Promise.resolve();
 
   job.completed = true;
-  
-  logger.debug(`Job ${jobId}: Marked complete. Received: ${job.receivedPages.size}, Processing: ${job.processingPages.size}`);
+
+  logger.debug(
+    `Job ${jobId}: Marked complete. Received: ${job.receivedPages.size}, Processing: ${job.processingPages.size}`
+  );
 
   if (job._completionPromise) {
     return job._completionPromise;
@@ -72,15 +78,15 @@ function markComplete(jobId: string): Promise<void> {
 
   job._completionPromise = new Promise((resolve) => {
     job._completionResolve = resolve;
-    
+
     const poll = () => {
       // Check if job was deleted (resolved externally)
       if (!jobs[jobId]) {
         return;
       }
-      
+
       const elapsed = Date.now() - startTime;
-      
+
       // Job is complete when all processing pages are done
       if (job.processingPages.size === 0) {
         logger.debug(`Job ${jobId}: All pages completed. Cleaning up.`);
@@ -89,7 +95,7 @@ function markComplete(jobId: string): Promise<void> {
         if (resolve) resolve();
         return;
       }
-      
+
       if (elapsed >= MAX_WAIT_MS) {
         logger.warn(
           `Timeout reached for job ${jobId}. Forcing completion with ${job.processingPages.size} pages still processing (${job.receivedPages.size} total received).`
@@ -99,7 +105,7 @@ function markComplete(jobId: string): Promise<void> {
         if (resolve) resolve();
         return;
       }
-      
+
       job.timeout = setTimeout(poll, JOB_TIMEOUT_MS);
     };
     poll();

@@ -3,13 +3,11 @@ import { logger } from '../logger';
 import { Guid } from '../../utils/Guid';
 import { firecrawlJobStore } from './firecrawl.job.store';
 
-const JOB_TIMEOUT_MS = 2500;
-
 // Mock logger to check warning output
 jest.mock('../logger', () => ({
-  logger: { 
-    warn: jest.fn(), 
-    debug: jest.fn() 
+  logger: {
+    warn: jest.fn(),
+    debug: jest.fn(),
   },
 }));
 
@@ -114,22 +112,22 @@ describe('firecrawlJobStore', () => {
       const jobId = Guid();
       firecrawlJobStore.receivePage(jobId, 'page1');
       firecrawlJobStore.receivePage(jobId, 'page2');
-      
+
       // Start the completion process
       const completionPromise = firecrawlJobStore.markComplete(jobId);
-      
+
       // Complete first page - job should still exist
       firecrawlJobStore.completePage(jobId, 'page1');
       expect(firecrawlJobStore.jobs[jobId]).toBeDefined();
       expect(firecrawlJobStore.jobs[jobId]?.processingPages.size).toBe(1);
-      
+
       // Complete second page - job should be cleaned up immediately
       firecrawlJobStore.completePage(jobId, 'page2');
-      
+
       // The promise should resolve on the next tick since all pages are done
       jest.runOnlyPendingTimers();
       await Promise.resolve();
-      
+
       await expect(completionPromise).resolves.toBeUndefined();
       expect(firecrawlJobStore.jobs[jobId]).toBeUndefined();
     });
@@ -154,7 +152,7 @@ describe('firecrawlJobStore', () => {
     it('returns job status for existing job', () => {
       const jobId = Guid();
       firecrawlJobStore.receivePage(jobId, 'page1');
-      
+
       const status = firecrawlJobStore.getJobStatus(jobId);
       expect(status).toBeDefined();
       expect(status?.receivedPages.size).toBe(1);
@@ -172,31 +170,31 @@ describe('firecrawlJobStore', () => {
       const jobId = Guid();
       const pageCount = 55;
       const pageIds: string[] = [];
-      
+
       // Simulate receiving 50+ pages
       for (let i = 0; i < pageCount; i++) {
         const pageId = `page-${i}`;
         pageIds.push(pageId);
         firecrawlJobStore.receivePage(jobId, pageId);
       }
-      
+
       expect(firecrawlJobStore.jobs[jobId]?.processingPages.size).toBe(pageCount);
-      
+
       // Mark job as complete (like the crawl.completed webhook)
       const completionPromise = firecrawlJobStore.markComplete(jobId);
-      
+
       // Complete pages in random order (simulating concurrent async processing)
       const shuffledPages = [...pageIds].sort(() => Math.random() - 0.5);
-      
-             for (let i = 0; i < pageCount - 1; i++) {
-         firecrawlJobStore.completePage(jobId, shuffledPages[i]!);
-         // Job should still exist until all pages are done
-         expect(firecrawlJobStore.jobs[jobId]).toBeDefined();
-       }
-       
-       // Complete the last page
-       firecrawlJobStore.completePage(jobId, shuffledPages[pageCount - 1]!);
-      
+
+      for (let i = 0; i < pageCount - 1; i++) {
+        firecrawlJobStore.completePage(jobId, shuffledPages[i]!);
+        // Job should still exist until all pages are done
+        expect(firecrawlJobStore.jobs[jobId]).toBeDefined();
+      }
+
+      // Complete the last page
+      firecrawlJobStore.completePage(jobId, shuffledPages[pageCount - 1]!);
+
       // Job should be cleaned up and promise resolved
       await expect(completionPromise).resolves.toBeUndefined();
       expect(firecrawlJobStore.jobs[jobId]).toBeUndefined();
@@ -204,24 +202,24 @@ describe('firecrawlJobStore', () => {
 
     it('handles completion event arriving before all page events', async () => {
       const jobId = Guid();
-      
+
       // Add a few pages
       firecrawlJobStore.receivePage(jobId, 'page1');
       firecrawlJobStore.receivePage(jobId, 'page2');
-      
+
       // Mark complete early (common race condition with 50+ pages)
       const completionPromise = firecrawlJobStore.markComplete(jobId);
-      
+
       // More pages arrive after completion event
       firecrawlJobStore.receivePage(jobId, 'page3');
       firecrawlJobStore.receivePage(jobId, 'page4');
-      
+
       // Complete all pages
       firecrawlJobStore.completePage(jobId, 'page1');
       firecrawlJobStore.completePage(jobId, 'page2');
       firecrawlJobStore.completePage(jobId, 'page3');
       firecrawlJobStore.completePage(jobId, 'page4');
-      
+
       // Should resolve properly
       await expect(completionPromise).resolves.toBeUndefined();
       expect(firecrawlJobStore.jobs[jobId]).toBeUndefined();

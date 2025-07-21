@@ -38,12 +38,14 @@ export default async function FirecrawlWebhookRoutes(
         200: Type.Object({
           jobId: Type.String(),
           exists: Type.Boolean(),
-          status: Type.Optional(Type.Object({
-            receivedPages: Type.Number(),
-            processingPages: Type.Number(),
-            completed: Type.Boolean(),
-            hasTimeout: Type.Boolean(),
-          })),
+          status: Type.Optional(
+            Type.Object({
+              receivedPages: Type.Number(),
+              processingPages: Type.Number(),
+              completed: Type.Boolean(),
+              hasTimeout: Type.Boolean(),
+            })
+          ),
         }),
         404: Type.Object({
           error: Type.String(),

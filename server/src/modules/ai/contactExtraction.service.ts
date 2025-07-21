@@ -1,11 +1,11 @@
+import { compareTwoStrings } from 'string-similarity';
+import { eq } from 'drizzle-orm';
 import { logger } from '@/libs/logger';
 import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts } from '@/db/schema';
+import db from '@/libs/drizzleClient';
 import { createContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
 import { ExtractedContact } from './schemas/contactExtractionSchema';
-import { compareTwoStrings } from 'string-similarity';
-import db from '@/libs/drizzleClient';
-import { eq } from 'drizzle-orm';
 
 export const ContactExtractionService = {
   /**
@@ -41,7 +41,9 @@ export const ContactExtractionService = {
         existingContacts
       );
 
-      logger.info(`Successfully processed ${processedContacts.created} new and ${processedContacts.updated} updated contacts for leadId: ${leadId}`);
+      logger.info(
+        `Successfully processed ${processedContacts.created} new and ${processedContacts.updated} updated contacts for leadId: ${leadId}`
+      );
 
       return {
         contactsCreated: processedContacts.created,
@@ -67,7 +69,7 @@ export const ContactExtractionService = {
         .select()
         .from(leadPointOfContacts)
         .where(eq(leadPointOfContacts.leadId, leadId));
-      
+
       return contacts;
     } catch (error) {
       logger.error('Error getting existing contacts:', error);
@@ -102,10 +104,7 @@ export const ContactExtractionService = {
 
         if (similarContact) {
           // Merge and update existing contact
-          const mergedContact = ContactExtractionService.mergeContacts(
-            similarContact,
-            leadContact
-          );
+          const mergedContact = ContactExtractionService.mergeContacts(similarContact, leadContact);
 
           const updatedContact = await ContactExtractionService.updateContact(
             similarContact.id,
@@ -125,7 +124,10 @@ export const ContactExtractionService = {
           logger.debug(`Created contact: ${extractedContact.name} for leadId: ${leadId}`);
         }
       } catch (error) {
-        logger.warn(`Failed to process contact ${extractedContact.name} for leadId: ${leadId}:`, error);
+        logger.warn(
+          `Failed to process contact ${extractedContact.name} for leadId: ${leadId}:`,
+          error
+        );
         // Continue processing other contacts even if one fails
       }
     }
@@ -146,7 +148,7 @@ export const ContactExtractionService = {
 
     for (const existing of existingContacts) {
       const score = ContactExtractionService.calculateContactSimilarity(newContact, existing);
-      
+
       if (score > threshold && score > bestScore) {
         bestScore = score;
         bestMatch = existing;
@@ -197,7 +199,7 @@ export const ContactExtractionService = {
     if (contact1.phone && contact2.phone) {
       const phone1 = ContactExtractionService.normalizePhone(contact1.phone);
       const phone2 = ContactExtractionService.normalizePhone(contact2.phone);
-      
+
       if (phone1 === phone2) {
         totalScore += 1.0 * weights.phone;
       } else {
@@ -225,14 +227,14 @@ export const ContactExtractionService = {
    * Normalize phone number for comparison
    */
   normalizePhone: (phone: string): string => {
-    return phone.replace(/[\s\-\(\)\+]/g, '').replace(/^1/, '');
+    return phone.replace(/[\s\-()[\]+]/g, '').replace(/^1/, '');
   },
 
   /**
    * Merge two contacts, preferring new non-null/non-empty values
    */
   mergeContacts: (
-    existing: LeadPointOfContact,
+    _existing: LeadPointOfContact,
     newContact: Omit<NewLeadPointOfContact, 'leadId'>
   ): Partial<LeadPointOfContact> => {
     const merged: Partial<LeadPointOfContact> = {};
