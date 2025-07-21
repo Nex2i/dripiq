@@ -943,9 +943,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         500: defaultRouteResponse,
       },
     },
-    handler: async (request: AuthenticatedRequest, reply) => {
+    handler: async (request, reply) => {
+      const authenticatedRequest = request as AuthenticatedRequest;
+      
       try {
-        await ensureAllLeadsHaveDefaultStatus(request.tenantId);
+        await ensureAllLeadsHaveDefaultStatus(authenticatedRequest.tenantId);
 
         reply.status(200).send({
           message: 'Successfully ensured all leads have default statuses',
