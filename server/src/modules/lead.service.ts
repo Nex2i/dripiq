@@ -14,8 +14,8 @@ import {
   users,
 } from '../db/schema';
 import { logger } from '../libs/logger';
-import { storageService } from './storage/storage.service';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
+import { storageService } from './storage/storage.service';
 
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {

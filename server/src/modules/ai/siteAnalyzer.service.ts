@@ -2,9 +2,9 @@ import { supabaseStorage } from '@/libs/supabase.storage';
 import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { updateLeadStatuses } from '../lead.service';
+import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { EmbeddingsService } from './embeddings.service';
 import { LeadAnalyzerService } from './leadAnalyzer.service';
-import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
@@ -45,7 +45,12 @@ export const SiteAnalyzerService = {
     switch (metadata.type) {
       case 'lead_site':
         // Remove "Scraping Site" status when scraping is complete
-        await updateLeadStatuses(metadata.tenantId, metadata.leadId, [], [LEAD_STATUS.SCRAPING_SITE]);
+        await updateLeadStatuses(
+          metadata.tenantId,
+          metadata.leadId,
+          [],
+          [LEAD_STATUS.SCRAPING_SITE]
+        );
         LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
         break;
     }

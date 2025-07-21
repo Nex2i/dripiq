@@ -77,7 +77,7 @@ function StatusHeader() {
           title="View status definitions"
         >
           <svg
-            className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors"
+            className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -91,7 +91,7 @@ function StatusHeader() {
           </svg>
         </button>
       </div>
-      
+
       <StatusInfoModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -162,8 +162,6 @@ const LeadsPage: React.FC = () => {
       day: 'numeric',
     })
   }
-
-
 
   const getOwnerDisplay = (lead: Lead) => {
     // Find the owner user from the users list
@@ -312,7 +310,12 @@ const LeadsPage: React.FC = () => {
       {
         accessorKey: 'statuses',
         header: () => <StatusHeader />,
-        cell: (info) => <LeadStatusBadges statuses={info.row.original.statuses || []} compact />,
+        cell: (info) => (
+          <LeadStatusBadges
+            statuses={info.row.original.statuses || []}
+            compact
+          />
+        ),
       },
       {
         accessorKey: 'ownerId',
@@ -639,7 +642,7 @@ const LeadsPage: React.FC = () => {
                         <th
                           key={header.id}
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider"
                         >
                           {header.isPlaceholder
                             ? null

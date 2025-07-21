@@ -46,7 +46,14 @@ const pointOfContactResponseSchema = Type.Object({
 const leadStatusResponseSchema = Type.Object({
   id: Type.String({ description: 'Status ID' }),
   status: Type.String({
-    enum: ['Unprocessed', 'Syncing Site', 'Scraping Site', 'Analyzing Site', 'Extracting Contacts', 'Processed'],
+    enum: [
+      'Unprocessed',
+      'Syncing Site',
+      'Scraping Site',
+      'Analyzing Site',
+      'Extracting Contacts',
+      'Processed',
+    ],
     description: 'Status value',
   }),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),

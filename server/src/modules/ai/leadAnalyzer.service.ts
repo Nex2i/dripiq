@@ -1,9 +1,9 @@
 import { getLeadById, updateLead, updateLeadStatuses } from '../lead.service';
+import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { siteAnalysisAgent } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
 import { ContactExtractionService } from './contactExtraction.service';
-import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
@@ -24,7 +24,12 @@ export const LeadAnalyzerService = {
     );
   },
   summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
-    await updateLeadStatuses(tenantId, leadId, [LEAD_STATUS.ANALYZING_SITE], [LEAD_STATUS.SYNCING_SITE, LEAD_STATUS.SCRAPING_SITE]);
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.ANALYZING_SITE],
+      [LEAD_STATUS.SYNCING_SITE, LEAD_STATUS.SCRAPING_SITE]
+    );
 
     // Run site analysis
     const aiOutput = await siteAnalysisAgent.analyze(domain);
@@ -56,7 +61,12 @@ export const LeadAnalyzerService = {
     const { url } = await getLeadById(tenantId, leadId);
 
     // Add "Syncing Site" status when starting to index
-    await updateLeadStatuses(tenantId, leadId, [LEAD_STATUS.SYNCING_SITE], [LEAD_STATUS.UNPROCESSED]);
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.SYNCING_SITE],
+      [LEAD_STATUS.UNPROCESSED]
+    );
 
     if (await LeadAnalyzerService.wasLastScrapeTooRecent(url.getDomain())) {
       await LeadAnalyzerService.analyze(tenantId, leadId);
@@ -64,7 +74,12 @@ export const LeadAnalyzerService = {
     }
 
     // Add "Scraping Site" status when starting to scrape
-    await updateLeadStatuses(tenantId, leadId, [LEAD_STATUS.SCRAPING_SITE], [LEAD_STATUS.SYNCING_SITE]);
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.SCRAPING_SITE],
+      [LEAD_STATUS.SYNCING_SITE]
+    );
 
     const metadata = {
       leadId,
