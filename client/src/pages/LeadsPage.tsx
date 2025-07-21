@@ -63,49 +63,124 @@ function DebouncedInput({
   )
 }
 
-// Status Header Component with Info Tooltip
-function StatusHeader() {
-  const [showTooltip, setShowTooltip] = React.useState(false)
+// Status Info Modal Component
+function StatusInfoModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const modalRef = React.useRef<HTMLDivElement>(null)
+
+  // Close modal when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen, onClose])
+
+  // Close modal on Escape key
+  React.useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
 
   return (
-    <div className="flex items-center gap-1">
-      <span>Status</span>
-      <div 
-        className="relative"
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div
+        ref={modalRef}
+        className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
       >
-        <svg
-          className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Lead Status Definitions</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            title="Close"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
         
-        {showTooltip && (
-          <div className="absolute z-50 top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg py-2 px-3 shadow-lg min-w-64 max-w-80">
-            <div className="font-semibold mb-2">Lead Status Definitions:</div>
-            <div className="space-y-1">
-              {LEAD_STATUS_ORDERED.map((status) => (
-                <div key={status} className="flex flex-col">
-                  <span className="font-medium text-gray-200">{status}:</span>
-                  <span className="text-gray-300 ml-2">{LEAD_STATUS_DEFINITIONS[status]}</span>
+        <div className="p-6">
+          <div className="space-y-4">
+            {LEAD_STATUS_ORDERED.map((status) => (
+              <div key={status} className="flex flex-col">
+                <div className="font-medium text-gray-900 mb-1">{status}:</div>
+                <div className="text-gray-600 text-sm leading-relaxed">
+                  {LEAD_STATUS_DEFINITIONS[status]}
                 </div>
-              ))}
-            </div>
-            {/* Tooltip arrow */}
-            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
+  )
+}
+
+// Status Header Component with Info Modal
+function StatusHeader() {
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+
+  return (
+    <>
+      <div className="flex items-center gap-1">
+        <span>Status</span>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center"
+          title="View status definitions"
+        >
+          <svg
+            className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+      </div>
+      
+      <StatusInfoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   )
 }
 
