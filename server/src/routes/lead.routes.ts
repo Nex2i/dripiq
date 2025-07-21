@@ -46,7 +46,14 @@ const pointOfContactResponseSchema = Type.Object({
 const leadStatusResponseSchema = Type.Object({
   id: Type.String({ description: 'Status ID' }),
   status: Type.String({
-    enum: ['New', 'Scraping Site', 'Analyzing Site', 'Extracting Contacts', 'Processed'],
+    enum: [
+      'Unprocessed',
+      'Syncing Site',
+      'Scraping Site',
+      'Analyzing Site',
+      'Extracting Contacts',
+      'Processed',
+    ],
     description: 'Status value',
   }),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
@@ -231,8 +238,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // analyze lead
-        // await LeadAnalyzerService.analyze(authenticatedRequest.tenantId, newLead.id);
+        // Index the lead's site after creation
+        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, newLead.id);
 
         reply.status(201).send({
           message: 'Lead created successfully',

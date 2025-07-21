@@ -1,4 +1,5 @@
 import { getLeadById, updateLead, updateLeadStatuses } from '../lead.service';
+import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { siteAnalysisAgent } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
@@ -18,12 +19,17 @@ export const LeadAnalyzerService = {
     await updateLeadStatuses(
       tenantId,
       leadId,
-      ['Processed'],
-      ['Analyzing Site', 'Extracting Contacts']
+      [LEAD_STATUS.PROCESSED],
+      [LEAD_STATUS.ANALYZING_SITE, LEAD_STATUS.EXTRACTING_CONTACTS]
     );
   },
   summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
-    await updateLeadStatuses(tenantId, leadId, ['Analyzing Site'], ['New']);
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.ANALYZING_SITE],
+      [LEAD_STATUS.SYNCING_SITE, LEAD_STATUS.SCRAPING_SITE]
+    );
 
     // Run site analysis
     const aiOutput = await siteAnalysisAgent.analyze(domain);
@@ -42,7 +48,7 @@ export const LeadAnalyzerService = {
   },
   extractContacts: async (tenantId: string, leadId: string, domain: string) => {
     // Add "Extracting Contacts" status
-    await updateLeadStatuses(tenantId, leadId, ['Extracting Contacts'], []);
+    await updateLeadStatuses(tenantId, leadId, [LEAD_STATUS.EXTRACTING_CONTACTS], []);
 
     const contactResults = await ContactExtractionService.extractAndSaveContacts(
       tenantId,
@@ -54,13 +60,26 @@ export const LeadAnalyzerService = {
   indexSite: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
 
+    // Add "Syncing Site" status when starting to index
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.SYNCING_SITE],
+      [LEAD_STATUS.UNPROCESSED]
+    );
+
     if (await LeadAnalyzerService.wasLastScrapeTooRecent(url.getDomain())) {
       await LeadAnalyzerService.analyze(tenantId, leadId);
       return;
     }
 
     // Add "Scraping Site" status when starting to scrape
-    await updateLeadStatuses(tenantId, leadId, ['Scraping Site'], []);
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.SCRAPING_SITE],
+      [LEAD_STATUS.SYNCING_SITE]
+    );
 
     const metadata = {
       leadId,

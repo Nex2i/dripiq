@@ -14,6 +14,7 @@ import {
   users,
 } from '../db/schema';
 import { logger } from '../libs/logger';
+import { LEAD_STATUS } from '../constants/leadStatus.constants';
 import { storageService } from './storage/storage.service';
 
 // Helper function to transform lead data with signed URLs
@@ -188,11 +189,11 @@ export const createLead = async (
       }
     }
 
-    // Create default "New" status for the lead
+    // Create default "Unprocessed" status for the lead
     await tx.insert(leadStatuses).values({
       leadId: createdLead.id,
       tenantId,
-      status: 'New',
+      status: LEAD_STATUS.UNPROCESSED,
     });
 
     // Transform lead with signed URLs
@@ -592,7 +593,7 @@ export const hasStatus = async (
 };
 
 /**
- * Ensure a lead has the default "New" status if no statuses exist
+ * Ensure a lead has the default "Unprocessed" status if no statuses exist
  * @param tenantId - The ID of the tenant
  * @param leadId - The ID of the lead
  * @returns A promise that resolves when the default status is ensured
@@ -609,10 +610,10 @@ export const ensureDefaultStatus = async (tenantId: string, leadId: string): Pro
       await db.insert(leadStatuses).values({
         leadId,
         tenantId,
-        status: 'New',
+        status: LEAD_STATUS.UNPROCESSED,
       });
 
-      logger.info(`Added default "New" status to lead ${leadId}`);
+      logger.info(`Added default "Unprocessed" status to lead ${leadId}`);
     }
   } catch (error) {
     logger.error('Error ensuring default status:', error);
@@ -653,11 +654,11 @@ export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise
       const defaultStatuses = leadsWithoutStatus.map((lead) => ({
         leadId: lead.id,
         tenantId,
-        status: 'New' as const,
+        status: LEAD_STATUS.UNPROCESSED,
       }));
 
       await db.insert(leadStatuses).values(defaultStatuses);
-      logger.info(`Added default "New" status to ${leadsWithoutStatus.length} leads`);
+      logger.info(`Added default "Unprocessed" status to ${leadsWithoutStatus.length} leads`);
     }
   } catch (error) {
     logger.error('Error ensuring all leads have default status:', error);
@@ -731,12 +732,12 @@ export const updateLeadStatuses = async (
         .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
         .orderBy(leadStatuses.createdAt);
 
-      // Ensure at least one status exists (add "New" if none exist)
+      // Ensure at least one status exists (add "Unprocessed" if none exist)
       if (updatedStatuses.length === 0) {
         await tx.insert(leadStatuses).values({
           leadId,
           tenantId,
-          status: 'New',
+          status: LEAD_STATUS.UNPROCESSED,
         });
 
         // Get the final statuses including the default one

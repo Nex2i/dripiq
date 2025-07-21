@@ -20,6 +20,7 @@ import {
 } from '../hooks/useLeadsQuery'
 import type { Lead } from '../types/lead.types'
 import LeadStatusBadges from '../components/LeadStatusBadges'
+import StatusInfoModal from '../components/StatusInfoModal'
 
 // Define a simple fuzzy filter function (required by global module declaration)
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -59,6 +60,43 @@ function DebouncedInput({
       value={value}
       onChange={(e) => setValue(e.target.value)}
     />
+  )
+}
+
+// Status Header Component with Info Modal
+function StatusHeader() {
+  const [isModalOpen, setIsModalOpen] = React.useState(false)
+
+  return (
+    <>
+      <div className="flex items-center gap-1">
+        <span>Status</span>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center"
+          title="View status definitions"
+        >
+          <svg
+            className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <StatusInfoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   )
 }
 
@@ -124,8 +162,6 @@ const LeadsPage: React.FC = () => {
       day: 'numeric',
     })
   }
-
-
 
   const getOwnerDisplay = (lead: Lead) => {
     // Find the owner user from the users list
@@ -273,8 +309,13 @@ const LeadsPage: React.FC = () => {
       },
       {
         accessorKey: 'statuses',
-        header: 'Status',
-        cell: (info) => <LeadStatusBadges statuses={info.row.original.statuses || []} compact />,
+        header: () => <StatusHeader />,
+        cell: (info) => (
+          <LeadStatusBadges
+            statuses={info.row.original.statuses || []}
+            compact
+          />
+        ),
       },
       {
         accessorKey: 'ownerId',
@@ -601,7 +642,7 @@ const LeadsPage: React.FC = () => {
                         <th
                           key={header.id}
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider"
                         >
                           {header.isPlaceholder
                             ? null
