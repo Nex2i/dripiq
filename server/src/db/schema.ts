@@ -248,12 +248,44 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     fields: [leads.primaryContactId],
     references: [leadPointOfContacts.id],
   }),
+  statuses: many(leadStatuses),
 }));
 
 export const leadPointOfContactsRelations = relations(leadPointOfContacts, ({ one }) => ({
   lead: one(leads, {
     fields: [leadPointOfContacts.leadId],
     references: [leads.id],
+  }),
+}));
+
+// Lead Statuses table
+export const leadStatuses = appSchema.table(
+  'lead_statuses',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    status: text('status').notNull(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique('lead_status_unique').on(table.leadId, table.status)]
+);
+
+export const leadStatusesRelations = relations(leadStatuses, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadStatuses.leadId],
+    references: [leads.id],
+  }),
+  tenant: one(tenants, {
+    fields: [leadStatuses.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -346,3 +378,5 @@ export type SiteEmbedding = typeof siteEmbeddings.$inferSelect;
 export type NewSiteEmbedding = typeof siteEmbeddings.$inferInsert;
 export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;
 export type NewSiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferInsert;
+export type LeadStatus = typeof leadStatuses.$inferSelect;
+export type NewLeadStatus = typeof leadStatuses.$inferInsert;

@@ -42,7 +42,9 @@ export const SiteAnalyzerService = {
 
     switch (metadata.type) {
       case 'lead_site':
-        LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
+        // Mark scraping as complete and then start analysis
+        await LeadAnalyzerService.scrapingComplete(metadata.tenantId, metadata.leadId);
+        await LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
         break;
     }
   },

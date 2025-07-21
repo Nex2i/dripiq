@@ -9,9 +9,13 @@ import {
   LeadPointOfContact,
   userTenants,
   users,
+  leadStatuses,
+  NewLeadStatus,
+  LeadStatus,
 } from '../db/schema';
 import { logger } from '../libs/logger';
 import { storageService } from './storage/storage.service';
+import { LEAD_STATUS, LeadStatusType } from '../constants/leadStatus.constants';
 
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
@@ -28,9 +32,10 @@ const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
  * Retrieves a list of leads for a specific tenant, with optional search functionality.
  * @param tenantId - The ID of the tenant to retrieve leads for.
  * @param searchQuery - An optional string to search for in the lead's name, email, company, or phone number.
+ * @param includeStatuses - Whether to include statuses for each lead (default: true for compatibility).
  * @returns A promise that resolves to an array of lead objects with owner information.
  */
-export const getLeads = async (tenantId: string, searchQuery?: string) => {
+export const getLeads = async (tenantId: string, searchQuery?: string, includeStatuses: boolean = true) => {
   // Build base query with tenant filter
   const baseWhere = eq(leads.tenantId, tenantId);
 
@@ -87,6 +92,34 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
       .from(leads)
       .where(baseWhere)
       .orderBy(desc(leads.createdAt));
+  }
+
+  // Include statuses if requested
+  if (includeStatuses && result.length > 0) {
+    const leadIds = result.map(lead => lead.id);
+    const allStatuses = await db
+      .select()
+      .from(leadStatuses)
+      .where(and(
+        eq(leadStatuses.tenantId, tenantId),
+        inArray(leadStatuses.leadId, leadIds)
+      ))
+      .orderBy(leadStatuses.createdAt);
+
+    // Group statuses by leadId
+    const statusesByLeadId = allStatuses.reduce((acc, status) => {
+      if (!acc[status.leadId]) {
+        acc[status.leadId] = [];
+      }
+      acc[status.leadId]!.push(status);
+      return acc;
+    }, {} as Record<string, LeadStatus[]>);
+
+    // Add statuses to each lead
+    return result.map(lead => ({
+      ...lead,
+      statuses: statusesByLeadId[lead.id] || [],
+    }));
   }
 
   return result;
@@ -146,12 +179,31 @@ export const createLead = async (
       }
     }
 
+    // Create default "New" status for the lead
+    const defaultStatus: NewLeadStatus = {
+      leadId: createdLead.id,
+      tenantId,
+      status: LEAD_STATUS.NEW,
+    };
+    await tx.insert(leadStatuses).values(defaultStatus);
+
     // Transform lead with signed URLs
     const transformedLead = await transformLeadWithSignedUrls(tenantId, createdLead);
+
+    // Get the default status
+    const defaultStatuses = [{
+      id: '', // Will be populated by the database
+      leadId: createdLead.id,
+      tenantId,
+      status: LEAD_STATUS.NEW,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }];
 
     return {
       ...transformedLead,
       pointOfContacts: createdContacts,
+      statuses: defaultStatuses,
     };
   });
 
@@ -164,7 +216,10 @@ export const createLead = async (
  * @param id - The ID of the lead to retrieve.
  * @returns A promise that resolves to the lead object with point of contacts, or undefined if not found.
  */
-type LeadWithPointOfContacts = Lead & { pointOfContacts: LeadPointOfContact[] };
+type LeadWithPointOfContacts = Lead & { 
+  pointOfContacts: LeadPointOfContact[];
+  statuses: LeadStatus[];
+};
 export const getLeadById = async (
   tenantId: string,
   id: string
@@ -212,12 +267,16 @@ export const getLeadById = async (
       .where(eq(leadPointOfContacts.leadId, id))
       .orderBy(leadPointOfContacts.createdAt);
 
+    // Get statuses for this lead
+    const statuses = await getLeadStatuses(tenantId, id);
+
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
 
     return {
       ...transformedLead,
       pointOfContacts: contacts,
+      statuses,
     } as LeadWithPointOfContacts;
   } catch (error) {
     logger.error('Error getting lead by ID:', error);
@@ -459,5 +518,123 @@ export const toggleContactManuallyReviewed = async (
   } catch (error) {
     logger.error('Error toggling contact manually reviewed status:', error);
     throw error;
+  }
+};
+
+/**
+ * Central status management for leads.
+ * @param tenantId - The ID of the tenant.
+ * @param leadId - The ID of the lead.
+ * @param statusesToAdd - Array of statuses to add.
+ * @param statusesToRemove - Array of statuses to remove.
+ * @returns A promise that resolves to the updated statuses.
+ */
+export const updateLeadStatuses = async (
+  tenantId: string,
+  leadId: string,
+  statusesToAdd: LeadStatusType[] = [],
+  statusesToRemove: LeadStatusType[] = []
+): Promise<LeadStatus[]> => {
+  try {
+    // Verify the lead exists and belongs to the tenant
+    const lead = await getLeadById(tenantId, leadId);
+    if (!lead) {
+      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
+    }
+
+    await db.transaction(async (tx) => {
+      // Remove statuses if specified
+      if (statusesToRemove.length > 0) {
+        await tx
+          .delete(leadStatuses)
+          .where(
+            and(
+              eq(leadStatuses.leadId, leadId),
+              eq(leadStatuses.tenantId, tenantId),
+              inArray(leadStatuses.status, statusesToRemove)
+            )
+          );
+      }
+
+      // Add new statuses if specified
+      if (statusesToAdd.length > 0) {
+        const newStatuses: NewLeadStatus[] = statusesToAdd.map((status) => ({
+          leadId,
+          tenantId,
+          status,
+        }));
+
+        // Use INSERT ... ON CONFLICT DO NOTHING to avoid duplicates
+        for (const statusData of newStatuses) {
+          try {
+            await tx.insert(leadStatuses).values(statusData);
+          } catch (error: any) {
+            // Ignore unique constraint violations (status already exists)
+            if (!error.message?.includes('duplicate key value') && error.code !== '23505') {
+              throw error;
+            }
+          }
+        }
+      }
+    });
+
+    // Return updated statuses
+    return await getLeadStatuses(tenantId, leadId);
+  } catch (error) {
+    logger.error('Error updating lead statuses:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all statuses for a lead.
+ * @param tenantId - The ID of the tenant.
+ * @param leadId - The ID of the lead.
+ * @returns A promise that resolves to an array of lead statuses.
+ */
+export const getLeadStatuses = async (tenantId: string, leadId: string): Promise<LeadStatus[]> => {
+  try {
+    const statuses = await db
+      .select()
+      .from(leadStatuses)
+      .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
+      .orderBy(leadStatuses.createdAt);
+
+    return statuses;
+  } catch (error) {
+    logger.error('Error getting lead statuses:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check if a lead has a specific status.
+ * @param tenantId - The ID of the tenant.
+ * @param leadId - The ID of the lead.
+ * @param status - The status to check for.
+ * @returns A promise that resolves to a boolean indicating if the status exists.
+ */
+export const hasStatus = async (
+  tenantId: string,
+  leadId: string,
+  status: LeadStatusType
+): Promise<boolean> => {
+  try {
+    const result = await db
+      .select()
+      .from(leadStatuses)
+      .where(
+        and(
+          eq(leadStatuses.leadId, leadId),
+          eq(leadStatuses.tenantId, tenantId),
+          eq(leadStatuses.status, status)
+        )
+      )
+      .limit(1);
+
+    return result.length > 0;
+  } catch (error) {
+    logger.error('Error checking lead status:', error);
+    return false;
   }
 };

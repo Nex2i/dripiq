@@ -1,16 +1,16 @@
 import React from 'react'
 import { User, Globe } from 'lucide-react'
+import LeadStatusBadges from '../LeadStatusBadges'
+import type { LeadStatus } from '../../services/leads.service'
 
 interface LeadDetailsTabProps {
-  status: string
+  statuses: LeadStatus[]
   url: string
-  getStatusBadge: (status: string) => React.ReactNode
 }
 
 const LeadDetailsTab: React.FC<LeadDetailsTabProps> = ({
-  status,
+  statuses,
   url,
-  getStatusBadge,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -24,7 +24,9 @@ const LeadDetailsTab: React.FC<LeadDetailsTabProps> = ({
               <User className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-sm font-medium text-gray-900">Status</p>
-                <div className="mt-1">{getStatusBadge(status)}</div>
+                <div className="mt-1">
+                  <LeadStatusBadges statuses={statuses} mode="full" />
+                </div>
               </div>
             </div>
           </div>

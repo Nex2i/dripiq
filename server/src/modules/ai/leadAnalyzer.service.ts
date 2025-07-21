@@ -1,18 +1,30 @@
-import { getLeadById, updateLead } from '../lead.service';
+import { getLeadById, updateLead, updateLeadStatuses } from '../lead.service';
 import { siteAnalysisAgent } from './langchain';
 import { EmbeddingsService } from './embeddings.service';
 import { SiteScrapeService } from './siteScrape.service';
 import { ContactExtractionService } from './contactExtraction.service';
+import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
     const domain = url.getDomain();
 
+    // Remove "New" status and add "Analyzing Site" status
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.ANALYZING_SITE],
+      [LEAD_STATUS.NEW]
+    );
+
     await Promise.allSettled([
       LeadAnalyzerService.summarizeSite(tenantId, leadId, domain),
       LeadAnalyzerService.extractContacts(tenantId, leadId, domain),
     ]);
+
+    // Mark analysis as complete
+    await LeadAnalyzerService.analysisComplete(tenantId, leadId);
   },
   summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
     // Run site analysis
@@ -31,6 +43,9 @@ export const LeadAnalyzerService = {
     });
   },
   extractContacts: async (tenantId: string, leadId: string, domain: string) => {
+    // Add "Extracting Contacts" status
+    await updateLeadStatuses(tenantId, leadId, [LEAD_STATUS.EXTRACTING_CONTACTS]);
+
     const contactResults = await ContactExtractionService.extractAndSaveContacts(
       tenantId,
       leadId,
@@ -46,6 +61,9 @@ export const LeadAnalyzerService = {
       return;
     }
 
+    // Add "Scraping Site" status
+    await updateLeadStatuses(tenantId, leadId, [LEAD_STATUS.SCRAPING_SITE]);
+
     const metadata = {
       leadId,
       tenantId,
@@ -53,6 +71,26 @@ export const LeadAnalyzerService = {
     };
 
     await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata);
+  },
+
+  scrapingComplete: async (tenantId: string, leadId: string) => {
+    // Remove "Scraping Site" status and add "Analyzing Site" status
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.ANALYZING_SITE],
+      [LEAD_STATUS.SCRAPING_SITE]
+    );
+  },
+
+  analysisComplete: async (tenantId: string, leadId: string) => {
+    // Remove analysis and extraction statuses, add "Processed" status
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.PROCESSED],
+      [LEAD_STATUS.ANALYZING_SITE, LEAD_STATUS.EXTRACTING_CONTACTS]
+    );
   },
 
   wasLastScrapeTooRecent: async (url: string) => {

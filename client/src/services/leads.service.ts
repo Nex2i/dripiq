@@ -14,6 +14,15 @@ export interface LeadPointOfContact {
   updatedAt: string
 }
 
+export interface LeadStatus {
+  id: string
+  leadId: string
+  status: string
+  tenantId: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Lead {
   id: string
   name: string
@@ -32,6 +41,7 @@ export interface Lead {
   createdAt: string
   updatedAt: string
   pointOfContacts?: LeadPointOfContact[]
+  statuses?: LeadStatus[]
 }
 
 export interface CreateLeadData {

@@ -42,6 +42,16 @@ const pointOfContactResponseSchema = Type.Object({
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
 });
 
+// Schema for lead status response
+const leadStatusResponseSchema = Type.Object({
+  id: Type.String({ description: 'Status ID' }),
+  leadId: Type.String({ description: 'Lead ID' }),
+  status: Type.String({ description: 'Status value' }),
+  tenantId: Type.String({ description: 'Tenant ID' }),
+  createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
+  updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
+});
+
 // Schema for create lead endpoint
 const createLeadBodySchema = Type.Object({
   name: Type.String({ minLength: 1, description: 'Lead name' }),
@@ -83,6 +93,11 @@ const leadResponseSchema = Type.Object({
   pointOfContacts: Type.Optional(
     Type.Array(pointOfContactResponseSchema, {
       description: 'Array of point of contacts for the lead',
+    })
+  ),
+  statuses: Type.Optional(
+    Type.Array(leadStatusResponseSchema, {
+      description: 'Array of statuses for the lead',
     })
   ),
 });
