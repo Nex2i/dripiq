@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsService, leadQueryKeys } from '../services/leads.service'
 import { invitesService } from '../services/invites.service'
+import type { Lead } from '../types/lead.types'
 import type {
-  Lead,
   CreateLeadData,
   UpdateLeadData,
 } from '../services/leads.service'

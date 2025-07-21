@@ -18,7 +18,7 @@ import {
   useAssignLeadOwner,
   useUsers,
 } from '../hooks/useLeadsQuery'
-import type { Lead } from '../services/leads.service'
+import type { Lead } from '../types/lead.types'
 import LeadStatusBadges from '../components/LeadStatusBadges'
 
 // Define a simple fuzzy filter function (required by global module declaration)

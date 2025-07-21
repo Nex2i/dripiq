@@ -1,7 +1,7 @@
 import React from 'react'
 import { User, Globe } from 'lucide-react'
 import LeadStatusBadges from '../LeadStatusBadges'
-import { LeadStatus } from '../../services/leads.service'
+import type { LeadStatus } from '../../types/lead.types'
 
 interface LeadDetailsTabProps {
   status: string

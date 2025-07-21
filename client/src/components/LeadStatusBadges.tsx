@@ -1,5 +1,5 @@
 import React from 'react'
-import { LeadStatus } from '../services/leads.service'
+import type { LeadStatus } from '../types/lead.types'
 
 interface LeadStatusBadgesProps {
   statuses: LeadStatus[]
