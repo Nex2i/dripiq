@@ -261,12 +261,19 @@ export const getLeadById = async (
       .where(eq(leadPointOfContacts.leadId, id))
       .orderBy(leadPointOfContacts.createdAt);
 
-    // Get statuses for this lead
-    const statuses = await db
-      .select()
-      .from(leadStatuses)
-      .where(and(eq(leadStatuses.leadId, id), eq(leadStatuses.tenantId, tenantId)))
-      .orderBy(leadStatuses.createdAt);
+    // Get statuses for this lead (handle case where table doesn't exist yet)
+    let statuses: any[] = [];
+    try {
+      statuses = await db
+        .select()
+        .from(leadStatuses)
+        .where(and(eq(leadStatuses.leadId, id), eq(leadStatuses.tenantId, tenantId)))
+        .orderBy(leadStatuses.createdAt);
+    } catch (error) {
+      // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
+      logger.warn('Could not fetch lead statuses for lead detail, this may be expected if migration has not been run yet:', error);
+      statuses = [];
+    }
 
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
@@ -647,6 +654,27 @@ export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise
   } catch (error) {
     logger.error('Error ensuring all leads have default status:', error);
     // Don't throw to avoid breaking the application
+  }
+};
+
+/**
+ * Helper function to add a test status to a lead (for testing purposes)
+ * @param tenantId - The ID of the tenant
+ * @param leadId - The ID of the lead
+ * @returns A promise that resolves when the test status is added
+ */
+export const addTestStatusToLead = async (tenantId: string, leadId: string): Promise<void> => {
+  try {
+    // Try to add a "New" status to the lead
+    await db.insert(leadStatuses).values({
+      leadId,
+      tenantId,
+      status: 'New',
+    });
+    logger.info(`Added test "New" status to lead ${leadId}`);
+  } catch (error) {
+    logger.error('Error adding test status to lead:', error);
+    throw error;
   }
 };
 
