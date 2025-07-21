@@ -35,6 +35,7 @@ const pointOfContactResponseSchema = Type.Object({
   phone: Type.Optional(Type.String({ description: 'Contact phone' })),
   title: Type.Optional(Type.String({ description: 'Contact job title' })),
   company: Type.Optional(Type.String({ description: 'Contact company' })),
+  sourceUrl: Type.Optional(Type.String({ description: 'URL where contact information was found' })),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
 });

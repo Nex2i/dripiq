@@ -1,19 +1,10 @@
 import React from 'react'
 import { Users, User, Crown, Mail, Phone, Building, ExternalLink } from 'lucide-react'
 import CopyButton from '../CopyButton'
-
-interface Contact {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  title?: string
-  company?: string
-  sourceUrl?: string
-}
+import type { LeadPointOfContact } from '../../services/leads.service'
 
 interface ContactsTabProps {
-  contacts: Contact[]
+  contacts: LeadPointOfContact[]
   primaryContactId?: string
 }
 
