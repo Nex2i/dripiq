@@ -1,5 +1,6 @@
 import React from 'react'
 import type { LeadStatus } from '../types/lead.types'
+import { LEAD_STATUS, LEAD_STATUS_PRIORITY } from '../constants/leadStatus.constants'
 
 interface LeadStatusBadgesProps {
   statuses: LeadStatus[]
@@ -8,15 +9,15 @@ interface LeadStatusBadgesProps {
 
 const getStatusColor = (status: LeadStatus['status']) => {
   switch (status) {
-    case 'New':
+    case LEAD_STATUS.NEW:
       return 'bg-blue-100 text-blue-800 border-blue-200'
-    case 'Scraping Site':
+    case LEAD_STATUS.SCRAPING_SITE:
       return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    case 'Analyzing Site':
+    case LEAD_STATUS.ANALYZING_SITE:
       return 'bg-orange-100 text-orange-800 border-orange-200'
-    case 'Extracting Contacts':
+    case LEAD_STATUS.EXTRACTING_CONTACTS:
       return 'bg-purple-100 text-purple-800 border-purple-200'
-    case 'Processed':
+    case LEAD_STATUS.PROCESSED:
       return 'bg-green-100 text-green-800 border-green-200'
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200'
@@ -25,15 +26,15 @@ const getStatusColor = (status: LeadStatus['status']) => {
 
 const getStatusIcon = (status: LeadStatus['status']) => {
   switch (status) {
-    case 'New':
+    case LEAD_STATUS.NEW:
       return '✨'
-    case 'Scraping Site':
+    case LEAD_STATUS.SCRAPING_SITE:
       return '🔍'
-    case 'Analyzing Site':
+    case LEAD_STATUS.ANALYZING_SITE:
       return '🧠'
-    case 'Extracting Contacts':
+    case LEAD_STATUS.EXTRACTING_CONTACTS:
       return '📞'
-    case 'Processed':
+    case LEAD_STATUS.PROCESSED:
       return '✅'
     default:
       return '●'
@@ -59,16 +60,8 @@ const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact =
 
   if (compact) {
     // For table view - show the most important status based on priority
-    const statusPriority = {
-      'Processed': 5,
-      'Extracting Contacts': 4,
-      'Analyzing Site': 3,
-      'Scraping Site': 2,
-      'New': 1
-    }
-    
     const mostImportantStatus = sortedStatuses.reduce((prev, current) => 
-      statusPriority[current.status] > statusPriority[prev.status] ? current : prev
+      LEAD_STATUS_PRIORITY[current.status] > LEAD_STATUS_PRIORITY[prev.status] ? current : prev
     )
     
     return (

@@ -1,6 +1,8 @@
+import type { LeadStatusValue } from '../constants/leadStatus.constants'
+
 export interface LeadStatus {
   id: string
-  status: 'New' | 'Scraping Site' | 'Analyzing Site' | 'Extracting Contacts' | 'Processed'
+  status: LeadStatusValue
   createdAt: string
   updatedAt: string
 }

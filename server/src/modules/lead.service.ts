@@ -15,6 +15,7 @@ import {
 } from '../db/schema';
 import { logger } from '../libs/logger';
 import { storageService } from './storage/storage.service';
+import { LEAD_STATUS } from '../constants/leadStatus.constants';
 
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
@@ -278,11 +279,14 @@ export const getLeadById = async (
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
 
-    return {
+    const result = {
       ...transformedLead,
       pointOfContacts: contacts,
-      statuses: statuses,
+      statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
+
+    logger.info(`Returning lead ${id} with ${result.statuses.length} statuses`);
+    return result;
   } catch (error) {
     logger.error('Error getting lead by ID:', error);
     throw error;
@@ -669,9 +673,9 @@ export const addTestStatusToLead = async (tenantId: string, leadId: string): Pro
     await db.insert(leadStatuses).values({
       leadId,
       tenantId,
-      status: 'New',
+      status: LEAD_STATUS.NEW,
     });
-    logger.info(`Added test "New" status to lead ${leadId}`);
+    logger.info(`Added test "${LEAD_STATUS.NEW}" status to lead ${leadId}`);
   } catch (error) {
     logger.error('Error adding test status to lead:', error);
     throw error;

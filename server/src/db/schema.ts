@@ -239,8 +239,7 @@ export const leadStatuses = appSchema.table('lead_statuses', {
     .notNull()
     .references(() => leads.id, { onDelete: 'cascade' }),
   status: text('status')
-    .notNull()
-    .$type<'New' | 'Scraping Site' | 'Analyzing Site' | 'Extracting Contacts' | 'Processed'>(),
+    .notNull(),
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
