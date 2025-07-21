@@ -9,6 +9,7 @@ export interface LeadPointOfContact {
   title?: string
   company?: string
   sourceUrl?: string
+  manuallyReviewed: boolean
   createdAt: string
   updatedAt: string
 }
@@ -384,6 +385,46 @@ class LeadsService {
           )
         },
       )
+
+      // Invalidate leads list to ensure consistency
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
+
+  // Toggle contact manually reviewed status
+  async toggleContactManuallyReviewed(
+    leadId: string,
+    contactId: string,
+    manuallyReviewed: boolean,
+  ): Promise<{ message: string; contact: LeadPointOfContact }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts/${contactId}/manually-reviewed`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ manuallyReviewed }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to update contact manually reviewed status')
+    }
+
+    const result = await response.json()
+
+    // Update cache after successful update if queryClient is available
+    if (this.queryClient) {
+      // Invalidate the lead detail to refresh the contact data
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(leadId),
+      })
 
       // Invalidate leads list to ensure consistency
       this.queryClient.invalidateQueries({

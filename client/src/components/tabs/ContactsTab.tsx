@@ -1,14 +1,42 @@
-import React from 'react'
-import { Users, User, Crown, Mail, Phone, Building, ExternalLink } from 'lucide-react'
+import React, { useState } from 'react'
+import { Users, User, Crown, Mail, Phone, Building, ExternalLink, CheckSquare, Square } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import type { LeadPointOfContact } from '../../services/leads.service'
+import { getLeadsService } from '../../services/leads.service'
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
   primaryContactId?: string
+  leadId: string
 }
 
-const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId }) => {
+const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, leadId }) => {
+  const [loadingContactId, setLoadingContactId] = useState<string | null>(null)
+  const leadsService = getLeadsService()
+
+  const toggleManuallyReviewedMutation = useMutation({
+    mutationFn: ({ contactId, manuallyReviewed }: { contactId: string; manuallyReviewed: boolean }) =>
+      leadsService.toggleContactManuallyReviewed(leadId, contactId, manuallyReviewed),
+    onMutate: ({ contactId }) => {
+      setLoadingContactId(contactId)
+    },
+    onSettled: () => {
+      setLoadingContactId(null)
+    },
+    onError: (error) => {
+      console.error('Failed to update manually reviewed status:', error)
+      // You might want to show a toast notification here
+    },
+  })
+
+  const handleToggleManuallyReviewed = (contact: LeadPointOfContact) => {
+    toggleManuallyReviewedMutation.mutate({
+      contactId: contact.id,
+      manuallyReviewed: !contact.manuallyReviewed,
+    })
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-6">
@@ -43,6 +71,25 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId })
                         Primary
                       </div>
                     )}
+                  </div>
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => handleToggleManuallyReviewed(contact)}
+                      disabled={loadingContactId === contact.id}
+                      className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={contact.manuallyReviewed ? 'Mark as not manually reviewed' : 'Mark as manually reviewed'}
+                    >
+                      {loadingContactId === contact.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                      ) : contact.manuallyReviewed ? (
+                        <CheckSquare className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Square className="h-4 w-4 text-gray-400" />
+                      )}
+                      <span className="text-sm font-medium text-gray-700">
+                        Manually Reviewed
+                      </span>
+                    </button>
                   </div>
                 </div>
 

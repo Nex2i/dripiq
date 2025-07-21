@@ -214,6 +214,7 @@ const LeadDetailPage: React.FC = () => {
           <ContactsTab
             contacts={lead.pointOfContacts || []}
             primaryContactId={lead.primaryContactId}
+            leadId={leadId}
           />
         )
       case 'ai-details':
@@ -252,6 +253,7 @@ const LeadDetailPage: React.FC = () => {
           <ContactsTab
             contacts={lead.pointOfContacts || []}
             primaryContactId={lead.primaryContactId}
+            leadId={leadId}
           />
         )
     }
