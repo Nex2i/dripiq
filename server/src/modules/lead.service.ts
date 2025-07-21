@@ -265,13 +265,16 @@ export const getLeadById = async (
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
     try {
+      console.log('DEBUG: Attempting to fetch statuses for lead:', id, 'tenant:', tenantId);
       statuses = await db
         .select()
         .from(leadStatuses)
         .where(and(eq(leadStatuses.leadId, id), eq(leadStatuses.tenantId, tenantId)))
         .orderBy(leadStatuses.createdAt);
+      console.log('DEBUG: Fetched statuses successfully, count:', statuses.length);
     } catch (error) {
       // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
+      console.log('DEBUG: Failed to fetch statuses, error:', error);
       logger.warn('Could not fetch lead statuses for lead detail, this may be expected if migration has not been run yet:', error);
       statuses = [];
     }
@@ -285,7 +288,11 @@ export const getLeadById = async (
       statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
 
-    logger.info(`Returning lead ${id} with ${result.statuses.length} statuses`);
+    // Debug logging
+    console.log('DEBUG: statuses array length:', statuses?.length || 0);
+    console.log('DEBUG: result has statuses property:', 'statuses' in result);
+    console.log('DEBUG: result.statuses:', result.statuses);
+
     return result;
   } catch (error) {
     logger.error('Error getting lead by ID:', error);
@@ -661,26 +668,7 @@ export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise
   }
 };
 
-/**
- * Helper function to add a test status to a lead (for testing purposes)
- * @param tenantId - The ID of the tenant
- * @param leadId - The ID of the lead
- * @returns A promise that resolves when the test status is added
- */
-export const addTestStatusToLead = async (tenantId: string, leadId: string): Promise<void> => {
-  try {
-    // Try to add a "New" status to the lead
-    await db.insert(leadStatuses).values({
-      leadId,
-      tenantId,
-      status: LEAD_STATUS.NEW,
-    });
-    logger.info(`Added test "${LEAD_STATUS.NEW}" status to lead ${leadId}`);
-  } catch (error) {
-    logger.error('Error adding test status to lead:', error);
-    throw error;
-  }
-};
+
 
 /**
  * Central method to update lead statuses by adding and removing specific statuses

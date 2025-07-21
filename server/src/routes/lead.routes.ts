@@ -13,7 +13,6 @@ import {
   getLeadById,
   assignLeadOwner,
   toggleContactManuallyReviewed,
-  addTestStatusToLead,
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
@@ -927,50 +926,5 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Test route to add status to a lead
-  fastify.route({
-    method: HttpMethods.POST,
-    url: `${basePath}/:id/test-status`,
-    preHandler: [fastify.authPrehandler],
-    schema: {
-      tags: ['Leads'],
-      summary: 'Add Test Status to Lead',
-      description: 'Add a test status to a specific lead (for testing)',
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
-      response: {
-        200: Type.Object({
-          message: Type.String({ description: 'Success message' }),
-        }),
-        404: defaultRouteResponse,
-        500: defaultRouteResponse,
-      },
-    },
-    handler: async (request, reply) => {
-      const authenticatedRequest = request as AuthenticatedRequest;
-      const { id } = request.params as { id: string };
-      
-      try {
-        await addTestStatusToLead(authenticatedRequest.tenantId, id);
 
-        reply.status(200).send({
-          message: 'Successfully added test status to lead',
-        });
-      } catch (error: any) {
-        if (error.message?.includes('Lead not found')) {
-          reply.status(404).send({
-            message: 'Lead not found',
-            error: error.message,
-          });
-          return;
-        }
-
-        reply.status(500).send({
-          message: 'Failed to add test status to lead',
-          error: error.message,
-        });
-      }
-    },
-  });
 }
