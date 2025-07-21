@@ -1,38 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { authService } from './auth.service'
+import type { Lead, LeadPointOfContact, LeadStatus } from '../types/lead.types'
 
-export interface LeadPointOfContact {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  title?: string
-  company?: string
-  sourceUrl?: string
-  manuallyReviewed: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export interface Lead {
-  id: string
-  name: string
-  url: string
-  status: string
-  summary?: string
-  products?: string[]
-  services?: string[]
-  differentiators?: string[]
-  targetMarket?: string
-  tone?: string
-  logo?: string | null
-  brandColors?: string[]
-  primaryContactId?: string
-  ownerId?: string
-  createdAt: string
-  updatedAt: string
-  pointOfContacts?: LeadPointOfContact[]
-}
+// Re-export types for backward compatibility
+export type { Lead, LeadPointOfContact, LeadStatus }
 
 export interface CreateLeadData {
   name: string

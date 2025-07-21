@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Users, User, Crown, Mail, Phone, Building, ExternalLink, CheckSquare, Square } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
-import type { LeadPointOfContact } from '../../services/leads.service'
+import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
 
 interface ContactsTabProps {

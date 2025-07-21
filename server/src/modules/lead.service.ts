@@ -7,6 +7,9 @@ import {
   NewLeadPointOfContact,
   Lead,
   LeadPointOfContact,
+  leadStatuses,
+  NewLeadStatus,
+  LeadStatus,
   userTenants,
   users,
 } from '../db/schema';
@@ -35,10 +38,10 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
   const baseWhere = eq(leads.tenantId, tenantId);
 
   // Add search functionality if searchQuery is provided
-  let result;
+  let leadResults;
   if (searchQuery && searchQuery.trim()) {
     const searchTerm = `%${searchQuery.trim()}%`;
-    result = await db
+    leadResults = await db
       .select({
         // Lead fields
         id: leads.id,
@@ -63,7 +66,7 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
       .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
       .orderBy(desc(leads.createdAt));
   } else {
-    result = await db
+    leadResults = await db
       .select({
         // Lead fields
         id: leads.id,
@@ -88,6 +91,45 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
       .where(baseWhere)
       .orderBy(desc(leads.createdAt));
   }
+
+  // Get statuses for all leads in a single query for better performance
+  const leadIds = leadResults.map((lead) => lead.id);
+  let allStatuses: any[] = [];
+
+  if (leadIds.length > 0) {
+    try {
+      allStatuses = await db
+        .select()
+        .from(leadStatuses)
+        .where(and(inArray(leadStatuses.leadId, leadIds), eq(leadStatuses.tenantId, tenantId)))
+        .orderBy(leadStatuses.createdAt);
+    } catch (error) {
+      // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
+      logger.warn(
+        'Could not fetch lead statuses, this may be expected if migration has not been run yet:',
+        error
+      );
+      allStatuses = [];
+    }
+  }
+
+  // Group statuses by leadId
+  const statusesByLeadId = allStatuses.reduce(
+    (acc, status) => {
+      if (!acc[status.leadId]) {
+        acc[status.leadId] = [];
+      }
+      acc[status.leadId].push(status);
+      return acc;
+    },
+    {} as Record<string, any[]>
+  );
+
+  // Add statuses to each lead
+  const result = leadResults.map((lead) => ({
+    ...lead,
+    statuses: statusesByLeadId[lead.id] || [],
+  }));
 
   return result;
 };
@@ -146,6 +188,13 @@ export const createLead = async (
       }
     }
 
+    // Create default "New" status for the lead
+    await tx.insert(leadStatuses).values({
+      leadId: createdLead.id,
+      tenantId,
+      status: 'New',
+    });
+
     // Transform lead with signed URLs
     const transformedLead = await transformLeadWithSignedUrls(tenantId, createdLead);
 
@@ -164,7 +213,10 @@ export const createLead = async (
  * @param id - The ID of the lead to retrieve.
  * @returns A promise that resolves to the lead object with point of contacts, or undefined if not found.
  */
-type LeadWithPointOfContacts = Lead & { pointOfContacts: LeadPointOfContact[] };
+type LeadWithPointOfContacts = Lead & {
+  pointOfContacts: LeadPointOfContact[];
+  statuses: LeadStatus[];
+};
 export const getLeadById = async (
   tenantId: string,
   id: string
@@ -212,12 +264,30 @@ export const getLeadById = async (
       .where(eq(leadPointOfContacts.leadId, id))
       .orderBy(leadPointOfContacts.createdAt);
 
+    // Get statuses for this lead (handle case where table doesn't exist yet)
+    let statuses: any[] = [];
+    try {
+      statuses = await db
+        .select()
+        .from(leadStatuses)
+        .where(and(eq(leadStatuses.leadId, id), eq(leadStatuses.tenantId, tenantId)))
+        .orderBy(leadStatuses.createdAt);
+    } catch (error) {
+      // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
+      logger.warn(
+        'Could not fetch lead statuses for lead detail, this may be expected if migration has not been run yet:',
+        error
+      );
+      statuses = [];
+    }
+
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
 
     return {
       ...transformedLead,
       pointOfContacts: contacts,
+      statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
   } catch (error) {
     logger.error('Error getting lead by ID:', error);
@@ -458,6 +528,235 @@ export const toggleContactManuallyReviewed = async (
     return updatedContact;
   } catch (error) {
     logger.error('Error toggling contact manually reviewed status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all statuses for a lead
+ * @param tenantId - The ID of the tenant
+ * @param leadId - The ID of the lead
+ * @returns A promise that resolves to an array of lead statuses
+ */
+export const getLeadStatuses = async (tenantId: string, leadId: string): Promise<LeadStatus[]> => {
+  try {
+    // Verify the lead exists and belongs to the tenant
+    const lead = await getLeadById(tenantId, leadId);
+    if (!lead) {
+      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
+    }
+
+    const statuses = await db
+      .select()
+      .from(leadStatuses)
+      .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
+      .orderBy(leadStatuses.createdAt);
+
+    return statuses;
+  } catch (error) {
+    logger.error('Error getting lead statuses:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check if a lead has a specific status
+ * @param tenantId - The ID of the tenant
+ * @param leadId - The ID of the lead
+ * @param status - The status to check for
+ * @returns A promise that resolves to a boolean indicating if the status exists
+ */
+export const hasStatus = async (
+  tenantId: string,
+  leadId: string,
+  status: LeadStatus['status']
+): Promise<boolean> => {
+  try {
+    const result = await db
+      .select()
+      .from(leadStatuses)
+      .where(
+        and(
+          eq(leadStatuses.leadId, leadId),
+          eq(leadStatuses.tenantId, tenantId),
+          eq(leadStatuses.status, status)
+        )
+      )
+      .limit(1);
+
+    return result.length > 0;
+  } catch (error) {
+    logger.error('Error checking lead status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Ensure a lead has the default "New" status if no statuses exist
+ * @param tenantId - The ID of the tenant
+ * @param leadId - The ID of the lead
+ * @returns A promise that resolves when the default status is ensured
+ */
+export const ensureDefaultStatus = async (tenantId: string, leadId: string): Promise<void> => {
+  try {
+    const existingStatuses = await db
+      .select()
+      .from(leadStatuses)
+      .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
+      .limit(1);
+
+    if (existingStatuses.length === 0) {
+      await db.insert(leadStatuses).values({
+        leadId,
+        tenantId,
+        status: 'New',
+      });
+
+      logger.info(`Added default "New" status to lead ${leadId}`);
+    }
+  } catch (error) {
+    logger.error('Error ensuring default status:', error);
+    // Don't throw error to avoid breaking lead operations if status table doesn't exist yet
+    logger.warn(
+      `Could not ensure default status for lead ${leadId}, this may be expected if migration hasn't run yet`
+    );
+  }
+};
+
+/**
+ * Helper function to add default statuses to all leads that don't have any
+ * This can be used for data migration or fixing existing leads
+ * @param tenantId - The ID of the tenant
+ * @returns A promise that resolves when all leads have default statuses
+ */
+export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise<void> => {
+  try {
+    // Get all leads for the tenant
+    const allLeads = await db
+      .select({ id: leads.id })
+      .from(leads)
+      .where(eq(leads.tenantId, tenantId));
+
+    // Get all existing statuses for this tenant
+    const existingStatuses = await db
+      .select({ leadId: leadStatuses.leadId })
+      .from(leadStatuses)
+      .where(eq(leadStatuses.tenantId, tenantId));
+
+    const leadsWithStatuses = new Set(existingStatuses.map((s) => s.leadId));
+
+    // Find leads without any status
+    const leadsWithoutStatus = allLeads.filter((lead) => !leadsWithStatuses.has(lead.id));
+
+    if (leadsWithoutStatus.length > 0) {
+      // Create default statuses for leads without any
+      const defaultStatuses = leadsWithoutStatus.map((lead) => ({
+        leadId: lead.id,
+        tenantId,
+        status: 'New' as const,
+      }));
+
+      await db.insert(leadStatuses).values(defaultStatuses);
+      logger.info(`Added default "New" status to ${leadsWithoutStatus.length} leads`);
+    }
+  } catch (error) {
+    logger.error('Error ensuring all leads have default status:', error);
+    // Don't throw to avoid breaking the application
+  }
+};
+
+/**
+ * Central method to update lead statuses by adding and removing specific statuses
+ * @param tenantId - The ID of the tenant
+ * @param leadId - The ID of the lead
+ * @param statusesToAdd - Array of statuses to add
+ * @param statusesToRemove - Array of statuses to remove
+ * @returns A promise that resolves to the updated list of statuses
+ */
+export const updateLeadStatuses = async (
+  tenantId: string,
+  leadId: string,
+  statusesToAdd: LeadStatus['status'][] = [],
+  statusesToRemove: LeadStatus['status'][] = []
+): Promise<LeadStatus[]> => {
+  try {
+    // Verify the lead exists and belongs to the tenant
+    const lead = await getLeadById(tenantId, leadId);
+    if (!lead) {
+      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
+    }
+
+    // Use transaction to ensure consistency
+    const result = await db.transaction(async (tx) => {
+      // Get current statuses
+      const currentStatuses = await tx
+        .select()
+        .from(leadStatuses)
+        .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)));
+
+      // Remove specified statuses
+      if (statusesToRemove.length > 0) {
+        await tx
+          .delete(leadStatuses)
+          .where(
+            and(
+              eq(leadStatuses.leadId, leadId),
+              eq(leadStatuses.tenantId, tenantId),
+              inArray(leadStatuses.status, statusesToRemove)
+            )
+          );
+      }
+
+      // Add new statuses (only if they don't already exist)
+      const statusesToInsert: NewLeadStatus[] = [];
+      for (const status of statusesToAdd) {
+        const exists = currentStatuses.some((s) => s.status === status);
+        if (!exists && !statusesToRemove.includes(status)) {
+          statusesToInsert.push({
+            leadId,
+            tenantId,
+            status,
+          });
+        }
+      }
+
+      if (statusesToInsert.length > 0) {
+        await tx.insert(leadStatuses).values(statusesToInsert);
+      }
+
+      // Get updated statuses after changes
+      const updatedStatuses = await tx
+        .select()
+        .from(leadStatuses)
+        .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
+        .orderBy(leadStatuses.createdAt);
+
+      // Ensure at least one status exists (add "New" if none exist)
+      if (updatedStatuses.length === 0) {
+        await tx.insert(leadStatuses).values({
+          leadId,
+          tenantId,
+          status: 'New',
+        });
+
+        // Get the final statuses including the default one
+        return await tx
+          .select()
+          .from(leadStatuses)
+          .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
+          .orderBy(leadStatuses.createdAt);
+      }
+
+      return updatedStatuses;
+    });
+
+    logger.info(
+      `Updated statuses for lead ${leadId}: added [${statusesToAdd.join(', ')}], removed [${statusesToRemove.join(', ')}]`
+    );
+
+    return result;
+  } catch (error) {
+    logger.error('Error updating lead statuses:', error);
     throw error;
   }
 };

@@ -22,6 +22,7 @@ import ContactsTab from '../components/tabs/ContactsTab'
 import AIDetailsTab from '../components/tabs/AIDetailsTab'
 import BrandingTab from '../components/tabs/BrandingTab'
 import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
+import LeadStatusBadges from '../components/LeadStatusBadges'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -93,25 +94,6 @@ const LeadDetailPage: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit',
     })
-  }
-
-  const getStatusBadge = (status: string) => {
-    const statusColors = {
-      new: 'bg-[var(--color-primary-100)] text-[var(--color-primary-800)]',
-      contacted: 'bg-yellow-100 text-yellow-800',
-      qualified: 'bg-green-100 text-green-800',
-      lost: 'bg-red-100 text-red-800',
-    }
-
-    const displayStatus = status || 'new'
-
-    return (
-      <span
-        className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${statusColors[displayStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}
-      >
-        {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
-      </span>
-    )
   }
 
   const tabs = [
@@ -245,7 +227,7 @@ const LeadDetailPage: React.FC = () => {
           <LeadDetailsTab
             status={lead.status}
             url={lead.url}
-            getStatusBadge={getStatusBadge}
+            statuses={lead.statuses}
           />
         )
       default:
@@ -295,15 +277,21 @@ const LeadDetailPage: React.FC = () => {
                       className="inline-flex items-center text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
                     >
                       <Globe className="h-5 w-5 mr-1" />
-                      <span className="text-lg">{lead.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                      <span className="text-lg">
+                        {lead.url
+                          .replace(/^https?:\/\//, '')
+                          .replace(/\/$/, '')}
+                      </span>
                     </a>
                   )}
+                </div>
+                <div className="mt-3">
+                  <LeadStatusBadges statuses={lead.statuses || []} />
                 </div>
                 <p className="mt-2 text-gray-600">Lead Details</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {getStatusBadge(lead.status)}
               <button
                 onClick={handleResync}
                 disabled={resyncLead.isPending}
