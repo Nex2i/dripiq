@@ -225,6 +225,7 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
   title: text('title'), // Job title
   company: text('company'),
   sourceUrl: text('source_url'), // URL where the contact information was found
+  manuallyReviewed: boolean('manually_reviewed').notNull().default(false), // Whether the contact has been manually reviewed
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

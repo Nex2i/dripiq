@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."lead_point_of_contacts" ADD COLUMN "manually_reviewed" boolean DEFAULT false NOT NULL;
