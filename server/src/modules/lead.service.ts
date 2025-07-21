@@ -265,16 +265,13 @@ export const getLeadById = async (
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
     try {
-      console.log('DEBUG: Attempting to fetch statuses for lead:', id, 'tenant:', tenantId);
       statuses = await db
         .select()
         .from(leadStatuses)
         .where(and(eq(leadStatuses.leadId, id), eq(leadStatuses.tenantId, tenantId)))
         .orderBy(leadStatuses.createdAt);
-      console.log('DEBUG: Fetched statuses successfully, count:', statuses.length);
     } catch (error) {
       // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
-      console.log('DEBUG: Failed to fetch statuses, error:', error);
       logger.warn('Could not fetch lead statuses for lead detail, this may be expected if migration has not been run yet:', error);
       statuses = [];
     }
@@ -282,18 +279,11 @@ export const getLeadById = async (
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
 
-    const result = {
+    return {
       ...transformedLead,
       pointOfContacts: contacts,
       statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
-
-    // Debug logging
-    console.log('DEBUG: statuses array length:', statuses?.length || 0);
-    console.log('DEBUG: result has statuses property:', 'statuses' in result);
-    console.log('DEBUG: result.statuses:', result.statuses);
-
-    return result;
   } catch (error) {
     logger.error('Error getting lead by ID:', error);
     throw error;

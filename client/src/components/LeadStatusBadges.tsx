@@ -64,14 +64,41 @@ const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact =
       LEAD_STATUS_PRIORITY[current.status] > LEAD_STATUS_PRIORITY[prev.status] ? current : prev
     )
     
+    const hasMultipleStatuses = sortedStatuses.length > 1
+    
     return (
-      <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(mostImportantStatus.status)}`}
-        title={`All statuses: ${sortedStatuses.map(s => s.status).join(', ')}`}
-      >
-        <span className="text-xs">{getStatusIcon(mostImportantStatus.status)}</span>
-        {mostImportantStatus.status}
-      </span>
+      <div className="relative group">
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(mostImportantStatus.status)} ${hasMultipleStatuses ? 'cursor-help' : ''}`}
+        >
+          <span className="text-xs">{getStatusIcon(mostImportantStatus.status)}</span>
+          {mostImportantStatus.status}
+          {hasMultipleStatuses && (
+            <span className="ml-1 px-1 py-0.5 bg-black bg-opacity-20 rounded-full text-xs font-bold leading-none">
+              +{sortedStatuses.length - 1}
+            </span>
+          )}
+        </span>
+        
+        {hasMultipleStatuses && (
+          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-max max-w-xs">
+            <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+              <div className="font-semibold mb-1">All Statuses:</div>
+              <div className="space-y-1">
+                {sortedStatuses.map((status, index) => (
+                  <div key={status.id} className="flex items-center gap-2">
+                    <span>{getStatusIcon(status.status)}</span>
+                    <span>{status.status}</span>
+                    {index === 0 && <span className="text-gray-400 text-xs">(primary)</span>}
+                  </div>
+                ))}
+              </div>
+              {/* Tooltip arrow */}
+              <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+            </div>
+          </div>
+        )}
+      </div>
     )
   }
 
