@@ -932,4 +932,164 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       }
     },
   });
+
+  // Lead qualification endpoint
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:leadId/contacts/:contactId/qualification`,
+    schema: {
+      description: 'Generate lead qualification and outreach strategy for a specific contact',
+      tags: ['Leads'],
+      params: Type.Object({
+        leadId: Type.String({ description: 'Lead ID' }),
+        contactId: Type.String({ description: 'Contact index' }),
+      }),
+      querystring: Type.Object({
+        tenantId: Type.String({ description: 'Tenant ID' }),
+      }),
+      response: {
+        200: Type.Object({
+          success: Type.Boolean(),
+          message: Type.String(),
+          data: Type.Object({
+            leadResearch: Type.Object({
+              companyBackground: Type.String(),
+              recentNews: Type.Array(Type.String()),
+              industryContext: Type.String(),
+              problemSolutionFit: Type.String(),
+              priorityScore: Type.Union([Type.Literal('high'), Type.Literal('medium'), Type.Literal('low')]),
+              potentialValue: Type.String(),
+            }),
+            contactAnalysis: Type.Object({
+              contact: Type.Object({
+                name: Type.String(),
+                title: Type.Union([Type.String(), Type.Null()]),
+                persona: Type.String(),
+                painPoints: Type.Array(Type.String()),
+                professionalGoals: Type.Array(Type.String()),
+                messagingApproach: Type.Union([
+                  Type.Literal('strategic'),
+                  Type.Literal('tactical'),
+                  Type.Literal('technical'),
+                  Type.Literal('financial')
+                ]),
+              }),
+              decisionMakingRole: Type.String(),
+              influenceLevel: Type.Union([Type.Literal('high'), Type.Literal('medium'), Type.Literal('low')]),
+              engagementStrategy: Type.String(),
+            }),
+            outreachStrategy: Type.Object({
+              dripCampaign: Type.Object({
+                touchpoint1: Type.Any(),
+                touchpoint2: Type.Any(),
+                touchpoint3: Type.Any(),
+                touchpoint4: Type.Any(),
+                touchpoint5: Type.Any(),
+                touchpoint6: Type.Any(),
+              }),
+              timing: Type.Object({
+                frequency: Type.String(),
+                totalDuration: Type.String(),
+              }),
+              channelMix: Type.Array(Type.String()),
+            }),
+            messaging: Type.Object({
+              valueProposition: Type.String(),
+              keyBenefits: Type.Array(Type.String()),
+              caseStudyReferences: Type.Array(Type.String()),
+              supportingMaterials: Type.Array(Type.String()),
+              objectionHandling: Type.Array(Type.Object({
+                objection: Type.String(),
+                response: Type.String(),
+              })),
+            }),
+            nextSteps: Type.Object({
+              immediateActions: Type.Array(Type.String()),
+              followUpSchedule: Type.String(),
+              successMetrics: Type.Array(Type.String()),
+              escalationTriggers: Type.Array(Type.String()),
+            }),
+            summary: Type.String(),
+          }),
+          metadata: Type.Object({
+            totalIterations: Type.Number(),
+            processingTime: Type.Number(),
+          }),
+        }),
+        400: defaultRouteResponse,
+        403: defaultRouteResponse,
+        404: defaultRouteResponse,
+        500: defaultRouteResponse,
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const { leadId, contactId } = request.params as { leadId: string; contactId: string };
+      const { tenantId } = request.query as { tenantId: string };
+      const userId = authenticatedRequest.user?.id;
+
+      try {
+        const startTime = Date.now();
+        
+        const { qualifyLeadContact } = await import('@/modules/ai');
+        
+        const result = await qualifyLeadContact({
+          leadId,
+          contactId: parseInt(contactId, 10),
+          tenantId,
+          userId,
+        });
+
+        const processingTime = Date.now() - startTime;
+
+        reply.status(200).send({
+          success: true,
+          message: 'Lead qualification completed successfully',
+          data: result.finalResponseParsed,
+          metadata: {
+            totalIterations: result.totalIterations,
+            processingTime,
+          },
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error qualifying lead contact: ${error.message}`);
+
+        if (error.message?.includes('Access denied')) {
+          reply.status(403).send({
+            success: false,
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (
+          error.message?.includes('not found') ||
+          error.message?.includes('Contact not found')
+        ) {
+          reply.status(404).send({
+            success: false,
+            message: 'Lead or contact not found',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('No contacts found')) {
+          reply.status(400).send({
+            success: false,
+            message: 'No contacts available for this lead',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to generate lead qualification',
+          error: error.message,
+        });
+      }
+    },
+  });
 }

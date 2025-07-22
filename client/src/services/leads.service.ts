@@ -405,6 +405,31 @@ class LeadsService {
 
     return result
   }
+
+  // Generate lead qualification and outreach strategy for a contact
+  async qualifyLeadContact(
+    leadId: string,
+    contactId: number,
+    tenantId: string,
+  ): Promise<any> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts/${contactId}/qualification?tenantId=${tenantId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to generate lead qualification')
+    }
+
+    const result = await response.json()
+    return result
+  }
 }
 
 // Create a singleton instance that will be initialized with QueryClient

@@ -22,12 +22,19 @@ export {
   type ContactExtractionResult,
 } from './agents/ContactExtractionAgent';
 
+export {
+  LeadQualificationAgent,
+  type LeadQualificationResult,
+} from './agents/LeadQualificationAgent';
+
 // Export agent factories
 export {
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
+  leadQualificationAgent,
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,
+  createLeadQualificationAgent,
 } from './factories/AgentFactory';

@@ -1,19 +1,27 @@
 import React, { useState } from 'react'
-import { Users, User, Crown, Mail, Phone, Building, ExternalLink, CheckSquare, Square } from 'lucide-react'
+import { Users, User, Crown, Mail, Phone, Building, ExternalLink, CheckSquare, Square, Target, Loader2 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
+import LeadQualificationModal from '../LeadQualificationModal'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
   primaryContactId?: string
   leadId: string
+  companyName?: string
 }
 
-const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, leadId }) => {
+const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, leadId, companyName }) => {
   const [loadingContactId, setLoadingContactId] = useState<string | null>(null)
+  const [qualifyingContactId, setQualifyingContactId] = useState<string | null>(null)
+  const [qualificationModalOpen, setQualificationModalOpen] = useState(false)
+  const [qualificationData, setQualificationData] = useState<any>(null)
+  const [selectedContactName, setSelectedContactName] = useState<string>('')
   const leadsService = getLeadsService()
+  const { user } = useAuth()
 
   const toggleManuallyReviewedMutation = useMutation({
     mutationFn: ({ contactId, manuallyReviewed }: { contactId: string; manuallyReviewed: boolean }) =>
@@ -30,10 +38,43 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
     },
   })
 
+  const qualifyContactMutation = useMutation({
+    mutationFn: ({ contactIndex, tenantId }: { contactIndex: number; tenantId: string }) =>
+      leadsService.qualifyLeadContact(leadId, contactIndex, tenantId),
+    onMutate: ({ contactIndex }) => {
+      const contact = contacts[contactIndex]
+      setQualifyingContactId(contact.id)
+      setSelectedContactName(contact.name)
+    },
+    onSuccess: (result) => {
+      setQualificationData(result.data)
+      setQualificationModalOpen(true)
+    },
+    onSettled: () => {
+      setQualifyingContactId(null)
+    },
+    onError: (error) => {
+      console.error('Failed to generate lead qualification:', error)
+      // You might want to show a toast notification here
+    },
+  })
+
   const handleToggleManuallyReviewed = (contact: LeadPointOfContact) => {
     toggleManuallyReviewedMutation.mutate({
       contactId: contact.id,
       manuallyReviewed: !contact.manuallyReviewed,
+    })
+  }
+
+  const handleQualifyContact = (contactIndex: number) => {
+    if (!user?.tenantId) {
+      console.error('No tenant ID available')
+      return
+    }
+
+    qualifyContactMutation.mutate({
+      contactIndex,
+      tenantId: user.tenantId,
     })
   }
 
@@ -54,7 +95,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
           </div>
         ) : (
           <div className="space-y-6">
-            {contacts.map((contact) => (
+            {contacts.map((contact, index) => (
               <div
                 key={contact.id}
                 className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
@@ -72,7 +113,22 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => handleQualifyContact(index)}
+                      disabled={qualifyingContactId === contact.id}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Generate outreach strategy for this contact"
+                    >
+                      {qualifyingContactId === contact.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Target className="h-4 w-4" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {qualifyingContactId === contact.id ? 'Generating...' : 'Generate Strategy'}
+                      </span>
+                    </button>
                     <button
                       onClick={() => handleToggleManuallyReviewed(contact)}
                       disabled={loadingContactId === contact.id}
@@ -173,6 +229,15 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
           </div>
         )}
       </div>
+      
+      {/* Lead Qualification Modal */}
+      <LeadQualificationModal
+        isOpen={qualificationModalOpen}
+        onClose={() => setQualificationModalOpen(false)}
+        data={qualificationData}
+        contactName={selectedContactName}
+        companyName={companyName || 'Unknown Company'}
+      />
     </div>
   )
 }
