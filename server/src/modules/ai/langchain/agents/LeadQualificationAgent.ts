@@ -81,7 +81,7 @@ export class LeadQualificationAgent {
         partner_products: JSON.stringify(safeInput.partnerProducts, null, 2),
         output_schema: JSON.stringify(z.toJSONSchema(leadQualificationOutputSchema), null, 2),
       });
-      
+
       // Add explicit JSON mode instruction
       systemPrompt = `${basePrompt}\n\nIMPORTANT: You must respond with valid JSON only. Start with { and end with }. Do not include any other text.`;
     } catch (error) {
@@ -139,24 +139,30 @@ export class LeadQualificationAgent {
     try {
       // Create a direct model instance for structured output
       const model = createChatModel(this.config);
-      
+
       // Try using withStructuredOutput if available
       const structuredModel = model.withStructuredOutput(leadQualificationOutputSchema);
-      
+
       const response = await structuredModel.invoke([
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: 'Please provide the lead qualification analysis in the specified JSON format.' }
+        {
+          role: 'user',
+          content: 'Please provide the lead qualification analysis in the specified JSON format.',
+        },
       ]);
 
       return JSON.stringify(response, null, 2);
     } catch (error) {
-      logger.warn('Direct model approach with structured output failed, falling back to text approach', error);
-      
+      logger.warn(
+        'Direct model approach with structured output failed, falling back to text approach',
+        error
+      );
+
       // Fallback to regular model call
       const model = createChatModel(this.config);
       const response = await model.invoke([
         { role: 'system', content: systemPrompt + '\n\nRESPOND WITH VALID JSON ONLY.' },
-        { role: 'user', content: 'Please provide the lead qualification analysis in JSON format.' }
+        { role: 'user', content: 'Please provide the lead qualification analysis in JSON format.' },
       ]);
 
       return response.content as string;
@@ -211,38 +217,38 @@ function parseWithSchema(
   try {
     // First, try to find JSON in the content with multiple strategies
     let jsonText = content;
-    
+
     // Remove markdown code fencing
     jsonText = jsonText.replace(/^```(?:json)?|```$/gm, '').trim();
-    
+
     // Look for JSON object patterns
     const jsonMatches = jsonText.match(/\{[\s\S]*\}/);
     if (jsonMatches) {
       jsonText = jsonMatches[0];
     }
-    
+
     // Clean up common formatting issues
     jsonText = jsonText.trim();
-    
+
     // Log what we're trying to parse for debugging
-    logger.info('Attempting to parse lead qualification JSON', { 
+    logger.info('Attempting to parse lead qualification JSON', {
       contentLength: content.length,
       extractedLength: jsonText.length,
-      preview: jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : '')
+      preview: jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''),
     });
 
     const parsed = JSON.parse(jsonText);
     return leadQualificationOutputSchema.parse(parsed);
   } catch (parseError) {
-    logger.warn('Lead qualification JSON parsing failed', { 
+    logger.warn('Lead qualification JSON parsing failed', {
       error: parseError instanceof Error ? parseError.message : 'Unknown error',
       contentPreview: content.substring(0, 500) + (content.length > 500 ? '...' : ''),
-      contentLength: content.length
+      contentLength: content.length,
     });
-    
+
     // Try to extract individual fields if JSON parsing completely fails
     try {
-      return extractFieldsFromText(content, leadDetails, contactDetails);
+      return extractFieldsFromText(leadDetails, contactDetails);
     } catch (fallbackError) {
       logger.error('Fallback extraction also failed', fallbackError);
       return getFallbackResult(leadDetails, contactDetails, parseError);
@@ -250,15 +256,15 @@ function parseWithSchema(
   }
 }
 
-function extractFieldsFromText(
-  content: string,
-  leadDetails: any,
-  contactDetails: any
-): LeadQualificationOutput {
+function extractFieldsFromText(leadDetails: any, contactDetails: any): LeadQualificationOutput {
   // Simple fallback - look for key patterns in text
   logger.info('Attempting text-based field extraction for lead qualification');
-  
-  return getFallbackResult(leadDetails, contactDetails, new Error('JSON parsing failed, used text extraction'));
+
+  return getFallbackResult(
+    leadDetails,
+    contactDetails,
+    new Error('JSON parsing failed, used text extraction')
+  );
 }
 
 function getFallbackResult(

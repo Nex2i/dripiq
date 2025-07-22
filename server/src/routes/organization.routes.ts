@@ -2,6 +2,7 @@ import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 import { storageService } from '@/modules/storage/storage.service';
+import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 
 const basePath = '/organizations';
 
@@ -125,8 +126,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const user = (request as any).user;
-        const tenantId = (request as any).tenantId;
+        const { tenantId } = request as AuthenticatedRequest;
 
         if (tenantId !== id) {
           return reply
