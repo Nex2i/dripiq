@@ -1,8 +1,4 @@
 import { logger } from '@/libs/logger';
-import { getLeadById } from '../lead.service';
-import { ProductsService } from '../products.service';
-import { TenantService } from '../tenant.service';
-import { leadQualificationAgent } from './langchain';
 import type { LeadQualificationResult } from './langchain/agents/LeadQualificationAgent';
 
 export interface QualifyLeadContactParams {
@@ -21,6 +17,12 @@ export const qualifyLeadContact = async (
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
+    // Import services at runtime to avoid startup dependencies
+    const { getLeadById } = await import('../lead.service');
+    const { ProductsService } = await import('../products.service');
+    const { TenantService } = await import('../tenant.service');
+    const { leadQualificationAgent } = await import('./langchain');
+
     // Verify user access if userId provided
     if (userId) {
       const hasAccess = await ProductsService.checkUserAccess(userId, tenantId);

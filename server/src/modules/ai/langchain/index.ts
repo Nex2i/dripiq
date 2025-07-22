@@ -32,9 +32,11 @@ export {
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
-  leadQualificationAgent,
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,
   createLeadQualificationAgent,
 } from './factories/AgentFactory';
+
+// Export lazy-loaded lead qualification agent separately
+export { leadQualificationAgent } from './factories/AgentFactory';

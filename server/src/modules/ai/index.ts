@@ -11,7 +11,6 @@ export {
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
-  leadQualificationAgent,
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,
@@ -28,3 +27,6 @@ export {
   type ContactExtractionResult,
   type LeadQualificationResult,
 } from './langchain';
+
+// Export lazy-loaded lead qualification agent separately
+export { leadQualificationAgent } from './langchain';
