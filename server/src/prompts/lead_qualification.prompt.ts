@@ -71,12 +71,15 @@ Use the available tools to:
 
 ## OUTPUT REQUIREMENTS
 
-Provide your analysis in the exact JSON schema format specified. Ensure:
+**CRITICAL: You must return your response as a valid JSON object that exactly matches the provided schema.**
+
+Provide your analysis in the exact JSON schema format shown below. Ensure:
 - All sections are thoroughly completed
 - Messages are personalized and professional
 - Recommendations are actionable and specific
 - Content demonstrates deep understanding of both the contact and company
 - Timing and frequency suggestions are realistic and effective
+- **Your response must be valid JSON that can be parsed programmatically**
 
 ## CONTEXT VARIABLES
 
@@ -85,6 +88,33 @@ Contact Information: {{contact_details}}
 Partner Information: {{partner_details}}
 Partner Products: {{partner_products}}
 
-Focus your entire analysis on creating the most effective outreach strategy for this specific contact while demonstrating value alignment between the partner and the prospect company.`;
+## REQUIRED OUTPUT SCHEMA
+
+Your response must be a JSON object that matches this exact schema:
+{{output_schema}}
+
+Focus your entire analysis on creating the most effective outreach strategy for this specific contact while demonstrating value alignment between the partner and the prospect company.
+
+**IMPORTANT: Return ONLY the JSON object. Do not include any explanatory text before or after the JSON.**
+
+**FORMATTING REQUIREMENTS:**
+- Start your response immediately with an opening curly brace {
+- End your response with a closing curly brace }
+- Do not include any text like explanations or code block markers
+- Do not include any markdown formatting
+- Ensure all string values are properly quoted
+- Ensure all arrays and objects are properly formatted
+- Use double quotes for all JSON keys and string values
+
+**EXAMPLE RESPONSE FORMAT:**
+{
+  "leadResearch": {
+    "companyBackground": "Analysis text here...",
+    "recentNews": ["news item 1", "news item 2"]
+  },
+  "contactAnalysis": {
+    "contact": { "name": "Contact Name" }
+  }
+}`;
 
 export default leadQualificationPrompt;
