@@ -38,7 +38,9 @@ const extractedContactSchema = z.object({
   // Priority Information
   isPriorityContact: z
     .boolean()
-    .describe('True if this is the most important/primary contact for business engagement, false otherwise'),
+    .describe(
+      'True if this is the most important/primary contact for business engagement, false otherwise'
+    ),
 
   // Additional Information
   address: z.string().nullable().describe('Physical address if available, null if not found'),
@@ -70,7 +72,9 @@ const contactExtractionOutputSchema = z.object({
   priorityContactId: z
     .number()
     .nullable()
-    .describe('Index (0-based) of the most important contact in the contacts array, or null if no clear priority contact exists'),
+    .describe(
+      'Index (0-based) of the most important contact in the contacts array, or null if no clear priority contact exists'
+    ),
   summary: z
     .string()
     .describe('Brief summary of contact extraction results and any notable findings'),
