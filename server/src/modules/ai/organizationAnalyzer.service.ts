@@ -1,4 +1,5 @@
 import { TenantService } from '../tenant.service';
+import { EmbeddingsService } from './embeddings.service';
 import { siteAnalysisAgent } from './langchain';
 import { SiteScrapeService } from './siteScrape.service';
 
@@ -14,6 +15,11 @@ export const OrganizationAnalyzerService = {
       tenantId,
       type: 'organization_site',
     };
+
+    if (await OrganizationAnalyzerService.wasLastScrapeTooRecent(website.cleanWebsiteUrl())) {
+      await OrganizationAnalyzerService.analyzeOrganization(tenantId);
+      return;
+    }
 
     await SiteScrapeService.scrapeSite(website.cleanWebsiteUrl(), metadata, 'organization_site');
   },
@@ -46,5 +52,15 @@ export const OrganizationAnalyzerService = {
       targetMarket: targetMarket,
       tone: tone,
     });
+  },
+  wasLastScrapeTooRecent: async (url: string) => {
+    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
+
+    if (!lastScrape) {
+      return false;
+    }
+
+    const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    return lastScrape > oneMonthAgo;
   },
 };
