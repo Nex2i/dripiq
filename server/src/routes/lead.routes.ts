@@ -16,6 +16,7 @@ import {
 } from '../modules/lead.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
+import { qualifyLeadContact } from '@/modules/ai/leadQualification.service';
 
 const basePath = '/leads';
 
@@ -1040,8 +1041,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
       try {
         const startTime = Date.now();
-
-        const { qualifyLeadContact } = await import('@/modules/ai');
 
         const result = await qualifyLeadContact({
           leadId,

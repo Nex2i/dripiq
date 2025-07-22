@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm';
-import { db, userTenants } from '@/db';
+import { db, userTenants, users } from '@/db';
 import { ForbiddenError } from '@/exceptions/error';
 
 /**
@@ -65,7 +65,6 @@ export async function validateTenantAccessFromSupabaseUser(
   tenantId: string
 ): Promise<string> {
   // First get the user's database ID using Supabase ID
-  const { users } = await import('@/db');
   const user = await db
     .select({ id: users.id })
     .from(users)

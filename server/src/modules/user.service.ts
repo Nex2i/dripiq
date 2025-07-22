@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db, users, User, NewUser, UserTenant, userTenants, tenants } from '@/db';
+import { validateUserTenantAccess } from '@/utils/tenantValidation';
 
 export interface CreateUserData {
   supabaseId: string;
@@ -200,10 +201,8 @@ export class UserService {
     tenantId: string
   ): Promise<(UserTenant & { user: User })[]> {
     // Validate requesting user has access to this tenant
-    const { validateUserTenantAccess } = await import('../utils/tenantValidation');
     await validateUserTenantAccess(requestingUserId, tenantId);
 
-    const { userTenants } = await import('@/db');
     const result = await db
       .select()
       .from(userTenants)

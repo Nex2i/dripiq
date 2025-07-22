@@ -10,6 +10,7 @@ import {
   NewTenant,
   NewUserTenant,
 } from '@/db';
+import { validateUserSuperAccess, validateUserTenantAccess } from '@/utils/tenantValidation';
 
 export interface CreateTenantData {
   name: string;
@@ -175,7 +176,6 @@ export class TenantService {
     updateData: Partial<CreateTenantData>
   ): Promise<Tenant> {
     // Validate user has access to this tenant
-    const { validateUserTenantAccess } = await import('../utils/tenantValidation');
     await validateUserTenantAccess(userId, tenantId);
 
     if (updateData.website) {
@@ -212,7 +212,6 @@ export class TenantService {
    */
   static async deleteTenant(userId: string, tenantId: string): Promise<Tenant> {
     // Validate user has super user access to this tenant
-    const { validateUserSuperAccess } = await import('../utils/tenantValidation');
     await validateUserSuperAccess(userId, tenantId);
 
     const [tenant] = await db.delete(tenants).where(eq(tenants.id, tenantId)).returning();
@@ -235,7 +234,6 @@ export class TenantService {
     tenantId: string
   ): Promise<TenantWithUsers | null> {
     // Validate user has access to this tenant
-    const { validateUserTenantAccess } = await import('../utils/tenantValidation');
     await validateUserTenantAccess(userId, tenantId);
 
     return this.getTenantById(tenantId);
