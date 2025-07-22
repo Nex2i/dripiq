@@ -957,7 +957,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
               recentNews: Type.Array(Type.String()),
               industryContext: Type.String(),
               problemSolutionFit: Type.String(),
-              priorityScore: Type.Union([Type.Literal('high'), Type.Literal('medium'), Type.Literal('low')]),
+              priorityScore: Type.Union([
+                Type.Literal('high'),
+                Type.Literal('medium'),
+                Type.Literal('low'),
+              ]),
               potentialValue: Type.String(),
             }),
             contactAnalysis: Type.Object({
@@ -971,11 +975,15 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
                   Type.Literal('strategic'),
                   Type.Literal('tactical'),
                   Type.Literal('technical'),
-                  Type.Literal('financial')
+                  Type.Literal('financial'),
                 ]),
               }),
               decisionMakingRole: Type.String(),
-              influenceLevel: Type.Union([Type.Literal('high'), Type.Literal('medium'), Type.Literal('low')]),
+              influenceLevel: Type.Union([
+                Type.Literal('high'),
+                Type.Literal('medium'),
+                Type.Literal('low'),
+              ]),
               engagementStrategy: Type.String(),
             }),
             outreachStrategy: Type.Object({
@@ -998,10 +1006,12 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
               keyBenefits: Type.Array(Type.String()),
               caseStudyReferences: Type.Array(Type.String()),
               supportingMaterials: Type.Array(Type.String()),
-              objectionHandling: Type.Array(Type.Object({
-                objection: Type.String(),
-                response: Type.String(),
-              })),
+              objectionHandling: Type.Array(
+                Type.Object({
+                  objection: Type.String(),
+                  response: Type.String(),
+                })
+              ),
             }),
             nextSteps: Type.Object({
               immediateActions: Type.Array(Type.String()),
@@ -1030,9 +1040,9 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
       try {
         const startTime = Date.now();
-        
+
         const { qualifyLeadContact } = await import('@/modules/ai');
-        
+
         const result = await qualifyLeadContact({
           leadId,
           contactId: parseInt(contactId, 10),
@@ -1063,10 +1073,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        if (
-          error.message?.includes('not found') ||
-          error.message?.includes('Contact not found')
-        ) {
+        if (error.message?.includes('not found') || error.message?.includes('Contact not found')) {
           reply.status(404).send({
             success: false,
             message: 'Lead or contact not found',

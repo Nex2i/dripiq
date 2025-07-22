@@ -1,8 +1,8 @@
-import { leadQualificationAgent } from './langchain';
+import { logger } from '@/libs/logger';
 import { getLeadById } from '../lead.service';
 import { ProductsService } from '../products.service';
 import { TenantService } from '../tenant.service';
-import { logger } from '@/libs/logger';
+import { leadQualificationAgent } from './langchain';
 import type { LeadQualificationResult } from './langchain/agents/LeadQualificationAgent';
 
 export interface QualifyLeadContactParams {
@@ -15,7 +15,9 @@ export interface QualifyLeadContactParams {
 /**
  * Service to qualify a lead and generate outreach strategy for a specific contact
  */
-export const qualifyLeadContact = async (params: QualifyLeadContactParams): Promise<LeadQualificationResult> => {
+export const qualifyLeadContact = async (
+  params: QualifyLeadContactParams
+): Promise<LeadQualificationResult> => {
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
@@ -80,7 +82,7 @@ export const qualifyLeadContact = async (params: QualifyLeadContactParams): Prom
         tone: tenant.tone,
         // Add any other relevant tenant information
       },
-      partnerProducts: tenantProducts.map(product => ({
+      partnerProducts: tenantProducts.map((product) => ({
         id: product.id,
         title: product.title,
         description: product.description,
@@ -99,7 +101,6 @@ export const qualifyLeadContact = async (params: QualifyLeadContactParams): Prom
     });
 
     return result;
-
   } catch (error) {
     logger.error('Lead qualification failed', {
       leadId,

@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 const touchpointMessageSchema = z.object({
-  type: z.enum(['email', 'call', 'linkedin']).describe('The communication channel for this touchpoint'),
+  type: z
+    .enum(['email', 'call', 'linkedin'])
+    .describe('The communication channel for this touchpoint'),
   timing: z.string().describe('When to send this touchpoint (e.g., "Day 1", "Day 3", "Week 2")'),
   subject: z.string().describe('Email subject line or call/message purpose'),
   content: z.string().describe('The actual message content, personalized for the contact'),
@@ -15,17 +17,27 @@ const contactPersonaSchema = z.object({
   persona: z.string().describe('Persona category (executive, operational, technical, etc.)'),
   painPoints: z.array(z.string()).describe('Likely pain points for this contact'),
   professionalGoals: z.array(z.string()).describe('Professional objectives they might have'),
-  messagingApproach: z.enum(['strategic', 'tactical', 'technical', 'financial']).describe('Best messaging approach for this contact'),
+  messagingApproach: z
+    .enum(['strategic', 'tactical', 'technical', 'financial'])
+    .describe('Best messaging approach for this contact'),
 });
 
 const leadQualificationOutputSchema = z.object({
   // Lead Research & Qualification
   leadResearch: z.object({
-    companyBackground: z.string().describe('Comprehensive company background based on website analysis'),
-    recentNews: z.array(z.string()).describe('Any recent company news, announcements, or updates found'),
+    companyBackground: z
+      .string()
+      .describe('Comprehensive company background based on website analysis'),
+    recentNews: z
+      .array(z.string())
+      .describe('Any recent company news, announcements, or updates found'),
     industryContext: z.string().describe('Industry vertical and market context'),
-    problemSolutionFit: z.string().describe('How partner products/services address company challenges'),
-    priorityScore: z.enum(['high', 'medium', 'low']).describe('Lead priority based on fit assessment'),
+    problemSolutionFit: z
+      .string()
+      .describe('How partner products/services address company challenges'),
+    priorityScore: z
+      .enum(['high', 'medium', 'low'])
+      .describe('Lead priority based on fit assessment'),
     potentialValue: z.string().describe('Estimated business value or deal size potential'),
   }),
 
@@ -33,20 +45,26 @@ const leadQualificationOutputSchema = z.object({
   contactAnalysis: z.object({
     contact: contactPersonaSchema.describe('Analysis of the selected contact'),
     decisionMakingRole: z.string().describe('Their role in the decision-making process'),
-    influenceLevel: z.enum(['high', 'medium', 'low']).describe('Level of influence in purchasing decisions'),
-    engagementStrategy: z.string().describe('Recommended approach for engaging this specific contact'),
+    influenceLevel: z
+      .enum(['high', 'medium', 'low'])
+      .describe('Level of influence in purchasing decisions'),
+    engagementStrategy: z
+      .string()
+      .describe('Recommended approach for engaging this specific contact'),
   }),
 
   // Outreach Strategy
   outreachStrategy: z.object({
-    dripCampaign: z.object({
-      touchpoint1: touchpointMessageSchema,
-      touchpoint2: touchpointMessageSchema,
-      touchpoint3: touchpointMessageSchema,
-      touchpoint4: touchpointMessageSchema,
-      touchpoint5: touchpointMessageSchema,
-      touchpoint6: touchpointMessageSchema,
-    }).describe('Six-step outreach sequence tailored to the contact'),
+    dripCampaign: z
+      .object({
+        touchpoint1: touchpointMessageSchema,
+        touchpoint2: touchpointMessageSchema,
+        touchpoint3: touchpointMessageSchema,
+        touchpoint4: touchpointMessageSchema,
+        touchpoint5: touchpointMessageSchema,
+        touchpoint6: touchpointMessageSchema,
+      })
+      .describe('Six-step outreach sequence tailored to the contact'),
     timing: z.object({
       frequency: z.string().describe('Recommended frequency between touchpoints'),
       totalDuration: z.string().describe('Total campaign duration'),
@@ -56,14 +74,26 @@ const leadQualificationOutputSchema = z.object({
 
   // Messaging Framework
   messaging: z.object({
-    valueProposition: z.string().describe('Core value proposition tailored to this contact and company'),
-    keyBenefits: z.array(z.string()).describe('Key benefits that resonate with this contact\'s role'),
-    caseStudyReferences: z.array(z.string()).describe('Relevant case studies or success stories to reference'),
-    supportingMaterials: z.array(z.string()).describe('Recommended materials to share (whitepapers, demos, etc.)'),
-    objectionHandling: z.array(z.object({
-      objection: z.string(),
-      response: z.string(),
-    })).describe('Anticipated objections and recommended responses'),
+    valueProposition: z
+      .string()
+      .describe('Core value proposition tailored to this contact and company'),
+    keyBenefits: z
+      .array(z.string())
+      .describe("Key benefits that resonate with this contact's role"),
+    caseStudyReferences: z
+      .array(z.string())
+      .describe('Relevant case studies or success stories to reference'),
+    supportingMaterials: z
+      .array(z.string())
+      .describe('Recommended materials to share (whitepapers, demos, etc.)'),
+    objectionHandling: z
+      .array(
+        z.object({
+          objection: z.string(),
+          response: z.string(),
+        })
+      )
+      .describe('Anticipated objections and recommended responses'),
   }),
 
   // Next Steps
