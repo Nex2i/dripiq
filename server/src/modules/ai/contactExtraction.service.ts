@@ -1,7 +1,7 @@
 import { compareTwoStrings } from 'string-similarity';
 import { eq } from 'drizzle-orm';
 import { logger } from '@/libs/logger';
-import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts } from '@/db/schema';
+import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts, leads } from '@/db/schema';
 import db from '@/libs/drizzleClient';
 import { createContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
@@ -28,7 +28,15 @@ export const ContactExtractionService = {
       }
 
       const contacts = extractionResult.finalResponseParsed.contacts;
-      logger.info(`Found ${contacts.length} contacts for domain: ${domain}`);
+      const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
+      
+      // Deduplicate contacts before processing
+      const { deduplicatedContacts, updatedPriorityIndex } = ContactExtractionService.deduplicateContacts(
+        contacts, 
+        priorityContactIndex
+      );
+      
+      logger.info(`Found ${contacts.length} contacts, deduplicated to ${deduplicatedContacts.length} for domain: ${domain}`);
 
       // Get existing contacts for the lead
       const existingContacts = await ContactExtractionService.getExistingContacts(leadId);
@@ -37,17 +45,25 @@ export const ContactExtractionService = {
       const processedContacts = await ContactExtractionService.processAndMergeContacts(
         tenantId,
         leadId,
-        contacts,
-        existingContacts
+        deduplicatedContacts,
+        existingContacts,
+        updatedPriorityIndex
       );
 
       logger.info(
         `Successfully processed ${processedContacts.created} new and ${processedContacts.updated} updated contacts for leadId: ${leadId}`
       );
 
+      // Set primary contact if priority contact was identified
+      if (processedContacts.primaryContactId) {
+        await ContactExtractionService.updateLeadPrimaryContact(leadId, processedContacts.primaryContactId);
+        logger.info(`Set primary contact ${processedContacts.primaryContactId} for leadId: ${leadId}`);
+      }
+
       return {
         contactsCreated: processedContacts.created,
         contactsUpdated: processedContacts.updated,
+        primaryContactId: processedContacts.primaryContactId,
         summary: extractionResult.finalResponseParsed.summary,
         extractionResult,
         contacts: processedContacts.contacts,
@@ -57,6 +73,100 @@ export const ContactExtractionService = {
       throw new Error(
         `Contact extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+    }
+  },
+
+  /**
+   * Deduplicate contacts based on email, phone, and name similarity
+   */
+  deduplicateContacts: (
+    contacts: ExtractedContact[], 
+    priorityContactIndex?: number | null
+  ): { deduplicatedContacts: ExtractedContact[]; updatedPriorityIndex: number | null } => {
+    const deduplicatedContacts: ExtractedContact[] = [];
+    const seenEmails = new Set<string>();
+    const seenPhones = new Set<string>();
+    let updatedPriorityIndex: number | null = null;
+
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      if (!contact) continue;
+
+      // Validate contact first (includes generic template filtering)
+      if (!ContactExtractionService.validateContact(contact)) {
+        logger.debug(`Skipping invalid/generic contact: ${contact.name}`);
+        continue;
+      }
+
+      // Check for email duplicates
+      const normalizedEmail = contact.email?.toLowerCase().trim();
+      if (normalizedEmail && seenEmails.has(normalizedEmail)) {
+        logger.debug(`Skipping duplicate email contact: ${contact.name} (${normalizedEmail})`);
+        continue;
+      }
+
+      // Check for phone duplicates
+      const normalizedPhone = contact.phone ? ContactExtractionService.normalizePhone(contact.phone) : null;
+      if (normalizedPhone && seenPhones.has(normalizedPhone)) {
+        logger.debug(`Skipping duplicate phone contact: ${contact.name} (${normalizedPhone})`);
+        continue;
+      }
+
+      // Check for name-based duplicates (similar names with same contact type)
+      const isDuplicateName = deduplicatedContacts.some(existingContact => {
+        if (contact.contactType !== existingContact.contactType) return false;
+        
+        const nameSimilarity = compareTwoStrings(
+          contact.name.toLowerCase().trim(),
+          existingContact.name.toLowerCase().trim()
+        );
+        
+        // Consider it a duplicate if names are very similar (>80%) and same contact type
+        return nameSimilarity > 0.8;
+      });
+
+      if (isDuplicateName) {
+        logger.debug(`Skipping duplicate name contact: ${contact.name}`);
+        continue;
+      }
+
+      // Add to deduplicated list
+      deduplicatedContacts.push(contact);
+      
+      // Track seen values
+      if (normalizedEmail) seenEmails.add(normalizedEmail);
+      if (normalizedPhone) seenPhones.add(normalizedPhone);
+
+      // Update priority index if this was the priority contact
+      if (priorityContactIndex !== null && priorityContactIndex !== undefined && i === priorityContactIndex) {
+        updatedPriorityIndex = deduplicatedContacts.length - 1;
+      }
+    }
+
+    // If priority contact was removed due to duplication, try to find a priority contact by flag
+    if (priorityContactIndex !== null && updatedPriorityIndex === null) {
+      const priorityContactByFlag = deduplicatedContacts.findIndex(contact => contact.isPriorityContact);
+      if (priorityContactByFlag >= 0) {
+        updatedPriorityIndex = priorityContactByFlag;
+        logger.info(`Priority contact index updated due to deduplication: ${updatedPriorityIndex}`);
+      }
+    }
+
+    return { deduplicatedContacts, updatedPriorityIndex };
+  },
+
+  /**
+   * Update the primary contact for a lead
+   */
+  updateLeadPrimaryContact: async (leadId: string, primaryContactId: string): Promise<void> => {
+    try {
+      await db
+        .update(leads)
+        .set({ primaryContactId })
+        .where(eq(leads.id, leadId));
+    } catch (error) {
+      logger.error('Error updating lead primary contact:', error);
+      throw error;
     }
   },
 
@@ -84,15 +194,20 @@ export const ContactExtractionService = {
     tenantId: string,
     leadId: string,
     extractedContacts: ExtractedContact[],
-    existingContacts: LeadPointOfContact[]
+    existingContacts: LeadPointOfContact[],
+    priorityContactIndex?: number | null
   ) => {
     const results = {
       created: 0,
       updated: 0,
       contacts: [] as LeadPointOfContact[],
+      primaryContactId: null as string | null,
     };
 
-    for (const extractedContact of extractedContacts) {
+    for (let i = 0; i < extractedContacts.length; i++) {
+      const extractedContact = extractedContacts[i];
+      if (!extractedContact) continue;
+      
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(extractedContact);
 
@@ -101,6 +216,8 @@ export const ContactExtractionService = {
           leadContact,
           existingContacts
         );
+
+        let contactId: string;
 
         if (similarContact) {
           // Merge and update existing contact
@@ -114,21 +231,47 @@ export const ContactExtractionService = {
           if (updatedContact) {
             results.updated++;
             results.contacts.push(updatedContact);
+            contactId = updatedContact.id;
             logger.debug(`Updated contact: ${extractedContact.name} for leadId: ${leadId}`);
+          } else {
+            continue;
           }
         } else {
           // Create new contact
           const createdContact = await createContact(tenantId, leadId, leadContact);
           results.created++;
           results.contacts.push(createdContact);
+          contactId = createdContact.id;
           logger.debug(`Created contact: ${extractedContact.name} for leadId: ${leadId}`);
+        }
+
+        // Check if this is the priority contact
+        if (
+          priorityContactIndex !== null &&
+          priorityContactIndex !== undefined &&
+          i === priorityContactIndex
+        ) {
+          results.primaryContactId = contactId;
+          logger.info(`Identified priority contact: ${extractedContact.name} (${contactId}) for leadId: ${leadId}`);
         }
       } catch (error) {
         logger.warn(
-          `Failed to process contact ${extractedContact.name} for leadId: ${leadId}:`,
+          `Failed to process contact ${extractedContact.name || 'unknown'} for leadId: ${leadId}:`,
           error
         );
         // Continue processing other contacts even if one fails
+      }
+    }
+
+    // Fallback: if no priority contact was explicitly identified, use the first contact with isPriorityContact=true
+    if (!results.primaryContactId && extractedContacts.length > 0) {
+      const priorityContact = extractedContacts.find(contact => contact?.isPriorityContact);
+      if (priorityContact) {
+        const priorityIndex = extractedContacts.indexOf(priorityContact);
+        if (priorityIndex >= 0 && priorityIndex < results.contacts.length && results.contacts[priorityIndex]) {
+          results.primaryContactId = results.contacts[priorityIndex].id;
+          logger.info(`Fallback: Found priority contact by isPriorityContact flag: ${priorityContact.name} for leadId: ${leadId}`);
+        }
       }
     }
 
@@ -159,7 +302,7 @@ export const ContactExtractionService = {
   },
 
   /**
-   * Calculate similarity score between two contacts
+   * Enhanced contact similarity calculation with better deduplication logic
    */
   calculateContactSimilarity: (
     contact1: Omit<NewLeadPointOfContact, 'leadId'>,
@@ -175,7 +318,33 @@ export const ContactExtractionService = {
     let totalScore = 0;
     let totalWeight = 0;
 
-    // Name similarity (most important)
+    // Exact email match gets highest priority
+    if (contact1.email && contact2.email) {
+      const email1 = contact1.email.toLowerCase().trim();
+      const email2 = contact2.email.toLowerCase().trim();
+      if (email1 === email2) {
+        return 1.0; // Perfect match on email
+      }
+      const emailScore = compareTwoStrings(email1, email2);
+      totalScore += emailScore * weights.email;
+      totalWeight += weights.email;
+    }
+
+    // Exact phone match also gets high priority
+    if (contact1.phone && contact2.phone) {
+      const phone1 = ContactExtractionService.normalizePhone(contact1.phone);
+      const phone2 = ContactExtractionService.normalizePhone(contact2.phone);
+
+      if (phone1 === phone2) {
+        return 1.0; // Perfect match on phone
+      } else {
+        const phoneScore = compareTwoStrings(phone1, phone2);
+        totalScore += phoneScore * weights.phone;
+      }
+      totalWeight += weights.phone;
+    }
+
+    // Name similarity (most important after exact contact matches)
     if (contact1.name && contact2.name) {
       const nameScore = compareTwoStrings(
         contact1.name.toLowerCase().trim(),
@@ -183,30 +352,6 @@ export const ContactExtractionService = {
       );
       totalScore += nameScore * weights.name;
       totalWeight += weights.name;
-    }
-
-    // Email similarity
-    if (contact1.email && contact2.email) {
-      const emailScore = compareTwoStrings(
-        contact1.email.toLowerCase().trim(),
-        contact2.email.toLowerCase().trim()
-      );
-      totalScore += emailScore * weights.email;
-      totalWeight += weights.email;
-    }
-
-    // Phone similarity (normalize phone numbers)
-    if (contact1.phone && contact2.phone) {
-      const phone1 = ContactExtractionService.normalizePhone(contact1.phone);
-      const phone2 = ContactExtractionService.normalizePhone(contact2.phone);
-
-      if (phone1 === phone2) {
-        totalScore += 1.0 * weights.phone;
-      } else {
-        const phoneScore = compareTwoStrings(phone1, phone2);
-        totalScore += phoneScore * weights.phone;
-      }
-      totalWeight += weights.phone;
     }
 
     // Company similarity
@@ -234,7 +379,7 @@ export const ContactExtractionService = {
    * Merge two contacts, preferring new non-null/non-empty values
    */
   mergeContacts: (
-    _existing: LeadPointOfContact,
+    existing: LeadPointOfContact,
     newContact: Omit<NewLeadPointOfContact, 'leadId'>
   ): Partial<LeadPointOfContact> => {
     const merged: Partial<LeadPointOfContact> = {};
@@ -297,11 +442,16 @@ export const ContactExtractionService = {
   processAndSaveContacts: async (
     tenantId: string,
     leadId: string,
-    extractedContacts: ExtractedContact[]
+    extractedContacts: ExtractedContact[],
+    priorityContactIndex?: number | null
   ) => {
     const createdContacts = [];
+    let primaryContactId: string | null = null;
 
-    for (const contact of extractedContacts) {
+    for (let i = 0; i < extractedContacts.length; i++) {
+      const contact = extractedContacts[i];
+      if (!contact) continue;
+      
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(contact);
 
@@ -309,14 +459,42 @@ export const ContactExtractionService = {
         const createdContact = await createContact(tenantId, leadId, leadContact);
         createdContacts.push(createdContact);
 
+        // Check if this is the priority contact
+        if (
+          priorityContactIndex !== null &&
+          priorityContactIndex !== undefined &&
+          i === priorityContactIndex
+        ) {
+          primaryContactId = createdContact.id;
+          logger.info(`Identified priority contact: ${contact.name} (${createdContact.id}) for leadId: ${leadId}`);
+        }
+
         logger.debug(`Created contact: ${contact.name} for leadId: ${leadId}`);
       } catch (error) {
-        logger.warn(`Failed to create contact ${contact.name} for leadId: ${leadId}:`, error);
+        logger.warn(`Failed to create contact ${contact.name || 'unknown'} for leadId: ${leadId}:`, error);
         // Continue processing other contacts even if one fails
       }
     }
 
-    return createdContacts;
+    // Fallback: if no priority contact was explicitly identified, use the first contact with isPriorityContact=true
+    if (!primaryContactId && extractedContacts.length > 0) {
+      const priorityContact = extractedContacts.find(contact => contact?.isPriorityContact);
+      if (priorityContact) {
+        const priorityIndex = extractedContacts.indexOf(priorityContact);
+        if (priorityIndex >= 0 && priorityIndex < createdContacts.length && createdContacts[priorityIndex]) {
+          primaryContactId = createdContacts[priorityIndex].id;
+          logger.info(`Fallback: Found priority contact by isPriorityContact flag: ${priorityContact.name} for leadId: ${leadId}`);
+        }
+      }
+    }
+
+    // Set primary contact if identified
+    if (primaryContactId) {
+      await ContactExtractionService.updateLeadPrimaryContact(leadId, primaryContactId);
+      logger.info(`Set primary contact ${primaryContactId} for leadId: ${leadId}`);
+    }
+
+    return { contacts: createdContacts, primaryContactId };
   },
 
   /**
@@ -379,6 +557,12 @@ export const ContactExtractionService = {
       return false;
     }
 
+    // Check if this is likely a generic/template contact that should be filtered
+    if (ContactExtractionService.isGenericTemplateContact(contact)) {
+      logger.debug(`Filtering out generic template contact: ${contact.name}`);
+      return false;
+    }
+
     // Must have at least one form of contact information or be a named individual
     const hasContactInfo = !!(
       contact.email ||
@@ -392,5 +576,68 @@ export const ContactExtractionService = {
       contact.contactType === 'individual' && contact.name.split(' ').length >= 2; // Has first and last name
 
     return hasContactInfo || isNamedIndividual;
+  },
+
+  /**
+   * Detect if a contact is likely generic template information that appears in headers/footers
+   */
+  isGenericTemplateContact: (contact: ExtractedContact): boolean => {
+    const name = contact.name.toLowerCase();
+    const email = contact.email?.toLowerCase() || '';
+    const context = contact.context?.toLowerCase() || '';
+    const sourceUrl = contact.sourceUrl?.toLowerCase() || '';
+
+    // Generic email patterns that are likely template content
+    const genericEmailPatterns = [
+      /^info@/,
+      /^contact@/,
+      /^hello@/,
+      /^general@/,
+      /^office@/,
+      /^main@/,
+      /^admin@/,
+      /^webmaster@/,
+      /^noreply@/,
+      /^no-reply@/
+    ];
+
+    // Generic name patterns
+    const genericNamePatterns = [
+      'contact us',
+      'get in touch',
+      'main office',
+      'headquarters',
+      'customer service',
+      'general inquiry',
+      'information',
+      'contact form',
+      'contact page'
+    ];
+
+    // Check if email matches generic patterns
+    if (email && genericEmailPatterns.some(pattern => pattern.test(email))) {
+      // If it's a generic email AND appears in multiple common locations, it's likely template content
+      const templateIndicators = [
+        context.includes('header'),
+        context.includes('footer'),
+        context.includes('navigation'),
+        context.includes('widget'),
+        sourceUrl.includes('contact'),
+        sourceUrl.includes('footer'),
+        sourceUrl.includes('header')
+      ];
+
+      // If 2 or more template indicators, consider it template content
+      if (templateIndicators.filter(Boolean).length >= 2) {
+        return true;
+      }
+    }
+
+    // Check if name matches generic patterns
+    if (genericNamePatterns.some(pattern => name.includes(pattern))) {
+      return true;
+    }
+
+    return false;
   },
 };
