@@ -11,17 +11,12 @@ export const contactExtractionAgent = new ContactExtractionAgent(defaultLangChai
 
 // Lazy-loaded agent to avoid startup dependencies
 let _leadQualificationAgent: LeadQualificationAgent | null = null;
-export const leadQualificationAgent = {
-  get instance() {
-    if (!_leadQualificationAgent) {
-      _leadQualificationAgent = new LeadQualificationAgent(defaultLangChainConfig);
-    }
-    return _leadQualificationAgent;
-  },
-  qualifyLead: (input: LeadQualificationInput) => {
-    return leadQualificationAgent.instance.qualifyLead(input);
+export function getLeadQualificationAgent(): LeadQualificationAgent {
+  if (!_leadQualificationAgent) {
+    _leadQualificationAgent = new LeadQualificationAgent(defaultLangChainConfig);
   }
-};
+  return _leadQualificationAgent;
+}
 
 // Factory functions
 export const createSiteAnalysisAgent = (config = defaultLangChainConfig) => {

@@ -29,4 +29,4 @@ export {
 } from './langchain';
 
 // Export lazy-loaded lead qualification agent separately
-export { leadQualificationAgent } from './langchain';
+export { getLeadQualificationAgent } from './langchain';

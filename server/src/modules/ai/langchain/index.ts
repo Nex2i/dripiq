@@ -39,4 +39,4 @@ export {
 } from './factories/AgentFactory';
 
 // Export lazy-loaded lead qualification agent separately
-export { leadQualificationAgent } from './factories/AgentFactory';
+export { getLeadQualificationAgent } from './factories/AgentFactory';

@@ -64,13 +64,27 @@ export class LeadQualificationAgent {
   }
 
   async qualifyLead(input: LeadQualificationInput): Promise<LeadQualificationResult> {
-    const systemPrompt = promptHelper.injectInputVariables(leadQualificationPrompt, {
-      lead_details: JSON.stringify(input.leadDetails, null, 2),
-      contact_details: JSON.stringify(input.contactDetails, null, 2),
-      partner_details: JSON.stringify(input.partnerDetails, null, 2),
-      partner_products: JSON.stringify(input.partnerProducts, null, 2),
-      output_schema: JSON.stringify(z.toJSONSchema(leadQualificationOutputSchema), null, 2),
-    });
+    // Ensure all input properties exist and are serializable
+    const safeInput = {
+      leadDetails: input.leadDetails || {},
+      contactDetails: input.contactDetails || {},
+      partnerDetails: input.partnerDetails || {},
+      partnerProducts: input.partnerProducts || [],
+    };
+
+    let systemPrompt: string;
+    try {
+      systemPrompt = promptHelper.injectInputVariables(leadQualificationPrompt, {
+        lead_details: JSON.stringify(safeInput.leadDetails, null, 2),
+        contact_details: JSON.stringify(safeInput.contactDetails, null, 2),
+        partner_details: JSON.stringify(safeInput.partnerDetails, null, 2),
+        partner_products: JSON.stringify(safeInput.partnerProducts, null, 2),
+        output_schema: JSON.stringify(z.toJSONSchema(leadQualificationOutputSchema), null, 2),
+      });
+    } catch (error) {
+      logger.error('Error preparing prompt variables', error);
+      throw new Error(`Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 
     try {
       const result = await this.agent.invoke({

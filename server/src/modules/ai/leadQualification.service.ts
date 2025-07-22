@@ -21,7 +21,7 @@ export const qualifyLeadContact = async (
     const { getLeadById } = await import('../lead.service');
     const { ProductsService } = await import('../products.service');
     const { TenantService } = await import('../tenant.service');
-    const { leadQualificationAgent } = await import('./langchain');
+    const { getLeadQualificationAgent } = await import('./langchain');
 
     // Verify user access if userId provided
     if (userId) {
@@ -92,17 +92,44 @@ export const qualifyLeadContact = async (
       })),
     };
 
-    // Execute agent analysis
-    const result = await leadQualificationAgent.qualifyLead(agentInput);
-
-    logger.info('Lead qualification completed successfully', {
+    // Log input data for debugging
+    logger.info('Preparing agent input', {
       leadId,
       contactId,
       tenantId,
-      iterations: result.totalIterations,
+      leadData: {
+        id: lead.id,
+        name: lead.name,
+        summary: lead.summary,
+        targetMarket: lead.targetMarket,
+        tone: lead.tone,
+      },
+      contactData: contact,
+      tenantData: {
+        id: tenant.id,
+        name: tenant.name,
+        website: tenant.website,
+        organizationName: tenant.organizationName,
+        summary: tenant.summary,
+      },
+      productsCount: tenantProducts?.length || 0,
     });
 
-    return result;
+    // Execute agent analysis
+    try {
+      const agent = getLeadQualificationAgent();
+      const result = await agent.qualifyLead(agentInput);
+      return result;
+    } catch (agentError) {
+      logger.error('Agent execution failed', {
+        leadId,
+        contactId,
+        tenantId,
+        error: agentError instanceof Error ? agentError.message : 'Unknown agent error',
+        stack: agentError instanceof Error ? agentError.stack : undefined,
+      });
+      throw new Error(`Agent execution failed: ${agentError instanceof Error ? agentError.message : 'Unknown error'}`);
+    }
   } catch (error) {
     logger.error('Lead qualification failed', {
       leadId,
