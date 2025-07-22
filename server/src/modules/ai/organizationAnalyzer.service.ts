@@ -1,8 +1,23 @@
 import { TenantService } from '../tenant.service';
 import { siteAnalysisAgent } from './langchain';
+import { SiteScrapeService } from './siteScrape.service';
 
 export const OrganizationAnalyzerService = {
-  analyzeOrganization: async (tenantId: string, userId: string) => {
+  indexSite: async (tenantId: string) => {
+    const { website } = await TenantService.getTenantById(tenantId);
+
+    if (!website) {
+      throw new Error('Organization website is required');
+    }
+
+    const metadata = {
+      tenantId,
+      type: 'organization_site',
+    };
+
+    await SiteScrapeService.scrapeSite(website.cleanWebsiteUrl(), metadata, 'organization_site');
+  },
+  analyzeOrganization: async (tenantId: string) => {
     const { id, website } = await TenantService.getTenantById(tenantId);
 
     if (!website) {
@@ -20,11 +35,10 @@ export const OrganizationAnalyzerService = {
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');
     }
-    ``;
     const { summary, products, services, differentiators, targetMarket, tone } =
       aiOutput.finalResponseParsed;
     // save on tenant
-    await TenantService.updateTenant(userId, id, {
+    await TenantService.updateTenant(id, {
       summary: summary,
       products: products,
       services: services,

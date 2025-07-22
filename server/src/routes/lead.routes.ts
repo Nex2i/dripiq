@@ -4,6 +4,7 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
+import { qualifyLeadContact } from '@/modules/ai';
 import {
   getLeads,
   createLead,
@@ -927,6 +928,97 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to update contact manually reviewed status',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Lead qualification endpoint
+  fastify.route({
+    method: HttpMethods.PUT,
+    url: `${basePath}/:leadId/contacts/:contactId/qualification`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      description: 'Generate lead qualification and outreach strategy for a specific contact',
+      tags: ['Leads'],
+      params: Type.Object({
+        leadId: Type.String({ description: 'Lead ID' }),
+        contactId: Type.String({ description: 'Contact ID' }),
+      }),
+
+      response: {
+        ...defaultRouteResponse(),
+        200: Type.Object({
+          success: Type.Boolean(),
+          message: Type.String(),
+          data: Type.Any(), // Simplified schema - using Any for complex nested structure
+          metadata: Type.Object({
+            totalIterations: Type.Number(),
+            processingTime: Type.Number(),
+          }),
+        }),
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      const { leadId, contactId } = request.params as { leadId: string; contactId: string };
+      const userId = user?.id;
+
+      try {
+        const startTime = Date.now();
+
+        const result = await qualifyLeadContact({
+          leadId,
+          contactId,
+          tenantId,
+          userId,
+        });
+
+        const processingTime = Date.now() - startTime;
+
+        reply.status(200).send({
+          success: true,
+          message: 'Lead qualification completed successfully',
+          data: result.finalResponseParsed,
+          metadata: {
+            totalIterations: result.totalIterations,
+            processingTime,
+          },
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error qualifying lead contact: ${error.message}`);
+
+        if (error.message?.includes('Access denied')) {
+          reply.status(403).send({
+            success: false,
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('not found') || error.message?.includes('Contact not found')) {
+          reply.status(404).send({
+            success: false,
+            message: 'Lead or contact not found',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('No contacts found')) {
+          reply.status(400).send({
+            success: false,
+            message: 'No contacts available for this lead',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to generate lead qualification',
           error: error.message,
         });
       }

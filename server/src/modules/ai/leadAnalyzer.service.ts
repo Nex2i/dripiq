@@ -87,7 +87,7 @@ export const LeadAnalyzerService = {
       type: 'lead_site',
     };
 
-    await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata);
+    await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata, 'lead_site');
   },
 
   wasLastScrapeTooRecent: async (url: string) => {

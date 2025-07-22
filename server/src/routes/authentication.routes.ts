@@ -4,6 +4,7 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { supabase } from '@/libs/supabase.client';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
+import { RoleService } from '@/modules/role.service';
 
 const basePath = '/auth';
 
@@ -93,7 +94,6 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         });
 
         // Step 4: Get Admin role for the user
-        const { RoleService } = await import('@/modules/role.service');
         const adminRole = await RoleService.getRoleByName('Admin');
 
         if (!adminRole) {
@@ -222,7 +222,6 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         const userTenants = await TenantService.getUserTenants(dbUser.id);
 
         // Get role information for each tenant
-        const { RoleService } = await import('@/modules/role.service');
         const tenantsWithRoles = await Promise.all(
           userTenants.map(async (ut) => {
             const userPermissions = await RoleService.getUserPermissions(dbUser.id, ut.tenant.id);

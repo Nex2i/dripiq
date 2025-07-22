@@ -10,18 +10,20 @@ const smartFilterSiteMapSchema = z.object({
   urls: z.array(z.string()).describe('The filtered list of URLs'),
 });
 
+type SiteType = 'lead_site' | 'organization_site';
+
 export const SiteScrapeService = {
-  scrapeSite: async (url: string, metadata: Record<string, any>) => {
+  scrapeSite: async (url: string, metadata: Record<string, any>, siteType: SiteType) => {
     let siteMap = await firecrawlClient.getSiteMap(url.cleanWebsiteUrl());
 
     siteMap = filterUrls(siteMap);
 
-    siteMap = await SiteScrapeService.smartFilterSiteMap(siteMap);
+    siteMap = await SiteScrapeService.smartFilterSiteMap(siteMap, siteType);
 
     await firecrawlClient.batchScrapeUrls(siteMap, metadata);
   },
 
-  smartFilterSiteMap: async (siteMap: string[]): Promise<string[]> => {
+  smartFilterSiteMap: async (siteMap: string[], siteType: SiteType): Promise<string[]> => {
     const minUrls = 25;
     const maxUrls = 75;
     if (siteMap.length <= 25) {
@@ -38,6 +40,7 @@ export const SiteScrapeService = {
         output_schema: JSON.stringify(z.toJSONSchema(smartFilterSiteMapSchema), null, 2),
         min_urls: minUrls.toString(),
         max_urls: maxUrls.toString(),
+        site_type: siteType,
       });
 
       const response = await chatModel.invoke([

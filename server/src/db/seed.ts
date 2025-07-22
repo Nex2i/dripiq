@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { TenantService } from '@/modules/tenant.service';
+import { RoleService } from '@/modules/role.service';
 import { tenants, users, userTenants } from './schema';
 import { seedRoles } from './seed-roles';
 import { db } from './index';
@@ -123,7 +124,6 @@ async function createSeedUser() {
   }
 
   // Get Admin role
-  const { RoleService } = await import('@/modules/role.service');
   const adminRole = await RoleService.getRoleByName('Admin');
 
   if (!adminRole) {

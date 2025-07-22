@@ -2,6 +2,7 @@ import { FastifyInstance, RouteOptions } from 'fastify';
 import { TenantService } from '@/modules/tenant.service';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 import { storageService } from '@/modules/storage/storage.service';
+import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 
 const basePath = '/organizations';
 
@@ -76,7 +77,6 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const user = (request as any).user;
         const updateData = request.body;
 
         // Map frontend field names to database field names
@@ -86,7 +86,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           website: updateData.organizationWebsite, // Map to database field name
         };
 
-        const updatedTenant = await TenantService.updateTenant(user.id, id, mappedUpdateData);
+        const updatedTenant = await TenantService.updateTenant(id, mappedUpdateData);
 
         // Return updated organization data
         return reply.send({
@@ -126,8 +126,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const user = (request as any).user;
-        const tenantId = (request as any).tenantId;
+        const { tenantId } = request as AuthenticatedRequest;
 
         if (tenantId !== id) {
           return reply
@@ -135,10 +134,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
             .send({ message: 'You are not authorized to resync this organization' });
         }
 
-        const siteAnalyzerResult = await OrganizationAnalyzerService.analyzeOrganization(
-          tenantId,
-          user.id
-        );
+        const siteAnalyzerResult = await OrganizationAnalyzerService.indexSite(tenantId);
         return reply.status(200).send({
           message: 'Organization details resynced successfully',
           id: tenantId,
