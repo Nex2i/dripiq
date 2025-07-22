@@ -171,13 +171,9 @@ export class TenantService {
    * @throws Throws an error if the tenant is not found.
    */
   static async updateTenant(
-    userId: string,
     tenantId: string,
     updateData: Partial<CreateTenantData>
   ): Promise<Tenant> {
-    // Validate user has access to this tenant
-    await validateUserTenantAccess(userId, tenantId);
-
     if (updateData.website) {
       updateData.website = updateData.website?.cleanWebsiteUrl();
     }

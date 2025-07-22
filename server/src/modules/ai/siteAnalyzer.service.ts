@@ -5,6 +5,7 @@ import { updateLeadStatuses } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { EmbeddingsService } from './embeddings.service';
 import { LeadAnalyzerService } from './leadAnalyzer.service';
+import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
@@ -52,6 +53,10 @@ export const SiteAnalyzerService = {
           [LEAD_STATUS.SCRAPING_SITE]
         );
         LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
+        break;
+
+      case 'organization_site':
+        OrganizationAnalyzerService.analyzeOrganization(metadata.tenantId);
         break;
     }
   },
