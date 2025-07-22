@@ -15,10 +15,10 @@ interface CollapsibleSectionProps {
   defaultExpanded?: boolean
 }
 
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ 
-  title, 
-  children, 
-  defaultExpanded = false 
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
+  title,
+  children,
+  defaultExpanded = false,
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
@@ -36,9 +36,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         )}
       </button>
       {isExpanded && (
-        <div className="p-4 border-t border-gray-200">
-          {children}
-        </div>
+        <div className="p-4 border-t border-gray-200">{children}</div>
       )}
     </div>
   )
@@ -82,7 +80,9 @@ const LeadQualificationModal: React.FC<LeadQualificationModalProps> = ({
           </div>
           <div>
             <span className="font-medium text-gray-700">Content: </span>
-            <p className="text-gray-900 whitespace-pre-wrap">{touchpoint.content}</p>
+            <p className="text-gray-900 whitespace-pre-wrap">
+              {touchpoint.content}
+            </p>
           </div>
           <div>
             <span className="font-medium text-gray-700">Call to Action: </span>
@@ -172,54 +172,85 @@ const LeadQualificationModal: React.FC<LeadQualificationModalProps> = ({
               <div className="space-y-4">
                 {/* Summary */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 mb-2">Executive Summary</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">
+                    Executive Summary
+                  </h3>
                   <p className="text-blue-800">{data.summary}</p>
                 </div>
 
                 {/* Lead Research */}
-                <CollapsibleSection title="Lead Research & Analysis" defaultExpanded>
+                <CollapsibleSection
+                  title="Lead Research & Analysis"
+                  defaultExpanded
+                >
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Company Background</h4>
-                      <p className="text-gray-700">{data.leadResearch?.companyBackground}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Industry Context</h4>
-                      <p className="text-gray-700">{data.leadResearch?.industryContext}</p>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Company Background
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.leadResearch?.companyBackground}
+                      </p>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Problem-Solution Fit</h4>
-                      <p className="text-gray-700">{data.leadResearch?.problemSolutionFit}</p>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Industry Context
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.leadResearch?.industryContext}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Problem-Solution Fit
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.leadResearch?.problemSolutionFit}
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Priority Score</h4>
-                        <span className={`inline-flex px-2 py-1 rounded-full text-sm font-medium ${
-                          data.leadResearch?.priorityScore === 'high' 
-                            ? 'bg-red-100 text-red-800'
-                            : data.leadResearch?.priorityScore === 'medium'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Priority Score
+                        </h4>
+                        <span
+                          className={`inline-flex px-2 py-1 rounded-full text-sm font-medium ${
+                            data.leadResearch?.priorityScore === 'high'
+                              ? 'bg-red-100 text-red-800'
+                              : data.leadResearch?.priorityScore === 'medium'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-green-100 text-green-800'
+                          }`}
+                        >
                           {data.leadResearch?.priorityScore?.toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Potential Value</h4>
-                        <p className="text-gray-700">{data.leadResearch?.potentialValue}</p>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Potential Value
+                        </h4>
+                        <p className="text-gray-700">
+                          {data.leadResearch?.potentialValue}
+                        </p>
                       </div>
                     </div>
 
                     {data.leadResearch?.recentNews?.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Recent News</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Recent News
+                        </h4>
                         <ul className="list-disc list-inside space-y-1">
-                          {data.leadResearch.recentNews.map((news: string, index: number) => (
-                            <li key={index} className="text-gray-700">{news}</li>
-                          ))}
+                          {data.leadResearch.recentNews.map(
+                            (news: string, index: number) => (
+                              <li key={index} className="text-gray-700">
+                                {news}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       </div>
                     )}
@@ -230,55 +261,94 @@ const LeadQualificationModal: React.FC<LeadQualificationModalProps> = ({
                 <CollapsibleSection title="Contact Analysis">
                   <div className="space-y-4">
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Contact Profile</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Contact Profile
+                      </h4>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <span className="font-medium text-gray-700">Name: </span>
-                          <span className="text-gray-900">{data.contactAnalysis?.contact?.name}</span>
+                          <span className="font-medium text-gray-700">
+                            Name:{' '}
+                          </span>
+                          <span className="text-gray-900">
+                            {data.contactAnalysis?.contact?.name}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">Title: </span>
-                          <span className="text-gray-900">{data.contactAnalysis?.contact?.title || 'N/A'}</span>
+                          <span className="font-medium text-gray-700">
+                            Title:{' '}
+                          </span>
+                          <span className="text-gray-900">
+                            {data.contactAnalysis?.contact?.title || 'N/A'}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">Persona: </span>
-                          <span className="text-gray-900">{data.contactAnalysis?.contact?.persona}</span>
+                          <span className="font-medium text-gray-700">
+                            Persona:{' '}
+                          </span>
+                          <span className="text-gray-900">
+                            {data.contactAnalysis?.contact?.persona}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">Messaging Approach: </span>
-                          <span className="text-gray-900">{data.contactAnalysis?.contact?.messagingApproach}</span>
+                          <span className="font-medium text-gray-700">
+                            Messaging Approach:{' '}
+                          </span>
+                          <span className="text-gray-900">
+                            {data.contactAnalysis?.contact?.messagingApproach}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Decision Making Role</h4>
-                      <p className="text-gray-700">{data.contactAnalysis?.decisionMakingRole}</p>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Decision Making Role
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.contactAnalysis?.decisionMakingRole}
+                      </p>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Engagement Strategy</h4>
-                      <p className="text-gray-700">{data.contactAnalysis?.engagementStrategy}</p>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Engagement Strategy
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.contactAnalysis?.engagementStrategy}
+                      </p>
                     </div>
 
                     {data.contactAnalysis?.contact?.painPoints?.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Pain Points</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Pain Points
+                        </h4>
                         <ul className="list-disc list-inside space-y-1">
-                          {data.contactAnalysis.contact.painPoints.map((point: string, index: number) => (
-                            <li key={index} className="text-gray-700">{point}</li>
-                          ))}
+                          {data.contactAnalysis.contact.painPoints.map(
+                            (point: string, index: number) => (
+                              <li key={index} className="text-gray-700">
+                                {point}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       </div>
                     )}
 
-                    {data.contactAnalysis?.contact?.professionalGoals?.length > 0 && (
+                    {data.contactAnalysis?.contact?.professionalGoals?.length >
+                      0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Professional Goals</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Professional Goals
+                        </h4>
                         <ul className="list-disc list-inside space-y-1">
-                          {data.contactAnalysis.contact.professionalGoals.map((goal: string, index: number) => (
-                            <li key={index} className="text-gray-700">{goal}</li>
-                          ))}
+                          {data.contactAnalysis.contact.professionalGoals.map(
+                            (goal: string, index: number) => (
+                              <li key={index} className="text-gray-700">
+                                {goal}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       </div>
                     )}
@@ -290,31 +360,50 @@ const LeadQualificationModal: React.FC<LeadQualificationModalProps> = ({
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Frequency</h4>
-                        <p className="text-gray-700">{data.outreachStrategy?.timing?.frequency}</p>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Frequency
+                        </h4>
+                        <p className="text-gray-700">
+                          {data.outreachStrategy?.timing?.frequency}
+                        </p>
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Total Duration</h4>
-                        <p className="text-gray-700">{data.outreachStrategy?.timing?.totalDuration}</p>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Total Duration
+                        </h4>
+                        <p className="text-gray-700">
+                          {data.outreachStrategy?.timing?.totalDuration}
+                        </p>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Channel Mix</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Channel Mix
+                      </h4>
                       <div className="flex flex-wrap gap-2">
-                        {data.outreachStrategy?.channelMix?.map((channel: string, index: number) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">
-                            {channel}
-                          </span>
-                        ))}
+                        {data.outreachStrategy?.channelMix?.map(
+                          (channel: string, index: number) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
+                            >
+                              {channel}
+                            </span>
+                          ),
+                        )}
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-4">Drip Campaign</h4>
-                      {data.outreachStrategy?.dripCampaign && Object.entries(data.outreachStrategy.dripCampaign).map(([key, touchpoint], index) => 
-                        renderTouchpoint(touchpoint, index)
-                      )}
+                      <h4 className="font-medium text-gray-900 mb-4">
+                        Drip Campaign
+                      </h4>
+                      {data.outreachStrategy?.dripCampaign &&
+                        Object.entries(data.outreachStrategy.dripCampaign).map(
+                          ([_key, touchpoint], index) =>
+                            renderTouchpoint(touchpoint, index),
+                        )}
                     </div>
                   </div>
                 </CollapsibleSection>
@@ -323,35 +412,52 @@ const LeadQualificationModal: React.FC<LeadQualificationModalProps> = ({
                 <CollapsibleSection title="Messaging Framework">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Value Proposition</h4>
-                      <p className="text-gray-700">{data.messaging?.valueProposition}</p>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Value Proposition
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.messaging?.valueProposition}
+                      </p>
                     </div>
 
                     {data.messaging?.keyBenefits?.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Key Benefits</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Key Benefits
+                        </h4>
                         <ul className="list-disc list-inside space-y-1">
-                          {data.messaging.keyBenefits.map((benefit: string, index: number) => (
-                            <li key={index} className="text-gray-700">{benefit}</li>
-                          ))}
+                          {data.messaging.keyBenefits.map(
+                            (benefit: string, index: number) => (
+                              <li key={index} className="text-gray-700">
+                                {benefit}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       </div>
                     )}
 
                     {data.messaging?.objectionHandling?.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Objection Handling</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Objection Handling
+                        </h4>
                         <div className="space-y-3">
-                          {data.messaging.objectionHandling.map((item: any, index: number) => (
-                            <div key={index} className="bg-gray-50 rounded-lg p-3">
-                              <div className="font-medium text-gray-900 mb-1">
-                                Objection: {item.objection}
+                          {data.messaging.objectionHandling.map(
+                            (item: any, index: number) => (
+                              <div
+                                key={index}
+                                className="bg-gray-50 rounded-lg p-3"
+                              >
+                                <div className="font-medium text-gray-900 mb-1">
+                                  Objection: {item.objection}
+                                </div>
+                                <div className="text-gray-700">
+                                  Response: {item.response}
+                                </div>
                               </div>
-                              <div className="text-gray-700">
-                                Response: {item.response}
-                              </div>
-                            </div>
-                          ))}
+                            ),
+                          )}
                         </div>
                       </div>
                     )}
@@ -363,27 +469,43 @@ const LeadQualificationModal: React.FC<LeadQualificationModalProps> = ({
                   <div className="space-y-4">
                     {data.nextSteps?.immediateActions?.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Immediate Actions</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Immediate Actions
+                        </h4>
                         <ul className="list-disc list-inside space-y-1">
-                          {data.nextSteps.immediateActions.map((action: string, index: number) => (
-                            <li key={index} className="text-gray-700">{action}</li>
-                          ))}
+                          {data.nextSteps.immediateActions.map(
+                            (action: string, index: number) => (
+                              <li key={index} className="text-gray-700">
+                                {action}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       </div>
                     )}
 
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Follow-up Schedule</h4>
-                      <p className="text-gray-700">{data.nextSteps?.followUpSchedule}</p>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Follow-up Schedule
+                      </h4>
+                      <p className="text-gray-700">
+                        {data.nextSteps?.followUpSchedule}
+                      </p>
                     </div>
 
                     {data.nextSteps?.successMetrics?.length > 0 && (
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Success Metrics</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">
+                          Success Metrics
+                        </h4>
                         <ul className="list-disc list-inside space-y-1">
-                          {data.nextSteps.successMetrics.map((metric: string, index: number) => (
-                            <li key={index} className="text-gray-700">{metric}</li>
-                          ))}
+                          {data.nextSteps.successMetrics.map(
+                            (metric: string, index: number) => (
+                              <li key={index} className="text-gray-700">
+                                {metric}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       </div>
                     )}

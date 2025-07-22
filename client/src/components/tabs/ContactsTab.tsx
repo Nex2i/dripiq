@@ -1,11 +1,22 @@
 import React, { useState } from 'react'
-import { Users, User, Crown, Mail, Phone, Building, ExternalLink, CheckSquare, Square, Target, Loader2 } from 'lucide-react'
+import {
+  Users,
+  User,
+  Crown,
+  Mail,
+  Phone,
+  Building,
+  ExternalLink,
+  CheckSquare,
+  Square,
+  Target,
+  Loader2,
+} from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import LeadQualificationModal from '../LeadQualificationModal'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
-
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
@@ -14,17 +25,34 @@ interface ContactsTabProps {
   companyName?: string
 }
 
-const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, leadId, companyName }) => {
+const ContactsTab: React.FC<ContactsTabProps> = ({
+  contacts,
+  primaryContactId,
+  leadId,
+  companyName,
+}) => {
   const [loadingContactId, setLoadingContactId] = useState<string | null>(null)
-  const [qualifyingContactId, setQualifyingContactId] = useState<string | null>(null)
+  const [qualifyingContactId, setQualifyingContactId] = useState<string | null>(
+    null,
+  )
   const [qualificationModalOpen, setQualificationModalOpen] = useState(false)
   const [qualificationData, setQualificationData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
   const leadsService = getLeadsService()
 
   const toggleManuallyReviewedMutation = useMutation({
-    mutationFn: ({ contactId, manuallyReviewed }: { contactId: string; manuallyReviewed: boolean }) =>
-      leadsService.toggleContactManuallyReviewed(leadId, contactId, manuallyReviewed),
+    mutationFn: ({
+      contactId,
+      manuallyReviewed,
+    }: {
+      contactId: string
+      manuallyReviewed: boolean
+    }) =>
+      leadsService.toggleContactManuallyReviewed(
+        leadId,
+        contactId,
+        manuallyReviewed,
+      ),
     onMutate: ({ contactId }) => {
       setLoadingContactId(contactId)
     },
@@ -41,7 +69,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
     mutationFn: (contactId: string) =>
       leadsService.qualifyLeadContact(leadId, contactId),
     onMutate: (contactId) => {
-      const contact = contacts.find(c => c.id === contactId)
+      const contact = contacts.find((c) => c.id === contactId)
       if (contact) {
         setQualifyingContactId(contact.id)
         setSelectedContactName(contact.name)
@@ -98,7 +126,11 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                     <h3 className="text-lg font-medium text-gray-900">
                       {contact.name}
                     </h3>
-                    <CopyButton text={contact.name} label="name" className="ml-2" />
+                    <CopyButton
+                      text={contact.name}
+                      label="name"
+                      className="ml-2"
+                    />
                     {primaryContactId === contact.id && (
                       <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         <Crown className="h-3 w-3 mr-1" />
@@ -119,14 +151,20 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                         <Target className="h-4 w-4" />
                       )}
                       <span className="text-sm font-medium">
-                        {qualifyingContactId === contact.id ? 'Generating...' : 'Generate Strategy'}
+                        {qualifyingContactId === contact.id
+                          ? 'Generating...'
+                          : 'Generate Strategy'}
                       </span>
                     </button>
                     <button
                       onClick={() => handleToggleManuallyReviewed(contact)}
                       disabled={loadingContactId === contact.id}
                       className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={contact.manuallyReviewed ? 'Mark as not manually reviewed' : 'Mark as manually reviewed'}
+                      title={
+                        contact.manuallyReviewed
+                          ? 'Mark as not manually reviewed'
+                          : 'Mark as manually reviewed'
+                      }
                     >
                       {loadingContactId === contact.id ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
@@ -147,7 +185,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                     <div className="flex items-center space-x-3">
                       <Mail className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Email</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          Email
+                        </p>
                         <a
                           href={`mailto:${contact.email}`}
                           className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
@@ -164,7 +204,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                       <div className="flex items-center space-x-3">
                         <Phone className="h-5 w-5 text-gray-400" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Phone</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            Phone
+                          </p>
                           <a
                             href={`tel:${contact.phone}`}
                             className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
@@ -181,8 +223,12 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <User className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Title</p>
-                        <p className="text-base text-gray-700">{contact.title}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          Title
+                        </p>
+                        <p className="text-base text-gray-700">
+                          {contact.title}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -191,8 +237,12 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <Building className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Company</p>
-                        <p className="text-base text-gray-700">{contact.company}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          Company
+                        </p>
+                        <p className="text-base text-gray-700">
+                          {contact.company}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -202,7 +252,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                       <div className="flex items-center space-x-3">
                         <ExternalLink className="h-5 w-5 text-gray-400" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Source</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            Source
+                          </p>
                           <a
                             href={contact.sourceUrl}
                             target="_blank"
@@ -222,7 +274,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
           </div>
         )}
       </div>
-      
+
       {/* Lead Qualification Modal */}
       <LeadQualificationModal
         isOpen={qualificationModalOpen}

@@ -4,6 +4,7 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
+import { qualifyLeadContact } from '@/modules/ai';
 import {
   getLeads,
   createLead,
@@ -937,6 +938,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
   fastify.route({
     method: HttpMethods.PUT,
     url: `${basePath}/:leadId/contacts/:contactId/qualification`,
+    preHandler: [fastify.authPrehandler],
     schema: {
       description: 'Generate lead qualification and outreach strategy for a specific contact',
       tags: ['Leads'],
@@ -959,15 +961,12 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
-      const authenticatedRequest = request as AuthenticatedRequest;
+      const { tenantId, user } = request as AuthenticatedRequest;
       const { leadId, contactId } = request.params as { leadId: string; contactId: string };
-      const tenantId = authenticatedRequest.tenantId;
-      const userId = authenticatedRequest.user?.id;
+      const userId = user?.id;
 
       try {
         const startTime = Date.now();
-
-        const { qualifyLeadContact } = await import('@/modules/ai/leadQualification.service');
 
         const result = await qualifyLeadContact({
           leadId,

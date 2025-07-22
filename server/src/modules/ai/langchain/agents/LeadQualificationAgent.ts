@@ -83,7 +83,9 @@ export class LeadQualificationAgent {
       });
     } catch (error) {
       logger.error('Error preparing prompt variables', error);
-      throw new Error(`Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     try {

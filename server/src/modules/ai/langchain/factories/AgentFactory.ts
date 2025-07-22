@@ -1,7 +1,7 @@
 import { SiteAnalysisAgent } from '../agents/SiteAnalysisAgent';
 import { VendorFitAgent } from '../agents/VendorFitAgent';
 import { ContactExtractionAgent } from '../agents/ContactExtractionAgent';
-import { LeadQualificationAgent, type LeadQualificationInput } from '../agents/LeadQualificationAgent';
+import { LeadQualificationAgent } from '../agents/LeadQualificationAgent';
 import { defaultLangChainConfig } from '../config/langchain.config';
 
 // Create default agent instances

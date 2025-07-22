@@ -1,5 +1,9 @@
 import { logger } from '@/libs/logger';
+import { ProductsService } from '../products.service';
+import { getLeadById } from '../lead.service';
+import { TenantService } from '../tenant.service';
 import type { LeadQualificationResult } from './langchain/agents/LeadQualificationAgent';
+import { getLeadQualificationAgent } from './langchain';
 
 export interface QualifyLeadContactParams {
   leadId: string;
@@ -17,12 +21,6 @@ export const qualifyLeadContact = async (
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
-    // Import services at runtime to avoid startup dependencies
-    const { getLeadById } = await import('../lead.service');
-    const { ProductsService } = await import('../products.service');
-    const { TenantService } = await import('../tenant.service');
-    const { getLeadQualificationAgent } = await import('./langchain');
-
     // Verify user access if userId provided
     if (userId) {
       const hasAccess = await ProductsService.checkUserAccess(userId, tenantId);
@@ -44,7 +42,7 @@ export const qualifyLeadContact = async (
     }
 
     // Get specific contact by ID
-    const contact = leadContacts.find(c => c.id === contactId);
+    const contact = leadContacts.find((c) => c.id === contactId);
     if (!contact) {
       throw new Error(`Contact not found with ID ${contactId}`);
     }
@@ -128,7 +126,9 @@ export const qualifyLeadContact = async (
         error: agentError instanceof Error ? agentError.message : 'Unknown agent error',
         stack: agentError instanceof Error ? agentError.stack : undefined,
       });
-      throw new Error(`Agent execution failed: ${agentError instanceof Error ? agentError.message : 'Unknown error'}`);
+      throw new Error(
+        `Agent execution failed: ${agentError instanceof Error ? agentError.message : 'Unknown error'}`
+      );
     }
   } catch (error) {
     logger.error('Lead qualification failed', {
