@@ -17,7 +17,6 @@ import {
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 
-
 const basePath = '/leads';
 
 // Schema for point of contact
@@ -936,7 +935,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
   // Lead qualification endpoint
   fastify.route({
-    method: HttpMethods.POST,
+    method: HttpMethods.PUT,
     url: `${basePath}/:leadId/contacts/:contactId/qualification`,
     schema: {
       description: 'Generate lead qualification and outreach strategy for a specific contact',
@@ -967,7 +966,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
       try {
         const startTime = Date.now();
-        
+
         const { qualifyLeadContact } = await import('@/modules/ai/leadQualification.service');
 
         const result = await qualifyLeadContact({

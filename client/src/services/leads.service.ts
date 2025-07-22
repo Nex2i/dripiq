@@ -374,18 +374,24 @@ class LeadsService {
   ): Promise<{ message: string; contact: LeadPointOfContact }> {
     const authHeaders = await authService.getAuthHeaders()
 
-    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts/${contactId}/manually-reviewed`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
+    const response = await fetch(
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/manually-reviewed`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({ manuallyReviewed }),
       },
-      body: JSON.stringify({ manuallyReviewed }),
-    })
+    )
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to update contact manually reviewed status')
+      throw new Error(
+        errorData.message ||
+          'Failed to update contact manually reviewed status',
+      )
     }
 
     const result = await response.json()
@@ -407,23 +413,24 @@ class LeadsService {
   }
 
   // Generate lead qualification and outreach strategy for a contact
-  async qualifyLeadContact(
-    leadId: string,
-    contactId: number,
-  ): Promise<any> {
+  async qualifyLeadContact(leadId: string, contactId: number): Promise<any> {
     const authHeaders = await authService.getAuthHeaders()
 
-    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts/${contactId}/qualification`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
+    const response = await fetch(
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/qualification`,
+      {
+        method: 'PUT',
+        headers: {
+          ...authHeaders,
+        },
       },
-    })
+    )
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to generate lead qualification')
+      throw new Error(
+        errorData.message || 'Failed to generate lead qualification',
+      )
     }
 
     const result = await response.json()
