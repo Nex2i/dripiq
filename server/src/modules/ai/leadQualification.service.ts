@@ -4,6 +4,7 @@ import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
 import type { LeadQualificationResult } from './langchain/agents/LeadQualificationAgent';
 import { getLeadQualificationAgent } from './langchain';
+import { supabaseStorage } from '@/libs/supabase.storage';
 
 export interface QualifyLeadContactParams {
   leadId: string;
@@ -21,6 +22,33 @@ export const qualifyLeadContact = async (
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
+    // Check if cached result exists in storage
+    const cacheKey = `${tenantId}/${leadId}/${contactId}/qualify.json`;
+    
+    logger.info('Checking for cached qualification result', {
+      leadId,
+      contactId,
+      tenantId,
+      cacheKey,
+    });
+
+    const cachedResult = await supabaseStorage.downloadFile(cacheKey);
+    if (cachedResult) {
+      logger.info('Found cached qualification result, returning cached data', {
+        leadId,
+        contactId,
+        tenantId,
+        cacheKey,
+      });
+      return cachedResult;
+    }
+
+    logger.info('No cached result found, proceeding with qualification', {
+      leadId,
+      contactId,
+      tenantId,
+      cacheKey,
+    });
     // Verify user access if userId provided
     if (userId) {
       const hasAccess = await ProductsService.checkUserAccess(userId, tenantId);
@@ -117,6 +145,27 @@ export const qualifyLeadContact = async (
     try {
       const agent = getLeadQualificationAgent();
       const result = await agent.qualifyLead(agentInput);
+      
+      // Save result to cache
+      try {
+        await supabaseStorage.uploadJsonFile(cacheKey, result);
+        logger.info('Successfully cached qualification result', {
+          leadId,
+          contactId,
+          tenantId,
+          cacheKey,
+        });
+      } catch (cacheError) {
+        logger.error('Failed to cache qualification result', {
+          leadId,
+          contactId,
+          tenantId,
+          cacheKey,
+          error: cacheError instanceof Error ? cacheError.message : 'Unknown cache error',
+        });
+        // Don't throw error for cache failures - return the result anyway
+      }
+      
       return result;
     } catch (agentError) {
       logger.error('Agent execution failed', {
