@@ -413,7 +413,7 @@ class LeadsService {
   }
 
   // Generate lead qualification and outreach strategy for a contact
-  async qualifyLeadContact(leadId: string, contactId: number): Promise<any> {
+  async qualifyLeadContact(leadId: string, contactId: string): Promise<any> {
     const authHeaders = await authService.getAuthHeaders()
 
     const response = await fetch(

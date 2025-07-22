@@ -38,12 +38,14 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
   })
 
   const qualifyContactMutation = useMutation({
-    mutationFn: (contactIndex: number) =>
-      leadsService.qualifyLeadContact(leadId, contactIndex),
-    onMutate: (contactIndex) => {
-      const contact = contacts[contactIndex]
-      setQualifyingContactId(contact.id)
-      setSelectedContactName(contact.name)
+    mutationFn: (contactId: string) =>
+      leadsService.qualifyLeadContact(leadId, contactId),
+    onMutate: (contactId) => {
+      const contact = contacts.find(c => c.id === contactId)
+      if (contact) {
+        setQualifyingContactId(contact.id)
+        setSelectedContactName(contact.name)
+      }
     },
     onSuccess: (result) => {
       setQualificationData(result.data)
@@ -65,8 +67,8 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
     })
   }
 
-  const handleQualifyContact = (contactIndex: number) => {
-    qualifyContactMutation.mutate(contactIndex)
+  const handleQualifyContact = (contactId: string) => {
+    qualifyContactMutation.mutate(contactId)
   }
 
   return (
@@ -86,7 +88,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
           </div>
         ) : (
           <div className="space-y-6">
-            {contacts.map((contact, index) => (
+            {contacts.map((contact) => (
               <div
                 key={contact.id}
                 className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
@@ -106,7 +108,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
                   </div>
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => handleQualifyContact(index)}
+                      onClick={() => handleQualifyContact(contact.id)}
                       disabled={qualifyingContactId === contact.id}
                       className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Generate outreach strategy for this contact"

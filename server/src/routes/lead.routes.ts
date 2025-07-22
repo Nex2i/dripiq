@@ -942,7 +942,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Leads'],
       params: Type.Object({
         leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact index' }),
+        contactId: Type.String({ description: 'Contact ID' }),
       }),
 
       response: {
@@ -971,7 +971,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         const result = await qualifyLeadContact({
           leadId,
-          contactId: parseInt(contactId, 10),
+          contactId,
           tenantId,
           userId,
         });

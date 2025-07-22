@@ -3,7 +3,7 @@ import type { LeadQualificationResult } from './langchain/agents/LeadQualificati
 
 export interface QualifyLeadContactParams {
   leadId: string;
-  contactId: number;
+  contactId: string;
   tenantId: string;
   userId?: string;
 }
@@ -43,10 +43,10 @@ export const qualifyLeadContact = async (
       throw new Error('No contacts found for this lead');
     }
 
-    // Get specific contact
-    const contact = leadContacts[contactId];
+    // Get specific contact by ID
+    const contact = leadContacts.find(c => c.id === contactId);
     if (!contact) {
-      throw new Error(`Contact not found at index ${contactId}`);
+      throw new Error(`Contact not found with ID ${contactId}`);
     }
 
     // Get tenant details
