@@ -82,7 +82,7 @@ export const supabaseStorage = {
         logger.error(`Error downloading file ${key}`, error);
         return null;
       }
-      
+
       if (data) {
         const text = await data.text();
         try {
@@ -92,7 +92,7 @@ export const supabaseStorage = {
           return null;
         }
       }
-      
+
       return null;
     } catch (error) {
       logger.error(`Error downloading file ${key}`, error);
@@ -104,14 +104,14 @@ export const supabaseStorage = {
     try {
       const jsonString = JSON.stringify(jsonData, null, 2);
       const fileBlob = new Blob([jsonString], { type: 'application/json' });
-      
+
       const file: IUploadFile = {
         contentType: 'application/json',
         fileName: key.split('/').pop() || 'data.json',
         fileBody: fileBlob,
         slug: '',
       };
-      
+
       return await supabaseStorage.uploadFile(key, file);
     } catch (error) {
       logger.error(`Error uploading JSON file ${key}`, error);

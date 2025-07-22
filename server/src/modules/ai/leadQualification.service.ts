@@ -1,10 +1,10 @@
 import { logger } from '@/libs/logger';
+import { supabaseStorage } from '@/libs/supabase.storage';
 import { ProductsService } from '../products.service';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
 import type { LeadQualificationResult } from './langchain/agents/LeadQualificationAgent';
 import { getLeadQualificationAgent } from './langchain';
-import { supabaseStorage } from '@/libs/supabase.storage';
 
 export interface QualifyLeadContactParams {
   leadId: string;
@@ -24,7 +24,7 @@ export const qualifyLeadContact = async (
   try {
     // Check if cached result exists in storage
     const cacheKey = `${tenantId}/${leadId}/${contactId}/qualify.json`;
-    
+
     logger.info('Checking for cached qualification result', {
       leadId,
       contactId,
@@ -145,7 +145,7 @@ export const qualifyLeadContact = async (
     try {
       const agent = getLeadQualificationAgent();
       const result = await agent.qualifyLead(agentInput);
-      
+
       // Save result to cache
       try {
         await supabaseStorage.uploadJsonFile(cacheKey, result);
@@ -165,7 +165,7 @@ export const qualifyLeadContact = async (
         });
         // Don't throw error for cache failures - return the result anyway
       }
-      
+
       return result;
     } catch (agentError) {
       logger.error('Agent execution failed', {
