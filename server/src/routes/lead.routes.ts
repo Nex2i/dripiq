@@ -945,9 +945,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         leadId: Type.String({ description: 'Lead ID' }),
         contactId: Type.String({ description: 'Contact index' }),
       }),
-      querystring: Type.Object({
-        tenantId: Type.String({ description: 'Tenant ID' }),
-      }),
+
       response: {
         ...defaultRouteResponse(),
         200: Type.Object({
@@ -964,7 +962,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { leadId, contactId } = request.params as { leadId: string; contactId: string };
-      const { tenantId } = request.query as { tenantId: string };
+      const tenantId = authenticatedRequest.tenantId;
       const userId = authenticatedRequest.user?.id;
 
       try {

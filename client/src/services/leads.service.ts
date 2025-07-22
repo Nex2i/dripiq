@@ -410,11 +410,10 @@ class LeadsService {
   async qualifyLeadContact(
     leadId: string,
     contactId: number,
-    tenantId: string,
   ): Promise<any> {
     const authHeaders = await authService.getAuthHeaders()
 
-    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts/${contactId}/qualification?tenantId=${tenantId}`, {
+    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts/${contactId}/qualification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

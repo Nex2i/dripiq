@@ -5,7 +5,7 @@ import CopyButton from '../CopyButton'
 import LeadQualificationModal from '../LeadQualificationModal'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
-import { useAuth } from '../../contexts/AuthContext'
+
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
@@ -21,7 +21,6 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
   const [qualificationData, setQualificationData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
   const leadsService = getLeadsService()
-  const { user } = useAuth()
 
   const toggleManuallyReviewedMutation = useMutation({
     mutationFn: ({ contactId, manuallyReviewed }: { contactId: string; manuallyReviewed: boolean }) =>
@@ -39,9 +38,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
   })
 
   const qualifyContactMutation = useMutation({
-    mutationFn: ({ contactIndex, tenantId }: { contactIndex: number; tenantId: string }) =>
-      leadsService.qualifyLeadContact(leadId, contactIndex, tenantId),
-    onMutate: ({ contactIndex }) => {
+    mutationFn: (contactIndex: number) =>
+      leadsService.qualifyLeadContact(leadId, contactIndex),
+    onMutate: (contactIndex) => {
       const contact = contacts[contactIndex]
       setQualifyingContactId(contact.id)
       setSelectedContactName(contact.name)
@@ -67,15 +66,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({ contacts, primaryContactId, l
   }
 
   const handleQualifyContact = (contactIndex: number) => {
-    if (!user?.tenantId) {
-      console.error('No tenant ID available')
-      return
-    }
-
-    qualifyContactMutation.mutate({
-      contactIndex,
-      tenantId: user.tenantId,
-    })
+    qualifyContactMutation.mutate(contactIndex)
   }
 
   return (
