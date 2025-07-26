@@ -14,7 +14,6 @@ import {
   getLeadById,
   assignLeadOwner,
 } from '../modules/lead.service';
-import { toggleContactManuallyReviewed } from '../modules/contact.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 
@@ -820,114 +819,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to assign lead owner',
-          error: error.message,
-        });
-      }
-    },
-  });
-
-  // Toggle contact manually reviewed status route
-  fastify.route({
-    method: HttpMethods.PUT,
-    url: `${basePath}/:leadId/contacts/:contactId/manually-reviewed`,
-    preHandler: [fastify.authPrehandler],
-    schema: {
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact ID' }),
-      }),
-      body: Type.Object({
-        manuallyReviewed: Type.Boolean({
-          description: 'Whether the contact has been manually reviewed',
-        }),
-      }),
-      tags: ['Leads'],
-      summary: 'Toggle Contact Manually Reviewed Status',
-      description: 'Toggle the manually reviewed status of a contact (tenant-scoped)',
-      response: {
-        ...defaultRouteResponse(),
-        200: Type.Object({
-          message: Type.String(),
-          contact: pointOfContactResponseSchema,
-        }),
-      },
-    },
-    handler: async (
-      request: FastifyRequest<{
-        Params: {
-          leadId: string;
-          contactId: string;
-        };
-        Body: {
-          manuallyReviewed: boolean;
-        };
-      }>,
-      reply: FastifyReply
-    ) => {
-      try {
-        const authenticatedRequest = request as AuthenticatedRequest;
-        const { leadId, contactId } = request.params;
-        const { manuallyReviewed } = request.body;
-
-        if (!leadId || !leadId.trim()) {
-          reply.status(400).send({
-            message: 'Lead ID is required',
-            error: 'Invalid lead ID',
-          });
-          return;
-        }
-
-        if (!contactId || !contactId.trim()) {
-          reply.status(400).send({
-            message: 'Contact ID is required',
-            error: 'Invalid contact ID',
-          });
-          return;
-        }
-
-        // Toggle the contact's manually reviewed status
-        const updatedContact = await toggleContactManuallyReviewed(
-          authenticatedRequest.tenantId,
-          leadId,
-          contactId,
-          manuallyReviewed
-        );
-
-        fastify.log.info(
-          `Contact manually reviewed status updated. Contact ID: ${contactId}, Lead ID: ${leadId}, Status: ${manuallyReviewed}, Tenant: ${authenticatedRequest.tenantId}`
-        );
-
-        reply.status(200).send({
-          message: 'Contact manually reviewed status updated successfully',
-          contact: updatedContact,
-        });
-      } catch (error: any) {
-        fastify.log.error(`Error updating contact manually reviewed status: ${error.message}`);
-
-        if (
-          error.message?.includes('access to tenant') ||
-          error.message?.includes('ForbiddenError')
-        ) {
-          reply.status(403).send({
-            message: 'Access denied to tenant resources',
-            error: error.message,
-          });
-          return;
-        }
-
-        if (
-          error.message?.includes('Lead not found') ||
-          error.message?.includes('Contact not found')
-        ) {
-          reply.status(404).send({
-            message: 'Lead or contact not found',
-            error: error.message,
-          });
-          return;
-        }
-
-        reply.status(500).send({
-          message: 'Failed to update contact manually reviewed status',
           error: error.message,
         });
       }

@@ -26,9 +26,15 @@ const pointOfContactSchema = Type.Object({
 const pointOfContactUpdateSchema = Type.Object({
   name: Type.Optional(Type.String({ minLength: 1, description: 'Contact name' })),
   email: Type.Optional(Type.String({ format: 'email', description: 'Contact email address' })),
-  phone: Type.Optional(Type.Union([Type.String({ description: 'Contact phone number' }), Type.Null()])),
-  title: Type.Optional(Type.Union([Type.String({ description: 'Contact job title' }), Type.Null()])),
-  company: Type.Optional(Type.Union([Type.String({ description: 'Contact company' }), Type.Null()])),
+  phone: Type.Optional(
+    Type.Union([Type.String({ description: 'Contact phone number' }), Type.Null()])
+  ),
+  title: Type.Optional(
+    Type.Union([Type.String({ description: 'Contact job title' }), Type.Null()])
+  ),
+  company: Type.Optional(
+    Type.Union([Type.String({ description: 'Contact company' }), Type.Null()])
+  ),
 });
 
 // Schema for point of contact response
@@ -94,11 +100,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        const contact = await getContactById(
-          authenticatedRequest.tenantId,
-          leadId,
-          contactId
-        );
+        const contact = await getContactById(authenticatedRequest.tenantId, leadId, contactId);
 
         if (!contact) {
           reply.status(404).send({
@@ -248,10 +250,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        if (
-          error.message?.includes('required') ||
-          error.message?.includes('Invalid email')
-        ) {
+        if (error.message?.includes('required') || error.message?.includes('Invalid email')) {
           reply.status(400).send({
             message: 'Validation error',
             error: error.message,
@@ -351,10 +350,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        if (
-          error.message?.includes('required') ||
-          error.message?.includes('Invalid email')
-        ) {
+        if (error.message?.includes('required') || error.message?.includes('Invalid email')) {
           reply.status(400).send({
             message: 'Validation error',
             error: error.message,
@@ -418,11 +414,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        await deleteContact(
-          authenticatedRequest.tenantId,
-          leadId,
-          contactId
-        );
+        await deleteContact(authenticatedRequest.tenantId, leadId, contactId);
 
         fastify.log.info(
           `Contact deleted. Contact ID: ${contactId}, Lead ID: ${leadId}, Tenant: ${authenticatedRequest.tenantId}`
