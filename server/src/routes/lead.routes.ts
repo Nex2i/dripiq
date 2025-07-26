@@ -13,8 +13,8 @@ import {
   bulkDeleteLeads,
   getLeadById,
   assignLeadOwner,
-  toggleContactManuallyReviewed,
 } from '../modules/lead.service';
+import { toggleContactManuallyReviewed } from '../modules/contact.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 

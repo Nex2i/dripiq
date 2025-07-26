@@ -366,6 +366,60 @@ class LeadsService {
     return result
   }
 
+  // Update contact information
+  async updateContact(
+    leadId: string,
+    contactId: string,
+    contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title' | 'company'>>,
+  ): Promise<{ message: string; contact: LeadPointOfContact }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify(contactData),
+      },
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(
+        errorData.message || 'Failed to update contact',
+      )
+    }
+
+    const result = await response.json()
+
+    // Update cache after successful update if queryClient is available
+    if (this.queryClient) {
+      // Update the specific lead's contacts in the cache
+      this.queryClient.setQueryData<Lead>(
+        leadQueryKeys.detail(leadId),
+        (oldLead) => {
+          if (!oldLead || !oldLead.pointOfContacts) return oldLead
+          return {
+            ...oldLead,
+            pointOfContacts: oldLead.pointOfContacts.map((contact) =>
+              contact.id === contactId ? result.contact : contact,
+            ),
+          }
+        },
+      )
+
+      // Invalidate leads list to ensure consistency
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
+
   // Toggle contact manually reviewed status
   async toggleContactManuallyReviewed(
     leadId: string,

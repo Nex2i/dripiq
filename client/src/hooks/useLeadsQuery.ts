@@ -221,6 +221,57 @@ export function useAssignLeadOwner() {
   })
 }
 
+// Hook to update a contact
+export function useUpdateContact() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ 
+      leadId, 
+      contactId, 
+      contactData 
+    }: { 
+      leadId: string; 
+      contactId: string; 
+      contactData: Partial<Pick<Lead['pointOfContacts'][0], 'name' | 'email' | 'phone' | 'title' | 'company'>>
+    }) => leadsService.updateContact(leadId, contactId, contactData),
+    onSuccess: (data, { leadId, contactId }) => {
+      // Update the individual lead cache
+      queryClient.setQueryData<Lead>(leadQueryKeys.detail(leadId), (oldLead) => {
+        if (!oldLead || !oldLead.pointOfContacts) return oldLead
+        return {
+          ...oldLead,
+          pointOfContacts: oldLead.pointOfContacts.map((contact) =>
+            contact.id === contactId ? data.contact : contact,
+          ),
+        }
+      })
+
+      // Update the leads list cache
+      queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
+        if (!oldLeads) return oldLeads
+        return oldLeads.map((lead) => {
+          if (lead.id !== leadId || !lead.pointOfContacts) return lead
+          return {
+            ...lead,
+            pointOfContacts: lead.pointOfContacts.map((contact) =>
+              contact.id === contactId ? data.contact : contact,
+            ),
+          }
+        })
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error updating contact:', error)
+    },
+  })
+}
+
 // Hook to invalidate leads data (useful for manual refresh)
 export function useInvalidateLeads() {
   const queryClient = useQueryClient()

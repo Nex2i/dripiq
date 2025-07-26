@@ -11,12 +11,16 @@ import {
   Square,
   Target,
   Loader2,
+  Edit3,
+  Save,
+  X,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import LeadQualificationModal from '../LeadQualificationModal'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
+import { useUpdateContact } from '../../hooks/useLeadsQuery'
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
@@ -38,7 +42,11 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [qualificationModalOpen, setQualificationModalOpen] = useState(false)
   const [qualificationData, setQualificationData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>({})
+  const [originalFormData, setOriginalFormData] = useState<Partial<LeadPointOfContact>>({})
   const leadsService = getLeadsService()
+  const updateContactMutation = useUpdateContact()
 
   const toggleManuallyReviewedMutation = useMutation({
     mutationFn: ({
@@ -99,6 +107,92 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     qualifyContactMutation.mutate(contactId)
   }
 
+  const handleEditContact = (contact: LeadPointOfContact) => {
+    const editableData = {
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone || '',
+      title: contact.title || '',
+      company: contact.company || '',
+    }
+    setEditingContactId(contact.id)
+    setEditFormData(editableData)
+    setOriginalFormData(editableData)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingContactId(null)
+    setEditFormData({})
+    setOriginalFormData({})
+  }
+
+  const handleFormChange = (field: keyof LeadPointOfContact, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleSaveContact = async () => {
+    if (!editingContactId) return
+
+    // Validate required fields
+    if (!editFormData.name?.trim()) {
+      // You might want to show a toast notification here
+      console.error('Contact name is required')
+      return
+    }
+
+    if (!editFormData.email?.trim()) {
+      // You might want to show a toast notification here
+      console.error('Contact email is required')
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(editFormData.email)) {
+      // You might want to show a toast notification here
+      console.error('Invalid email format')
+      return
+    }
+
+    try {
+      // Prepare data for update (only changed fields)
+      const updateData: any = {}
+      
+      if (editFormData.name !== originalFormData.name) {
+        updateData.name = editFormData.name
+      }
+      if (editFormData.email !== originalFormData.email) {
+        updateData.email = editFormData.email
+      }
+      if (editFormData.phone !== originalFormData.phone) {
+        updateData.phone = editFormData.phone || null
+      }
+      if (editFormData.title !== originalFormData.title) {
+        updateData.title = editFormData.title || null
+      }
+      if (editFormData.company !== originalFormData.company) {
+        updateData.company = editFormData.company || null
+      }
+
+      // Only make API call if there are changes
+      if (Object.keys(updateData).length > 0) {
+        await updateContactMutation.mutateAsync({
+          leadId,
+          contactId: editingContactId,
+          contactData: updateData,
+        })
+      }
+
+      handleCancelEdit()
+    } catch (error) {
+      console.error('Failed to update contact:', error)
+      // You might want to show a toast notification here
+    }
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-6">
@@ -123,60 +217,121 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {contact.name}
-                    </h3>
-                    <CopyButton
-                      text={contact.name}
-                      label="name"
-                      className="ml-2"
-                    />
-                    {primaryContactId === contact.id && (
-                      <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <Crown className="h-3 w-3 mr-1" />
-                        Primary
+                    {editingContactId === contact.id ? (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={editFormData.name || ''}
+                          onChange={(e) => handleFormChange('name', e.target.value)}
+                          className="text-lg font-medium text-gray-900 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Contact name"
+                          required
+                        />
+                        {primaryContactId === contact.id && (
+                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Primary
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {contact.name}
+                        </h3>
+                        <CopyButton
+                          text={contact.name}
+                          label="name"
+                          className="ml-2"
+                        />
+                        {primaryContactId === contact.id && (
+                          <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Primary
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => handleQualifyContact(contact.id)}
-                      disabled={qualifyingContactId === contact.id}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Generate outreach strategy for this contact"
-                    >
-                      {qualifyingContactId === contact.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Target className="h-4 w-4" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {qualifyingContactId === contact.id
-                          ? 'Generating...'
-                          : 'Generate Strategy'}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleToggleManuallyReviewed(contact)}
-                      disabled={loadingContactId === contact.id}
-                      className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={
-                        contact.manuallyReviewed
-                          ? 'Mark as not manually reviewed'
-                          : 'Mark as manually reviewed'
-                      }
-                    >
-                      {loadingContactId === contact.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                      ) : contact.manuallyReviewed ? (
-                        <CheckSquare className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Square className="h-4 w-4 text-gray-400" />
-                      )}
-                      <span className="text-sm font-medium text-gray-700">
-                        Manually Reviewed
-                      </span>
-                    </button>
+                    {editingContactId === contact.id ? (
+                      <>
+                        <button
+                          onClick={handleSaveContact}
+                          disabled={updateContactMutation.isPending}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Save changes"
+                        >
+                          {updateContactMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {updateContactMutation.isPending ? 'Saving...' : 'Save'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={updateContactMutation.isPending}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Cancel editing"
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="text-sm font-medium">Cancel</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditContact(contact)}
+                          disabled={editingContactId !== null || qualifyingContactId === contact.id || loadingContactId === contact.id}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Edit contact"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          <span className="text-sm font-medium">Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleQualifyContact(contact.id)}
+                          disabled={qualifyingContactId === contact.id || editingContactId !== null}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Generate outreach strategy for this contact"
+                        >
+                          {qualifyingContactId === contact.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Target className="h-4 w-4" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {qualifyingContactId === contact.id
+                              ? 'Generating...'
+                              : 'Generate Strategy'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleToggleManuallyReviewed(contact)}
+                          disabled={loadingContactId === contact.id || editingContactId !== null}
+                          className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            contact.manuallyReviewed
+                              ? 'Mark as not manually reviewed'
+                              : 'Mark as manually reviewed'
+                          }
+                        >
+                          {loadingContactId === contact.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                          ) : contact.manuallyReviewed ? (
+                            <CheckSquare className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Square className="h-4 w-4 text-gray-400" />
+                          )}
+                          <span className="text-sm font-medium text-gray-700">
+                            Manually Reviewed
+                          </span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -184,65 +339,116 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <Mail className="h-5 w-5 text-gray-400" />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           Email
                         </p>
-                        <a
-                          href={`mailto:${contact.email}`}
-                          className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                        >
-                          {contact.email}
-                        </a>
+                        {editingContactId === contact.id ? (
+                          <input
+                            type="email"
+                            value={editFormData.email || ''}
+                            onChange={(e) => handleFormChange('email', e.target.value)}
+                            className="text-base text-[var(--color-primary-600)] border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                            placeholder="Contact email"
+                            required
+                          />
+                        ) : (
+                          <a
+                            href={`mailto:${contact.email}`}
+                            className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                          >
+                            {contact.email}
+                          </a>
+                        )}
                       </div>
                     </div>
-                    <CopyButton text={contact.email} label="email" />
+                    {editingContactId !== contact.id && (
+                      <CopyButton text={contact.email} label="email" />
+                    )}
                   </div>
 
-                  {contact.phone && (
+                  {(contact.phone || editingContactId === contact.id) && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Phone className="h-5 w-5 text-gray-400" />
-                        <div>
+                        <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900">
                             Phone
                           </p>
-                          <a
-                            href={`tel:${contact.phone}`}
-                            className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                          >
-                            {contact.phone}
-                          </a>
+                          {editingContactId === contact.id ? (
+                            <input
+                              type="tel"
+                              value={editFormData.phone || ''}
+                              onChange={(e) => handleFormChange('phone', e.target.value)}
+                              className="text-base text-[var(--color-primary-600)] border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                              placeholder="Contact phone"
+                            />
+                          ) : contact.phone ? (
+                            <a
+                              href={`tel:${contact.phone}`}
+                              className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                            >
+                              {contact.phone}
+                            </a>
+                          ) : (
+                            <span className="text-base text-gray-500">No phone</span>
+                          )}
                         </div>
                       </div>
-                      <CopyButton text={contact.phone} label="phone" />
+                      {editingContactId !== contact.id && contact.phone && (
+                        <CopyButton text={contact.phone} label="phone" />
+                      )}
                     </div>
                   )}
 
-                  {contact.title && (
+                  {(contact.title || editingContactId === contact.id) && (
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <User className="h-5 w-5 text-gray-400" />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           Title
                         </p>
-                        <p className="text-base text-gray-700">
-                          {contact.title}
-                        </p>
+                        {editingContactId === contact.id ? (
+                          <input
+                            type="text"
+                            value={editFormData.title || ''}
+                            onChange={(e) => handleFormChange('title', e.target.value)}
+                            className="text-base text-gray-700 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                            placeholder="Contact title"
+                          />
+                        ) : contact.title ? (
+                          <p className="text-base text-gray-700">
+                            {contact.title}
+                          </p>
+                        ) : (
+                          <span className="text-base text-gray-500">No title</span>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {contact.company && (
+                  {(contact.company || editingContactId === contact.id) && (
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <Building className="h-5 w-5 text-gray-400" />
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           Company
                         </p>
-                        <p className="text-base text-gray-700">
-                          {contact.company}
-                        </p>
+                        {editingContactId === contact.id ? (
+                          <input
+                            type="text"
+                            value={editFormData.company || ''}
+                            onChange={(e) => handleFormChange('company', e.target.value)}
+                            className="text-base text-gray-700 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                            placeholder="Contact company"
+                          />
+                        ) : contact.company ? (
+                          <p className="text-base text-gray-700">
+                            {contact.company}
+                          </p>
+                        ) : (
+                          <span className="text-base text-gray-500">No company</span>
+                        )}
                       </div>
                     </div>
                   )}
