@@ -284,7 +284,7 @@ export function useUpdateContact(onSuccess?: () => void, onError?: (error: any) 
     }: { 
       leadId: string; 
       contactId: string; 
-      contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title' | 'company'>>
+      contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>
     }) => leadsService.updateContact(leadId, contactId, contactData),
     onSuccess: (data, { leadId, contactId }) => {
       // Update the individual lead cache

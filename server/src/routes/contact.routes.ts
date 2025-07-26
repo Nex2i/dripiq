@@ -32,9 +32,6 @@ const pointOfContactUpdateSchema = Type.Object({
   title: Type.Optional(
     Type.Union([Type.String({ description: 'Contact job title' }), Type.Null()])
   ),
-  company: Type.Optional(
-    Type.Union([Type.String({ description: 'Contact company' }), Type.Null()])
-  ),
 });
 
 // Schema for point of contact response
@@ -175,7 +172,6 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           email?: string;
           phone?: string | null;
           title?: string | null;
-          company?: string | null;
         };
       }>,
       reply: FastifyReply
@@ -296,7 +292,6 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           email: string;
           phone?: string;
           title?: string;
-          company?: string;
         };
       }>,
       reply: FastifyReply

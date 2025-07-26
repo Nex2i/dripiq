@@ -53,7 +53,7 @@ export const updateContact = async (
   tenantId: string,
   leadId: string,
   contactId: string,
-  contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title' | 'company'>>
+  contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>
 ): Promise<LeadPointOfContact> => {
   try {
     // Verify the contact exists and belongs to the tenant/lead

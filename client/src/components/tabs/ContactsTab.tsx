@@ -107,7 +107,6 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       email: contact.email,
       phone: contact.phone || '',
       title: contact.title || '',
-      company: contact.company || '',
     }
     setEditingContactId(contact.id)
     setEditFormData(editableData)
@@ -165,9 +164,6 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     }
     if (editFormData.title !== originalFormData.title) {
       updateData.title = editFormData.title || null
-    }
-    if (editFormData.company !== originalFormData.company) {
-      updateData.company = editFormData.company || null
     }
 
     // Only make API call if there are changes
@@ -417,28 +413,16 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                     </div>
                   )}
 
-                  {(contact.company || editingContactId === contact.id) && (
+                  {contact.company && (
                     <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                       <Building className="h-5 w-5 text-gray-400" />
-                      <div className="flex-1">
+                      <div>
                         <p className="text-sm font-medium text-gray-900">
                           Company
                         </p>
-                        {editingContactId === contact.id ? (
-                          <input
-                            type="text"
-                            value={editFormData.company || ''}
-                            onChange={(e) => handleFormChange('company', e.target.value)}
-                            className="text-base text-gray-700 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-                            placeholder="Contact company"
-                          />
-                        ) : contact.company ? (
-                          <p className="text-base text-gray-700">
-                            {contact.company}
-                          </p>
-                        ) : (
-                          <span className="text-base text-gray-500">No company</span>
-                        )}
+                        <p className="text-base text-gray-700">
+                          {contact.company}
+                        </p>
                       </div>
                     </div>
                   )}

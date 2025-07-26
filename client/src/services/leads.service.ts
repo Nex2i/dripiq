@@ -370,7 +370,7 @@ class LeadsService {
   async updateContact(
     leadId: string,
     contactId: string,
-    contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title' | 'company'>>,
+    contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>,
   ): Promise<{ message: string; contact: LeadPointOfContact }> {
     const authHeaders = await authService.getAuthHeaders()
 
