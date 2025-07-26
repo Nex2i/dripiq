@@ -20,7 +20,7 @@ import CopyButton from '../CopyButton'
 import LeadQualificationModal from '../LeadQualificationModal'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
-import { useUpdateContact } from '../../hooks/useLeadsQuery'
+import { useUpdateContact, useToggleContactManuallyReviewed } from '../../hooks/useLeadsQuery'
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
@@ -46,32 +46,20 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>({})
   const [originalFormData, setOriginalFormData] = useState<Partial<LeadPointOfContact>>({})
   const leadsService = getLeadsService()
-  const updateContactMutation = useUpdateContact()
-
-  const toggleManuallyReviewedMutation = useMutation({
-    mutationFn: ({
-      contactId,
-      manuallyReviewed,
-    }: {
-      contactId: string
-      manuallyReviewed: boolean
-    }) =>
-      leadsService.toggleContactManuallyReviewed(
-        leadId,
-        contactId,
-        manuallyReviewed,
-      ),
-    onMutate: ({ contactId }) => {
-      setLoadingContactId(contactId)
+  
+  const updateContactMutation = useUpdateContact(
+    // onSuccess callback
+    () => {
+      handleCancelEdit()
     },
-    onSettled: () => {
-      setLoadingContactId(null)
-    },
-    onError: (error) => {
-      console.error('Failed to update manually reviewed status:', error)
+    // onError callback
+    (error) => {
+      console.error('Failed to update contact:', error)
       // You might want to show a toast notification here
-    },
-  })
+    }
+  )
+
+  const toggleManuallyReviewedMutation = useToggleContactManuallyReviewed()
 
   const qualifyContactMutation = useMutation({
     mutationFn: (contactId: string) =>
@@ -97,9 +85,15 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   })
 
   const handleToggleManuallyReviewed = (contact: LeadPointOfContact) => {
+    setLoadingContactId(contact.id)
     toggleManuallyReviewedMutation.mutate({
+      leadId,
       contactId: contact.id,
       manuallyReviewed: !contact.manuallyReviewed,
+    }, {
+      onSettled: () => {
+        setLoadingContactId(null)
+      }
     })
   }
 
@@ -133,7 +127,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     }))
   }
 
-  const handleSaveContact = async () => {
+  const handleSaveContact = () => {
     if (!editingContactId) return
 
     // Validate required fields
@@ -157,39 +151,35 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       return
     }
 
-    try {
-      // Prepare data for update (only changed fields)
-      const updateData: any = {}
-      
-      if (editFormData.name !== originalFormData.name) {
-        updateData.name = editFormData.name
-      }
-      if (editFormData.email !== originalFormData.email) {
-        updateData.email = editFormData.email
-      }
-      if (editFormData.phone !== originalFormData.phone) {
-        updateData.phone = editFormData.phone || null
-      }
-      if (editFormData.title !== originalFormData.title) {
-        updateData.title = editFormData.title || null
-      }
-      if (editFormData.company !== originalFormData.company) {
-        updateData.company = editFormData.company || null
-      }
+    // Prepare data for update (only changed fields)
+    const updateData: any = {}
+    
+    if (editFormData.name !== originalFormData.name) {
+      updateData.name = editFormData.name
+    }
+    if (editFormData.email !== originalFormData.email) {
+      updateData.email = editFormData.email
+    }
+    if (editFormData.phone !== originalFormData.phone) {
+      updateData.phone = editFormData.phone || null
+    }
+    if (editFormData.title !== originalFormData.title) {
+      updateData.title = editFormData.title || null
+    }
+    if (editFormData.company !== originalFormData.company) {
+      updateData.company = editFormData.company || null
+    }
 
-      // Only make API call if there are changes
-      if (Object.keys(updateData).length > 0) {
-        await updateContactMutation.mutateAsync({
-          leadId,
-          contactId: editingContactId,
-          contactData: updateData,
-        })
-      }
-
+    // Only make API call if there are changes
+    if (Object.keys(updateData).length > 0) {
+      updateContactMutation.mutate({
+        leadId,
+        contactId: editingContactId,
+        contactData: updateData,
+      })
+    } else {
+      // No changes, just exit edit mode
       handleCancelEdit()
-    } catch (error) {
-      console.error('Failed to update contact:', error)
-      // You might want to show a toast notification here
     }
   }
 
@@ -311,7 +301,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                         </button>
                         <button
                           onClick={() => handleToggleManuallyReviewed(contact)}
-                          disabled={loadingContactId === contact.id || editingContactId !== null}
+                          disabled={loadingContactId === contact.id || editingContactId !== null || toggleManuallyReviewedMutation.isPending}
                           className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
                             contact.manuallyReviewed
@@ -319,7 +309,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                               : 'Mark as manually reviewed'
                           }
                         >
-                          {loadingContactId === contact.id ? (
+                          {(loadingContactId === contact.id || toggleManuallyReviewedMutation.isPending) ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
                           ) : contact.manuallyReviewed ? (
                             <CheckSquare className="h-4 w-4 text-green-600" />
