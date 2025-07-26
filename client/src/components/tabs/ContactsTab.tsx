@@ -111,6 +111,12 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     setEditingContactId(contact.id)
     setEditFormData(editableData)
     setOriginalFormData(editableData)
+    
+    // Auto-focus the name input after the component re-renders
+    setTimeout(() => {
+      const nameInput = document.querySelector(`input[data-field="name-${contact.id}"]`) as HTMLInputElement;
+      if (nameInput) nameInput.focus();
+    }, 0)
   }
 
   const handleCancelEdit = () => {
@@ -204,12 +210,19 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     {editingContactId === contact.id ? (
-                      <div className="flex items-center space-x-2">
+                      <div 
+                        className="flex items-center space-x-2 cursor-text"
+                        onClick={() => {
+                          const nameInput = document.querySelector(`input[data-field="name-${contact.id}"]`) as HTMLInputElement;
+                          if (nameInput) nameInput.focus();
+                        }}
+                      >
                         <input
                           type="text"
+                          data-field={`name-${contact.id}`}
                           value={editFormData.name || ''}
                           onChange={(e) => handleFormChange('name', e.target.value)}
-                          className="text-lg font-medium text-gray-900 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="text-lg font-medium text-gray-900 bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 min-w-0 flex-1"
                           placeholder="Contact name"
                           required
                         />
@@ -322,94 +335,147 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          Email
-                        </p>
-                        {editingContactId === contact.id ? (
-                          <input
-                            type="email"
-                            value={editFormData.email || ''}
-                            onChange={(e) => handleFormChange('email', e.target.value)}
-                            className="text-base text-[var(--color-primary-600)] border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-                            placeholder="Contact email"
-                            required
-                          />
-                        ) : (
-                          <a
-                            href={`mailto:${contact.email}`}
-                            className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                          >
-                            {contact.email}
-                          </a>
-                        )}
+                                     <div 
+                     className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
+                     onClick={() => {
+                       if (editingContactId === contact.id) {
+                         const emailInput = document.querySelector(`input[data-field="email-${contact.id}"]`) as HTMLInputElement;
+                         if (emailInput) emailInput.focus();
+                       }
+                     }}
+                  >
+                    {editingContactId === contact.id ? (
+                      <div className="w-full">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                          <p className="text-sm font-medium text-gray-900">Email</p>
+                        </div>
+                        <input
+                          type="email"
+                          data-field={`email-${contact.id}`}
+                          value={editFormData.email || ''}
+                          onChange={(e) => handleFormChange('email', e.target.value)}
+                          className="w-full text-base text-[var(--color-primary-600)] bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                          placeholder="Contact email"
+                          required
+                        />
                       </div>
-                    </div>
-                    {editingContactId !== contact.id && (
-                      <CopyButton text={contact.email} label="email" />
+                    ) : (
+                      <>
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Email
+                            </p>
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                            >
+                              {contact.email}
+                            </a>
+                          </div>
+                        </div>
+                        <CopyButton text={contact.email} label="email" />
+                      </>
                     )}
                   </div>
 
                   {(contact.phone || editingContactId === contact.id) && (
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-5 w-5 text-gray-400" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
-                            Phone
-                          </p>
-                          {editingContactId === contact.id ? (
-                            <input
-                              type="tel"
-                              value={editFormData.phone || ''}
-                              onChange={(e) => handleFormChange('phone', e.target.value)}
-                              className="text-base text-[var(--color-primary-600)] border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-                              placeholder="Contact phone"
-                            />
-                          ) : contact.phone ? (
-                            <a
-                              href={`tel:${contact.phone}`}
-                              className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                            >
-                              {contact.phone}
-                            </a>
-                          ) : (
-                            <span className="text-base text-gray-500">No phone</span>
-                          )}
+                                         <div 
+                       className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
+                       onClick={() => {
+                         if (editingContactId === contact.id) {
+                           const phoneInput = document.querySelector(`input[data-field="phone-${contact.id}"]`) as HTMLInputElement;
+                           if (phoneInput) phoneInput.focus();
+                         }
+                       }}
+                    >
+                      {editingContactId === contact.id ? (
+                        <div className="w-full">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <Phone className="h-5 w-5 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-900">Phone</p>
+                          </div>
+                          <input
+                            type="tel"
+                            data-field={`phone-${contact.id}`}
+                            value={editFormData.phone || ''}
+                            onChange={(e) => handleFormChange('phone', e.target.value)}
+                            className="w-full text-base text-[var(--color-primary-600)] bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                            placeholder="Contact phone"
+                          />
                         </div>
-                      </div>
-                      {editingContactId !== contact.id && contact.phone && (
-                        <CopyButton text={contact.phone} label="phone" />
+                      ) : (
+                        <>
+                          <div className="flex items-center space-x-3">
+                            <Phone className="h-5 w-5 text-gray-400" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                Phone
+                              </p>
+                              {contact.phone ? (
+                                <a
+                                  href={`tel:${contact.phone}`}
+                                  className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                                >
+                                  {contact.phone}
+                                </a>
+                              ) : (
+                                <span className="text-base text-gray-500">No phone</span>
+                              )}
+                            </div>
+                          </div>
+                          {contact.phone && (
+                            <CopyButton text={contact.phone} label="phone" />
+                          )}
+                        </>
                       )}
                     </div>
                   )}
 
                   {(contact.title || editingContactId === contact.id) && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <User className="h-5 w-5 text-gray-400" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          Title
-                        </p>
-                        {editingContactId === contact.id ? (
+                                         <div 
+                       className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center space-x-3'}`}
+                       onClick={() => {
+                         if (editingContactId === contact.id) {
+                           const titleInput = document.querySelector(`input[data-field="title-${contact.id}"]`) as HTMLInputElement;
+                           if (titleInput) titleInput.focus();
+                         }
+                       }}
+                    >
+                      {editingContactId === contact.id ? (
+                        <div className="w-full">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <User className="h-5 w-5 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-900">Title</p>
+                          </div>
                           <input
                             type="text"
+                            data-field={`title-${contact.id}`}
                             value={editFormData.title || ''}
                             onChange={(e) => handleFormChange('title', e.target.value)}
-                            className="text-base text-gray-700 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                            className="w-full text-base text-gray-700 bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
                             placeholder="Contact title"
                           />
-                        ) : contact.title ? (
-                          <p className="text-base text-gray-700">
-                            {contact.title}
-                          </p>
-                        ) : (
-                          <span className="text-base text-gray-500">No title</span>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <>
+                          <User className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Title
+                            </p>
+                            {contact.title ? (
+                              <p className="text-base text-gray-700">
+                                {contact.title}
+                              </p>
+                            ) : (
+                              <span className="text-base text-gray-500">No title</span>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
