@@ -110,7 +110,7 @@ export default function ContactSalesModal({
     <div className="fixed inset-0 z-50">
       {/* Background overlay */}
       <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 backdrop-blur-sm transition-opacity"
         onClick={handleClose}
       ></div>
 
