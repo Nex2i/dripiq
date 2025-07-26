@@ -45,6 +45,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>({})
   const [originalFormData, setOriginalFormData] = useState<Partial<LeadPointOfContact>>({})
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const leadsService = getLeadsService()
   
   const updateContactMutation = useUpdateContact(
@@ -105,12 +106,13 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     const editableData = {
       name: contact.name,
       email: contact.email,
-      phone: contact.phone || '',
+      phone: contact.phone ? formatPhoneNumber(contact.phone) : '',
       title: contact.title || '',
     }
     setEditingContactId(contact.id)
     setEditFormData(editableData)
     setOriginalFormData(editableData)
+    setValidationErrors({})
     
     // Auto-focus the name input after the component re-renders
     setTimeout(() => {
@@ -123,36 +125,159 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     setEditingContactId(null)
     setEditFormData({})
     setOriginalFormData({})
+    setValidationErrors({})
+  }
+
+  const validateEmail = (email: string): string | null => {
+    if (!email.trim()) return 'Email is required'
+    
+    // Basic format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return 'Please enter a valid email address'
+    
+    // Check for common issues
+    if (email.includes('..')) return 'Email cannot contain consecutive dots'
+    if (email.startsWith('.') || email.endsWith('.')) return 'Email cannot start or end with a dot'
+    if (email.includes(' ')) return 'Email cannot contain spaces'
+    
+    // Check domain part
+    const domain = email.split('@')[1]
+    if (domain && domain.length < 2) return 'Email domain is too short'
+    
+    return null
+  }
+
+  const validatePhoneNumber = (phone: string): string | null => {
+    if (!phone.trim()) return null // Phone is optional
+    
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '')
+    
+    // US phone number should have exactly 10 digits (without country code) or 11 digits (with country code 1)
+    if (digitsOnly.length === 10) {
+      // Valid 10-digit US number - check that area code and exchange code are valid
+      const areaCode = digitsOnly.slice(0, 3)
+      const exchangeCode = digitsOnly.slice(3, 6)
+      
+      // Area code cannot start with 0 or 1
+      if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
+        return 'Invalid area code - cannot start with 0 or 1'
+      }
+      
+      // Exchange code cannot start with 0 or 1
+      if (exchangeCode.startsWith('0') || exchangeCode.startsWith('1')) {
+        return 'Invalid phone number format'
+      }
+      
+      return null
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      // Valid 11-digit US number with country code - validate the same way
+      const areaCode = digitsOnly.slice(1, 4)
+      const exchangeCode = digitsOnly.slice(4, 7)
+      
+      if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
+        return 'Invalid area code - cannot start with 0 or 1'
+      }
+      
+      if (exchangeCode.startsWith('0') || exchangeCode.startsWith('1')) {
+        return 'Invalid phone number format'
+      }
+      
+      return null
+    } else if (digitsOnly.length < 10) {
+      return 'Phone number is too short - must be 10 digits'
+    } else {
+      return 'Phone number is too long - must be 10 digits'
+    }
+  }
+
+  const validateField = (field: string, value: string): string | null => {
+    switch (field) {
+      case 'name':
+        return !value.trim() ? 'Name is required' : null
+      case 'email':
+        return validateEmail(value)
+      case 'phone':
+        return validatePhoneNumber(value)
+      default:
+        return null
+    }
+  }
+
+  const formatPhoneNumber = (value: string): string => {
+    // Remove all non-digit characters
+    const digitsOnly = value.replace(/\D/g, '')
+    
+    // Don't format if empty
+    if (!digitsOnly) return ''
+    
+    // Format based on length
+    if (digitsOnly.length <= 3) {
+      return digitsOnly
+    } else if (digitsOnly.length <= 6) {
+      return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3)}`
+    } else if (digitsOnly.length <= 10) {
+      return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      return `+1 (${digitsOnly.slice(1, 4)}) ${digitsOnly.slice(4, 7)}-${digitsOnly.slice(7)}`
+    } else {
+      // Limit to 10 digits for US numbers
+      const truncated = digitsOnly.slice(0, 10)
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3, 6)}-${truncated.slice(6)}`
+    }
   }
 
   const handleFormChange = (field: keyof LeadPointOfContact, value: string) => {
+    let processedValue = value
+    
+    // Format phone number as user types
+    if (field === 'phone') {
+      processedValue = formatPhoneNumber(value)
+    }
+
     setEditFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: processedValue,
     }))
+
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+  }
+
+  const handleBlur = (field: string, value: string) => {
+    const error = validateField(field, value)
+    if (error) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: error
+      }))
+    }
   }
 
   const handleSaveContact = () => {
     if (!editingContactId) return
 
-    // Validate required fields
-    if (!editFormData.name?.trim()) {
-      // You might want to show a toast notification here
-      console.error('Contact name is required')
-      return
-    }
+    // Validate all fields
+    const errors: {[key: string]: string} = {}
+    
+    const nameError = validateField('name', editFormData.name || '')
+    if (nameError) errors.name = nameError
 
-    if (!editFormData.email?.trim()) {
-      // You might want to show a toast notification here
-      console.error('Contact email is required')
-      return
-    }
+    const emailError = validateField('email', editFormData.email || '')
+    if (emailError) errors.email = emailError
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(editFormData.email)) {
-      // You might want to show a toast notification here
-      console.error('Invalid email format')
+    const phoneError = validateField('phone', editFormData.phone || '')
+    if (phoneError) errors.phone = phoneError
+
+    // If there are validation errors, show them and don't proceed
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
       return
     }
 
@@ -217,15 +342,23 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           if (nameInput) nameInput.focus();
                         }}
                       >
-                        <input
-                          type="text"
-                          data-field={`name-${contact.id}`}
-                          value={editFormData.name || ''}
-                          onChange={(e) => handleFormChange('name', e.target.value)}
-                          className="text-lg font-medium text-gray-900 bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 min-w-0 flex-1"
-                          placeholder="Contact name"
-                          required
-                        />
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            data-field={`name-${contact.id}`}
+                            value={editFormData.name || ''}
+                            onChange={(e) => handleFormChange('name', e.target.value)}
+                            onBlur={(e) => handleBlur('name', e.target.value)}
+                            className={`text-lg font-medium bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 min-w-0 w-full ${
+                              validationErrors.name ? 'text-red-600' : 'text-gray-900'
+                            }`}
+                            placeholder="Contact name"
+                            required
+                          />
+                          {validationErrors.name && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.name}</p>
+                          )}
+                        </div>
                         {primaryContactId === contact.id && (
                           <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             <Crown className="h-3 w-3 mr-1" />
@@ -257,9 +390,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                       <>
                         <button
                           onClick={handleSaveContact}
-                          disabled={updateContactMutation.isPending}
+                          disabled={updateContactMutation.isPending || Object.keys(validationErrors).length > 0}
                           className="flex items-center space-x-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Save changes"
+                          title={Object.keys(validationErrors).length > 0 ? "Please fix validation errors before saving" : "Save changes"}
                         >
                           {updateContactMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -355,10 +488,16 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           data-field={`email-${contact.id}`}
                           value={editFormData.email || ''}
                           onChange={(e) => handleFormChange('email', e.target.value)}
-                          className="w-full text-base text-[var(--color-primary-600)] bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                          onBlur={(e) => handleBlur('email', e.target.value)}
+                          className={`w-full text-base bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 ${
+                            validationErrors.email ? 'text-red-600' : 'text-[var(--color-primary-600)]'
+                          }`}
                           placeholder="Contact email"
                           required
                         />
+                        {validationErrors.email && (
+                          <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -402,9 +541,15 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                             data-field={`phone-${contact.id}`}
                             value={editFormData.phone || ''}
                             onChange={(e) => handleFormChange('phone', e.target.value)}
-                            className="w-full text-base text-[var(--color-primary-600)] bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
-                            placeholder="Contact phone"
+                            onBlur={(e) => handleBlur('phone', e.target.value)}
+                            className={`w-full text-base bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 ${
+                              validationErrors.phone ? 'text-red-600' : 'text-[var(--color-primary-600)]'
+                            }`}
+                            placeholder="Contact phone (US format)"
                           />
+                          {validationErrors.phone && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                          )}
                         </div>
                       ) : (
                         <>
