@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsService, leadQueryKeys } from '../services/leads.service'
 import { invitesService } from '../services/invites.service'
-import type { Lead } from '../types/lead.types'
+import type { Lead, LeadPointOfContact } from '../types/lead.types'
 import type {
   CreateLeadData,
   UpdateLeadData,
@@ -217,6 +217,118 @@ export function useAssignLeadOwner() {
     },
     onError: (error) => {
       console.error('Error assigning lead owner:', error)
+    },
+  })
+}
+
+// Hook to toggle contact manually reviewed status
+export function useToggleContactManuallyReviewed() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ 
+      leadId, 
+      contactId, 
+      manuallyReviewed 
+    }: { 
+      leadId: string; 
+      contactId: string; 
+      manuallyReviewed: boolean;
+    }) => leadsService.toggleContactManuallyReviewed(leadId, contactId, manuallyReviewed),
+    onSuccess: (data, { leadId, contactId }) => {
+      // Update the individual lead cache
+      queryClient.setQueryData<Lead>(leadQueryKeys.detail(leadId), (oldLead) => {
+        if (!oldLead || !oldLead.pointOfContacts) return oldLead
+        return {
+          ...oldLead,
+          pointOfContacts: oldLead.pointOfContacts.map((contact) =>
+            contact.id === contactId ? data.contact : contact,
+          ),
+        }
+      })
+
+      // Update the leads list cache
+      queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
+        if (!oldLeads) return oldLeads
+        return oldLeads.map((lead) => {
+          if (lead.id !== leadId || !lead.pointOfContacts) return lead
+          return {
+            ...lead,
+            pointOfContacts: lead.pointOfContacts.map((contact) =>
+              contact.id === contactId ? data.contact : contact,
+            ),
+          }
+        })
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error toggling contact manually reviewed status:', error)
+    },
+  })
+}
+
+// Hook to update a contact
+export function useUpdateContact(onSuccess?: () => void, onError?: (error: any) => void) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ 
+      leadId, 
+      contactId, 
+      contactData 
+    }: { 
+      leadId: string; 
+      contactId: string; 
+      contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>
+    }) => leadsService.updateContact(leadId, contactId, contactData),
+    onSuccess: (data, { leadId, contactId }) => {
+      // Update the individual lead cache
+      queryClient.setQueryData<Lead>(leadQueryKeys.detail(leadId), (oldLead) => {
+        if (!oldLead || !oldLead.pointOfContacts) return oldLead
+        return {
+          ...oldLead,
+          pointOfContacts: oldLead.pointOfContacts.map((contact) =>
+            contact.id === contactId ? data.contact : contact,
+          ),
+        }
+      })
+
+      // Update the leads list cache
+      queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
+        if (!oldLeads) return oldLeads
+        return oldLeads.map((lead) => {
+          if (lead.id !== leadId || !lead.pointOfContacts) return lead
+          return {
+            ...lead,
+            pointOfContacts: lead.pointOfContacts.map((contact) =>
+              contact.id === contactId ? data.contact : contact,
+            ),
+          }
+        })
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+
+      // Call the custom success callback if provided
+      if (onSuccess) {
+        onSuccess()
+      }
+    },
+    onError: (error) => {
+      console.error('Error updating contact:', error)
+      
+      // Call the custom error callback if provided
+      if (onError) {
+        onError(error)
+      }
     },
   })
 }

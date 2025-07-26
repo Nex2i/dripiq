@@ -11,12 +11,16 @@ import {
   Square,
   Target,
   Loader2,
+  Edit3,
+  Save,
+  X,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import LeadQualificationModal from '../LeadQualificationModal'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
+import { useUpdateContact, useToggleContactManuallyReviewed } from '../../hooks/useLeadsQuery'
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
@@ -38,32 +42,25 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [qualificationModalOpen, setQualificationModalOpen] = useState(false)
   const [qualificationData, setQualificationData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
+  const [editingContactId, setEditingContactId] = useState<string | null>(null)
+  const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>({})
+  const [originalFormData, setOriginalFormData] = useState<Partial<LeadPointOfContact>>({})
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   const leadsService = getLeadsService()
-
-  const toggleManuallyReviewedMutation = useMutation({
-    mutationFn: ({
-      contactId,
-      manuallyReviewed,
-    }: {
-      contactId: string
-      manuallyReviewed: boolean
-    }) =>
-      leadsService.toggleContactManuallyReviewed(
-        leadId,
-        contactId,
-        manuallyReviewed,
-      ),
-    onMutate: ({ contactId }) => {
-      setLoadingContactId(contactId)
+  
+  const updateContactMutation = useUpdateContact(
+    // onSuccess callback
+    () => {
+      handleCancelEdit()
     },
-    onSettled: () => {
-      setLoadingContactId(null)
-    },
-    onError: (error) => {
-      console.error('Failed to update manually reviewed status:', error)
+    // onError callback
+    (error) => {
+      console.error('Failed to update contact:', error)
       // You might want to show a toast notification here
-    },
-  })
+    }
+  )
+
+  const toggleManuallyReviewedMutation = useToggleContactManuallyReviewed()
 
   const qualifyContactMutation = useMutation({
     mutationFn: (contactId: string) =>
@@ -89,14 +86,228 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   })
 
   const handleToggleManuallyReviewed = (contact: LeadPointOfContact) => {
+    setLoadingContactId(contact.id)
     toggleManuallyReviewedMutation.mutate({
+      leadId,
       contactId: contact.id,
       manuallyReviewed: !contact.manuallyReviewed,
+    }, {
+      onSettled: () => {
+        setLoadingContactId(null)
+      }
     })
   }
 
   const handleQualifyContact = (contactId: string) => {
     qualifyContactMutation.mutate(contactId)
+  }
+
+  const handleEditContact = (contact: LeadPointOfContact) => {
+    const editableData = {
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone ? formatPhoneNumber(contact.phone) : '',
+      title: contact.title || '',
+    }
+    setEditingContactId(contact.id)
+    setEditFormData(editableData)
+    setOriginalFormData(editableData)
+    setValidationErrors({})
+    
+    // Auto-focus the name input after the component re-renders
+    setTimeout(() => {
+      const nameInput = document.querySelector(`input[data-field="name-${contact.id}"]`) as HTMLInputElement;
+      if (nameInput) nameInput.focus();
+    }, 0)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingContactId(null)
+    setEditFormData({})
+    setOriginalFormData({})
+    setValidationErrors({})
+  }
+
+  const validateEmail = (email: string): string | null => {
+    if (!email.trim()) return 'Email is required'
+    
+    // Basic format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return 'Please enter a valid email address'
+    
+    // Check for common issues
+    if (email.includes('..')) return 'Email cannot contain consecutive dots'
+    if (email.startsWith('.') || email.endsWith('.')) return 'Email cannot start or end with a dot'
+    if (email.includes(' ')) return 'Email cannot contain spaces'
+    
+    // Check domain part
+    const domain = email.split('@')[1]
+    if (domain && domain.length < 2) return 'Email domain is too short'
+    
+    return null
+  }
+
+  const validatePhoneNumber = (phone: string): string | null => {
+    if (!phone.trim()) return null // Phone is optional
+    
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '')
+    
+    // US phone number should have exactly 10 digits (without country code) or 11 digits (with country code 1)
+    if (digitsOnly.length === 10) {
+      // Valid 10-digit US number - check that area code and exchange code are valid
+      const areaCode = digitsOnly.slice(0, 3)
+      const exchangeCode = digitsOnly.slice(3, 6)
+      
+      // Area code cannot start with 0 or 1
+      if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
+        return 'Invalid area code - cannot start with 0 or 1'
+      }
+      
+      // Exchange code cannot start with 0 or 1
+      if (exchangeCode.startsWith('0') || exchangeCode.startsWith('1')) {
+        return 'Invalid phone number format'
+      }
+      
+      return null
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      // Valid 11-digit US number with country code - validate the same way
+      const areaCode = digitsOnly.slice(1, 4)
+      const exchangeCode = digitsOnly.slice(4, 7)
+      
+      if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
+        return 'Invalid area code - cannot start with 0 or 1'
+      }
+      
+      if (exchangeCode.startsWith('0') || exchangeCode.startsWith('1')) {
+        return 'Invalid phone number format'
+      }
+      
+      return null
+    } else if (digitsOnly.length < 10) {
+      return 'Phone number is too short - must be 10 digits'
+    } else {
+      return 'Phone number is too long - must be 10 digits'
+    }
+  }
+
+  const validateField = (field: string, value: string): string | null => {
+    switch (field) {
+      case 'name':
+        return !value.trim() ? 'Name is required' : null
+      case 'email':
+        return validateEmail(value)
+      case 'phone':
+        return validatePhoneNumber(value)
+      default:
+        return null
+    }
+  }
+
+  const formatPhoneNumber = (value: string): string => {
+    // Remove all non-digit characters
+    const digitsOnly = value.replace(/\D/g, '')
+    
+    // Don't format if empty
+    if (!digitsOnly) return ''
+    
+    // Format based on length
+    if (digitsOnly.length <= 3) {
+      return digitsOnly
+    } else if (digitsOnly.length <= 6) {
+      return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3)}`
+    } else if (digitsOnly.length <= 10) {
+      return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      return `+1 (${digitsOnly.slice(1, 4)}) ${digitsOnly.slice(4, 7)}-${digitsOnly.slice(7)}`
+    } else {
+      // Limit to 10 digits for US numbers
+      const truncated = digitsOnly.slice(0, 10)
+      return `(${truncated.slice(0, 3)}) ${truncated.slice(3, 6)}-${truncated.slice(6)}`
+    }
+  }
+
+  const handleFormChange = (field: keyof LeadPointOfContact, value: string) => {
+    let processedValue = value
+    
+    // Format phone number as user types
+    if (field === 'phone') {
+      processedValue = formatPhoneNumber(value)
+    }
+
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: processedValue,
+    }))
+
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+  }
+
+  const handleBlur = (field: string, value: string) => {
+    const error = validateField(field, value)
+    if (error) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: error
+      }))
+    }
+  }
+
+  const handleSaveContact = () => {
+    if (!editingContactId) return
+
+    // Validate all fields
+    const errors: {[key: string]: string} = {}
+    
+    const nameError = validateField('name', editFormData.name || '')
+    if (nameError) errors.name = nameError
+
+    const emailError = validateField('email', editFormData.email || '')
+    if (emailError) errors.email = emailError
+
+    const phoneError = validateField('phone', editFormData.phone || '')
+    if (phoneError) errors.phone = phoneError
+
+    // If there are validation errors, show them and don't proceed
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      return
+    }
+
+    // Prepare data for update (only changed fields)
+    const updateData: any = {}
+    
+    if (editFormData.name !== originalFormData.name) {
+      updateData.name = editFormData.name
+    }
+    if (editFormData.email !== originalFormData.email) {
+      updateData.email = editFormData.email
+    }
+    if (editFormData.phone !== originalFormData.phone) {
+      updateData.phone = editFormData.phone || null
+    }
+    if (editFormData.title !== originalFormData.title) {
+      updateData.title = editFormData.title || null
+    }
+
+    // Only make API call if there are changes
+    if (Object.keys(updateData).length > 0) {
+      updateContactMutation.mutate({
+        leadId,
+        contactId: editingContactId,
+        contactData: updateData,
+      })
+    } else {
+      // No changes, just exit edit mode
+      handleCancelEdit()
+    }
   }
 
   return (
@@ -123,113 +334,293 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {contact.name}
-                    </h3>
-                    <CopyButton
-                      text={contact.name}
-                      label="name"
-                      className="ml-2"
-                    />
-                    {primaryContactId === contact.id && (
-                      <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <Crown className="h-3 w-3 mr-1" />
-                        Primary
+                    {editingContactId === contact.id ? (
+                      <div 
+                        className="flex items-center space-x-2 cursor-text"
+                        onClick={() => {
+                          const nameInput = document.querySelector(`input[data-field="name-${contact.id}"]`) as HTMLInputElement;
+                          if (nameInput) nameInput.focus();
+                        }}
+                      >
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            data-field={`name-${contact.id}`}
+                            value={editFormData.name || ''}
+                            onChange={(e) => handleFormChange('name', e.target.value)}
+                            onBlur={(e) => handleBlur('name', e.target.value)}
+                            className={`text-lg font-medium bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 min-w-0 w-full ${
+                              validationErrors.name ? 'text-red-600' : 'text-gray-900'
+                            }`}
+                            placeholder="Contact name"
+                            required
+                          />
+                          {validationErrors.name && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.name}</p>
+                          )}
+                        </div>
+                        {primaryContactId === contact.id && (
+                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Primary
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {contact.name}
+                        </h3>
+                        <CopyButton
+                          text={contact.name}
+                          label="name"
+                          className="ml-2"
+                        />
+                        {primaryContactId === contact.id && (
+                          <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Primary
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => handleQualifyContact(contact.id)}
-                      disabled={qualifyingContactId === contact.id}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Generate outreach strategy for this contact"
-                    >
-                      {qualifyingContactId === contact.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Target className="h-4 w-4" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {qualifyingContactId === contact.id
-                          ? 'Generating...'
-                          : 'Generate Strategy'}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleToggleManuallyReviewed(contact)}
-                      disabled={loadingContactId === contact.id}
-                      className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={
-                        contact.manuallyReviewed
-                          ? 'Mark as not manually reviewed'
-                          : 'Mark as manually reviewed'
-                      }
-                    >
-                      {loadingContactId === contact.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                      ) : contact.manuallyReviewed ? (
-                        <CheckSquare className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Square className="h-4 w-4 text-gray-400" />
-                      )}
-                      <span className="text-sm font-medium text-gray-700">
-                        Manually Reviewed
-                      </span>
-                    </button>
+                    {editingContactId === contact.id ? (
+                      <>
+                        <button
+                          onClick={handleSaveContact}
+                          disabled={updateContactMutation.isPending || Object.keys(validationErrors).length > 0}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={Object.keys(validationErrors).length > 0 ? "Please fix validation errors before saving" : "Save changes"}
+                        >
+                          {updateContactMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="h-4 w-4" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {updateContactMutation.isPending ? 'Saving...' : 'Save'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={updateContactMutation.isPending}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Cancel editing"
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="text-sm font-medium">Cancel</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEditContact(contact)}
+                          disabled={editingContactId !== null || qualifyingContactId === contact.id || loadingContactId === contact.id}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Edit contact"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          <span className="text-sm font-medium">Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleQualifyContact(contact.id)}
+                          disabled={qualifyingContactId === contact.id || editingContactId !== null}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Generate outreach strategy for this contact"
+                        >
+                          {qualifyingContactId === contact.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Target className="h-4 w-4" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {qualifyingContactId === contact.id
+                              ? 'Generating...'
+                              : 'Generate Strategy'}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleToggleManuallyReviewed(contact)}
+                          disabled={loadingContactId === contact.id || editingContactId !== null || toggleManuallyReviewedMutation.isPending}
+                          className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            contact.manuallyReviewed
+                              ? 'Mark as not manually reviewed'
+                              : 'Mark as manually reviewed'
+                          }
+                        >
+                          {(loadingContactId === contact.id || toggleManuallyReviewedMutation.isPending) ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                          ) : contact.manuallyReviewed ? (
+                            <CheckSquare className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Square className="h-4 w-4 text-gray-400" />
+                          )}
+                          <span className="text-sm font-medium text-gray-700">
+                            Manually Reviewed
+                          </span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Email
-                        </p>
-                        <a
-                          href={`mailto:${contact.email}`}
-                          className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                        >
-                          {contact.email}
-                        </a>
+                                     <div 
+                     className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
+                     onClick={() => {
+                       if (editingContactId === contact.id) {
+                         const emailInput = document.querySelector(`input[data-field="email-${contact.id}"]`) as HTMLInputElement;
+                         if (emailInput) emailInput.focus();
+                       }
+                     }}
+                  >
+                    {editingContactId === contact.id ? (
+                      <div className="w-full">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                          <p className="text-sm font-medium text-gray-900">Email</p>
+                        </div>
+                        <input
+                          type="email"
+                          data-field={`email-${contact.id}`}
+                          value={editFormData.email || ''}
+                          onChange={(e) => handleFormChange('email', e.target.value)}
+                          onBlur={(e) => handleBlur('email', e.target.value)}
+                          className={`w-full text-base bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 ${
+                            validationErrors.email ? 'text-red-600' : 'text-[var(--color-primary-600)]'
+                          }`}
+                          placeholder="Contact email"
+                          required
+                        />
+                        {validationErrors.email && (
+                          <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                        )}
                       </div>
-                    </div>
-                    <CopyButton text={contact.email} label="email" />
+                    ) : (
+                      <>
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Email
+                            </p>
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                            >
+                              {contact.email}
+                            </a>
+                          </div>
+                        </div>
+                        <CopyButton text={contact.email} label="email" />
+                      </>
+                    )}
                   </div>
 
-                  {contact.phone && (
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            Phone
-                          </p>
-                          <a
-                            href={`tel:${contact.phone}`}
-                            className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                          >
-                            {contact.phone}
-                          </a>
+                  {(contact.phone || editingContactId === contact.id) && (
+                                         <div 
+                       className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
+                       onClick={() => {
+                         if (editingContactId === contact.id) {
+                           const phoneInput = document.querySelector(`input[data-field="phone-${contact.id}"]`) as HTMLInputElement;
+                           if (phoneInput) phoneInput.focus();
+                         }
+                       }}
+                    >
+                      {editingContactId === contact.id ? (
+                        <div className="w-full">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <Phone className="h-5 w-5 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-900">Phone</p>
+                          </div>
+                          <input
+                            type="tel"
+                            data-field={`phone-${contact.id}`}
+                            value={editFormData.phone || ''}
+                            onChange={(e) => handleFormChange('phone', e.target.value)}
+                            onBlur={(e) => handleBlur('phone', e.target.value)}
+                            className={`w-full text-base bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 ${
+                              validationErrors.phone ? 'text-red-600' : 'text-[var(--color-primary-600)]'
+                            }`}
+                            placeholder="Contact phone (US format)"
+                          />
+                          {validationErrors.phone && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                          )}
                         </div>
-                      </div>
-                      <CopyButton text={contact.phone} label="phone" />
+                      ) : (
+                        <>
+                          <div className="flex items-center space-x-3">
+                            <Phone className="h-5 w-5 text-gray-400" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                Phone
+                              </p>
+                              {contact.phone ? (
+                                <a
+                                  href={`tel:${contact.phone}`}
+                                  className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                                >
+                                  {contact.phone}
+                                </a>
+                              ) : (
+                                <span className="text-base text-gray-500">No phone</span>
+                              )}
+                            </div>
+                          </div>
+                          {contact.phone && (
+                            <CopyButton text={contact.phone} label="phone" />
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
 
-                  {contact.title && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <User className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          Title
-                        </p>
-                        <p className="text-base text-gray-700">
-                          {contact.title}
-                        </p>
-                      </div>
+                  {(contact.title || editingContactId === contact.id) && (
+                                         <div 
+                       className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center space-x-3'}`}
+                       onClick={() => {
+                         if (editingContactId === contact.id) {
+                           const titleInput = document.querySelector(`input[data-field="title-${contact.id}"]`) as HTMLInputElement;
+                           if (titleInput) titleInput.focus();
+                         }
+                       }}
+                    >
+                      {editingContactId === contact.id ? (
+                        <div className="w-full">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <User className="h-5 w-5 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-900">Title</p>
+                          </div>
+                          <input
+                            type="text"
+                            data-field={`title-${contact.id}`}
+                            value={editFormData.title || ''}
+                            onChange={(e) => handleFormChange('title', e.target.value)}
+                            className="w-full text-base text-gray-700 bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
+                            placeholder="Contact title"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <User className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Title
+                            </p>
+                            {contact.title ? (
+                              <p className="text-base text-gray-700">
+                                {contact.title}
+                              </p>
+                            ) : (
+                              <span className="text-base text-gray-500">No title</span>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
