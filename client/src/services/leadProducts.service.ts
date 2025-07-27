@@ -1,6 +1,7 @@
 import type { AttachedProduct } from '../types/lead.types'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 export interface AttachProductsRequest {
   productIds: string[]
@@ -28,7 +29,9 @@ export interface DetachProductResponse {
 /**
  * Get all products attached to a lead
  */
-export async function getLeadProducts(leadId: string): Promise<AttachedProduct[]> {
+export async function getLeadProducts(
+  leadId: string,
+): Promise<AttachedProduct[]> {
   const response = await fetch(`${API_BASE_URL}/leads/${leadId}/products`, {
     method: 'GET',
     headers: {
@@ -39,7 +42,10 @@ export async function getLeadProducts(leadId: string): Promise<AttachedProduct[]
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `Failed to get lead products: ${response.statusText}`)
+    throw new Error(
+      errorData.message ||
+        `Failed to get lead products: ${response.statusText}`,
+    )
   }
 
   return response.json()
@@ -50,7 +56,7 @@ export async function getLeadProducts(leadId: string): Promise<AttachedProduct[]
  */
 export async function attachProductsToLead(
   leadId: string,
-  data: AttachProductsRequest
+  data: AttachProductsRequest,
 ): Promise<AttachProductsResponse> {
   const response = await fetch(`${API_BASE_URL}/leads/${leadId}/products`, {
     method: 'POST',
@@ -63,7 +69,9 @@ export async function attachProductsToLead(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `Failed to attach products: ${response.statusText}`)
+    throw new Error(
+      errorData.message || `Failed to attach products: ${response.statusText}`,
+    )
   }
 
   return response.json()
@@ -74,19 +82,24 @@ export async function attachProductsToLead(
  */
 export async function detachProductFromLead(
   leadId: string,
-  productId: string
+  productId: string,
 ): Promise<DetachProductResponse> {
-  const response = await fetch(`${API_BASE_URL}/leads/${leadId}/products/${productId}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetch(
+    `${API_BASE_URL}/leads/${leadId}/products/${productId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
     },
-    credentials: 'include',
-  })
+  )
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `Failed to detach product: ${response.statusText}`)
+    throw new Error(
+      errorData.message || `Failed to detach product: ${response.statusText}`,
+    )
   }
 
   return response.json()
