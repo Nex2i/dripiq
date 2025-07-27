@@ -14,6 +14,16 @@ export const ProductsService = {
     return productsList;
   },
 
+  // Get default products for a tenant (for internal use)
+  async getDefaultProducts(tenantId: string): Promise<Product[]> {
+    const defaultProducts = await db.query.products.findMany({
+      where: and(eq(products.tenantId, tenantId), eq(products.isDefault, true)),
+      orderBy: (products, { desc }) => [desc(products.createdAt)],
+    });
+
+    return defaultProducts;
+  },
+
   // Get a single product by ID
   async getProduct(id: string): Promise<Product | null> {
     const product = await db.query.products.findFirst({

@@ -8,6 +8,7 @@ interface CreateProductBody {
   title: string;
   description?: string;
   salesVoice?: string;
+  isDefault?: boolean;
   tenantId: string;
 }
 
@@ -15,6 +16,7 @@ interface UpdateProductBody {
   title?: string;
   description?: string;
   salesVoice?: string;
+  isDefault?: boolean;
 }
 
 interface ProductParams {
@@ -102,7 +104,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     url: basePath,
     handler: async (request, reply) => {
       try {
-        const { title, description, salesVoice, tenantId } = request.body;
+        const { title, description, salesVoice, isDefault, tenantId } = request.body;
         const authenticatedRequest = request as AuthenticatedRequest;
         const {
           user: { id: userId },
@@ -118,6 +120,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
           title,
           description,
           salesVoice,
+          isDefault: isDefault || false,
           tenantId,
         });
 

@@ -16,6 +16,8 @@ import {
 import { logger } from '../libs/logger';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
 import { storageService } from './storage/storage.service';
+import { ProductsService } from './products.service';
+import { attachProductsToLead } from './leadProduct.service';
 
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
@@ -204,6 +206,18 @@ export const createLead = async (
       pointOfContacts: createdContacts,
     };
   });
+
+  // After the transaction is complete, attach default products to the lead
+  try {
+    const defaultProducts = await ProductsService.getDefaultProducts(tenantId);
+    if (defaultProducts.length > 0) {
+      const defaultProductIds = defaultProducts.map(product => product.id);
+      await attachProductsToLead(result.id, defaultProductIds, tenantId);
+    }
+  } catch (error) {
+    // Log the error but don't fail the lead creation if product attachment fails
+    logger.error('Failed to attach default products to new lead:', error);
+  }
 
   return result;
 };

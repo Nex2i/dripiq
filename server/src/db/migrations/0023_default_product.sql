@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."products" ADD COLUMN "is_default" boolean DEFAULT false NOT NULL;

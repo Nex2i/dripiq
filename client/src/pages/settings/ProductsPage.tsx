@@ -34,6 +34,7 @@ function ProductModal({
     title: product?.title || '',
     description: product?.description || '',
     salesVoice: product?.salesVoice || '',
+    isDefault: product?.isDefault || false,
   })
 
   // Update form data when product prop changes
@@ -42,6 +43,7 @@ function ProductModal({
       title: product?.title || '',
       description: product?.description || '',
       salesVoice: product?.salesVoice || '',
+      isDefault: product?.isDefault || false,
     })
   }, [product])
 
@@ -59,6 +61,7 @@ function ProductModal({
       title: product?.title || '',
       description: product?.description || '',
       salesVoice: product?.salesVoice || '',
+      isDefault: product?.isDefault || false,
     })
     onClose()
   }
@@ -138,6 +141,25 @@ function ProductModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
               placeholder="How would you describe this product to a potential customer?"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.isDefault}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, isDefault: e.target.checked }))
+                }
+                className="w-4 h-4 text-[var(--color-primary-600)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary-500)] focus:ring-2"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Default Product
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              Default products are automatically associated with new leads
+            </p>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
@@ -322,9 +344,16 @@ export default function ProductsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {product.title}
-                      </h3>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {product.title}
+                        </h3>
+                        {product.isDefault && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Default
+                          </span>
+                        )}
+                      </div>
                       {product.description && (
                         <p className="text-gray-600 mb-3">
                           {product.description}
