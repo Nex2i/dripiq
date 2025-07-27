@@ -9,15 +9,6 @@ export const siteAnalysisAgent = new SiteAnalysisAgent(defaultLangChainConfig);
 export const vendorFitAgent = new VendorFitAgent(defaultLangChainConfig);
 export const contactExtractionAgent = new ContactExtractionAgent(defaultLangChainConfig);
 
-// Lazy-loaded agent to avoid startup dependencies
-let _contactStrategyAgent: ContactStrategyAgent | null = null;
-export function getContactStrategyAgent(): ContactStrategyAgent {
-  if (!_contactStrategyAgent) {
-    _contactStrategyAgent = new ContactStrategyAgent(defaultLangChainConfig);
-  }
-  return _contactStrategyAgent;
-}
-
 // Factory functions
 export const createSiteAnalysisAgent = (config = defaultLangChainConfig) => {
   return new SiteAnalysisAgent(config);

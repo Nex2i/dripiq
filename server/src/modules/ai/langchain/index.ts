@@ -22,10 +22,7 @@ export {
   type ContactExtractionResult,
 } from './agents/ContactExtractionAgent';
 
-export {
-  ContactStrategyAgent,
-  type ContactStrategyResult,
-} from './agents/ContactStrategyAgent';
+export { ContactStrategyAgent, type ContactStrategyResult } from './agents/ContactStrategyAgent';
 
 // Export agent factories
 export {
@@ -37,6 +34,3 @@ export {
   createContactExtractionAgent,
   createContactStrategyAgent,
 } from './factories/AgentFactory';
-
-// Export lazy-loaded contact strategy agent separately
-export { getContactStrategyAgent } from './factories/AgentFactory';

@@ -4,7 +4,7 @@ import { ProductsService } from '../products.service';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
-import { getContactStrategyAgent } from './langchain';
+import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
 
 export interface GenerateContactStrategyParams {
   leadId: string;
@@ -19,7 +19,7 @@ export interface GenerateContactStrategyParams {
 export const generateContactStrategy = async (
   params: GenerateContactStrategyParams
 ): Promise<ContactStrategyResult> => {
-  const { leadId, contactId, tenantId, userId } = params;
+  const { leadId, contactId, tenantId } = params;
 
   try {
     // Check if cached result exists in storage
@@ -32,30 +32,16 @@ export const generateContactStrategy = async (
       cacheKey,
     });
 
-    const cachedResult = await supabaseStorage.downloadFile(cacheKey);
-    if (cachedResult) {
-      logger.info('Found cached contact strategy result, returning cached data', {
-        leadId,
-        contactId,
-        tenantId,
-        cacheKey,
-      });
-      return cachedResult;
-    }
-
-    logger.info('No cached result found, proceeding with contact strategy generation', {
-      leadId,
-      contactId,
-      tenantId,
-      cacheKey,
-    });
-    // Verify user access if userId provided
-    if (userId) {
-      const hasAccess = await ProductsService.checkUserAccess(userId, tenantId);
-      if (!hasAccess) {
-        throw new Error('Access denied to this tenant');
-      }
-    }
+    // const cachedResult = await supabaseStorage.downloadFile(cacheKey);
+    // if (cachedResult) {
+    //   logger.info('Found cached contact strategy result, returning cached data', {
+    //     leadId,
+    //     contactId,
+    //     tenantId,
+    //     cacheKey,
+    //   });
+    //   return cachedResult;
+    // }
 
     // Get lead details
     const lead = await getLeadById(tenantId, leadId);
@@ -118,32 +104,9 @@ export const generateContactStrategy = async (
       })),
     };
 
-    // Log input data for debugging
-    logger.info('Preparing agent input', {
-      leadId,
-      contactId,
-      tenantId,
-      leadData: {
-        id: lead.id,
-        name: lead.name,
-        summary: lead.summary,
-        targetMarket: lead.targetMarket,
-        tone: lead.tone,
-      },
-      contactData: contact,
-      tenantData: {
-        id: tenant.id,
-        name: tenant.name,
-        website: tenant.website,
-        organizationName: tenant.organizationName,
-        summary: tenant.summary,
-      },
-      productsCount: tenantProducts?.length || 0,
-    });
-
     // Execute agent analysis
     try {
-      const agent = getContactStrategyAgent();
+      const agent = createContactStrategyAgent({ ...defaultLangChainConfig, model: 'gpt-4.1' });
       const result = await agent.generateContactStrategy(agentInput);
 
       // Save result to cache

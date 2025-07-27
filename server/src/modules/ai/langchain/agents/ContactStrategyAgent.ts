@@ -4,19 +4,18 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
-import contactStrategyPrompt from '@/prompts/contact_strategy.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import contactStrategyOutputSchema, {
-  ContactStrategyOutput,
+  OutreachStrategyOutput,
 } from '../../schemas/contactStrategyOutputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
 
 export type ContactStrategyResult = {
   finalResponse: string;
-  finalResponseParsed: ContactStrategyOutput;
+  finalResponseParsed: OutreachStrategyOutput;
   totalIterations: number;
   functionCalls: any[];
 };
@@ -74,7 +73,7 @@ export class ContactStrategyAgent {
 
     let systemPrompt: string;
     try {
-      const basePrompt = promptHelper.injectInputVariables(contactStrategyPrompt, {
+      const basePrompt = promptHelper.getPromptAndInject('contact_strategy', {
         lead_details: JSON.stringify(safeInput.leadDetails, null, 2),
         contact_details: JSON.stringify(safeInput.contactDetails, null, 2),
         partner_details: JSON.stringify(safeInput.partnerDetails, null, 2),
@@ -83,7 +82,7 @@ export class ContactStrategyAgent {
       });
 
       // Add explicit JSON mode instruction
-      systemPrompt = `${basePrompt}\n\nIMPORTANT: You must respond with valid JSON only. Start with { and end with }. Do not include any other text.`;
+      systemPrompt = `${basePrompt}\n\nIMPORTANT: You must respond with valid JSON only.`;
     } catch (error) {
       logger.error('Error preparing prompt variables', error);
       throw new Error(
@@ -93,7 +92,6 @@ export class ContactStrategyAgent {
 
     try {
       const result = await this.agent.invoke({
-        input: `Analyze contact strategy for contact: ${safeInput.contactDetails.name || 'Unknown'} at company: ${safeInput.leadDetails.name || 'Unknown'}`,
         system_prompt: systemPrompt,
       });
 
@@ -111,7 +109,7 @@ export class ContactStrategyAgent {
       }
 
       // Enhanced JSON parsing with better error handling
-      const parsedResult = parseWithSchema(finalResponse, input.leadDetails, input.contactDetails);
+      const parsedResult = parseWithSchema(finalResponse);
 
       return {
         finalResponse: result.output || finalResponse || 'Contact strategy generation completed',
@@ -122,16 +120,7 @@ export class ContactStrategyAgent {
     } catch (error) {
       logger.error('Contact strategy generation failed:', error);
 
-      // Return fallback result
-      const fallbackResult = getFallbackResult(input.leadDetails, input.contactDetails, error);
-      return {
-        finalResponse: `Contact strategy generation failed for ${input.leadDetails.name}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        finalResponseParsed: fallbackResult,
-        totalIterations: 0,
-        functionCalls: [],
-      };
+      throw error;
     }
   }
 
@@ -209,11 +198,7 @@ Return your answer as valid JSON matching the provided schema.
 }
 
 // -- Helpers --
-function parseWithSchema(
-  content: string,
-  leadDetails: any,
-  contactDetails: any
-): ContactStrategyOutput {
+function parseWithSchema(content: string): OutreachStrategyOutput {
   try {
     // First, try to find JSON in the content with multiple strategies
     let jsonText = content;
@@ -247,99 +232,6 @@ function parseWithSchema(
     });
 
     // Try to extract individual fields if JSON parsing completely fails
-    try {
-      return extractFieldsFromText(leadDetails, contactDetails);
-    } catch (fallbackError) {
-      logger.error('Fallback extraction also failed', fallbackError);
-      return getFallbackResult(leadDetails, contactDetails, parseError);
-    }
+    throw new Error('Contact strategy JSON parsing failed');
   }
-}
-
-function extractFieldsFromText(leadDetails: any, contactDetails: any): ContactStrategyOutput {
-  // Simple fallback - look for key patterns in text
-  logger.info('Attempting text-based field extraction for contact strategy');
-
-  return getFallbackResult(
-    leadDetails,
-    contactDetails,
-    new Error('JSON parsing failed, used text extraction')
-  );
-}
-
-function getFallbackResult(
-  leadDetails: any,
-  contactDetails: any,
-  error: unknown
-): ContactStrategyOutput {
-  return {
-    leadResearch: {
-      companyBackground: `Unable to complete comprehensive analysis for ${leadDetails.name} due to an error: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`,
-      recentNews: [],
-      industryContext: leadDetails.targetMarket || 'Unknown',
-      problemSolutionFit: 'Analysis incomplete due to error',
-      priorityScore: 'medium',
-      potentialValue: 'Unknown',
-    },
-    contactAnalysis: {
-      contact: {
-        name: contactDetails.name || 'Unknown',
-        title: contactDetails.title || null,
-        persona: 'Unknown',
-        painPoints: [],
-        professionalGoals: [],
-        messagingApproach: 'strategic',
-      },
-      decisionMakingRole: 'Unknown',
-      influenceLevel: 'medium',
-      engagementStrategy: 'Standard outreach approach recommended',
-    },
-    outreachStrategy: {
-      dripCampaign: {
-        touchpoint1: createFallbackTouchpoint('email', 'Day 1', 'Introduction'),
-        touchpoint2: createFallbackTouchpoint('email', 'Day 3', 'Follow-up'),
-        touchpoint3: createFallbackTouchpoint('call', 'Day 7', 'Phone outreach'),
-        touchpoint4: createFallbackTouchpoint('email', 'Day 10', 'Educational content'),
-        touchpoint5: createFallbackTouchpoint('call', 'Day 14', 'Second call attempt'),
-        touchpoint6: createFallbackTouchpoint('email', 'Day 21', 'Break-up email'),
-      },
-      timing: {
-        frequency: 'Every 3-4 business days',
-        totalDuration: '3 weeks',
-      },
-      channelMix: ['Email', 'Phone'],
-    },
-    messaging: {
-      valueProposition: 'Analysis incomplete - generic value proposition would be recommended',
-      keyBenefits: [],
-      caseStudyReferences: [],
-      supportingMaterials: [],
-      objectionHandling: [],
-    },
-    nextSteps: {
-      immediateActions: ['Review error and retry analysis'],
-      followUpSchedule: 'Standard follow-up schedule',
-      successMetrics: ['Email open rates', 'Response rates'],
-      escalationTriggers: ['No response after 3 touchpoints'],
-    },
-    summary:
-      'Contact strategy analysis could not be completed due to an error. Manual review recommended.',
-  };
-}
-
-function createFallbackTouchpoint(
-  type: 'email' | 'call' | 'linkedin',
-  timing: string,
-  purpose: string
-) {
-  return {
-    type,
-    timing,
-    subject: `${purpose} - Generic template`,
-    content: 'Generic content template would be provided here',
-    callToAction: 'Schedule a brief call',
-    notes: 'Manual customization required',
-  };
 }

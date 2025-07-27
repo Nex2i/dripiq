@@ -27,6 +27,3 @@ export {
   type ContactExtractionResult,
   type ContactStrategyResult,
 } from './langchain';
-
-// Export lazy-loaded contact strategy agent separately
-export { getContactStrategyAgent } from './langchain';
