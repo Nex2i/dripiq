@@ -1,7 +1,7 @@
 import type { AttachedProduct } from '../types/lead.types'
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  import.meta.env.VITE_API_BASE_URL + '/api' || 'http://localhost:3000'
 
 export interface AttachProductsRequest {
   productIds: string[]
@@ -37,7 +37,6 @@ export async function getLeadProducts(
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -63,7 +62,6 @@ export async function attachProductsToLead(
     headers: {
       'Content-Type': 'application/json',
     },
-    credentials: 'include',
     body: JSON.stringify(data),
   })
 
@@ -91,7 +89,6 @@ export async function detachProductFromLead(
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
     },
   )
 
