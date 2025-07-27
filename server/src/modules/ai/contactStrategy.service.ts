@@ -32,16 +32,16 @@ export const generateContactStrategy = async (
       cacheKey,
     });
 
-    // const cachedResult = await supabaseStorage.downloadFile(cacheKey);
-    // if (cachedResult) {
-    //   logger.info('Found cached contact strategy result, returning cached data', {
-    //     leadId,
-    //     contactId,
-    //     tenantId,
-    //     cacheKey,
-    //   });
-    //   return cachedResult;
-    // }
+    const cachedResult = await supabaseStorage.downloadFile(cacheKey);
+    if (cachedResult) {
+      logger.info('Found cached contact strategy result, returning cached data', {
+        leadId,
+        contactId,
+        tenantId,
+        cacheKey,
+      });
+      return cachedResult;
+    }
 
     // Get lead details
     const lead = await getLeadById(tenantId, leadId);
