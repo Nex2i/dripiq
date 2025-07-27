@@ -1,5 +1,7 @@
 ---
-description:
-globs:
-alwaysApply: true
+globs: **/client/**
+alwaysApply: false
 ---
+
+This is the frontend, written in React and typescript.
+This project uses tanstack and tailwind css.
