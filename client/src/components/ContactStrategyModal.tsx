@@ -100,12 +100,12 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
             Touchpoint {index + 1} - {touchpoint.timing}
           </h4>
           <div className="flex items-center space-x-2">
-            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+            <span className="bg-[var(--color-primary-100)] text-[var(--color-primary-800)] text-xs font-medium px-2.5 py-0.5 rounded">
               {touchpoint.type}
             </span>
             <button
               onClick={() => copyToClipboard(formatTouchpointForCopy(touchpoint, index), `touchpoint-full-${index}`)}
-              className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1 rounded text-sm font-medium transition-colors flex items-center space-x-1"
+              className="bg-[var(--color-primary-100)] hover:bg-[var(--color-primary-200)] text-[var(--color-primary-700)] px-3 py-1 rounded text-sm font-medium transition-colors flex items-center space-x-1"
               title="Copy entire touchpoint"
             >
               {copiedItem === `touchpoint-full-${index}` ? (
@@ -185,23 +185,23 @@ Call to Action: ${touchpoint.callToAction}`.trim()
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[95vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+        <div className="bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">
                 Contact Strategy & Outreach Plan
               </h2>
-              <p className="text-blue-100 mt-1">
+              <p className="text-[var(--color-primary-100)] mt-1">
                 {contactName} at {companyName}
               </p>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => copyToClipboard(formatFullCampaignForCopy(), 'full-strategy')}
-                className="bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+                className="bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-400)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
               >
                 {copiedItem === 'full-strategy' ? (
                   <>
@@ -231,7 +231,7 @@ Call to Action: ${touchpoint.callToAction}`.trim()
             {/* Summary */}
             {data.summary && (
               <CollapsibleSection title="Campaign Summary" defaultExpanded={true}>
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                <div className="bg-[var(--color-primary-50)] border-l-4 border-[var(--color-primary-400)] p-4 rounded">
                   <div className="flex items-start justify-between">
                     <p className="text-gray-800 leading-relaxed flex-1 mr-4">{data.summary}</p>
                     <button
@@ -253,7 +253,7 @@ Call to Action: ${touchpoint.callToAction}`.trim()
             {/* Campaign Cadence */}
             {data.cadence && (
               <CollapsibleSection title="Campaign Cadence">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-[var(--color-success-50)] border border-[var(--color-success-200)] rounded-lg p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CopyableText
                       text={data.cadence.interval}
