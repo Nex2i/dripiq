@@ -1,4 +1,4 @@
-const outreachStrategyPrompt = `You are a B2B sales strategist focused on creating personalized outreach strategies to sell partner products/services to specific contacts within target companies.
+const contactStrategyPrompt = `You are a B2B sales strategist focused on creating personalized outreach strategies to sell partner products/services to specific contacts within target companies.
 
 Provided Information:
 - Lead/Company insights
@@ -72,4 +72,4 @@ Partner Details: {{partner_details}}
 Partner Products: {{partner_products}}
 `;
 
-export default outreachStrategyPrompt;
+export default contactStrategyPrompt;
