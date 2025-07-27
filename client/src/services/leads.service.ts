@@ -466,12 +466,12 @@ class LeadsService {
     return result
   }
 
-  // Generate lead qualification and outreach strategy for a contact
-  async qualifyLeadContact(leadId: string, contactId: string): Promise<any> {
+  // Generate contact strategy and outreach plan for a contact
+  async generateContactStrategy(leadId: string, contactId: string): Promise<any> {
     const authHeaders = await authService.getAuthHeaders()
 
     const response = await fetch(
-      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/qualification`,
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/contact-strategy`,
       {
         method: 'PUT',
         headers: {
@@ -483,7 +483,7 @@ class LeadsService {
     if (!response.ok) {
       const errorData = await response.json()
       throw new Error(
-        errorData.message || 'Failed to generate lead qualification',
+        errorData.message || 'Failed to generate contact strategy',
       )
     }
 

@@ -22,10 +22,7 @@ export {
   type ContactExtractionResult,
 } from './agents/ContactExtractionAgent';
 
-export {
-  LeadQualificationAgent,
-  type LeadQualificationResult,
-} from './agents/LeadQualificationAgent';
+export { ContactStrategyAgent, type ContactStrategyResult } from './agents/ContactStrategyAgent';
 
 // Export agent factories
 export {
@@ -35,8 +32,5 @@ export {
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,
-  createLeadQualificationAgent,
+  createContactStrategyAgent,
 } from './factories/AgentFactory';
-
-// Export lazy-loaded lead qualification agent separately
-export { getLeadQualificationAgent } from './factories/AgentFactory';
