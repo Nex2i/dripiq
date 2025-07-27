@@ -1,7 +1,7 @@
 import { SiteAnalysisAgent } from '../agents/SiteAnalysisAgent';
 import { VendorFitAgent } from '../agents/VendorFitAgent';
 import { ContactExtractionAgent } from '../agents/ContactExtractionAgent';
-import { LeadQualificationAgent } from '../agents/LeadQualificationAgent';
+import { ContactStrategyAgent } from '../agents/ContactStrategyAgent';
 import { defaultLangChainConfig } from '../config/langchain.config';
 
 // Create default agent instances
@@ -10,12 +10,12 @@ export const vendorFitAgent = new VendorFitAgent(defaultLangChainConfig);
 export const contactExtractionAgent = new ContactExtractionAgent(defaultLangChainConfig);
 
 // Lazy-loaded agent to avoid startup dependencies
-let _leadQualificationAgent: LeadQualificationAgent | null = null;
-export function getLeadQualificationAgent(): LeadQualificationAgent {
-  if (!_leadQualificationAgent) {
-    _leadQualificationAgent = new LeadQualificationAgent(defaultLangChainConfig);
+let _contactStrategyAgent: ContactStrategyAgent | null = null;
+export function getContactStrategyAgent(): ContactStrategyAgent {
+  if (!_contactStrategyAgent) {
+    _contactStrategyAgent = new ContactStrategyAgent(defaultLangChainConfig);
   }
-  return _leadQualificationAgent;
+  return _contactStrategyAgent;
 }
 
 // Factory functions
@@ -31,6 +31,6 @@ export const createContactExtractionAgent = (config = defaultLangChainConfig) =>
   return new ContactExtractionAgent(config);
 };
 
-export const createLeadQualificationAgent = (config = defaultLangChainConfig) => {
-  return new LeadQualificationAgent(config);
+export const createContactStrategyAgent = (config = defaultLangChainConfig) => {
+  return new ContactStrategyAgent(config);
 };

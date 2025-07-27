@@ -1,20 +1,20 @@
 // Export services
 export { ContactExtractionService } from './contactExtraction.service';
-export { qualifyLeadContact } from './leadQualification.service';
+export { generateContactStrategy } from './contactStrategy.service';
 
 // Export LangChain-based AI system
 export {
   SiteAnalysisAgent,
   VendorFitAgent,
   ContactExtractionAgent,
-  LeadQualificationAgent,
+  ContactStrategyAgent,
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,
-  createLeadQualificationAgent,
+  createContactStrategyAgent,
   RetrieveFullPageTool,
   GetInformationAboutDomainTool,
   ListDomainPagesTool,
@@ -25,8 +25,8 @@ export {
   type SiteAnalysisResult,
   type VendorFitResult,
   type ContactExtractionResult,
-  type LeadQualificationResult,
+  type ContactStrategyResult,
 } from './langchain';
 
-// Export lazy-loaded lead qualification agent separately
-export { getLeadQualificationAgent } from './langchain';
+// Export lazy-loaded contact strategy agent separately
+export { getContactStrategyAgent } from './langchain';

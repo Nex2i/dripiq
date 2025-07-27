@@ -3,10 +3,10 @@ import { supabaseStorage } from '@/libs/supabase.storage';
 import { ProductsService } from '../products.service';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
-import type { LeadQualificationResult } from './langchain/agents/LeadQualificationAgent';
-import { getLeadQualificationAgent } from './langchain';
+import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
+import { getContactStrategyAgent } from './langchain';
 
-export interface QualifyLeadContactParams {
+export interface GenerateContactStrategyParams {
   leadId: string;
   contactId: string;
   tenantId: string;
@@ -14,18 +14,18 @@ export interface QualifyLeadContactParams {
 }
 
 /**
- * Service to qualify a lead and generate outreach strategy for a specific contact
+ * Service to generate contact strategy and outreach plan for a specific contact
  */
-export const qualifyLeadContact = async (
-  params: QualifyLeadContactParams
-): Promise<LeadQualificationResult> => {
+export const generateContactStrategy = async (
+  params: GenerateContactStrategyParams
+): Promise<ContactStrategyResult> => {
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
     // Check if cached result exists in storage
-    const cacheKey = `${tenantId}/${leadId}/${contactId}/qualify.json`;
+    const cacheKey = `${tenantId}/${leadId}/${contactId}/contact-strategy.json`;
 
-    logger.info('Checking for cached qualification result', {
+    logger.info('Checking for cached contact strategy result', {
       leadId,
       contactId,
       tenantId,
@@ -34,7 +34,7 @@ export const qualifyLeadContact = async (
 
     const cachedResult = await supabaseStorage.downloadFile(cacheKey);
     if (cachedResult) {
-      logger.info('Found cached qualification result, returning cached data', {
+      logger.info('Found cached contact strategy result, returning cached data', {
         leadId,
         contactId,
         tenantId,
@@ -43,7 +43,7 @@ export const qualifyLeadContact = async (
       return cachedResult;
     }
 
-    logger.info('No cached result found, proceeding with qualification', {
+    logger.info('No cached result found, proceeding with contact strategy generation', {
       leadId,
       contactId,
       tenantId,
@@ -143,20 +143,20 @@ export const qualifyLeadContact = async (
 
     // Execute agent analysis
     try {
-      const agent = getLeadQualificationAgent();
-      const result = await agent.qualifyLead(agentInput);
+      const agent = getContactStrategyAgent();
+      const result = await agent.generateContactStrategy(agentInput);
 
       // Save result to cache
       try {
         await supabaseStorage.uploadJsonFile(cacheKey, result);
-        logger.info('Successfully cached qualification result', {
+        logger.info('Successfully cached contact strategy result', {
           leadId,
           contactId,
           tenantId,
           cacheKey,
         });
       } catch (cacheError) {
-        logger.error('Failed to cache qualification result', {
+        logger.error('Failed to cache contact strategy result', {
           leadId,
           contactId,
           tenantId,
@@ -180,7 +180,7 @@ export const qualifyLeadContact = async (
       );
     }
   } catch (error) {
-    logger.error('Lead qualification failed', {
+    logger.error('Contact strategy generation failed', {
       leadId,
       contactId,
       tenantId,

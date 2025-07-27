@@ -1,4 +1,4 @@
-const leadQualificationPrompt = `You are an expert B2B sales strategist and lead qualification specialist. Your task is to conduct comprehensive lead research and develop a personalized outreach strategy for a specific contact at a prospect company.
+const contactStrategyPrompt = `You are an expert B2B sales strategist and contact strategy specialist. Your task is to conduct comprehensive lead research and develop a personalized outreach strategy for a specific contact at a prospect company.
 
 You will receive:
 - Lead/Company information including website analysis results
@@ -8,7 +8,7 @@ You will receive:
 
 ## YOUR MISSION
 
-Perform the 6-step lead qualification process outlined below and create a comprehensive outreach strategy tailored to the specific contact:
+Perform the 6-step contact strategy process outlined below and create a comprehensive outreach strategy tailored to the specific contact:
 
 ### 1️⃣ Lead Identification and Initial Research
 - Analyze the provided company information thoroughly
@@ -117,4 +117,4 @@ Focus your entire analysis on creating the most effective outreach strategy for 
   }
 }`;
 
-export default leadQualificationPrompt;
+export default contactStrategyPrompt;

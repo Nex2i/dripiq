@@ -22,7 +22,7 @@ const contactPersonaSchema = z.object({
     .describe('Best messaging approach for this contact'),
 });
 
-const leadQualificationOutputSchema = z.object({
+const contactStrategyOutputSchema = z.object({
   // Lead Research & Qualification
   leadResearch: z.object({
     companyBackground: z
@@ -105,10 +105,10 @@ const leadQualificationOutputSchema = z.object({
   }),
 
   // Summary
-  summary: z.string().describe('Executive summary of the qualification and recommended approach'),
+  summary: z.string().describe('Executive summary of the contact strategy and recommended approach'),
 });
 
-export default leadQualificationOutputSchema;
+export default contactStrategyOutputSchema;
 export type TouchpointMessage = z.infer<typeof touchpointMessageSchema>;
 export type ContactPersona = z.infer<typeof contactPersonaSchema>;
-export type LeadQualificationOutput = z.infer<typeof leadQualificationOutputSchema>;
+export type ContactStrategyOutput = z.infer<typeof contactStrategyOutputSchema>;

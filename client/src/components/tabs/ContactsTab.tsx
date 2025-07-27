@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
-import LeadQualificationModal from '../LeadQualificationModal'
+import ContactStrategyModal from '../ContactStrategyModal'
 import AnimatedCheckbox from '../AnimatedCheckbox'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
@@ -38,8 +38,8 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [qualifyingContactId, setQualifyingContactId] = useState<string | null>(
     null,
   )
-  const [qualificationModalOpen, setQualificationModalOpen] = useState(false)
-  const [qualificationData, setQualificationData] = useState<any>(null)
+  const [contactStrategyModalOpen, setContactStrategyModalOpen] = useState(false)
+  const [contactStrategyData, setContactStrategyData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>({})
@@ -61,9 +61,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const toggleManuallyReviewedMutation = useToggleContactManuallyReviewed()
 
-  const qualifyContactMutation = useMutation({
+  const generateContactStrategyMutation = useMutation({
     mutationFn: (contactId: string) =>
-      leadsService.qualifyLeadContact(leadId, contactId),
+      leadsService.generateContactStrategy(leadId, contactId),
     onMutate: (contactId) => {
       const contact = contacts.find((c) => c.id === contactId)
       if (contact) {
@@ -72,14 +72,14 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       }
     },
     onSuccess: (result) => {
-      setQualificationData(result.data)
-      setQualificationModalOpen(true)
+      setContactStrategyData(result.data)
+      setContactStrategyModalOpen(true)
     },
     onSettled: () => {
       setQualifyingContactId(null)
     },
     onError: (error) => {
-      console.error('Failed to generate lead qualification:', error)
+      console.error('Failed to generate contact strategy:', error)
       // You might want to show a toast notification here
     },
   })
@@ -97,8 +97,8 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     })
   }
 
-  const handleQualifyContact = (contactId: string) => {
-    qualifyContactMutation.mutate(contactId)
+  const handleGenerateContactStrategy = (contactId: string) => {
+    generateContactStrategyMutation.mutate(contactId)
   }
 
   const handleEditContact = (contact: LeadPointOfContact) => {
@@ -424,10 +424,10 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           <span className="text-sm font-medium">Edit</span>
                         </button>
                         <button
-                          onClick={() => handleQualifyContact(contact.id)}
+                          onClick={() => handleGenerateContactStrategy(contact.id)}
                           disabled={qualifyingContactId === contact.id || editingContactId !== null}
                           className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Generate outreach strategy for this contact"
+                          title="Generate contact strategy for this contact"
                         >
                           {qualifyingContactId === contact.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -656,11 +656,11 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
         )}
       </div>
 
-      {/* Lead Qualification Modal */}
-      <LeadQualificationModal
-        isOpen={qualificationModalOpen}
-        onClose={() => setQualificationModalOpen(false)}
-        data={qualificationData}
+      {/* Contact Strategy Modal */}
+      <ContactStrategyModal
+        isOpen={contactStrategyModalOpen}
+        onClose={() => setContactStrategyModalOpen(false)}
+        data={contactStrategyData}
         contactName={selectedContactName}
         companyName={companyName || 'Unknown Company'}
       />

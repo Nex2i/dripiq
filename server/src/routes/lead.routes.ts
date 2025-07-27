@@ -4,7 +4,7 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
-import { qualifyLeadContact } from '@/modules/ai';
+import { generateContactStrategy } from '@/modules/ai';
 import {
   getLeads,
   createLead,
@@ -830,13 +830,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Lead qualification endpoint
+  // Contact strategy endpoint
   fastify.route({
     method: HttpMethods.PUT,
-    url: `${basePath}/:leadId/contacts/:contactId/qualification`,
+    url: `${basePath}/:leadId/contacts/:contactId/contact-strategy`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      description: 'Generate lead qualification and outreach strategy for a specific contact',
+      description: 'Generate contact strategy and outreach plan for a specific contact',
       tags: ['Leads'],
       params: Type.Object({
         leadId: Type.String({ description: 'Lead ID' }),
@@ -864,7 +864,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       try {
         const startTime = Date.now();
 
-        const result = await qualifyLeadContact({
+        const result = await generateContactStrategy({
           leadId,
           contactId,
           tenantId,
@@ -875,7 +875,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(200).send({
           success: true,
-          message: 'Lead qualification completed successfully',
+          message: 'Contact strategy generation completed successfully',
           data: result.finalResponseParsed,
           metadata: {
             totalIterations: result.totalIterations,
@@ -914,7 +914,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           success: false,
-          message: 'Failed to generate lead qualification',
+          message: 'Failed to generate contact strategy',
           error: error.message,
         });
       }
