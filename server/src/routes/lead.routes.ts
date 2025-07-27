@@ -923,7 +923,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
   // Get lead products route
   fastify.route({
-    method: [HttpMethods.GET, HttpMethods.OPTIONS],
+    method: HttpMethods.GET,
     url: `${basePath}/:leadId/products`,
     schema: {
       tags: ['Lead Products'],
