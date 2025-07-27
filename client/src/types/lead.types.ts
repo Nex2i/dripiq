@@ -20,6 +20,24 @@ export interface LeadPointOfContact {
   updatedAt: string
 }
 
+export interface AttachedProduct {
+  id: string
+  leadId: string
+  productId: string
+  attachedAt: string
+  createdAt: string
+  updatedAt: string
+  product: {
+    id: string
+    title: string
+    description?: string
+    salesVoice?: string
+    tenantId: string
+    createdAt: string
+    updatedAt: string
+  }
+}
+
 export interface Lead {
   id: string
   name: string
@@ -39,4 +57,5 @@ export interface Lead {
   updatedAt: string
   pointOfContacts?: LeadPointOfContact[]
   statuses?: LeadStatus[]
+  attachedProducts?: AttachedProduct[]
 }
