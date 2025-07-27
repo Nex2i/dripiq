@@ -5,6 +5,7 @@ export interface Product {
   title: string
   description?: string
   salesVoice?: string
+  siteUrl?: string
   isDefault: boolean
   tenantId: string
   createdAt: string
@@ -15,6 +16,7 @@ export interface CreateProductData {
   title: string
   description?: string
   salesVoice?: string
+  siteUrl?: string
   isDefault?: boolean
 }
 
@@ -22,6 +24,7 @@ export interface UpdateProductData {
   title?: string
   description?: string
   salesVoice?: string
+  siteUrl?: string
   isDefault?: boolean
 }
 

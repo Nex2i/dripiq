@@ -115,6 +115,7 @@ export const generateContactStrategy = async (
         title: product.product.title,
         description: product.product.description,
         salesVoice: product.product.salesVoice,
+        siteUrl: (product.product as any).siteUrl, // Will be properly typed after migration
       })),
     };
 

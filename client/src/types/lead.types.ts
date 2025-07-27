@@ -32,6 +32,7 @@ export interface AttachedProduct {
     title: string
     description?: string
     salesVoice?: string
+    siteUrl?: string
     tenantId: string
     createdAt: string
     updatedAt: string
