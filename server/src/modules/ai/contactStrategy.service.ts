@@ -3,9 +3,9 @@ import { supabaseStorage } from '@/libs/supabase.storage';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
 import { UserService } from '../user.service';
+import { getLeadProducts } from '../leadProduct.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
-import { getLeadProducts } from '../leadProduct.service';
 
 export interface GenerateContactStrategyParams {
   leadId: string;
