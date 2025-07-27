@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  leadProductsService,
-  type AttachProductsRequest,
-} from '../services/leadProducts.service'
+import { leadProductsService } from '../services/leadProducts.service'
+import type { AttachProductsRequest } from '../services/leadProducts.service'
 
 export const LEAD_PRODUCTS_QUERY_KEY = 'leadProducts'
 
@@ -25,14 +23,19 @@ export function useAttachProductsToLead() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ leadId, data }: { leadId: string; data: AttachProductsRequest }) =>
-      leadProductsService.attachProductsToLead(leadId, data),
+    mutationFn: ({
+      leadId,
+      data,
+    }: {
+      leadId: string
+      data: AttachProductsRequest
+    }) => leadProductsService.attachProductsToLead(leadId, data),
     onSuccess: (_, variables) => {
       // Invalidate the lead products query to refetch the updated list
       queryClient.invalidateQueries({
         queryKey: [LEAD_PRODUCTS_QUERY_KEY, variables.leadId],
       })
-      
+
       // Also invalidate the lead detail query in case it includes product count
       queryClient.invalidateQueries({
         queryKey: ['lead', variables.leadId],
@@ -48,14 +51,19 @@ export function useDetachProductFromLead() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ leadId, productId }: { leadId: string; productId: string }) =>
-      leadProductsService.detachProductFromLead(leadId, productId),
+    mutationFn: ({
+      leadId,
+      productId,
+    }: {
+      leadId: string
+      productId: string
+    }) => leadProductsService.detachProductFromLead(leadId, productId),
     onSuccess: (_, variables) => {
       // Invalidate the lead products query to refetch the updated list
       queryClient.invalidateQueries({
         queryKey: [LEAD_PRODUCTS_QUERY_KEY, variables.leadId],
       })
-      
+
       // Also invalidate the lead detail query in case it includes product count
       queryClient.invalidateQueries({
         queryKey: ['lead', variables.leadId],

@@ -1,8 +1,8 @@
 import { eq, and } from 'drizzle-orm';
+import { createId } from '@paralleldrive/cuid2';
 import { db } from '../db';
 import { leadProducts, leads, products } from '../db/schema';
 import type { NewLeadProduct, LeadProduct } from '../db/schema';
-import { createId } from '@paralleldrive/cuid2';
 
 /**
  * Get all products attached to a specific lead
@@ -71,13 +71,13 @@ export async function attachProductsToLead(
       .from(products)
       .where(
         and(
-          eq(products.tenantId, tenantId),
+          eq(products.tenantId, tenantId)
           // Check if productIds are in the valid products list
         )
       );
 
-    const validProductIds = validProducts.map(p => p.id);
-    const invalidProductIds = productIds.filter(id => !validProductIds.includes(id));
+    const validProductIds = validProducts.map((p) => p.id);
+    const invalidProductIds = productIds.filter((id) => !validProductIds.includes(id));
 
     if (invalidProductIds.length > 0) {
       throw new Error(`Invalid product IDs: ${invalidProductIds.join(', ')}`);
@@ -89,15 +89,15 @@ export async function attachProductsToLead(
       .from(leadProducts)
       .where(eq(leadProducts.leadId, leadId));
 
-    const existingProductIds = existingAttachments.map(a => a.productId);
-    const newProductIds = productIds.filter(id => !existingProductIds.includes(id));
+    const existingProductIds = existingAttachments.map((a) => a.productId);
+    const newProductIds = productIds.filter((id) => !existingProductIds.includes(id));
 
     if (newProductIds.length === 0) {
       throw new Error('All products are already attached to this lead');
     }
 
     // Create the new attachments
-    const newAttachments: NewLeadProduct[] = newProductIds.map(productId => ({
+    const newAttachments: NewLeadProduct[] = newProductIds.map((productId) => ({
       id: createId(),
       leadId,
       productId,
@@ -137,12 +137,7 @@ export async function detachProductFromLead(
     // Delete the attachment
     const result = await db
       .delete(leadProducts)
-      .where(
-        and(
-          eq(leadProducts.leadId, leadId),
-          eq(leadProducts.productId, productId)
-        )
-      )
+      .where(and(eq(leadProducts.leadId, leadId), eq(leadProducts.productId, productId)))
       .returning();
 
     return result.length > 0;
@@ -161,12 +156,7 @@ export async function getLeadProductCount(leadId: string, tenantId: string): Pro
       .select({ count: leadProducts.id })
       .from(leadProducts)
       .innerJoin(leads, eq(leadProducts.leadId, leads.id))
-      .where(
-        and(
-          eq(leadProducts.leadId, leadId),
-          eq(leads.tenantId, tenantId)
-        )
-      );
+      .where(and(eq(leadProducts.leadId, leadId), eq(leads.tenantId, tenantId)));
 
     return result.length;
   } catch (error) {
