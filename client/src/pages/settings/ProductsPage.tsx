@@ -385,13 +385,13 @@ export default function ProductsPage() {
                           Created:{' '}
                           {new Date(product.createdAt).toLocaleDateString()}
                         </div>
-                        <label className="flex items-center space-x-2">
+                        <label className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                           <input
                             type="checkbox"
                             checked={product.isDefault}
                             onChange={() => handleToggleDefault(product)}
                             disabled={updateProductMutation.isPending}
-                            className="w-4 h-4 text-[var(--color-primary-600)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary-500)] focus:ring-2 disabled:opacity-50"
+                            className="w-4 h-4 text-[var(--color-primary-600)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary-500)] focus:ring-2"
                           />
                           <span className="text-sm text-gray-700">
                             Default Product
