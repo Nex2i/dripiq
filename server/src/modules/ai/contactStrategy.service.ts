@@ -1,11 +1,11 @@
 import { logger } from '@/libs/logger';
 import { supabaseStorage } from '@/libs/supabase.storage';
-import { ProductsService } from '../products.service';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
 import { UserService } from '../user.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
+import { getLeadProducts } from '../leadProduct.service';
 
 export interface GenerateContactStrategyParams {
   leadId: string;
@@ -69,12 +69,14 @@ export const generateContactStrategy = async (
     }
 
     // Get lead products
-    const leadProducts = await ProductsService.getProducts(leadId);
+    const leadProducts = await getLeadProducts(leadId, tenantId);
 
     let getLeadOwner;
 
     if (lead.ownerId) {
       getLeadOwner = await UserService.getUserById(lead.ownerId);
+    } else {
+      throw new Error('Lead owner not found');
     }
 
     // Prepare agent input
@@ -110,9 +112,9 @@ export const generateContactStrategy = async (
       },
       partnerProducts: leadProducts.map((product) => ({
         id: product.id,
-        title: product.title,
-        description: product.description,
-        salesVoice: product.salesVoice,
+        title: product.product.title,
+        description: product.product.description,
+        salesVoice: product.product.salesVoice,
       })),
     };
 

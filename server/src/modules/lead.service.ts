@@ -12,6 +12,9 @@ import {
   LeadStatus,
   userTenants,
   users,
+  leadProducts,
+  LeadProduct,
+  Product,
 } from '../db/schema';
 import { logger } from '../libs/logger';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
