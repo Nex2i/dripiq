@@ -1,4 +1,5 @@
 import { FastifyInstance, RouteOptions } from 'fastify';
+import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { ProductsService } from '../modules/products.service';
 
 const basePath = '/products';
@@ -34,11 +35,14 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     url: basePath,
     handler: async (request, reply) => {
       try {
-        const { tenantId } = request.query;
-        const user = (request as any).user;
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const {
+          tenantId,
+          user: { id },
+        } = authenticatedRequest;
 
         // Verify user has access to this tenant
-        const hasAccess = await ProductsService.checkUserAccess(user.id, tenantId);
+        const hasAccess = await ProductsService.checkUserAccess(id, tenantId);
         if (!hasAccess) {
           return reply.status(403).send({ message: 'Access denied' });
         }
@@ -65,9 +69,12 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const user = (request as any).user;
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const {
+          user: { id: userId },
+        } = authenticatedRequest;
 
-        const product = await ProductsService.getProductWithAccess(user.id, id);
+        const product = await ProductsService.getProductWithAccess(userId, id);
         if (!product) {
           return reply.status(404).send({ message: 'Product not found' });
         }
@@ -96,10 +103,13 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     handler: async (request, reply) => {
       try {
         const { title, description, salesVoice, tenantId } = request.body;
-        const user = (request as any).user;
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const {
+          user: { id: userId },
+        } = authenticatedRequest;
 
         // Verify user has access to this tenant
-        const hasAccess = await ProductsService.checkUserAccess(user.id, tenantId);
+        const hasAccess = await ProductsService.checkUserAccess(userId, tenantId);
         if (!hasAccess) {
           return reply.status(403).send({ message: 'Access denied' });
         }
@@ -134,10 +144,13 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
       try {
         const { id } = request.params;
         const updateData = request.body;
-        const user = (request as any).user;
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const {
+          user: { id: userId },
+        } = authenticatedRequest;
 
         // Get the product first to check access
-        const existingProduct = await ProductsService.getProductWithAccess(user.id, id);
+        const existingProduct = await ProductsService.getProductWithAccess(userId, id);
         if (!existingProduct) {
           return reply.status(404).send({ message: 'Product not found' });
         }
@@ -167,10 +180,13 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     handler: async (request, reply) => {
       try {
         const { id } = request.params;
-        const user = (request as any).user;
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const {
+          user: { id: userId },
+        } = authenticatedRequest;
 
         // Get the product first to check access
-        const existingProduct = await ProductsService.getProductWithAccess(user.id, id);
+        const existingProduct = await ProductsService.getProductWithAccess(userId, id);
         if (!existingProduct) {
           return reply.status(404).send({ message: 'Product not found' });
         }
