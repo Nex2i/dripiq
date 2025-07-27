@@ -211,7 +211,7 @@ export const createLead = async (
   try {
     const defaultProducts = await ProductsService.getDefaultProducts(tenantId);
     if (defaultProducts.length > 0) {
-      const defaultProductIds = defaultProducts.map(product => product.id);
+      const defaultProductIds = defaultProducts.map((product) => product.id);
       await attachProductsToLead(result.id, defaultProductIds, tenantId);
     }
   } catch (error) {
