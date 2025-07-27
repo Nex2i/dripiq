@@ -102,13 +102,17 @@ function ProductModal({
             <textarea
               id="description"
               value={formData.description}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData((prev) => ({
                   ...prev,
                   description: e.target.value,
                 }))
-              }
+                // Auto-resize textarea
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
               rows={3}
+              style={{ resize: 'none', overflow: 'hidden' }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
             />
           </div>
@@ -123,10 +127,14 @@ function ProductModal({
             <textarea
               id="salesVoice"
               value={formData.salesVoice}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData((prev) => ({ ...prev, salesVoice: e.target.value }))
-              }
+                // Auto-resize textarea
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
               rows={3}
+              style={{ resize: 'none', overflow: 'hidden' }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
               placeholder="How would you describe this product to a potential customer?"
             />
