@@ -22,6 +22,7 @@ const AnimatedCheckbox: React.FC<AnimatedCheckboxProps> = ({
 }) => {
   return (
     <button
+      type="button"
       onClick={onChange}
       disabled={disabled || loading}
       className={`flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
