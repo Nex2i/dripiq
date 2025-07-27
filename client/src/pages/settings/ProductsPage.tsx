@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Package, Plus, Edit, Trash2, AlertCircle } from 'lucide-react'
+import { Package, Plus, Edit, Trash2, AlertCircle, CheckSquare, Square } from 'lucide-react'
 import {
   useProducts,
   useCreateProduct,
@@ -200,6 +200,7 @@ export default function ProductsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [loadingProductId, setLoadingProductId] = useState<string | null>(null)
 
   const handleCreateProduct = async (data: CreateProductData) => {
     if (!currentTenantId) return
@@ -237,15 +238,19 @@ export default function ProductsPage() {
     }
   }
 
-  const handleToggleDefault = async (product: Product) => {
-    try {
-      await updateProductMutation.mutateAsync({
-        id: product.id,
-        data: { isDefault: !product.isDefault }
-      })
-    } catch (error) {
-      console.error('Error updating product default status:', error)
-    }
+  const handleToggleDefault = (product: Product) => {
+    setLoadingProductId(product.id)
+    updateProductMutation.mutate({
+      id: product.id,
+      data: { isDefault: !product.isDefault }
+    }, {
+      onSettled: () => {
+        setLoadingProductId(null)
+      },
+      onError: (error) => {
+        console.error('Error updating product default status:', error)
+      }
+    })
   }
 
   const openEditModal = (product: Product) => {
@@ -385,18 +390,27 @@ export default function ProductsPage() {
                           Created:{' '}
                           {new Date(product.createdAt).toLocaleDateString()}
                         </div>
-                        <label className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                          <input
-                            type="checkbox"
-                            checked={product.isDefault}
-                            onChange={() => handleToggleDefault(product)}
-                            disabled={updateProductMutation.isPending}
-                            className="w-4 h-4 text-[var(--color-primary-600)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary-500)] focus:ring-2"
-                          />
-                          <span className="text-sm text-gray-700">
+                        <button
+                          onClick={() => handleToggleDefault(product)}
+                          disabled={loadingProductId === product.id || updateProductMutation.isPending}
+                          className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            product.isDefault
+                              ? 'Remove as default product'
+                              : 'Set as default product'
+                          }
+                        >
+                          {loadingProductId === product.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                          ) : product.isDefault ? (
+                            <CheckSquare className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Square className="h-4 w-4 text-gray-400" />
+                          )}
+                          <span className="text-sm font-medium text-gray-700">
                             Default Product
                           </span>
-                        </label>
+                        </button>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
