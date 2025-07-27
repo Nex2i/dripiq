@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Package, Plus, Edit, Trash2, AlertCircle, CheckSquare, Square } from 'lucide-react'
+import { Package, Plus, Edit, Trash2, AlertCircle } from 'lucide-react'
 import {
   useProducts,
   useCreateProduct,
@@ -7,6 +7,7 @@ import {
   useDeleteProduct,
 } from '../../hooks/useProductsQuery'
 import { useAuth } from '../../contexts/AuthContext'
+import AnimatedCheckbox from '../../components/AnimatedCheckbox'
 import type {
   Product,
   CreateProductData,
@@ -390,27 +391,18 @@ export default function ProductsPage() {
                           Created:{' '}
                           {new Date(product.createdAt).toLocaleDateString()}
                         </div>
-                        <button
-                          onClick={() => handleToggleDefault(product)}
+                        <AnimatedCheckbox
+                          checked={product.isDefault}
+                          onChange={() => handleToggleDefault(product)}
                           disabled={loadingProductId === product.id || updateProductMutation.isPending}
-                          className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          loading={loadingProductId === product.id}
+                          label="Default Product"
                           title={
                             product.isDefault
                               ? 'Remove as default product'
                               : 'Set as default product'
                           }
-                        >
-                          {loadingProductId === product.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                          ) : product.isDefault ? (
-                            <CheckSquare className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Square className="h-4 w-4 text-gray-400" />
-                          )}
-                          <span className="text-sm font-medium text-gray-700">
-                            Default Product
-                          </span>
-                        </button>
+                        />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
