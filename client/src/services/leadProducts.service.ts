@@ -1,7 +1,5 @@
+import { authService } from './auth.service'
 import type { AttachedProduct } from '../types/lead.types'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL + '/api' || 'http://localhost:3000'
 
 export interface AttachProductsRequest {
   productIds: string[]
@@ -26,78 +24,89 @@ export interface DetachProductResponse {
   message: string
 }
 
-/**
- * Get all products attached to a lead
- */
-export async function getLeadProducts(
-  leadId: string,
-): Promise<AttachedProduct[]> {
-  const response = await fetch(`${API_BASE_URL}/leads/${leadId}/products`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+class LeadProductsService {
+  private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(
-      errorData.message ||
-        `Failed to get lead products: ${response.statusText}`,
-    )
+  // Get all products attached to a lead
+  async getLeadProducts(leadId: string): Promise<AttachedProduct[]> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
+
+      const response = await fetch(`${this.baseUrl}/leads/${leadId}/products`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to get lead products: ${response.statusText}`)
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error fetching lead products:', error)
+      throw error
+    }
   }
 
-  return response.json()
-}
+  // Attach products to a lead
+  async attachProductsToLead(
+    leadId: string,
+    data: AttachProductsRequest
+  ): Promise<AttachProductsResponse> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
 
-/**
- * Attach products to a lead
- */
-export async function attachProductsToLead(
-  leadId: string,
-  data: AttachProductsRequest,
-): Promise<AttachProductsResponse> {
-  const response = await fetch(`${API_BASE_URL}/leads/${leadId}/products`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  })
+      const response = await fetch(`${this.baseUrl}/leads/${leadId}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify(data),
+      })
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(
-      errorData.message || `Failed to attach products: ${response.statusText}`,
-    )
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to attach products')
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error attaching products to lead:', error)
+      throw error
+    }
   }
 
-  return response.json()
-}
+  // Detach a product from a lead
+  async detachProductFromLead(
+    leadId: string,
+    productId: string
+  ): Promise<DetachProductResponse> {
+    try {
+      const authHeaders = await authService.getAuthHeaders()
 
-/**
- * Detach a product from a lead
- */
-export async function detachProductFromLead(
-  leadId: string,
-  productId: string,
-): Promise<DetachProductResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/leads/${leadId}/products/${productId}`,
-    {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    },
-  )
+      const response = await fetch(`${this.baseUrl}/leads/${leadId}/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+      })
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(
-      errorData.message || `Failed to detach product: ${response.statusText}`,
-    )
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to detach product')
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error detaching product from lead:', error)
+      throw error
+    }
   }
-
-  return response.json()
 }
+
+export const leadProductsService = new LeadProductsService()

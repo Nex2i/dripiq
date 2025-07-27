@@ -1010,7 +1010,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
   // Attach products to lead route
   fastify.route({
-    method: [HttpMethods.POST, HttpMethods.OPTIONS],
+    method: HttpMethods.POST,
     url: `${basePath}/:leadId/products`,
     schema: {
       tags: ['Lead Products'],
@@ -1118,7 +1118,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
   // Detach product from lead route
   fastify.route({
-    method: [HttpMethods.DELETE, HttpMethods.OPTIONS],
+    method: HttpMethods.DELETE,
     url: `${basePath}/:leadId/products/:productId`,
     schema: {
       tags: ['Lead Products'],

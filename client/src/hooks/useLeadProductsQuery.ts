@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  getLeadProducts,
-  attachProductsToLead,
-  detachProductFromLead,
+  leadProductsService,
   type AttachProductsRequest,
 } from '../services/leadProducts.service'
 
@@ -14,7 +12,7 @@ export const LEAD_PRODUCTS_QUERY_KEY = 'leadProducts'
 export function useLeadProducts(leadId: string | undefined) {
   return useQuery({
     queryKey: [LEAD_PRODUCTS_QUERY_KEY, leadId],
-    queryFn: () => getLeadProducts(leadId!),
+    queryFn: () => leadProductsService.getLeadProducts(leadId!),
     enabled: !!leadId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
@@ -28,7 +26,7 @@ export function useAttachProductsToLead() {
 
   return useMutation({
     mutationFn: ({ leadId, data }: { leadId: string; data: AttachProductsRequest }) =>
-      attachProductsToLead(leadId, data),
+      leadProductsService.attachProductsToLead(leadId, data),
     onSuccess: (_, variables) => {
       // Invalidate the lead products query to refetch the updated list
       queryClient.invalidateQueries({
@@ -51,7 +49,7 @@ export function useDetachProductFromLead() {
 
   return useMutation({
     mutationFn: ({ leadId, productId }: { leadId: string; productId: string }) =>
-      detachProductFromLead(leadId, productId),
+      leadProductsService.detachProductFromLead(leadId, productId),
     onSuccess: (_, variables) => {
       // Invalidate the lead products query to refetch the updated list
       queryClient.invalidateQueries({
