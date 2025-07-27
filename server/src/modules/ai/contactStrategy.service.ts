@@ -3,6 +3,7 @@ import { supabaseStorage } from '@/libs/supabase.storage';
 import { ProductsService } from '../products.service';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
+import { UserService } from '../user.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
 
@@ -67,8 +68,14 @@ export const generateContactStrategy = async (
       throw new Error(`Tenant not found: ${tenantId}`);
     }
 
-    // Get tenant products
-    const tenantProducts = await ProductsService.getProducts(tenantId);
+    // Get lead products
+    const leadProducts = await ProductsService.getProducts(leadId);
+
+    let getLeadOwner;
+
+    if (lead.ownerId) {
+      getLeadOwner = await UserService.getUserById(lead.ownerId);
+    }
 
     // Prepare agent input
     const agentInput = {
@@ -96,7 +103,12 @@ export const generateContactStrategy = async (
         tone: tenant.tone,
         // Add any other relevant tenant information
       },
-      partnerProducts: tenantProducts.map((product) => ({
+      salesman: {
+        id: getLeadOwner?.id,
+        name: getLeadOwner?.name,
+        email: getLeadOwner?.email,
+      },
+      partnerProducts: leadProducts.map((product) => ({
         id: product.id,
         title: product.title,
         description: product.description,

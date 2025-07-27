@@ -25,6 +25,7 @@ export interface ContactStrategyInput {
   contactDetails: any;
   partnerDetails: any;
   partnerProducts: any[];
+  salesman: any;
 }
 
 export class ContactStrategyAgent {
@@ -69,6 +70,7 @@ export class ContactStrategyAgent {
       contactDetails: input.contactDetails || {},
       partnerDetails: input.partnerDetails || {},
       partnerProducts: input.partnerProducts || [],
+      salesman: input.salesman || {},
     };
 
     let systemPrompt: string;
@@ -78,6 +80,7 @@ export class ContactStrategyAgent {
         contact_details: JSON.stringify(safeInput.contactDetails, null, 2),
         partner_details: JSON.stringify(safeInput.partnerDetails, null, 2),
         partner_products: JSON.stringify(safeInput.partnerProducts, null, 2),
+        salesman: JSON.stringify(safeInput.salesman, null, 2),
         output_schema: JSON.stringify(z.toJSONSchema(contactStrategyOutputSchema), null, 2),
       });
 

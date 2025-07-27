@@ -70,6 +70,7 @@ Lead Details: {{lead_details}}
 Contact Details: {{contact_details}}
 Partner Details: {{partner_details}}
 Partner Products: {{partner_products}}
+Salesman: {{salesman}}
 `;
 
 export default contactStrategyPrompt;
