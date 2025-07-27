@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Package, Plus, X, AlertCircle, Search } from 'lucide-react'
 import {
   useLeadProducts,
@@ -8,7 +8,6 @@ import {
 import { useProducts } from '../../hooks/useProductsQuery'
 import { useAuth } from '../../contexts/AuthContext'
 import type { AttachedProduct } from '../../types/lead.types'
-import type { Product } from '../../services/products.service'
 
 interface ProductsTabProps {
   leadId: string
@@ -26,7 +25,6 @@ interface AttachProductModalProps {
 function AttachProductModal({
   isOpen,
   onClose,
-  leadId,
   attachedProductIds,
   onAttach,
   isLoading,

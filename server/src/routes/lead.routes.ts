@@ -957,14 +957,22 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         500: defaultRouteResponse,
       },
     },
-    preHandler: fastify.authenticate,
-    handler: async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: [fastify.authPrehandler],
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          leadId: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
-        const { leadId } = request.params as { leadId: string };
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { leadId } = request.params;
 
-        fastify.log.info(`Getting products for lead: ${leadId} for tenant: ${request.tenantId}`);
+        fastify.log.info(`Getting products for lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`);
 
-        const leadProducts = await getLeadProducts(leadId, request.tenantId);
+        const leadProducts = await getLeadProducts(leadId, authenticatedRequest.tenantId);
 
         fastify.log.info(`Retrieved ${leadProducts.length} products for lead: ${leadId}`);
 
@@ -1029,15 +1037,26 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         500: defaultRouteResponse,
       },
     },
-    preHandler: fastify.authenticate,
-    handler: async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: [fastify.authPrehandler],
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          leadId: string;
+        };
+        Body: {
+          productIds: string[];
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
-        const { leadId } = request.params as { leadId: string };
-        const { productIds } = request.body as { productIds: string[] };
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { leadId } = request.params;
+        const { productIds } = request.body;
 
-        fastify.log.info(`Attaching ${productIds.length} products to lead: ${leadId} for tenant: ${request.tenantId}`);
+        fastify.log.info(`Attaching ${productIds.length} products to lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`);
 
-        const attachments = await attachProductsToLead(leadId, productIds, request.tenantId);
+        const attachments = await attachProductsToLead(leadId, productIds, authenticatedRequest.tenantId);
 
         fastify.log.info(`Successfully attached ${attachments.length} products to lead: ${leadId}`);
 
@@ -1098,14 +1117,23 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         500: defaultRouteResponse,
       },
     },
-    preHandler: fastify.authenticate,
-    handler: async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: [fastify.authPrehandler],
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          leadId: string;
+          productId: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
-        const { leadId, productId } = request.params as { leadId: string; productId: string };
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { leadId, productId } = request.params;
 
-        fastify.log.info(`Detaching product ${productId} from lead: ${leadId} for tenant: ${request.tenantId}`);
+        fastify.log.info(`Detaching product ${productId} from lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`);
 
-        const detached = await detachProductFromLead(leadId, productId, request.tenantId);
+        const detached = await detachProductFromLead(leadId, productId, authenticatedRequest.tenantId);
 
         if (!detached) {
           reply.status(404).send({
