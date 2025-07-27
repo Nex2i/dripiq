@@ -1,0 +1,6 @@
+---
+globs: **/server/**
+alwaysApply: false
+---
+
+This is the backend of the project. It is written in fastify and typescript.

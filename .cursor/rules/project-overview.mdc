@@ -1,0 +1,9 @@
+---
+description: Project overview, patterns for the project
+globs:
+alwaysApply: true
+---
+
+This project is a monorepo with the client and backend. 
+
+Before starting any work always return back first your plan before writing or commiting any code.
