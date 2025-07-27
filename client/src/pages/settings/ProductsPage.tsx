@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Package, Plus, Edit, Trash2, AlertCircle } from 'lucide-react'
 import {
   useProducts,
@@ -36,6 +36,15 @@ function ProductModal({
     salesVoice: product?.salesVoice || '',
   })
 
+  // Update form data when product prop changes
+  useEffect(() => {
+    setFormData({
+      title: product?.title || '',
+      description: product?.description || '',
+      salesVoice: product?.salesVoice || '',
+    })
+  }, [product])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (product) {
@@ -58,7 +67,7 @@ function ProductModal({
 
   return (
     <div className="fixed inset-0 backdrop-blur bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="bg-white rounded-lg p-6 w-4/5 mx-4 min-h-[50vh] max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">
           {product ? 'Edit Product' : 'Create Product'}
         </h2>
@@ -93,13 +102,17 @@ function ProductModal({
             <textarea
               id="description"
               value={formData.description}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData((prev) => ({
                   ...prev,
                   description: e.target.value,
                 }))
-              }
+                // Auto-resize textarea
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
               rows={3}
+              style={{ resize: 'none', overflow: 'hidden' }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
             />
           </div>
@@ -114,10 +127,14 @@ function ProductModal({
             <textarea
               id="salesVoice"
               value={formData.salesVoice}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData((prev) => ({ ...prev, salesVoice: e.target.value }))
-              }
+                // Auto-resize textarea
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
               rows={3}
+              style={{ resize: 'none', overflow: 'hidden' }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
               placeholder="How would you describe this product to a potential customer?"
             />
