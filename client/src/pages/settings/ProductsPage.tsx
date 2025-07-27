@@ -237,6 +237,17 @@ export default function ProductsPage() {
     }
   }
 
+  const handleToggleDefault = async (product: Product) => {
+    try {
+      await updateProductMutation.mutateAsync({
+        id: product.id,
+        data: { isDefault: !product.isDefault }
+      })
+    } catch (error) {
+      console.error('Error updating product default status:', error)
+    }
+  }
+
   const openEditModal = (product: Product) => {
     setEditingProduct(product)
     setIsModalOpen(true)
@@ -369,9 +380,23 @@ export default function ProductsPage() {
                           </p>
                         </div>
                       )}
-                      <div className="mt-3 text-xs text-gray-500">
-                        Created:{' '}
-                        {new Date(product.createdAt).toLocaleDateString()}
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="text-xs text-gray-500">
+                          Created:{' '}
+                          {new Date(product.createdAt).toLocaleDateString()}
+                        </div>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={product.isDefault}
+                            onChange={() => handleToggleDefault(product)}
+                            disabled={updateProductMutation.isPending}
+                            className="w-4 h-4 text-[var(--color-primary-600)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary-500)] focus:ring-2 disabled:opacity-50"
+                          />
+                          <span className="text-sm text-gray-700">
+                            Default Product
+                          </span>
+                        </label>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
