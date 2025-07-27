@@ -5,6 +5,7 @@ import { supabase } from '@/libs/supabase.client';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
 import { RoleService } from '@/modules/role.service';
+import { authCache } from '@/cache/AuthCache';
 
 const basePath = '/auth';
 
@@ -330,6 +331,9 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           return;
         }
 
+        authCache.clearToken(token);
+        authCache.clear(user.id);
+
         // For client-side authentication, we don't need to invalidate the token server-side
         // The client should remove the token from storage upon receiving this response
         // The token will naturally expire based on its TTL
@@ -363,42 +367,6 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         // This case should ideally be caught by authPrehandler
         reply.status(401).send({ message: 'Unauthorized: No user data found on request.' });
       }
-    },
-  });
-
-  // Delete User route - Placeholder, not fully implemented
-  fastify.route({
-    method: HttpMethods.DELETE,
-    url: `${basePath}/user/:userId`,
-    preHandler: [fastify.authPrehandler], // Protect this route
-    schema: {
-      tags: ['Authentication'],
-      summary: 'Delete User (Not Implemented)',
-      description:
-        'Delete a user by userId. (This endpoint is not fully implemented and requires admin privileges.)',
-      params: {
-        type: 'object',
-        properties: {
-          userId: { type: 'string', description: 'ID of the user to delete' },
-        },
-        required: ['userId'],
-      },
-    },
-    handler: async (
-      request: FastifyRequest<{ Params: { userId: string } }>,
-      reply: FastifyReply
-    ) => {
-      const { userId } = request.params;
-      // IMPORTANT: Deleting a user is a privileged operation.
-      // You would need to use the Supabase Admin SDK or a service_role key here,
-      // and ensure the calling user has administrative rights.
-      // Example: await supabase.auth.admin.deleteUser(userId);
-      fastify.log.warn(
-        `Attempt to delete user ${userId} - This functionality requires admin privileges and is not fully implemented.`
-      );
-      reply
-        .status(501)
-        .send({ message: 'Not Implemented: User deletion requires admin privileges.' });
     },
   });
 }

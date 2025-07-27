@@ -1,3 +1,4 @@
+import { JwtPayload } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 
 type Payload = Record<string, any>;
@@ -57,4 +58,25 @@ export function verifySignedJwt(token: string, guid: string): Payload {
       throw new Error('Token verification failed');
     }
   }
+}
+
+export function isTokenExpired(token: string): boolean {
+  try {
+    const decodedJwt = jwt.decode(token) as JwtPayload;
+
+    if (!decodedJwt) {
+      return false;
+    }
+
+    const expiresAt = decodedJwt.exp;
+    const now = Date.now() / 1000;
+
+    return expiresAt < now;
+  } catch (error) {
+    return error instanceof jwt.TokenExpiredError;
+  }
+}
+
+export function getDecodedJwt(token: string): JwtPayload {
+  return jwt.decode(token) as JwtPayload;
 }

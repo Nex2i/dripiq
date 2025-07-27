@@ -4,6 +4,8 @@ import { ForbiddenError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
 import { UserService } from '@/modules/user.service';
+import { getDecodedJwt, isTokenExpired } from '@/libs/jwt';
+import { authCache } from '@/cache/AuthCache';
 
 export interface IUser {
   id: string; // Database user ID
@@ -24,73 +26,6 @@ export interface AuthenticatedRequest extends FastifyRequest {
   tenantAccessValidated: boolean;
 }
 
-// Simple in-memory cache with TTL for authentication data
-interface CacheEntry {
-  data: {
-    user: IUser;
-    userTenants: Array<{
-      id: string;
-      name: string;
-      isSuperUser: boolean;
-    }>;
-  };
-  expiresAt: number;
-}
-
-class AuthCache {
-  private cache = new Map<string, CacheEntry>();
-  private readonly TTL = 5 * 60 * 1000; // 5 minutes
-
-  set(supabaseId: string, data: CacheEntry['data']): void {
-    this.cache.set(supabaseId, {
-      data,
-      expiresAt: Date.now() + this.TTL,
-    });
-  }
-
-  get(supabaseId: string): CacheEntry['data'] | null {
-    const entry = this.cache.get(supabaseId);
-    if (!entry) {
-      return null;
-    }
-
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(supabaseId);
-      return null;
-    }
-
-    return entry.data;
-  }
-
-  clear(supabaseId?: string): void {
-    if (supabaseId) {
-      this.cache.delete(supabaseId);
-    } else {
-      this.cache.clear();
-    }
-  }
-
-  // Clean up expired entries periodically
-  cleanup(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now > entry.expiresAt) {
-        this.cache.delete(key);
-      }
-    }
-  }
-}
-
-const authCache = new AuthCache();
-
-// Run cleanup every 10 minutes
-setInterval(
-  () => {
-    authCache.cleanup();
-  },
-  10 * 60 * 1000
-);
-
 export default fastifyPlugin(
   async (fastify: FastifyInstance) => {
     /**
@@ -98,6 +33,7 @@ export default fastifyPlugin(
      * Optimized with caching and single database query
      */
     const authPrehandler = async (request: FastifyRequest, _reply: FastifyReply) => {
+      const authPrehandlerStart = process.hrtime();
       try {
         const authHeader = request.headers?.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -112,25 +48,53 @@ export default fastifyPlugin(
           throw new ForbiddenError('No token provided in Authorization Header.');
         }
 
-        // Validate JWT with Supabase
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser(token);
+        let cachedToken = authCache.getToken(token);
 
-        if (error || !user) {
-          logger.warn(`Supabase auth.getUser error: ${error?.message}`, {
-            requestUrl: request.url,
+        let supabaseUserId: string | null = null;
+
+        if (!cachedToken || isTokenExpired(token)) {
+          authCache.clearToken(token);
+          authCache.setToken(token);
+
+          const supabaseGetUserStart = process.hrtime();
+          // Validate JWT with Supabase
+          const {
+            data: { user: supabaseUser },
+            error,
+          } = await supabase.auth.getUser(token);
+          if (error || !supabaseUser) {
+            logger.warn(`Supabase auth.getUser error: ${error?.message}`, {
+              requestUrl: request.url,
+            });
+            throw new ForbiddenError(`Invalid Token: ${error?.message || 'User not found'}`);
+          }
+          supabaseUserId = supabaseUser.id;
+
+          const supabaseGetUserEnd = process.hrtime(supabaseGetUserStart);
+          const supabaseGetUserDurationMicroSeconds =
+            supabaseGetUserEnd[0] * 1e6 + supabaseGetUserEnd[1] / 1e3;
+          logger.info(`supabaseGetUser took ${supabaseGetUserDurationMicroSeconds}μs`, {
+            supabaseGetUserStart: supabaseGetUserStart[0] * 1e6 + supabaseGetUserStart[1] / 1e3,
+            supabaseGetUserEnd: supabaseGetUserEnd[0] * 1e6 + supabaseGetUserEnd[1] / 1e3,
           });
-          throw new ForbiddenError(`Invalid Token: ${error?.message || 'User not found'}`);
+        } else {
+          supabaseUserId = getDecodedJwt(token).sub as string;
         }
 
         // Check cache first
-        let userData = authCache.get(user.id);
+        let userData = authCache.get(supabaseUserId);
 
         if (!userData) {
+          const dbResultStart = process.hrtime();
           // Cache miss - fetch from database with single optimized query
-          const dbResult = await UserService.getUserWithTenantsForAuth(user.id);
+          const dbResult = await UserService.getUserWithTenantsForAuth(supabaseUserId);
+          const dbResultEnd = process.hrtime(dbResultStart);
+          const dbResultDurationMicroSeconds = dbResultEnd[0] * 1e6 + dbResultEnd[1] / 1e3;
+          logger.info(`dbResult took ${dbResultDurationMicroSeconds}μs`, {
+            dbResultStart: dbResultStart[0] * 1e6 + dbResultStart[1] / 1e3,
+            dbResultEnd: dbResultEnd[0] * 1e6 + dbResultEnd[1] / 1e3,
+            dbResultDurationMicroSeconds,
+          });
 
           if (!dbResult) {
             throw new ForbiddenError('User not found in database');
@@ -151,7 +115,7 @@ export default fastifyPlugin(
           };
 
           // Cache the result
-          authCache.set(user.id, userData);
+          authCache.set(supabaseUserId, userData);
 
           logger.debug(
             `Authentication cache miss for user ${userData.user.id} - data loaded from DB`
@@ -196,6 +160,15 @@ export default fastifyPlugin(
           throw new ForbiddenError(errorMessage);
         }
       }
+
+      const authPrehandlerEnd = process.hrtime(authPrehandlerStart);
+      const authPrehandlerDurationMicroSeconds =
+        authPrehandlerEnd[0] * 1e6 + authPrehandlerEnd[1] / 1e3;
+      logger.info(`authPrehandler took ${authPrehandlerDurationMicroSeconds}μs`, {
+        authPrehandlerStart: authPrehandlerStart[0] * 1e6 + authPrehandlerStart[1] / 1e3,
+        authPrehandlerEnd: authPrehandlerEnd[0] * 1e6 + authPrehandlerEnd[1] / 1e3,
+        authPrehandlerDurationMicroSeconds,
+      });
     };
 
     // Decorate fastify instance with authentication prehandler and cache utilities
