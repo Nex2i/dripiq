@@ -14,6 +14,11 @@ import {
   getLeadById,
   assignLeadOwner,
 } from '../modules/lead.service';
+import {
+  getLeadProducts,
+  attachProductsToLead,
+  detachProductFromLead,
+} from '../modules/leadProduct.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 
@@ -910,6 +915,228 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         reply.status(500).send({
           success: false,
           message: 'Failed to generate lead qualification',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Get lead products route
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/:leadId/products`,
+    schema: {
+      tags: ['Lead Products'],
+      summary: 'Get Lead Products',
+      description: 'Get all products attached to a specific lead (tenant-scoped)',
+      params: Type.Object({
+        leadId: Type.String({ description: 'Lead ID to get products for' }),
+      }),
+      response: {
+        200: Type.Array(
+          Type.Object({
+            id: Type.String({ description: 'Lead-Product attachment ID' }),
+            leadId: Type.String({ description: 'Lead ID' }),
+            productId: Type.String({ description: 'Product ID' }),
+            attachedAt: Type.String({ format: 'date-time', description: 'When the product was attached' }),
+            createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
+            updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
+            product: Type.Object({
+              id: Type.String({ description: 'Product ID' }),
+              title: Type.String({ description: 'Product title' }),
+              description: Type.Optional(Type.String({ description: 'Product description' })),
+              salesVoice: Type.Optional(Type.String({ description: 'Product sales voice' })),
+              tenantId: Type.String({ description: 'Tenant ID' }),
+              createdAt: Type.String({ format: 'date-time', description: 'Product created timestamp' }),
+              updatedAt: Type.String({ format: 'date-time', description: 'Product updated timestamp' }),
+            }),
+          }),
+          { description: 'List of products attached to the lead' }
+        ),
+        404: defaultRouteResponse,
+        500: defaultRouteResponse,
+      },
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: AuthenticatedRequest, reply: FastifyReply) => {
+      try {
+        const { leadId } = request.params as { leadId: string };
+
+        fastify.log.info(`Getting products for lead: ${leadId} for tenant: ${request.tenantId}`);
+
+        const leadProducts = await getLeadProducts(leadId, request.tenantId);
+
+        fastify.log.info(`Retrieved ${leadProducts.length} products for lead: ${leadId}`);
+
+        reply.send(leadProducts);
+      } catch (error: any) {
+        fastify.log.error(`Error getting lead products: ${error.message}`);
+
+        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
+          reply.status(404).send({
+            success: false,
+            message: 'Lead not found or access denied',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to get lead products',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Attach products to lead route
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:leadId/products`,
+    schema: {
+      tags: ['Lead Products'],
+      summary: 'Attach Products to Lead',
+      description: 'Attach one or more products to a lead (tenant-scoped)',
+      params: Type.Object({
+        leadId: Type.String({ description: 'Lead ID to attach products to' }),
+      }),
+      body: Type.Object({
+        productIds: Type.Array(Type.String(), {
+          description: 'Array of product IDs to attach to the lead',
+          minItems: 1,
+        }),
+      }),
+      response: {
+        201: Type.Object({
+          success: Type.Boolean({ description: 'Whether the operation was successful' }),
+          message: Type.String({ description: 'Success message' }),
+          attachedCount: Type.Number({ description: 'Number of products attached' }),
+          attachments: Type.Array(
+            Type.Object({
+              id: Type.String({ description: 'Attachment ID' }),
+              leadId: Type.String({ description: 'Lead ID' }),
+              productId: Type.String({ description: 'Product ID' }),
+              attachedAt: Type.String({ format: 'date-time', description: 'When the product was attached' }),
+              createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
+              updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
+            }),
+            { description: 'List of created attachments' }
+          ),
+        }),
+        400: defaultRouteResponse,
+        404: defaultRouteResponse,
+        500: defaultRouteResponse,
+      },
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: AuthenticatedRequest, reply: FastifyReply) => {
+      try {
+        const { leadId } = request.params as { leadId: string };
+        const { productIds } = request.body as { productIds: string[] };
+
+        fastify.log.info(`Attaching ${productIds.length} products to lead: ${leadId} for tenant: ${request.tenantId}`);
+
+        const attachments = await attachProductsToLead(leadId, productIds, request.tenantId);
+
+        fastify.log.info(`Successfully attached ${attachments.length} products to lead: ${leadId}`);
+
+        reply.status(201).send({
+          success: true,
+          message: `Successfully attached ${attachments.length} product(s) to lead`,
+          attachedCount: attachments.length,
+          attachments,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error attaching products to lead: ${error.message}`);
+
+        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
+          reply.status(404).send({
+            success: false,
+            message: 'Lead not found or access denied',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('Invalid product IDs') || error.message?.includes('already attached')) {
+          reply.status(400).send({
+            success: false,
+            message: error.message,
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to attach products to lead',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Detach product from lead route
+  fastify.route({
+    method: HttpMethods.DELETE,
+    url: `${basePath}/:leadId/products/:productId`,
+    schema: {
+      tags: ['Lead Products'],
+      summary: 'Detach Product from Lead',
+      description: 'Detach a specific product from a lead (tenant-scoped)',
+      params: Type.Object({
+        leadId: Type.String({ description: 'Lead ID to detach product from' }),
+        productId: Type.String({ description: 'Product ID to detach from the lead' }),
+      }),
+      response: {
+        200: Type.Object({
+          success: Type.Boolean({ description: 'Whether the operation was successful' }),
+          message: Type.String({ description: 'Success message' }),
+        }),
+        404: defaultRouteResponse,
+        500: defaultRouteResponse,
+      },
+    },
+    preHandler: fastify.authenticate,
+    handler: async (request: AuthenticatedRequest, reply: FastifyReply) => {
+      try {
+        const { leadId, productId } = request.params as { leadId: string; productId: string };
+
+        fastify.log.info(`Detaching product ${productId} from lead: ${leadId} for tenant: ${request.tenantId}`);
+
+        const detached = await detachProductFromLead(leadId, productId, request.tenantId);
+
+        if (!detached) {
+          reply.status(404).send({
+            success: false,
+            message: 'Product attachment not found',
+            error: 'The specified product is not attached to this lead',
+          });
+          return;
+        }
+
+        fastify.log.info(`Successfully detached product ${productId} from lead: ${leadId}`);
+
+        reply.send({
+          success: true,
+          message: 'Product successfully detached from lead',
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error detaching product from lead: ${error.message}`);
+
+        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
+          reply.status(404).send({
+            success: false,
+            message: 'Lead not found or access denied',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to detach product from lead',
           error: error.message,
         });
       }

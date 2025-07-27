@@ -269,6 +269,7 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
     fields: [leads.primaryContactId],
     references: [leadPointOfContacts.id],
   }),
+  leadProducts: many(leadProducts),
 }));
 
 export const leadPointOfContactsRelations = relations(leadPointOfContacts, ({ one }) => ({
@@ -347,12 +348,45 @@ export const siteEmbeddingsRelations = relations(siteEmbeddings, ({ one }) => ({
   }),
 }));
 
+// Lead Products junction table (many-to-many relationship)
+export const leadProducts = appSchema.table(
+  'lead_products',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    productId: text('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    attachedAt: timestamp('attached_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique('lead_products_lead_id_product_id_unique').on(table.leadId, table.productId)]
+);
+
+// Relations for lead products junction table
+export const leadProductsRelations = relations(leadProducts, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadProducts.leadId],
+    references: [leads.id],
+  }),
+  product: one(products, {
+    fields: [leadProducts.productId],
+    references: [products.id],
+  }),
+}));
+
 // Relations for products table
-export const productsRelations = relations(products, ({ one }) => ({
+export const productsRelations = relations(products, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [products.tenantId],
     references: [tenants.id],
   }),
+  leadProducts: many(leadProducts),
 }));
 
 // Export types
@@ -380,3 +414,5 @@ export type SiteEmbedding = typeof siteEmbeddings.$inferSelect;
 export type NewSiteEmbedding = typeof siteEmbeddings.$inferInsert;
 export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;
 export type NewSiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferInsert;
+export type LeadProduct = typeof leadProducts.$inferSelect;
+export type NewLeadProduct = typeof leadProducts.$inferInsert;

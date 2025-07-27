@@ -14,6 +14,7 @@ import {
   Info,
   Palette,
   Brain,
+  Package,
 } from 'lucide-react'
 import VendorFitModal from '../components/VendorFitModal'
 import Tabs from '../components/Tabs'
@@ -22,6 +23,7 @@ import ContactsTab from '../components/tabs/ContactsTab'
 import AIDetailsTab from '../components/tabs/AIDetailsTab'
 import BrandingTab from '../components/tabs/BrandingTab'
 import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
+import ProductsTab from '../components/tabs/ProductsTab'
 import LeadStatusBadges from '../components/LeadStatusBadges'
 
 const LeadDetailPage: React.FC = () => {
@@ -101,6 +103,11 @@ const LeadDetailPage: React.FC = () => {
       id: 'contacts',
       label: 'Contacts',
       icon: <Users />,
+    },
+    {
+      id: 'products',
+      label: 'Products',
+      icon: <Package />,
     },
     {
       id: 'ai-details',
@@ -200,6 +207,8 @@ const LeadDetailPage: React.FC = () => {
             companyName={lead.name}
           />
         )
+      case 'products':
+        return <ProductsTab leadId={leadId} />
       case 'ai-details':
         return (
           <AIDetailsTab
