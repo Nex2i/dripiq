@@ -28,7 +28,6 @@ interface ProductQuery {
 }
 
 export default async function ProductsRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
-  // GET /products?tenantId=xxx - Get all products for a tenant
   fastify.route<{
     Querystring: ProductQuery;
   }>({
@@ -104,9 +103,10 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     url: basePath,
     handler: async (request, reply) => {
       try {
-        const { title, description, salesVoice, isDefault, tenantId } = request.body;
+        const { title, description, salesVoice, isDefault } = request.body;
         const authenticatedRequest = request as AuthenticatedRequest;
         const {
+          tenantId,
           user: { id: userId },
         } = authenticatedRequest;
 

@@ -19,7 +19,7 @@ export const productsQueryKeys = {
 export function useProducts(tenantId: string) {
   return useQuery({
     queryKey: productsQueryKeys.list(tenantId),
-    queryFn: () => productsService.getProducts(tenantId),
+    queryFn: () => productsService.getProducts(),
     enabled: !!tenantId,
     staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
     refetchOnMount: 'always',
