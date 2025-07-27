@@ -145,19 +145,15 @@ function ProductModal({
           </div>
 
           <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.isDefault}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, isDefault: e.target.checked }))
-                }
-                className="w-4 h-4 text-[var(--color-primary-600)] bg-gray-100 border-gray-300 rounded focus:ring-[var(--color-primary-500)] focus:ring-2"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Default Product
-              </span>
-            </label>
+            <AnimatedCheckbox
+              checked={formData.isDefault}
+              onChange={() =>
+                setFormData((prev) => ({ ...prev, isDefault: !prev.isDefault }))
+              }
+              disabled={isLoading}
+              label="Default Product"
+              title="Set as default product"
+            />
             <p className="text-xs text-gray-500 mt-1">
               Default products are automatically associated with new leads
             </p>
