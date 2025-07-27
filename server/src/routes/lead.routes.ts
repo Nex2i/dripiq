@@ -933,12 +933,16 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         leadId: Type.String({ description: 'Lead ID to get products for' }),
       }),
       response: {
+        ...defaultRouteResponse(),
         200: Type.Array(
           Type.Object({
             id: Type.String({ description: 'Lead-Product attachment ID' }),
             leadId: Type.String({ description: 'Lead ID' }),
             productId: Type.String({ description: 'Product ID' }),
-            attachedAt: Type.String({ format: 'date-time', description: 'When the product was attached' }),
+            attachedAt: Type.String({
+              format: 'date-time',
+              description: 'When the product was attached',
+            }),
             createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
             updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
             product: Type.Object({
@@ -947,14 +951,18 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
               description: Type.Optional(Type.String({ description: 'Product description' })),
               salesVoice: Type.Optional(Type.String({ description: 'Product sales voice' })),
               tenantId: Type.String({ description: 'Tenant ID' }),
-              createdAt: Type.String({ format: 'date-time', description: 'Product created timestamp' }),
-              updatedAt: Type.String({ format: 'date-time', description: 'Product updated timestamp' }),
+              createdAt: Type.String({
+                format: 'date-time',
+                description: 'Product created timestamp',
+              }),
+              updatedAt: Type.String({
+                format: 'date-time',
+                description: 'Product updated timestamp',
+              }),
             }),
           }),
           { description: 'List of products attached to the lead' }
         ),
-        404: defaultRouteResponse,
-        500: defaultRouteResponse,
       },
     },
     preHandler: [fastify.authPrehandler],
@@ -970,7 +978,9 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const authenticatedRequest = request as AuthenticatedRequest;
         const { leadId } = request.params;
 
-        fastify.log.info(`Getting products for lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`);
+        fastify.log.info(
+          `Getting products for lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
+        );
 
         const leadProducts = await getLeadProducts(leadId, authenticatedRequest.tenantId);
 
@@ -1016,6 +1026,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }),
       }),
       response: {
+        ...defaultRouteResponse(),
         201: Type.Object({
           success: Type.Boolean({ description: 'Whether the operation was successful' }),
           message: Type.String({ description: 'Success message' }),
@@ -1025,16 +1036,16 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
               id: Type.String({ description: 'Attachment ID' }),
               leadId: Type.String({ description: 'Lead ID' }),
               productId: Type.String({ description: 'Product ID' }),
-              attachedAt: Type.String({ format: 'date-time', description: 'When the product was attached' }),
+              attachedAt: Type.String({
+                format: 'date-time',
+                description: 'When the product was attached',
+              }),
               createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
               updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
             }),
             { description: 'List of created attachments' }
           ),
         }),
-        400: defaultRouteResponse,
-        404: defaultRouteResponse,
-        500: defaultRouteResponse,
       },
     },
     preHandler: [fastify.authPrehandler],
@@ -1054,9 +1065,15 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const { leadId } = request.params;
         const { productIds } = request.body;
 
-        fastify.log.info(`Attaching ${productIds.length} products to lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`);
+        fastify.log.info(
+          `Attaching ${productIds.length} products to lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
+        );
 
-        const attachments = await attachProductsToLead(leadId, productIds, authenticatedRequest.tenantId);
+        const attachments = await attachProductsToLead(
+          leadId,
+          productIds,
+          authenticatedRequest.tenantId
+        );
 
         fastify.log.info(`Successfully attached ${attachments.length} products to lead: ${leadId}`);
 
@@ -1078,7 +1095,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        if (error.message?.includes('Invalid product IDs') || error.message?.includes('already attached')) {
+        if (
+          error.message?.includes('Invalid product IDs') ||
+          error.message?.includes('already attached')
+        ) {
           reply.status(400).send({
             success: false,
             message: error.message,
@@ -1109,12 +1129,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         productId: Type.String({ description: 'Product ID to detach from the lead' }),
       }),
       response: {
+        ...defaultRouteResponse(),
         200: Type.Object({
           success: Type.Boolean({ description: 'Whether the operation was successful' }),
           message: Type.String({ description: 'Success message' }),
         }),
-        404: defaultRouteResponse,
-        500: defaultRouteResponse,
       },
     },
     preHandler: [fastify.authPrehandler],
@@ -1131,9 +1150,15 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const authenticatedRequest = request as AuthenticatedRequest;
         const { leadId, productId } = request.params;
 
-        fastify.log.info(`Detaching product ${productId} from lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`);
+        fastify.log.info(
+          `Detaching product ${productId} from lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
+        );
 
-        const detached = await detachProductFromLead(leadId, productId, authenticatedRequest.tenantId);
+        const detached = await detachProductFromLead(
+          leadId,
+          productId,
+          authenticatedRequest.tenantId
+        );
 
         if (!detached) {
           reply.status(404).send({
