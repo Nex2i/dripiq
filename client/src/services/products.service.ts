@@ -5,6 +5,7 @@ export interface Product {
   title: string
   description?: string
   salesVoice?: string
+  isDefault: boolean
   tenantId: string
   createdAt: string
   updatedAt: string
@@ -14,32 +15,31 @@ export interface CreateProductData {
   title: string
   description?: string
   salesVoice?: string
+  isDefault?: boolean
 }
 
 export interface UpdateProductData {
   title?: string
   description?: string
   salesVoice?: string
+  isDefault?: boolean
 }
 
 class ProductsService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
   // Get all products for a tenant
-  async getProducts(tenantId: string): Promise<Product[]> {
+  async getProducts(): Promise<Product[]> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
-      const response = await fetch(
-        `${this.baseUrl}/products?tenantId=${tenantId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...authHeaders,
-          },
+      const response = await fetch(`${this.baseUrl}/products`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
         },
-      )
+      })
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products: ${response.statusText}`)

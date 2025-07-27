@@ -58,6 +58,7 @@ export const products = appSchema.table('products', {
   title: text('title').notNull(),
   description: text('description'),
   salesVoice: text('sales_voice'),
+  isDefault: boolean('is_default').notNull().default(false),
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),

@@ -8,6 +8,7 @@ interface CreateProductBody {
   title: string;
   description?: string;
   salesVoice?: string;
+  isDefault?: boolean;
   tenantId: string;
 }
 
@@ -15,6 +16,7 @@ interface UpdateProductBody {
   title?: string;
   description?: string;
   salesVoice?: string;
+  isDefault?: boolean;
 }
 
 interface ProductParams {
@@ -26,7 +28,6 @@ interface ProductQuery {
 }
 
 export default async function ProductsRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
-  // GET /products?tenantId=xxx - Get all products for a tenant
   fastify.route<{
     Querystring: ProductQuery;
   }>({
@@ -102,9 +103,10 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
     url: basePath,
     handler: async (request, reply) => {
       try {
-        const { title, description, salesVoice, tenantId } = request.body;
+        const { title, description, salesVoice, isDefault } = request.body;
         const authenticatedRequest = request as AuthenticatedRequest;
         const {
+          tenantId,
           user: { id: userId },
         } = authenticatedRequest;
 
@@ -118,6 +120,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
           title,
           description,
           salesVoice,
+          isDefault: isDefault || false,
           tenantId,
         });
 

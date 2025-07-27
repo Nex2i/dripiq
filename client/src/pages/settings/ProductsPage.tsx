@@ -7,6 +7,7 @@ import {
   useDeleteProduct,
 } from '../../hooks/useProductsQuery'
 import { useAuth } from '../../contexts/AuthContext'
+import AnimatedCheckbox from '../../components/AnimatedCheckbox'
 import type {
   Product,
   CreateProductData,
@@ -34,6 +35,7 @@ function ProductModal({
     title: product?.title || '',
     description: product?.description || '',
     salesVoice: product?.salesVoice || '',
+    isDefault: product?.isDefault || false,
   })
 
   // Update form data when product prop changes
@@ -42,6 +44,7 @@ function ProductModal({
       title: product?.title || '',
       description: product?.description || '',
       salesVoice: product?.salesVoice || '',
+      isDefault: product?.isDefault || false,
     })
   }, [product])
 
@@ -59,6 +62,7 @@ function ProductModal({
       title: product?.title || '',
       description: product?.description || '',
       salesVoice: product?.salesVoice || '',
+      isDefault: product?.isDefault || false,
     })
     onClose()
   }
@@ -140,6 +144,21 @@ function ProductModal({
             />
           </div>
 
+          <div>
+            <AnimatedCheckbox
+              checked={formData.isDefault}
+              onChange={() =>
+                setFormData((prev) => ({ ...prev, isDefault: !prev.isDefault }))
+              }
+              disabled={isLoading}
+              label="Default Product"
+              title="Set as default product"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Default products are automatically associated with new leads
+            </p>
+          </div>
+
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
@@ -178,6 +197,7 @@ export default function ProductsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [loadingProductId, setLoadingProductId] = useState<string | null>(null)
 
   const handleCreateProduct = async (data: CreateProductData) => {
     if (!currentTenantId) return
@@ -213,6 +233,21 @@ export default function ProductsPage() {
     } catch (error) {
       console.error('Error deleting product:', error)
     }
+  }
+
+  const handleToggleDefault = (product: Product) => {
+    setLoadingProductId(product.id)
+    updateProductMutation.mutate({
+      id: product.id,
+      data: { isDefault: !product.isDefault }
+    }, {
+      onSettled: () => {
+        setLoadingProductId(null)
+      },
+      onError: (error) => {
+        console.error('Error updating product default status:', error)
+      }
+    })
   }
 
   const openEditModal = (product: Product) => {
@@ -322,9 +357,16 @@ export default function ProductsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {product.title}
-                      </h3>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {product.title}
+                        </h3>
+                        {product.isDefault && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Default
+                          </span>
+                        )}
+                      </div>
                       {product.description && (
                         <p className="text-gray-600 mb-3">
                           {product.description}
@@ -340,9 +382,23 @@ export default function ProductsPage() {
                           </p>
                         </div>
                       )}
-                      <div className="mt-3 text-xs text-gray-500">
-                        Created:{' '}
-                        {new Date(product.createdAt).toLocaleDateString()}
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="text-xs text-gray-500">
+                          Created:{' '}
+                          {new Date(product.createdAt).toLocaleDateString()}
+                        </div>
+                        <AnimatedCheckbox
+                          checked={product.isDefault}
+                          onChange={() => handleToggleDefault(product)}
+                          disabled={loadingProductId === product.id || updateProductMutation.isPending}
+                          loading={loadingProductId === product.id}
+                          label="Default Product"
+                          title={
+                            product.isDefault
+                              ? 'Remove as default product'
+                              : 'Set as default product'
+                          }
+                        />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 ml-4">

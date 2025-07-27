@@ -7,8 +7,6 @@ import {
   Phone,
   Building,
   ExternalLink,
-  CheckSquare,
-  Square,
   Target,
   Loader2,
   Edit3,
@@ -18,6 +16,7 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import LeadQualificationModal from '../LeadQualificationModal'
+import AnimatedCheckbox from '../AnimatedCheckbox'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
 import { useUpdateContact, useToggleContactManuallyReviewed } from '../../hooks/useLeadsQuery'
@@ -441,27 +440,18 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                               : 'Generate Strategy'}
                           </span>
                         </button>
-                        <button
-                          onClick={() => handleToggleManuallyReviewed(contact)}
+                        <AnimatedCheckbox
+                          checked={contact.manuallyReviewed}
+                          onChange={() => handleToggleManuallyReviewed(contact)}
                           disabled={loadingContactId === contact.id || editingContactId !== null || toggleManuallyReviewedMutation.isPending}
-                          className="flex items-center space-x-2 px-3 py-1 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          loading={loadingContactId === contact.id || toggleManuallyReviewedMutation.isPending}
+                          label="Manually Reviewed"
                           title={
                             contact.manuallyReviewed
                               ? 'Mark as not manually reviewed'
                               : 'Mark as manually reviewed'
                           }
-                        >
-                          {(loadingContactId === contact.id || toggleManuallyReviewedMutation.isPending) ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                          ) : contact.manuallyReviewed ? (
-                            <CheckSquare className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Square className="h-4 w-4 text-gray-400" />
-                          )}
-                          <span className="text-sm font-medium text-gray-700">
-                            Manually Reviewed
-                          </span>
-                        </button>
+                        />
                       </>
                     )}
                   </div>
