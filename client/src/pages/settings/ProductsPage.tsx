@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Package, Plus, Edit, Trash2, AlertCircle } from 'lucide-react'
 import {
   useProducts,
@@ -36,6 +36,15 @@ function ProductModal({
     salesVoice: product?.salesVoice || '',
   })
 
+  // Update form data when product prop changes
+  useEffect(() => {
+    setFormData({
+      title: product?.title || '',
+      description: product?.description || '',
+      salesVoice: product?.salesVoice || '',
+    })
+  }, [product])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (product) {
@@ -58,7 +67,7 @@ function ProductModal({
 
   return (
     <div className="fixed inset-0 backdrop-blur bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="bg-white rounded-lg p-6 w-4/5 mx-4 min-h-[50vh] max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-semibold mb-4">
           {product ? 'Edit Product' : 'Create Product'}
         </h2>
