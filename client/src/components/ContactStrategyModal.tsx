@@ -70,8 +70,10 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
     label: string
     className?: string
     showBorder?: boolean
-  }> = ({ text, id, label, className = "", showBorder = true }) => (
-    <div className={`${showBorder ? 'border border-gray-200 rounded-lg p-3' : ''} ${className}`}>
+  }> = ({ text, id, label, className = '', showBorder = true }) => (
+    <div
+      className={`${showBorder ? 'border border-gray-200 rounded-lg p-3' : ''} ${className}`}
+    >
       <div className="flex items-center justify-between mb-2">
         <h5 className="font-medium text-gray-700">{label}:</h5>
         <button
@@ -86,7 +88,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
           )}
         </button>
       </div>
-      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{text}</p>
+      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+        {text}
+      </p>
     </div>
   )
 
@@ -94,7 +98,10 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
     if (!touchpoint) return null
 
     return (
-      <div key={index} className="border border-gray-200 rounded-lg p-4 mb-4 bg-white">
+      <div
+        key={index}
+        className="border border-gray-200 rounded-lg p-4 mb-4 bg-white"
+      >
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold text-gray-900 text-lg">
             Touchpoint {index + 1} - {touchpoint.timing}
@@ -104,7 +111,12 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
               {touchpoint.type}
             </span>
             <button
-              onClick={() => copyToClipboard(formatTouchpointForCopy(touchpoint, index), `touchpoint-full-${index}`)}
+              onClick={() =>
+                copyToClipboard(
+                  formatTouchpointForCopy(touchpoint, index),
+                  `touchpoint-full-${index}`,
+                )
+              }
               className="bg-[var(--color-primary-100)] hover:bg-[var(--color-primary-200)] text-[var(--color-primary-700)] px-3 py-1 rounded text-sm font-medium transition-colors flex items-center space-x-1"
               title="Copy entire touchpoint"
             >
@@ -122,7 +134,7 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
             </button>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           {touchpoint.subject && (
             <CopyableText
@@ -131,13 +143,13 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
               label="Subject"
             />
           )}
-          
+
           <CopyableText
             text={touchpoint.content}
             id={`content-${index}`}
             label="Content"
           />
-          
+
           <CopyableText
             text={touchpoint.callToAction}
             id={`cta-${index}`}
@@ -191,16 +203,15 @@ Call to Action: ${touchpoint.callToAction}`.trim()
         <div className="bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-700)] text-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold">
-                Contact Strategy & Outreach Plan
-              </h2>
               <p className="text-[var(--color-primary-100)] mt-1">
                 {contactName} at {companyName}
               </p>
             </div>
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => copyToClipboard(formatFullCampaignForCopy(), 'full-strategy')}
+                onClick={() =>
+                  copyToClipboard(formatFullCampaignForCopy(), 'full-strategy')
+                }
                 className="bg-[var(--color-primary-500)] hover:bg-[var(--color-primary-400)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
               >
                 {copiedItem === 'full-strategy' ? (
@@ -230,10 +241,15 @@ Call to Action: ${touchpoint.callToAction}`.trim()
           <div className="p-6 space-y-6">
             {/* Summary */}
             {data.summary && (
-              <CollapsibleSection title="Campaign Summary" defaultExpanded={true}>
+              <CollapsibleSection
+                title="Campaign Summary"
+                defaultExpanded={true}
+              >
                 <div className="bg-[var(--color-primary-50)] border-l-4 border-[var(--color-primary-400)] p-4 rounded">
                   <div className="flex items-start justify-between">
-                    <p className="text-gray-800 leading-relaxed flex-1 mr-4">{data.summary}</p>
+                    <p className="text-gray-800 leading-relaxed flex-1 mr-4">
+                      {data.summary}
+                    </p>
                     <button
                       onClick={() => copyToClipboard(data.summary, 'summary')}
                       className="bg-white hover:bg-gray-50 text-gray-600 p-2 rounded transition-colors flex-shrink-0"
@@ -276,19 +292,25 @@ Call to Action: ${touchpoint.callToAction}`.trim()
 
             {/* Outreach Campaign */}
             {data.outreachCampaign && data.outreachCampaign.length > 0 && (
-              <CollapsibleSection title="Outreach Campaign" defaultExpanded={true}>
+              <CollapsibleSection
+                title="Outreach Campaign"
+                defaultExpanded={true}
+              >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
                     <div>
                       <h4 className="font-semibold text-gray-900">
-                        {data.outreachCampaign.length} Touchpoint{data.outreachCampaign.length !== 1 ? 's' : ''}
+                        {data.outreachCampaign.length} Touchpoint
+                        {data.outreachCampaign.length !== 1 ? 's' : ''}
                       </h4>
                       <p className="text-sm text-gray-600">
                         Click individual copy buttons to copy specific elements
                       </p>
                     </div>
                     <button
-                      onClick={() => copyToClipboard(formatFullCampaignForCopy(), 'campaign')}
+                      onClick={() =>
+                        copyToClipboard(formatFullCampaignForCopy(), 'campaign')
+                      }
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm font-medium transition-colors flex items-center space-x-2"
                     >
                       {copiedItem === 'campaign' ? (
@@ -304,25 +326,32 @@ Call to Action: ${touchpoint.callToAction}`.trim()
                       )}
                     </button>
                   </div>
-                  
+
                   <div className="space-y-4">
-                    {data.outreachCampaign.map((touchpoint: any, index: number) => {
-                      return formatTouchpoint(touchpoint, index)
-                    })}
+                    {data.outreachCampaign.map(
+                      (touchpoint: any, index: number) => {
+                        return formatTouchpoint(touchpoint, index)
+                      },
+                    )}
                   </div>
                 </div>
               </CollapsibleSection>
             )}
 
             {/* Empty state */}
-            {(!data.outreachCampaign || data.outreachCampaign.length === 0) && !data.summary && (
-              <div className="text-center py-12">
-                <div className="text-gray-500">
-                  <p className="text-lg font-medium">No outreach strategy available</p>
-                  <p className="text-sm mt-2">The contact strategy data appears to be empty or invalid.</p>
+            {(!data.outreachCampaign || data.outreachCampaign.length === 0) &&
+              !data.summary && (
+                <div className="text-center py-12">
+                  <div className="text-gray-500">
+                    <p className="text-lg font-medium">
+                      No outreach strategy available
+                    </p>
+                    <p className="text-sm mt-2">
+                      The contact strategy data appears to be empty or invalid.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       </div>
