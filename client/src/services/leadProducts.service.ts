@@ -54,7 +54,7 @@ class LeadProductsService {
   // Attach products to a lead
   async attachProductsToLead(
     leadId: string,
-    data: AttachProductsRequest
+    data: AttachProductsRequest,
   ): Promise<AttachProductsResponse> {
     try {
       const authHeaders = await authService.getAuthHeaders()
@@ -83,18 +83,20 @@ class LeadProductsService {
   // Detach a product from a lead
   async detachProductFromLead(
     leadId: string,
-    productId: string
+    productId: string,
   ): Promise<DetachProductResponse> {
     try {
       const authHeaders = await authService.getAuthHeaders()
 
-      const response = await fetch(`${this.baseUrl}/leads/${leadId}/products/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
+      const response = await fetch(
+        `${this.baseUrl}/leads/${leadId}/products/${productId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            ...authHeaders,
+          },
         },
-      })
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
