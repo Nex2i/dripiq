@@ -231,6 +231,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const newLead = await createLead(
           authenticatedRequest.tenantId,
           leadData as Omit<NewLead, 'tenantId'>,
+          authenticatedRequest.user.id,
           pointOfContacts
         );
 

@@ -141,18 +141,21 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
  * Creates a new lead for a specific tenant with optional point of contacts.
  * @param tenantId - The ID of the tenant the lead will belong to.
  * @param lead - The data for the new lead.
+ * @param ownerId - The ID of the user who will own this lead.
  * @param pointOfContacts - Optional array of point of contacts to create for the lead.
  * @returns A promise that resolves to the newly created lead object with point of contacts.
  */
 export const createLead = async (
   tenantId: string,
   lead: Omit<NewLead, 'tenantId'>,
+  ownerId: string,
   pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
 ) => {
-  // Add tenantId to the lead data
+  // Add tenantId and ownerId to the lead data
   const leadWithTenant: NewLead = {
     ...lead,
     tenantId,
+    ownerId,
   };
 
   if (leadWithTenant.url) {
