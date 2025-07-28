@@ -260,6 +260,12 @@ function LandingPage() {
             >
               Contact Sales
             </button>
+            <button
+              onClick={() => navigate({ to: '/privacy-policy' })}
+              className="text-gray-400 hover:text-white transition-colors duration-200"
+            >
+              Privacy Policy
+            </button>
             {!user && (
               <>
                 <button
