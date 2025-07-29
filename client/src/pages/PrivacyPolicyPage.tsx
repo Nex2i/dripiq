@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import Logo from '../components/Logo'
 
 const PrivacyPolicyPage: React.FC = () => {
@@ -101,6 +102,43 @@ const PrivacyPolicyPage: React.FC = () => {
         {children}
       </pre>
     ),
+    table: ({ children }: any) => (
+      <div className="overflow-x-auto mb-6 shadow-sm">
+        <table className="min-w-full divide-y divide-gray-200 border border-gray-300 rounded-lg bg-white">
+          {children}
+        </table>
+      </div>
+    ),
+    thead: ({ children }: any) => (
+      <thead className="bg-gray-50">
+        {children}
+      </thead>
+    ),
+    tbody: ({ children }: any) => (
+      <tbody className="bg-white divide-y divide-gray-200">
+        {children}
+      </tbody>
+    ),
+    tr: ({ children }: any) => (
+      <tr className="hover:bg-gray-50">
+        {children}
+      </tr>
+    ),
+    th: ({ children }: any) => (
+      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+        {children}
+      </th>
+    ),
+    td: ({ children }: any) => (
+      <td className="px-6 py-4 text-sm text-gray-900 border-b border-gray-200 align-top">
+        <div className="max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
+          {children}
+        </div>
+      </td>
+    ),
+    hr: () => (
+      <hr className="my-8 border-t border-gray-300" />
+    ),
   }
 
   if (loading) {
@@ -158,7 +196,10 @@ const PrivacyPolicyPage: React.FC = () => {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-sm border p-8 lg:p-12">
-          <ReactMarkdown components={markdownComponents}>
+          <ReactMarkdown 
+            components={markdownComponents}
+            remarkPlugins={[remarkGfm]}
+          >
             {markdownContent}
           </ReactMarkdown>
         </div>
