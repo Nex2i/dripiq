@@ -25,6 +25,7 @@ import SecurityPage from './pages/settings/SecurityPage'
 import BillingPage from './pages/settings/BillingPage'
 import OrganizationPage from './pages/settings/OrganizationPage'
 import ProductsPage from './pages/settings/ProductsPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 // Import demo components directly
@@ -90,6 +91,13 @@ const setupPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/setup-password',
   component: () => <SetupPassword />,
+})
+
+// Privacy policy route - public
+const privacyPolicyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/privacy-policy',
+  component: () => <PrivacyPolicyPage />,
 })
 
 // Dashboard route - protected
@@ -256,6 +264,7 @@ const authRouteTree = authRoute.addChildren([
 const routeTree = rootRoute.addChildren([
   landingRoute,
   setupPasswordRoute,
+  privacyPolicyRoute,
   protectedRouteTree,
   authRouteTree,
   notFoundRoute,
