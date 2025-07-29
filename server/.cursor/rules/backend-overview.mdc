@@ -4,3 +4,8 @@ alwaysApply: false
 ---
 
 This is the backend of the project. It is written in fastify and typescript.
+
+When making a db migration follow these steps.
+1. Update the schema.ts file
+2. run "npm run db:migrate:new {{MIGRATION_NAME}}" 
+3. From here the sql will be made for you.
