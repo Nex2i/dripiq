@@ -111,7 +111,7 @@ export const generateContactStrategy = async (
         email: getLeadOwner?.email,
       },
       partnerProducts: leadProducts.map((product) => ({
-        id: product.id,
+        id: product,
         title: product.product.title,
         description: product.product.description,
         salesVoice: product.product.salesVoice,
