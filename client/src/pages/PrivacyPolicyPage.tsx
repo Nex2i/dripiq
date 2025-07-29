@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import ReactMarkdown from 'react-markdown'
 import Logo from '../components/Logo'
 
 const PrivacyPolicyPage: React.FC = () => {
@@ -28,26 +29,78 @@ const PrivacyPolicyPage: React.FC = () => {
     loadMarkdown()
   }, [])
 
-  // Simple markdown to HTML converter for basic markdown
-  const markdownToHtml = (markdown: string): string => {
-    return markdown
-      // Headers
-      .replace(/^### (.*$)/gim, '<h3 class="text-xl font-semibold text-gray-900 mt-8 mb-4">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-semibold text-gray-900 mt-10 mb-6">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-8">$1</h1>')
-      // Bold
-      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
-      // Italic
-      .replace(/\*(.*)\*/gim, '<em class="italic">$1</em>')
-      // Links
-      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">$1</a>')
-      // Lists
-      .replace(/^\* (.*$)/gim, '<li class="mb-2">$1</li>')
-      .replace(/(<li.*<\/li>)/gims, '<ul class="list-disc list-inside mb-4 space-y-1">$1</ul>')
-      // Paragraphs
-      .replace(/^(?!<[h|u|l])(.+)$/gim, '<p class="mb-4 text-gray-700 leading-relaxed">$1</p>')
-      // Line breaks
-      .replace(/\n/gim, '<br/>')
+  // Custom components for react-markdown with Tailwind styling
+  const markdownComponents = {
+    h1: ({ children }: any) => (
+      <h1 className="text-3xl font-bold text-gray-900 mt-12 mb-8 first:mt-0">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }: any) => (
+      <h2 className="text-2xl font-semibold text-gray-900 mt-10 mb-6">
+        {children}
+      </h2>
+    ),
+    h3: ({ children }: any) => (
+      <h3 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
+        {children}
+      </h3>
+    ),
+    p: ({ children }: any) => (
+      <p className="mb-4 text-gray-700 leading-relaxed">
+        {children}
+      </p>
+    ),
+    ul: ({ children }: any) => (
+      <ul className="list-disc list-inside mb-4 space-y-1 ml-4">
+        {children}
+      </ul>
+    ),
+    ol: ({ children }: any) => (
+      <ol className="list-decimal list-inside mb-4 space-y-1 ml-4">
+        {children}
+      </ol>
+    ),
+    li: ({ children }: any) => (
+      <li className="mb-2 text-gray-700">
+        {children}
+      </li>
+    ),
+    strong: ({ children }: any) => (
+      <strong className="font-semibold text-gray-900">
+        {children}
+      </strong>
+    ),
+    em: ({ children }: any) => (
+      <em className="italic">
+        {children}
+      </em>
+    ),
+    a: ({ href, children }: any) => (
+      <a 
+        href={href}
+        className="text-blue-600 hover:text-blue-800 underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    ),
+    blockquote: ({ children }: any) => (
+      <blockquote className="border-l-4 border-gray-300 pl-4 mb-4 italic text-gray-600">
+        {children}
+      </blockquote>
+    ),
+    code: ({ children }: any) => (
+      <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm font-mono">
+        {children}
+      </code>
+    ),
+    pre: ({ children }: any) => (
+      <pre className="bg-gray-100 p-4 rounded-lg mb-4 overflow-x-auto">
+        {children}
+      </pre>
+    ),
   }
 
   if (loading) {
@@ -105,12 +158,9 @@ const PrivacyPolicyPage: React.FC = () => {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-sm border p-8 lg:p-12">
-          <div 
-            className="prose prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ 
-              __html: markdownToHtml(markdownContent) 
-            }}
-          />
+          <ReactMarkdown components={markdownComponents}>
+            {markdownContent}
+          </ReactMarkdown>
         </div>
       </div>
 
