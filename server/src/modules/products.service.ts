@@ -1,8 +1,8 @@
 import { eq, and } from 'drizzle-orm';
+import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { db } from '../db';
 import { products, userTenants } from '../db/schema';
 import type { Product, NewProduct } from '../db/schema';
-import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 
 export const ProductsService = {
   // Get all products for a tenant
