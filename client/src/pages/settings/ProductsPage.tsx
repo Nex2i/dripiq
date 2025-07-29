@@ -408,7 +408,7 @@ export default function ProductsPage() {
                         </div>
                       )}
                       {product.siteUrl && (
-                        <div className="bg-blue-50 rounded-md p-3">
+                        <div className="bg-[var(--color-primary-50)] rounded-md p-3">
                           <p className="text-sm font-medium text-gray-700 mb-1">
                             Site URL:
                           </p>
@@ -416,7 +416,7 @@ export default function ProductsPage() {
                             href={product.siteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:text-blue-800 underline"
+                            className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-800)] underline"
                           >
                             {product.siteUrl}
                           </a>
