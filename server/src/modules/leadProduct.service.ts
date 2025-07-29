@@ -25,6 +25,7 @@ export async function getLeadProducts(leadId: string, tenantId: string) {
           tenantId: products.tenantId,
           createdAt: products.createdAt,
           updatedAt: products.updatedAt,
+          siteUrl: products.siteUrl,
         },
       })
       .from(leadProducts)
