@@ -35,6 +35,7 @@ function ProductModal({
     title: product?.title || '',
     description: product?.description || '',
     salesVoice: product?.salesVoice || '',
+    siteUrl: product?.siteUrl || '',
     isDefault: product?.isDefault || false,
   })
 
@@ -44,6 +45,7 @@ function ProductModal({
       title: product?.title || '',
       description: product?.description || '',
       salesVoice: product?.salesVoice || '',
+      siteUrl: product?.siteUrl || '',
       isDefault: product?.isDefault || false,
     })
   }, [product])
@@ -62,6 +64,7 @@ function ProductModal({
       title: product?.title || '',
       description: product?.description || '',
       salesVoice: product?.salesVoice || '',
+      siteUrl: product?.siteUrl || '',
       isDefault: product?.isDefault || false,
     })
     onClose()
@@ -142,6 +145,28 @@ function ProductModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
               placeholder="How would you describe this product to a potential customer?"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="siteUrl"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Site URL
+            </label>
+            <input
+              type="url"
+              id="siteUrl"
+              value={formData.siteUrl}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, siteUrl: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
+              placeholder="https://example.com/product"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Optional URL to the product's website or landing page
+            </p>
           </div>
 
           <div>
@@ -373,13 +398,28 @@ export default function ProductsPage() {
                         </p>
                       )}
                       {product.salesVoice && (
-                        <div className="bg-gray-50 rounded-md p-3">
+                        <div className="bg-gray-50 rounded-md p-3 mb-3">
                           <p className="text-sm font-medium text-gray-700 mb-1">
                             Sales Voice:
                           </p>
                           <p className="text-sm text-gray-600">
                             {product.salesVoice}
                           </p>
+                        </div>
+                      )}
+                      {product.siteUrl && (
+                        <div className="bg-[var(--color-primary-50)] rounded-md p-3">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Site URL:
+                          </p>
+                          <a 
+                            href={product.siteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-800)] underline"
+                          >
+                            {product.siteUrl}
+                          </a>
                         </div>
                       )}
                       <div className="mt-3 flex items-center justify-between">

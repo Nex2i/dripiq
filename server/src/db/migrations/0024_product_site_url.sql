@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."products" ADD COLUMN "site_url" text;

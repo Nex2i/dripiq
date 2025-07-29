@@ -1,4 +1,5 @@
 import { eq, and } from 'drizzle-orm';
+import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { db } from '../db';
 import { products, userTenants } from '../db/schema';
 import type { Product, NewProduct } from '../db/schema';
@@ -39,6 +40,10 @@ export const ProductsService = {
     if (!newProduct) {
       throw new Error('Failed to create product');
     }
+
+    if (newProduct.siteUrl) {
+      await firecrawlClient.batchScrapeUrls([newProduct.siteUrl]);
+    }
     return newProduct;
   },
 
@@ -55,6 +60,10 @@ export const ProductsService = {
 
     if (!updatedProduct) {
       throw new Error('Failed to update product');
+    }
+
+    if (updatedProduct.siteUrl) {
+      await firecrawlClient.batchScrapeUrls([updatedProduct.siteUrl]);
     }
     return updatedProduct;
   },

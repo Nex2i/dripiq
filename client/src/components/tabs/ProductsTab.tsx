@@ -201,6 +201,19 @@ function ProductCard({
               <p className="text-sm text-gray-600">{product.salesVoice}</p>
             </div>
           )}
+          {product.siteUrl && (
+            <div className="bg-[var(--color-primary-50)] rounded-md p-3 mb-3">
+              <p className="text-sm font-medium text-gray-700 mb-1">Site URL:</p>
+              <a 
+                href={product.siteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-[var(--color-primary-600)] hover:text-[var(--color-primary-800)] underline"
+              >
+                {product.siteUrl}
+              </a>
+            </div>
+          )}
           <div className="text-xs text-gray-500">
             Attached: {new Date(attachedProduct.attachedAt).toLocaleDateString()}
           </div>
