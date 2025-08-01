@@ -65,7 +65,9 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
         .from(this.table)
         .where(and(eq(this.table.roleId, roleId), eq(this.table.permissionId, permissionId)))
         .limit(1);
-      return result[0];
+      if (result[0]) {
+        return result[0];
+      }
     }
 
     return await this.create({ roleId, permissionId });

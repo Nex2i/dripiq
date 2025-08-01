@@ -55,10 +55,17 @@ export class UserInvitationTransactionRepository {
 
       if (existingUsers.length > 0) {
         // User exists, use existing user
-        user = existingUsers[0];
+        const existingUser = existingUsers[0];
+        if (!existingUser) {
+          throw new Error('Existing user is undefined');
+        }
+        user = existingUser;
       } else {
         // Create new user
         const [createdUser] = await tx.insert(users).values(data.user).returning();
+        if (!createdUser) {
+          throw new Error('Failed to create user');
+        }
         user = createdUser;
         wasUserCreated = true;
       }
@@ -98,6 +105,14 @@ export class UserInvitationTransactionRepository {
       };
 
       const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
+      
+      if (!userTenant) {
+        throw new Error('Failed to create user-tenant relationship');
+      }
+      
+      if (!role) {
+        throw new Error('Role is undefined');
+      }
 
       return {
         user,
@@ -128,6 +143,9 @@ export class UserInvitationTransactionRepository {
           .set(updateUserData)
           .where(eq(users.id, userId))
           .returning();
+        if (!updatedUser) {
+          throw new Error('Failed to update user');
+        }
         user = updatedUser;
       } else {
         const [existingUser] = await tx
@@ -135,6 +153,9 @@ export class UserInvitationTransactionRepository {
           .from(users)
           .where(eq(users.id, userId))
           .limit(1);
+        if (!existingUser) {
+          throw new Error('User not found');
+        }
         user = existingUser;
       }
 
@@ -170,6 +191,10 @@ export class UserInvitationTransactionRepository {
         try {
           const invitation = data.invitations[i];
           
+          if (!invitation) {
+            throw new Error(`Invitation at index ${i} is undefined`);
+          }
+          
           // Check if user already exists by email
           const existingUsers = await tx
             .select()
@@ -181,9 +206,16 @@ export class UserInvitationTransactionRepository {
           let wasUserCreated = false;
 
           if (existingUsers.length > 0) {
-            user = existingUsers[0];
+            const existingUser = existingUsers[0];
+            if (!existingUser) {
+              throw new Error('Existing user is undefined');
+            }
+            user = existingUser;
           } else {
             const [createdUser] = await tx.insert(users).values(invitation.user).returning();
+            if (!createdUser) {
+              throw new Error('Failed to create user');
+            }
             user = createdUser;
             wasUserCreated = true;
           }
@@ -233,6 +265,14 @@ export class UserInvitationTransactionRepository {
           };
 
           const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
+          
+          if (!userTenant) {
+            throw new Error('Failed to create user-tenant relationship');
+          }
+          
+          if (!role) {
+            throw new Error('Role is undefined');
+          }
 
           results.push({
             user,
@@ -243,7 +283,7 @@ export class UserInvitationTransactionRepository {
         } catch (error) {
           errors.push({
             index: i,
-            email: data.invitations[i].user.email,
+            email: data.invitations[i]?.user?.email || 'unknown',
             error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
@@ -356,6 +396,10 @@ export class UserInvitationTransactionRepository {
       }
 
       const role = roleResults[0];
+      
+      if (!role) {
+        throw new Error('Role is undefined');
+      }
 
       // Update user-tenant role
       const [userTenant] = await tx

@@ -51,6 +51,24 @@ export type {
   CompleteSetupResult 
 } from './transactions/TenantSetupTransactionRepository';
 
+// Import all repository classes first
+import { UserRepository } from './entities/UserRepository';
+import { TenantRepository } from './entities/TenantRepository';
+import { RoleRepository } from './entities/RoleRepository';
+import { PermissionRepository } from './entities/PermissionRepository';
+import { RolePermissionRepository } from './entities/RolePermissionRepository';
+import { LeadRepository } from './entities/LeadRepository';
+import { ProductRepository } from './entities/ProductRepository';
+import { LeadPointOfContactRepository } from './entities/LeadPointOfContactRepository';
+import { LeadStatusRepository } from './entities/LeadStatusRepository';
+import { LeadProductRepository } from './entities/LeadProductRepository';
+import { UserTenantRepository } from './entities/UserTenantRepository';
+import { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
+import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
+import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
+import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
+
 // Repository instances - Singleton pattern for easy access
 const userRepository = new UserRepository();
 const tenantRepository = new TenantRepository();
