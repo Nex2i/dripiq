@@ -1,4 +1,5 @@
-import logo from '../assets/logo.svg'
+// @ts-ignore
+import LogoSvg from '../assets/logo.svg?react'
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
@@ -27,7 +28,7 @@ export default function Logo({
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Logo SVG */}
       <div className={`${sizeClasses[size]} flex-shrink-0`}>
-        <img src={logo} alt="dripIq Logo" className="w-full h-full" />
+        <LogoSvg />
       </div>
 
       {/* Brand text */}

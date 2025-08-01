@@ -141,7 +141,7 @@ export default function Header() {
                           </div>
                         )}
                       </div>
-                      <LogoSvg />
+                      <Logo size="sm" showText={false} />
                     </button>
 
                     {/* Profile Dropdown Menu */}
