@@ -12,6 +12,7 @@ import { SiteEmbeddingDomainRepository } from './site-embedding-domain.repositor
 import { LeadRepository } from './lead.repository';
 import { ProductRepository } from './product.repository';
 import { SiteEmbeddingRepository } from './site-embedding.repository';
+import { TransactionRepository } from './transaction.repository';
 
 // Base repository exports
 export { BaseRepository, IRepository, ITenantScopedRepository } from './base.repository';
@@ -30,3 +31,4 @@ export const leadStatusRepository = new LeadStatusRepository();
 export const leadProductRepository = new LeadProductRepository();
 export const siteEmbeddingDomainRepository = new SiteEmbeddingDomainRepository();
 export const siteEmbeddingRepository = new SiteEmbeddingRepository();
+export const transactionRepository = new TransactionRepository();

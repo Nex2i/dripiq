@@ -1,5 +1,5 @@
-import { eq, and, desc } from 'drizzle-orm';
-import { db, userTenants, users, roles, NewUser, UserTenant, NewUserTenant } from '@/db';
+import { userRepository, userTenantRepository, roleRepository } from '@/repositories';
+import { NewUser, UserTenant, NewUserTenant } from '@/db/schema';
 
 export interface CreateInviteData {
   tenantId: string;
