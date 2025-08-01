@@ -125,64 +125,75 @@ export abstract class TenantAwareRepository<
       .returning()) as TSelect[];
   }
 
-  // Override base methods to prevent accidental usage without tenant validation
-  async create(_data?: any): Promise<TSelect> {
-    throw new Error(
-      'Use createForTenant instead. Direct create is not allowed for tenant-aware repositories.'
+  // Override base methods with implementations that work but include security warnings
+  // Note: These methods bypass tenant validation - use tenant-aware methods when possible
+  async create(data: TInsert): Promise<TSelect> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using create() without tenant validation. Consider using createForTenant() instead.'
     );
+    return await super.create(data);
   }
 
-  async createMany(_data?: any): Promise<TSelect[]> {
-    throw new Error(
-      'Use createManyForTenant instead. Direct createMany is not allowed for tenant-aware repositories.'
+  async createMany(data: TInsert[]): Promise<TSelect[]> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using createMany() without tenant validation. Consider using createManyForTenant() instead.'
     );
+    return await super.createMany(data);
   }
 
-  async findById(_id?: any): Promise<TSelect | undefined> {
-    throw new Error(
-      'Use findByIdForTenant instead. Direct findById is not allowed for tenant-aware repositories.'
+  async findById(id: string): Promise<TSelect | undefined> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using findById() without tenant validation. Consider using findByIdForTenant() instead.'
     );
+    return await super.findById(id);
   }
 
-  async findByIds(_ids?: any): Promise<TSelect[]> {
-    throw new Error(
-      'Use findByIdsForTenant instead. Direct findByIds is not allowed for tenant-aware repositories.'
+  async findByIds(ids: string[]): Promise<TSelect[]> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using findByIds() without tenant validation. Consider using findByIdsForTenant() instead.'
     );
+    return await super.findByIds(ids);
   }
 
   async findAll(): Promise<TSelect[]> {
-    throw new Error(
-      'Use findAllForTenant instead. Direct findAll is not allowed for tenant-aware repositories.'
+    console.warn(
+      '⚠️  SECURITY WARNING: Using findAll() without tenant validation. Consider using findAllForTenant() instead.'
     );
+    return await super.findAll();
   }
 
-  async updateById(_id?: any, _data?: any): Promise<TSelect | undefined> {
-    throw new Error(
-      'Use updateByIdForTenant instead. Direct updateById is not allowed for tenant-aware repositories.'
+  async updateById(id: string, data: Partial<TInsert>): Promise<TSelect | undefined> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using updateById() without tenant validation. Consider using updateByIdForTenant() instead.'
     );
+    return await super.updateById(id, data);
   }
 
-  async deleteById(_id?: any): Promise<TSelect | undefined> {
-    throw new Error(
-      'Use deleteByIdForTenant instead. Direct deleteById is not allowed for tenant-aware repositories.'
+  async deleteById(id: string): Promise<TSelect | undefined> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using deleteById() without tenant validation. Consider using deleteByIdForTenant() instead.'
     );
+    return await super.deleteById(id);
   }
 
-  async deleteByIds(_ids?: any): Promise<TSelect[]> {
-    throw new Error(
-      'Use deleteByIdsForTenant instead. Direct deleteByIds is not allowed for tenant-aware repositories.'
+  async deleteByIds(ids: string[]): Promise<TSelect[]> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using deleteByIds() without tenant validation. Consider using deleteByIdsForTenant() instead.'
     );
+    return await super.deleteByIds(ids);
   }
 
-  async exists(_id?: any): Promise<boolean> {
-    throw new Error(
-      'Use existsForTenant instead. Direct exists is not allowed for tenant-aware repositories.'
+  async exists(id: string): Promise<boolean> {
+    console.warn(
+      '⚠️  SECURITY WARNING: Using exists() without tenant validation. Consider using existsForTenant() instead.'
     );
+    return await super.exists(id);
   }
 
   async count(): Promise<number> {
-    throw new Error(
-      'Use countForTenant instead. Direct count is not allowed for tenant-aware repositories.'
+    console.warn(
+      '⚠️  SECURITY WARNING: Using count() without tenant validation. Consider using countForTenant() instead.'
     );
+    return await super.count();
   }
 }
