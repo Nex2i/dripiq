@@ -208,6 +208,9 @@ export const updateLeadOwner = async (
   return transformedLead;
 };
 
+// Alias for backward compatibility
+export const assignLeadOwner = updateLeadOwner;
+
 /**
  * Creates a new point of contact for a lead.
  */

@@ -98,18 +98,11 @@ export class RoleService {
     if (!roleWithPerms) return null;
 
     return {
-      id: roleWithPerms.id,
-      name: roleWithPerms.name,
-      description: roleWithPerms.description,
-      permissions: roleWithPerms.permissions.map(p => p.permission),
+      id: roleWithPerms.role.id,
+      name: roleWithPerms.role.name,
+      description: roleWithPerms.role.description,
+      permissions: roleWithPerms.permissions,
     };
-  }
-
-  /**
-   * Get role by ID
-   */
-  static async getRoleById(roleId: string, tenantId: string, userId?: string): Promise<Role | null> {
-    return await roleRepository.findById(roleId, tenantId, userId);
   }
 
   /**
@@ -138,20 +131,12 @@ export class RoleService {
 
     return {
       role: {
-        id: roleWithPerms.id,
-        name: roleWithPerms.name,
-        description: roleWithPerms.description,
+        id: roleWithPerms.role.id,
+        name: roleWithPerms.role.name,
+        description: roleWithPerms.role.description,
       },
-      permissions: roleWithPerms.permissions.map(p => p.permission),
+      permissions: roleWithPerms.permissions,
     };
-  }
-
-  /**
-   * Get user permissions for a specific tenant
-   */
-  static async getUserPermissions(userId: string, tenantId: string): Promise<Permission[]> {
-    const userRole = await this.getUserRoleAndPermissions(userId, tenantId);
-    return userRole ? userRole.permissions : [];
   }
 
   /**
@@ -162,14 +147,6 @@ export class RoleService {
     if (!userRole) return false;
 
     return userRole.permissions.some(p => p.name === permissionName);
-  }
-
-  /**
-   * Check if user is an admin in a specific tenant
-   */
-  static async userIsAdmin(userId: string, tenantId: string): Promise<boolean> {
-    const userRole = await this.getUserRoleAndPermissions(userId, tenantId);
-    return userRole ? userRole.role.name.toLowerCase() === 'admin' : false;
   }
 
   /**

@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { logger } from '@/libs/logger';
 import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts, leads } from '@/db/schema';
 import db from '@/libs/drizzleClient';
-import { createContact } from '../lead.service';
+import { createLeadContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
 import { ExtractedContact } from './schemas/contactExtractionSchema';
 

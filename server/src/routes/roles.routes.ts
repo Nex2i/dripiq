@@ -3,6 +3,10 @@ import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { RoleService, CreateRoleData, CreatePermissionData } from '@/modules/role.service';
 import { UserService } from '@/modules/user.service';
+interface AuthenticatedRequest extends FastifyRequest {
+  tenantId: string;
+  user: { id: string };
+}
 
 const basePath = '/roles';
 
@@ -36,9 +40,11 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       summary: 'Get All Roles',
       description: 'Get all available roles in the system',
     },
-    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const roles = await RoleService.getAllRoles();
+          handler: async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const roles = await RoleService.getAllRoles(tenantId, userId);
         reply.send({
           message: 'Roles retrieved successfully',
           roles,
@@ -63,9 +69,11 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       summary: 'Get All Permissions',
       description: 'Get all available permissions in the system',
     },
-    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const permissions = await RoleService.getAllPermissions();
+          handler: async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const permissions = await RoleService.getAllPermissions(tenantId, userId);
         reply.send({
           message: 'Permissions retrieved successfully',
           permissions,
@@ -134,7 +142,9 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     handler: async (request: FastifyRequest<{ Body: CreateRoleData }>, reply: FastifyReply) => {
       try {
         const roleData = request.body;
-        const role = await RoleService.createRole(roleData);
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const role = await RoleService.createRole(roleData, tenantId, userId);
 
         reply.status(201).send({
           message: 'Role created successfully',
@@ -167,7 +177,9 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     ) => {
       try {
         const permissionData = request.body;
-        const permission = await RoleService.createPermission(permissionData);
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const permission = await RoleService.createPermission(permissionData, tenantId, userId);
 
         reply.status(201).send({
           message: 'Permission created successfully',
@@ -208,7 +220,9 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
         const { roleId } = request.params;
         const { permissionId } = request.body;
 
-        const rolePermission = await RoleService.assignPermissionToRole(roleId, permissionId);
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        await RoleService.addPermissionToRole(roleId, permissionId, tenantId, userId);
 
         reply.status(201).send({
           message: 'Permission assigned to role successfully',

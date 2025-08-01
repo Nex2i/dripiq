@@ -1,4 +1,3 @@
-import { PgDatabase } from 'drizzle-orm/pg-core';
 import { eq, and } from 'drizzle-orm';
 import { db } from '@/db';
 import { userTenants } from '@/db/schema';
@@ -8,7 +7,7 @@ import { userTenants } from '@/db/schema';
  * Provides common database operations and access patterns with tenant isolation
  */
 export abstract class BaseRepository {
-  protected db: PgDatabase<any>;
+  protected db = db;
 
   constructor() {
     this.db = db;
