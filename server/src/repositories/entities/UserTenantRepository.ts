@@ -51,18 +51,27 @@ export class UserTenantRepository extends TenantAwareRepository<
   /**
    * Find pending user-tenant relationship by user ID
    */
-  async findPendingByUserId(userId: string): Promise<UserTenant> {
+  async findPendingByUserId(userId: string, tenantId?: string): Promise<UserTenant> {
     const results = await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.userId, userId), eq(this.table.status, 'pending')))
-      .limit(1);
+      .where(and(eq(this.table.userId, userId), eq(this.table.status, 'pending')));
 
     if (!results[0]) {
       throw new NotFoundError(`User ${userId} has no pending user-tenant relationship`);
     }
 
-    return results[0];
+    if (!tenantId) {
+      return results[0];
+    }
+
+    const tenantSpecific = results.filter((result) => result.tenantId === tenantId)[0];
+    if (!tenantSpecific) {
+      throw new NotFoundError(
+        `User ${userId} has no pending user-tenant relationship in tenant ${tenantId}`
+      );
+    }
+    return tenantSpecific;
   }
 
   /**

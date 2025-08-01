@@ -1,5 +1,4 @@
-import { eq, and } from 'drizzle-orm';
-import { userTenants, users, roles, NewUser, UserTenant, NewUserTenant } from '@/db';
+import { NewUser, UserTenant, NewUserTenant } from '@/db';
 import { roleRepository, userRepository, userTenantRepository } from '@/repositories';
 import { NotFoundError } from '@/exceptions/error';
 
@@ -188,7 +187,7 @@ export class InviteService {
     userId: string,
     tenantId: string
   ): Promise<{ userTenant: UserTenant; token: string }> {
-    const userTenant = await userTenantRepository.findPendingByUserId(userId);
+    const userTenant = await userTenantRepository.findPendingByUserId(userId, tenantId);
 
     if (!userTenant) {
       throw new Error('User invitation not found or already activated');
