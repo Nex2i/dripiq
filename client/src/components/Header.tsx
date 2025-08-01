@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
 import { Settings } from 'lucide-react'
-import LogoSvg from '../assets/logo.svg'
 
 export default function Header() {
   const { user, logout } = useAuth()
