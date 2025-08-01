@@ -141,7 +141,7 @@ export abstract class TenantAwareRepository<
     return await super.createMany(data);
   }
 
-  async findById(id: string): Promise<TSelect | undefined> {
+  async findById(id: string): Promise<TSelect> {
     console.warn(
       '⚠️  SECURITY WARNING: Using findById() without tenant validation. Consider using findByIdForTenant() instead.'
     );

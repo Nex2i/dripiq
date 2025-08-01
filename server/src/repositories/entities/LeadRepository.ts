@@ -37,6 +37,20 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
     return lead[0];
   }
 
+  async findByIdForTenant(id: string, tenantId: string): Promise<LeadWithOwner> {
+    const lead = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .limit(1);
+
+    if (!lead || !lead[0]) {
+      throw new NotFoundError(`Lead not found with id: ${id} for tenant: ${tenantId}`);
+    }
+
+    return lead[0];
+  }
+
   /**
    * Find leads with search functionality
    */

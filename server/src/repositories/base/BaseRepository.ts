@@ -3,6 +3,7 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 
 export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TInsert = any> {
   protected db: PostgresJsDatabase<typeof schema>;
@@ -37,13 +38,18 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TIns
   /**
    * Find record by ID
    */
-  async findById(id: string): Promise<TSelect | undefined> {
+  async findById(id: string): Promise<TSelect> {
     const results = await this.db
       .select()
       .from(this.table)
       .where(eq((this.table as any).id, id))
       .limit(1);
-    return results[0] as TSelect | undefined;
+
+    if (!results[0]) {
+      throw new NotFoundError(`Record not found with id: ${id}`);
+    }
+
+    return results[0] as TSelect;
   }
 
   /**

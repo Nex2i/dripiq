@@ -1,7 +1,6 @@
-import { eq, and } from 'drizzle-orm';
-import { db } from '@/db';
-import { leadPointOfContacts, leads, NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
+import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { logger } from '@/libs/logger';
+import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 
 /**
  * Gets a contact by ID, ensuring it belongs to the specified tenant and lead.
@@ -14,27 +13,15 @@ export const getContactById = async (
   tenantId: string,
   leadId: string,
   contactId: string
-): Promise<LeadPointOfContact | null> => {
+): Promise<LeadPointOfContact> => {
   try {
     // First verify the lead exists and belongs to the tenant
-    const leadExists = await db
-      .select({ id: leads.id })
-      .from(leads)
-      .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
-      .limit(1);
-
-    if (leadExists.length === 0) {
-      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
-    }
+    await leadRepository.findByIdForTenant(leadId, tenantId);
 
     // Get the contact
-    const contacts = await db
-      .select()
-      .from(leadPointOfContacts)
-      .where(and(eq(leadPointOfContacts.id, contactId), eq(leadPointOfContacts.leadId, leadId)))
-      .limit(1);
+    const contact = await leadPointOfContactRepository.findById(contactId);
 
-    return contacts[0] || null;
+    return contact;
   } catch (error) {
     logger.error('Error getting contact by ID:', error);
     throw error;
@@ -77,14 +64,7 @@ export const updateContact = async (
     }
 
     // Update the contact
-    const [updatedContact] = await db
-      .update(leadPointOfContacts)
-      .set({
-        ...contactData,
-        updatedAt: new Date(),
-      })
-      .where(eq(leadPointOfContacts.id, contactId))
-      .returning();
+    const updatedContact = await leadPointOfContactRepository.updateById(contactId, contactData);
 
     if (!updatedContact) {
       throw new Error('Failed to update contact');
@@ -112,15 +92,7 @@ export const createContact = async (
 ): Promise<LeadPointOfContact> => {
   try {
     // First verify the lead exists and belongs to the tenant
-    const leadExists = await db
-      .select({ id: leads.id })
-      .from(leads)
-      .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
-      .limit(1);
-
-    if (leadExists.length === 0) {
-      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
-    }
+    await leadRepository.findByIdForTenant(leadId, tenantId);
 
     // Validate required fields
     if (!contactData.name || !contactData.name.trim()) {
@@ -142,7 +114,7 @@ export const createContact = async (
       leadId,
     };
 
-    const [createdContact] = await db.insert(leadPointOfContacts).values(newContact).returning();
+    const createdContact = await leadPointOfContactRepository.create(newContact);
 
     if (!createdContact) {
       throw new Error('Failed to create contact');
@@ -176,7 +148,7 @@ export const deleteContact = async (
     }
 
     // Delete the contact
-    await db.delete(leadPointOfContacts).where(eq(leadPointOfContacts.id, contactId));
+    await leadPointOfContactRepository.deleteById(contactId);
 
     logger.info(`Deleted contact ${contactId} for lead ${leadId}`);
   } catch (error) {
@@ -207,14 +179,9 @@ export const toggleContactManuallyReviewed = async (
     }
 
     // Update the contact's manually reviewed status
-    const [updatedContact] = await db
-      .update(leadPointOfContacts)
-      .set({
-        manuallyReviewed: manuallyReviewed,
-        updatedAt: new Date(),
-      })
-      .where(eq(leadPointOfContacts.id, contactId))
-      .returning();
+    const updatedContact = await leadPointOfContactRepository.updateById(contactId, {
+      manuallyReviewed,
+    });
 
     if (!updatedContact) {
       throw new Error('Failed to update contact manually reviewed status');
