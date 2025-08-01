@@ -336,7 +336,17 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
       };
     }
 
-    const tokenCounts = results.map(r => r.avgTokens);
+    const tokenCounts = results.map(r => r.avgTokens).filter((count): count is number => count !== null);
+    
+    if (tokenCounts.length === 0) {
+      return {
+        count: results.length,
+        minTokens: 0,
+        maxTokens: 0,
+        avgTokens: 0
+      };
+    }
+    
     return {
       count: results.length,
       minTokens: Math.min(...tokenCounts),

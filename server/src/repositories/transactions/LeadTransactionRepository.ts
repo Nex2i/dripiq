@@ -110,6 +110,10 @@ export class LeadTransactionRepository {
         try {
           const leadData = data.leadsWithContacts[i];
           
+          if (!leadData) {
+            throw new Error(`Lead data at index ${i} is undefined`);
+          }
+          
           // Create the lead
           const leadWithTenant = { ...leadData.lead, tenantId };
           const [createdLead] = await tx.insert(leads).values(leadWithTenant).returning();

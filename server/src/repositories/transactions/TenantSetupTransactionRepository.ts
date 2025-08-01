@@ -121,7 +121,7 @@ export class TenantSetupTransactionRepository {
           ...product,
           tenantId: tenant.id,
         }));
-        createdProducts = await tx.insert(products).values(productsWithTenant).returning();
+        createdProducts = await tx.insert(products).values(productsWithTenant as any).returning() as Product[];
       }
 
       return {
@@ -166,9 +166,16 @@ export class TenantSetupTransactionRepository {
           let wasUserCreated = false;
 
           if (existingUsers.length > 0) {
-            user = existingUsers[0];
+            const existingUser = existingUsers[0];
+            if (!existingUser) {
+              throw new Error('Existing user is undefined');
+            }
+            user = existingUser;
           } else {
             const [createdUser] = await tx.insert(users).values(userData.user).returning();
+            if (!createdUser) {
+              throw new Error('Failed to create user');
+            }
             user = createdUser;
             wasUserCreated = true;
           }
@@ -197,6 +204,14 @@ export class TenantSetupTransactionRepository {
           };
 
           const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
+          
+          if (!userTenant) {
+            throw new Error('Failed to create user-tenant relationship');
+          }
+          
+          if (!role) {
+            throw new Error('Role is undefined');
+          }
 
           additionalUsers.push({
             user,
@@ -299,12 +314,12 @@ export class TenantSetupTransactionRepository {
    */
   async setupInitialProducts(
     tenantId: string,
-    products: Omit<NewProduct, 'tenantId'>[],
+    productData: Omit<NewProduct, 'tenantId'>[],
     setFirstAsDefault: boolean = true
   ): Promise<Product[]> {
     return await db.transaction(async (tx) => {
       // Prepare products data
-      const productsWithTenant = products.map((product, index) => ({
+      const productsWithTenant = productData.map((product, index) => ({
         ...product,
         tenantId,
         isDefault: setFirstAsDefault && index === 0,
@@ -313,7 +328,7 @@ export class TenantSetupTransactionRepository {
       // Create products
       const createdProducts = await tx.insert(products).values(productsWithTenant).returning();
 
-      return createdProducts;
+      return createdProducts as Product[];
     });
   }
 
