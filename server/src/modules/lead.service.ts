@@ -33,52 +33,6 @@ const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
 export const getLeads = async (tenantId: string, searchQuery?: string, userId?: string) => {
   // Use repository method for search functionality
   const leadResults = await leadRepository.findByTenantWithSearch(tenantId, searchQuery, userId);
-        name: leads.name,
-        url: leads.url,
-        status: leads.status,
-        summary: leads.summary,
-        products: leads.products,
-        services: leads.services,
-        differentiators: leads.differentiators,
-        targetMarket: leads.targetMarket,
-        tone: leads.tone,
-        brandColors: leads.brandColors,
-        primaryContactId: leads.primaryContactId,
-        ownerId: leads.ownerId,
-        tenantId: leads.tenantId,
-        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
-      })
-      .from(leads)
-      .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
-      .orderBy(desc(leads.createdAt));
-  } else {
-    leadResults = await db
-      .select({
-        // Lead fields
-        id: leads.id,
-        name: leads.name,
-        url: leads.url,
-        status: leads.status,
-        summary: leads.summary,
-        products: leads.products,
-        services: leads.services,
-        differentiators: leads.differentiators,
-        targetMarket: leads.targetMarket,
-        tone: leads.tone,
-        brandColors: leads.brandColors,
-        primaryContactId: leads.primaryContactId,
-        ownerId: leads.ownerId,
-        tenantId: leads.tenantId,
-        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
-      })
-      .from(leads)
-      .where(baseWhere)
-      .orderBy(desc(leads.createdAt));
-  }
 
   // Get statuses for all leads in a single query for better performance
   const leadIds = leadResults.map((lead) => lead.id);

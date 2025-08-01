@@ -1,20 +1,20 @@
+// Repository exports
+import { UserRepository } from './user.repository';
+import { TenantRepository } from './tenant.repository';
+import { RoleRepository } from './role.repository';
+import { PermissionRepository } from './permission.repository';
+import { RolePermissionRepository } from './role-permission.repository';
+import { UserTenantRepository } from './user-tenant.repository';
+import { LeadPointOfContactRepository } from './lead-point-of-contact.repository';
+import { LeadStatusRepository } from './lead-status.repository';
+import { LeadProductRepository } from './lead-product.repository';
+import { SiteEmbeddingDomainRepository } from './site-embedding-domain.repository';
+import { LeadRepository } from './lead.repository';
+import { ProductRepository } from './product.repository';
+import { SiteEmbeddingRepository } from './site-embedding.repository';
+
 // Base repository exports
 export { BaseRepository, IRepository, ITenantScopedRepository } from './base.repository';
-
-// Repository exports
-export { UserRepository } from './user.repository';
-export { TenantRepository, TenantWithUsers } from './tenant.repository';
-export { ProductRepository } from './product.repository';
-export { RoleRepository } from './role.repository';
-export { PermissionRepository } from './permission.repository';
-export { RolePermissionRepository, RoleWithPermissions } from './role-permission.repository';
-export { UserTenantRepository, UserTenantWithDetails } from './user-tenant.repository';
-export { LeadRepository, LeadWithOwner, LeadWithDetails } from './lead.repository';
-export { LeadPointOfContactRepository } from './lead-point-of-contact.repository';
-export { LeadStatusRepository } from './lead-status.repository';
-export { LeadProductRepository, LeadProductWithDetails } from './lead-product.repository';
-export { SiteEmbeddingDomainRepository } from './site-embedding-domain.repository';
-export { SiteEmbeddingRepository, SiteEmbeddingWithDomain } from './site-embedding.repository';
 
 // Repository instances for dependency injection
 export const userRepository = new UserRepository();
