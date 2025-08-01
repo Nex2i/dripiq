@@ -1,17 +1,17 @@
-import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
-import db from '../libs/drizzleClient';
+import '../extensions';
 import {
-  leads,
+  leadRepository,
+  leadPointOfContactRepository,
+  leadStatusRepository,
+  leadTransactionRepository,
+  repositories
+} from '../repositories';
+import {
   NewLead,
-  leadPointOfContacts,
   NewLeadPointOfContact,
   Lead,
   LeadPointOfContact,
-  leadStatuses,
-  NewLeadStatus,
   LeadStatus,
-  userTenants,
-  users,
 } from '../db/schema';
 import { logger } from '../libs/logger';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
@@ -37,63 +37,10 @@ const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
  * @returns A promise that resolves to an array of lead objects with owner information.
  */
 export const getLeads = async (tenantId: string, searchQuery?: string) => {
-  // Build base query with tenant filter
-  const baseWhere = eq(leads.tenantId, tenantId);
-
-  // Add search functionality if searchQuery is provided
-  let leadResults;
-  if (searchQuery && searchQuery.trim()) {
-    const searchTerm = `%${searchQuery.trim()}%`;
-    leadResults = await db
-      .select({
-        // Lead fields
-        id: leads.id,
-        name: leads.name,
-        url: leads.url,
-        status: leads.status,
-        summary: leads.summary,
-        products: leads.products,
-        services: leads.services,
-        differentiators: leads.differentiators,
-        targetMarket: leads.targetMarket,
-        tone: leads.tone,
-        brandColors: leads.brandColors,
-        primaryContactId: leads.primaryContactId,
-        ownerId: leads.ownerId,
-        tenantId: leads.tenantId,
-        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
-      })
-      .from(leads)
-      .where(and(baseWhere, or(ilike(leads.name, searchTerm), ilike(leads.url, searchTerm))))
-      .orderBy(desc(leads.createdAt));
-  } else {
-    leadResults = await db
-      .select({
-        // Lead fields
-        id: leads.id,
-        name: leads.name,
-        url: leads.url,
-        status: leads.status,
-        summary: leads.summary,
-        products: leads.products,
-        services: leads.services,
-        differentiators: leads.differentiators,
-        targetMarket: leads.targetMarket,
-        tone: leads.tone,
-        brandColors: leads.brandColors,
-        primaryContactId: leads.primaryContactId,
-        ownerId: leads.ownerId,
-        tenantId: leads.tenantId,
-        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
-      })
-      .from(leads)
-      .where(baseWhere)
-      .orderBy(desc(leads.createdAt));
-  }
+  // Use repository to get leads with search functionality
+  const leadResults = await leadRepository.findWithSearch(tenantId, {
+    searchQuery,
+  });
 
   // Get statuses for all leads in a single query for better performance
   const leadIds = leadResults.map((lead) => lead.id);
@@ -101,11 +48,7 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
 
   if (leadIds.length > 0) {
     try {
-      allStatuses = await db
-        .select()
-        .from(leadStatuses)
-        .where(and(inArray(leadStatuses.leadId, leadIds), eq(leadStatuses.tenantId, tenantId)))
-        .orderBy(leadStatuses.createdAt);
+      allStatuses = await leadStatusRepository.findByLeadIdsForTenant(leadIds, tenantId);
     } catch (error) {
       // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
       logger.warn(
@@ -151,78 +94,45 @@ export const createLead = async (
   ownerId: string,
   pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
 ) => {
-  // Add tenantId and ownerId to the lead data
-  const leadWithTenant: NewLead = {
+  // Add ownerId to the lead data
+  const leadWithOwner = {
     ...lead,
-    tenantId,
     ownerId,
   };
 
-  if (leadWithTenant.url) {
-    leadWithTenant.url = leadWithTenant.url.cleanWebsiteUrl();
+  if (leadWithOwner.url) {
+    leadWithOwner.url = leadWithOwner.url.cleanWebsiteUrl();
   }
 
-  // Use transaction to create lead and point of contacts
-  const result = await db.transaction(async (tx) => {
-    // Create the lead first
-    const createdLeads = await tx.insert(leads).values(leadWithTenant).returning();
-    let createdLead = createdLeads[0];
-
-    if (!createdLead || !createdLead.id) {
-      throw new Error('Failed to create lead');
-    }
-
-    // Create point of contacts if provided
-    let createdContacts: any[] = [];
-    if (pointOfContacts && pointOfContacts.length > 0) {
-      const contactsWithLeadId = pointOfContacts.map((contact) => ({
-        ...contact,
-        leadId: createdLead!.id,
-      }));
-
-      createdContacts = await tx.insert(leadPointOfContacts).values(contactsWithLeadId).returning();
-
-      // Set the first contact as primary contact if no primary contact is set
-      if (createdContacts.length > 0 && !createdLead.primaryContactId) {
-        const updatedLeads = await tx
-          .update(leads)
-          .set({ primaryContactId: createdContacts[0].id })
-          .where(eq(leads.id, createdLead.id))
-          .returning();
-
-        createdLead = updatedLeads[0]!;
-      }
-    }
-
-    // Create default "Unprocessed" status for the lead
-    await tx.insert(leadStatuses).values({
-      leadId: createdLead.id,
-      tenantId,
-      status: LEAD_STATUS.UNPROCESSED,
-    });
-
-    // Transform lead with signed URLs
-    const transformedLead = await transformLeadWithSignedUrls(tenantId, createdLead);
-
-    return {
-      ...transformedLead,
-      pointOfContacts: createdContacts,
-    };
+  // Use transaction repository to create lead with contacts and status
+  const result = await leadTransactionRepository.createLeadWithContacts(tenantId, {
+    lead: leadWithOwner,
+    contacts: pointOfContacts || [],
+    statuses: [LEAD_STATUS.UNPROCESSED],
   });
+
+  // Transform lead with signed URLs
+  const transformedLead = await transformLeadWithSignedUrls(tenantId, result.lead);
+
+  const finalResult = {
+    ...transformedLead,
+    pointOfContacts: result.contacts,
+    statuses: result.statuses,
+  };
 
   // After the transaction is complete, attach default products to the lead
   try {
     const defaultProducts = await ProductsService.getDefaultProducts(tenantId);
     if (defaultProducts.length > 0) {
       const defaultProductIds = defaultProducts.map((product) => product.id);
-      await attachProductsToLead(result.id, defaultProductIds, tenantId);
+      await attachProductsToLead(finalResult.id, defaultProductIds, tenantId);
     }
   } catch (error) {
     // Log the error but don't fail the lead creation if product attachment fails
     logger.error('Failed to attach default products to new lead:', error);
   }
 
-  return result;
+  return finalResult;
 };
 
 /**
@@ -240,56 +150,21 @@ export const getLeadById = async (
   id: string
 ): Promise<LeadWithPointOfContacts> => {
   try {
-    const lead = await db
-      .select({
-        // Lead fields
-        id: leads.id,
-        name: leads.name,
-        url: leads.url,
-        status: leads.status,
-        summary: leads.summary,
-        products: leads.products,
-        services: leads.services,
-        differentiators: leads.differentiators,
-        targetMarket: leads.targetMarket,
-        tone: leads.tone,
-        brandColors: leads.brandColors,
-        primaryContactId: leads.primaryContactId,
-        ownerId: leads.ownerId,
-        tenantId: leads.tenantId,
-        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
-        // Owner fields (nullable)
-        ownerName: users.name,
-        ownerEmail: users.email,
-      })
-      .from(leads)
-      .leftJoin(users, eq(leads.ownerId, users.id))
-      .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
-      .limit(1);
+    // Get lead with owner information using repository
+    const leadResults = await leadRepository.findWithSearch(tenantId, {});
+    const leadData = leadResults.find(lead => lead.id === id);
 
-    if (lead.length === 0) {
+    if (!leadData) {
       throw new Error(`Lead not found with ID: ${id}`);
     }
 
-    const leadData = lead[0];
-
     // Get point of contacts for this lead
-    const contacts = await db
-      .select()
-      .from(leadPointOfContacts)
-      .where(eq(leadPointOfContacts.leadId, id))
-      .orderBy(leadPointOfContacts.createdAt);
+    const contacts = await leadPointOfContactRepository.findByLeadIdForTenant(id, tenantId);
 
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
     try {
-      statuses = await db
-        .select()
-        .from(leadStatuses)
-        .where(and(eq(leadStatuses.leadId, id), eq(leadStatuses.tenantId, tenantId)))
-        .orderBy(leadStatuses.createdAt);
+      statuses = await leadStatusRepository.findByLeadIdForTenant(id, tenantId);
     } catch (error) {
       // If leadStatuses table doesn't exist yet (migration not run), continue without statuses
       logger.warn(
@@ -325,12 +200,8 @@ export const updateLead = async (
   id: string,
   leadData: Partial<Omit<NewLead, 'tenantId'>>
 ) => {
-  const result = await db
-    .update(leads)
-    .set({ ...leadData, updatedAt: new Date() })
-    .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
-    .returning();
-  return result[0];
+  const result = await leadRepository.updateByIdForTenant(id, tenantId, leadData);
+  return result;
 };
 
 /**
@@ -340,16 +211,8 @@ export const updateLead = async (
  * @returns A promise that resolves to the deleted lead object.
  */
 export const deleteLead = async (tenantId: string, id: string) => {
-  const result = await db
-    .delete(leads)
-    .where(and(eq(leads.id, id), eq(leads.tenantId, tenantId)))
-    .returning();
-
-  if (result.length === 0) {
-    return null;
-  }
-
-  return result[0];
+  const result = await leadTransactionRepository.deleteLeadWithAllData(id, tenantId);
+  return result.lead;
 };
 
 /**
@@ -363,12 +226,8 @@ export const bulkDeleteLeads = async (tenantId: string, ids: string[]) => {
     return [];
   }
 
-  const result = await db
-    .delete(leads)
-    .where(and(inArray(leads.id, ids), eq(leads.tenantId, tenantId)))
-    .returning();
-
-  return result;
+  const result = await leadTransactionRepository.deleteMultipleLeadsWithAllData(ids, tenantId);
+  return result.leadsDeleted;
 };
 
 /**
@@ -381,74 +240,33 @@ export const bulkDeleteLeads = async (tenantId: string, ids: string[]) => {
 export const assignLeadOwner = async (tenantId: string, leadId: string, userId: string) => {
   try {
     // First, verify that the lead exists and belongs to the tenant
-    const lead = await db
-      .select()
-      .from(leads)
-      .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
-      .limit(1);
-
-    if (lead.length === 0) {
+    const lead = await leadRepository.findByIdForTenant(leadId, tenantId);
+    if (!lead) {
       throw new Error(`Lead not found with ID: ${leadId} in tenant: ${tenantId}`);
     }
 
     // Then, verify that the user exists and belongs to the same tenant
-    const userTenant = await db
-      .select()
-      .from(userTenants)
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .limit(1);
-
-    if (userTenant.length === 0) {
+    const userTenant = await repositories.userTenant.findByUserAndTenantId(userId, tenantId);
+    if (!userTenant) {
       throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
     }
 
     // Update the lead with the new owner
-    const result = await db
-      .update(leads)
-      .set({ ownerId: userId, updatedAt: new Date() })
-      .where(eq(leads.id, leadId))
-      .returning();
-
-    if (result.length === 0) {
+    const result = await leadRepository.assignToOwnerForTenant(leadId, tenantId, userId);
+    if (!result) {
       throw new Error('Failed to update lead owner');
     }
 
-    // Get the updated lead with owner information (similar to getLeads)
-    const updatedLeadWithOwner = await db
-      .select({
-        // Lead fields
-        id: leads.id,
-        name: leads.name,
-        url: leads.url,
-        status: leads.status,
-        summary: leads.summary,
-        products: leads.products,
-        services: leads.services,
-        differentiators: leads.differentiators,
-        targetMarket: leads.targetMarket,
-        tone: leads.tone,
-        brandColors: leads.brandColors,
-        primaryContactId: leads.primaryContactId,
-        ownerId: leads.ownerId,
-        tenantId: leads.tenantId,
-        siteEmbeddingDomainId: leads.siteEmbeddingDomainId,
-        createdAt: leads.createdAt,
-        updatedAt: leads.updatedAt,
-        // Owner fields (nullable)
-        ownerName: users.name,
-        ownerEmail: users.email,
-      })
-      .from(leads)
-      .leftJoin(users, eq(leads.ownerId, users.id))
-      .where(eq(leads.id, leadId))
-      .limit(1);
+    // Get the updated lead with owner information
+    const updatedLeadResults = await leadRepository.findWithSearch(tenantId, {});
+    const updatedLeadWithOwner = updatedLeadResults.find(lead => lead.id === leadId);
 
-    if (updatedLeadWithOwner.length === 0) {
+    if (!updatedLeadWithOwner) {
       throw new Error('Failed to retrieve updated lead with owner information');
     }
 
     // Transform lead with signed URLs
-    const transformedLead = await transformLeadWithSignedUrls(tenantId, updatedLeadWithOwner[0]);
+    const transformedLead = await transformLeadWithSignedUrls(tenantId, updatedLeadWithOwner);
 
     return transformedLead;
   } catch (error) {
@@ -476,17 +294,12 @@ export const createContact = async (
       throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
     }
 
-    // Create the contact
-    const newContact: NewLeadPointOfContact = {
-      ...contactData,
+    // Create the contact using repository
+    const createdContact = await leadPointOfContactRepository.createForLeadAndTenant(
       leadId,
-    };
-
-    const [createdContact] = await db.insert(leadPointOfContacts).values(newContact).returning();
-
-    if (!createdContact) {
-      throw new Error('Failed to create contact');
-    }
+      tenantId,
+      contactData
+    );
 
     logger.info(`Created contact ${createdContact.name} for lead ${leadId}`);
     return createdContact;
@@ -517,26 +330,18 @@ export const toggleContactManuallyReviewed = async (
       throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
     }
 
-    // Verify the contact exists and belongs to the lead
-    const contact = await db
-      .select()
-      .from(leadPointOfContacts)
-      .where(and(eq(leadPointOfContacts.id, contactId), eq(leadPointOfContacts.leadId, leadId)))
-      .limit(1);
-
-    if (contact.length === 0) {
+    // Verify the contact exists and belongs to the tenant/lead
+    const contact = await leadPointOfContactRepository.findByIdForTenant(contactId, tenantId);
+    if (!contact || contact.leadId !== leadId) {
       throw new Error(`Contact not found with ID: ${contactId} for lead: ${leadId}`);
     }
 
     // Update the contact's manually reviewed status
-    const [updatedContact] = await db
-      .update(leadPointOfContacts)
-      .set({
-        manuallyReviewed: manuallyReviewed,
-        updatedAt: new Date(),
-      })
-      .where(eq(leadPointOfContacts.id, contactId))
-      .returning();
+    const updatedContact = await leadPointOfContactRepository.updateByIdForTenant(
+      contactId,
+      tenantId,
+      { manuallyReviewed }
+    );
 
     if (!updatedContact) {
       throw new Error('Failed to update contact manually reviewed status');
@@ -564,12 +369,7 @@ export const getLeadStatuses = async (tenantId: string, leadId: string): Promise
       throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
     }
 
-    const statuses = await db
-      .select()
-      .from(leadStatuses)
-      .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
-      .orderBy(leadStatuses.createdAt);
-
+    const statuses = await leadStatusRepository.findByLeadIdForTenant(leadId, tenantId);
     return statuses;
   } catch (error) {
     logger.error('Error getting lead statuses:', error);
@@ -590,19 +390,8 @@ export const hasStatus = async (
   status: LeadStatus['status']
 ): Promise<boolean> => {
   try {
-    const result = await db
-      .select()
-      .from(leadStatuses)
-      .where(
-        and(
-          eq(leadStatuses.leadId, leadId),
-          eq(leadStatuses.tenantId, tenantId),
-          eq(leadStatuses.status, status)
-        )
-      )
-      .limit(1);
-
-    return result.length > 0;
+    const exists = await leadStatusRepository.statusExistsForLeadAndTenant(leadId, status, tenantId);
+    return exists;
   } catch (error) {
     logger.error('Error checking lead status:', error);
     throw error;
@@ -617,16 +406,11 @@ export const hasStatus = async (
  */
 export const ensureDefaultStatus = async (tenantId: string, leadId: string): Promise<void> => {
   try {
-    const existingStatuses = await db
-      .select()
-      .from(leadStatuses)
-      .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
-      .limit(1);
+    const existingStatuses = await leadStatusRepository.findByLeadIdForTenant(leadId, tenantId);
 
     if (existingStatuses.length === 0) {
-      await db.insert(leadStatuses).values({
+      await leadStatusRepository.createForTenant(tenantId, {
         leadId,
-        tenantId,
         status: LEAD_STATUS.UNPROCESSED,
       });
 
@@ -650,16 +434,10 @@ export const ensureDefaultStatus = async (tenantId: string, leadId: string): Pro
 export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise<void> => {
   try {
     // Get all leads for the tenant
-    const allLeads = await db
-      .select({ id: leads.id })
-      .from(leads)
-      .where(eq(leads.tenantId, tenantId));
+    const allLeads = await leadRepository.findAllForTenant(tenantId);
 
     // Get all existing statuses for this tenant
-    const existingStatuses = await db
-      .select({ leadId: leadStatuses.leadId })
-      .from(leadStatuses)
-      .where(eq(leadStatuses.tenantId, tenantId));
+    const existingStatuses = await leadStatusRepository.findAllForTenant(tenantId);
 
     const leadsWithStatuses = new Set(existingStatuses.map((s) => s.leadId));
 
@@ -668,13 +446,17 @@ export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise
 
     if (leadsWithoutStatus.length > 0) {
       // Create default statuses for leads without any
-      const defaultStatuses = leadsWithoutStatus.map((lead) => ({
-        leadId: lead.id,
-        tenantId,
-        status: LEAD_STATUS.UNPROCESSED,
-      }));
+      const statusesToCreate = leadsWithoutStatus.map(() => LEAD_STATUS.UNPROCESSED);
+      const leadIds = leadsWithoutStatus.map((lead) => lead.id);
+      
+      // Create statuses for each lead
+      for (let i = 0; i < leadIds.length; i++) {
+        await leadStatusRepository.createForTenant(tenantId, {
+          leadId: leadIds[i],
+          status: statusesToCreate[i],
+        });
+      }
 
-      await db.insert(leadStatuses).values(defaultStatuses);
       logger.info(`Added default "Unprocessed" status to ${leadsWithoutStatus.length} leads`);
     }
   } catch (error) {
@@ -704,75 +486,41 @@ export const updateLeadStatuses = async (
       throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
     }
 
-    // Use transaction to ensure consistency
-    const result = await db.transaction(async (tx) => {
-      // Get current statuses
-      const currentStatuses = await tx
-        .select()
-        .from(leadStatuses)
-        .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)));
+    // Get current statuses
+    const currentStatuses = await leadStatusRepository.findByLeadIdForTenant(leadId, tenantId);
 
-      // Remove specified statuses
-      if (statusesToRemove.length > 0) {
-        await tx
-          .delete(leadStatuses)
-          .where(
-            and(
-              eq(leadStatuses.leadId, leadId),
-              eq(leadStatuses.tenantId, tenantId),
-              inArray(leadStatuses.status, statusesToRemove)
-            )
-          );
+    // Remove specified statuses
+    for (const status of statusesToRemove) {
+      await leadStatusRepository.deleteByLeadAndStatusForTenant(leadId, status, tenantId);
+    }
+
+    // Add new statuses (only if they don't already exist)
+    for (const status of statusesToAdd) {
+      const exists = currentStatuses.some((s) => s.status === status);
+      if (!exists && !statusesToRemove.includes(status)) {
+        await leadStatusRepository.createIfNotExistsForTenant(leadId, status, tenantId);
       }
+    }
 
-      // Add new statuses (only if they don't already exist)
-      const statusesToInsert: NewLeadStatus[] = [];
-      for (const status of statusesToAdd) {
-        const exists = currentStatuses.some((s) => s.status === status);
-        if (!exists && !statusesToRemove.includes(status)) {
-          statusesToInsert.push({
-            leadId,
-            tenantId,
-            status,
-          });
-        }
-      }
+    // Get updated statuses after changes
+    let updatedStatuses = await leadStatusRepository.findByLeadIdForTenant(leadId, tenantId);
 
-      if (statusesToInsert.length > 0) {
-        await tx.insert(leadStatuses).values(statusesToInsert);
-      }
+    // Ensure at least one status exists (add "Unprocessed" if none exist)
+    if (updatedStatuses.length === 0) {
+      await leadStatusRepository.createForTenant(tenantId, {
+        leadId,
+        status: LEAD_STATUS.UNPROCESSED,
+      });
 
-      // Get updated statuses after changes
-      const updatedStatuses = await tx
-        .select()
-        .from(leadStatuses)
-        .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
-        .orderBy(leadStatuses.createdAt);
-
-      // Ensure at least one status exists (add "Unprocessed" if none exist)
-      if (updatedStatuses.length === 0) {
-        await tx.insert(leadStatuses).values({
-          leadId,
-          tenantId,
-          status: LEAD_STATUS.UNPROCESSED,
-        });
-
-        // Get the final statuses including the default one
-        return await tx
-          .select()
-          .from(leadStatuses)
-          .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
-          .orderBy(leadStatuses.createdAt);
-      }
-
-      return updatedStatuses;
-    });
+      // Get the final statuses including the default one
+      updatedStatuses = await leadStatusRepository.findByLeadIdForTenant(leadId, tenantId);
+    }
 
     logger.info(
       `Updated statuses for lead ${leadId}: added [${statusesToAdd.join(', ')}], removed [${statusesToRemove.join(', ')}]`
     );
 
-    return result;
+    return updatedStatuses;
   } catch (error) {
     logger.error('Error updating lead statuses:', error);
     throw error;
