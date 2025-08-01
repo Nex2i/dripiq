@@ -40,10 +40,13 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       summary: 'Get All Roles',
       description: 'Get all available roles in the system',
     },
-          handler: async (request: FastifyRequest, reply: FastifyReply) => {
-        try {
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const {
+          tenantId,
+          user: { id: userId },
+        } = authenticatedRequest;
         const roles = await RoleService.getAllRoles(tenantId, userId);
         reply.send({
           message: 'Roles retrieved successfully',
@@ -69,10 +72,13 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       summary: 'Get All Permissions',
       description: 'Get all available permissions in the system',
     },
-          handler: async (request: FastifyRequest, reply: FastifyReply) => {
-        try {
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const {
+          tenantId,
+          user: { id: userId },
+        } = authenticatedRequest;
         const permissions = await RoleService.getAllPermissions(tenantId, userId);
         reply.send({
           message: 'Permissions retrieved successfully',
@@ -143,7 +149,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       try {
         const roleData = request.body;
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const {
+          tenantId,
+          user: { id: userId },
+        } = authenticatedRequest;
         const role = await RoleService.createRole(roleData, tenantId, userId);
 
         reply.status(201).send({
@@ -178,7 +187,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       try {
         const permissionData = request.body;
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const {
+          tenantId,
+          user: { id: userId },
+        } = authenticatedRequest;
         const permission = await RoleService.createPermission(permissionData, tenantId, userId);
 
         reply.status(201).send({
@@ -221,7 +233,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
         const { permissionId } = request.body;
 
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { tenantId, user: { id: userId } } = authenticatedRequest;
+        const {
+          tenantId,
+          user: { id: userId },
+        } = authenticatedRequest;
         await RoleService.addPermissionToRole(roleId, permissionId, tenantId, userId);
 
         reply.status(201).send({
@@ -352,10 +367,11 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
       reply: FastifyReply
     ) => {
       try {
+        const { tenantId } = request as AuthenticatedRequest;
         const { roleId } = request.params;
         const updateData = request.body;
 
-        const role = await RoleService.updateRole(roleId, updateData);
+        const role = await RoleService.updateRole(roleId, tenantId, updateData);
 
         reply.send({
           message: 'Role updated successfully',
