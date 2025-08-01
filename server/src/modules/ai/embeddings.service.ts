@@ -1,7 +1,6 @@
-import { eq, desc } from 'drizzle-orm';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
-import db from '@/libs/drizzleClient';
-import { SiteEmbeddingDomain, siteEmbeddingDomains, siteEmbeddings } from '@/db';
+import { transactionRepository, siteEmbeddingDomainRepository, siteEmbeddingRepository } from '@/repositories';
+import { SiteEmbeddingDomain } from '@/db/schema';
 import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
 import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
 import { getContentFromMessage } from './langchain/utils/messageUtils';
@@ -20,51 +19,21 @@ export const EmbeddingsService = {
       })
     );
   },
-  getOrCreateDomainByUrl: async (url: string): Promise<SiteEmbeddingDomain> => {
-    const result = await db.transaction(async (tx) => {
-      const existing = await tx
-        .select()
-        .from(siteEmbeddingDomains)
-        .where(eq(siteEmbeddingDomains.domain, url))
-        .limit(1);
-
-      if (existing.length > 0) {
-        return existing[0];
-      }
-
-      const inserted = await tx
-        .insert(siteEmbeddingDomains)
-        .values({
-          domain: url,
-          scrapedAt: new Date(),
-        })
-        .returning();
-
-      return inserted[0];
-    });
-
-    if (!result) {
-      throw new Error('Failed to get or create domain');
-    }
-
-    return result;
+  getOrCreateDomainByUrl: async (url: string, tenantId: string = 'system', userId?: string): Promise<SiteEmbeddingDomain> => {
+    return await transactionRepository.getOrCreateSiteEmbeddingDomain(url, tenantId, userId);
   },
-  getDateOfLastDomainScrape: async (domain: string): Promise<Date | undefined> => {
-    const result = await db
-      .select({ scrapedAt: siteEmbeddingDomains.scrapedAt })
-      .from(siteEmbeddingDomains)
-      .where(eq(siteEmbeddingDomains.domain, domain))
-      .orderBy(desc(siteEmbeddingDomains.scrapedAt))
-      .limit(1);
-
-    return result[0]?.scrapedAt;
+  getDateOfLastDomainScrape: async (domain: string, tenantId: string = 'system', userId?: string): Promise<Date | undefined> => {
+    const domainRecord = await siteEmbeddingDomainRepository.findByDomain(domain, tenantId, userId);
+    return domainRecord?.scrapedAt;
   },
   embeddAndGetSummary: async (
     domainId: string,
     chunkIndex: number,
     metadata: Record<string, any>,
     chunk: string,
-    generateSummary: boolean = false
+    generateSummary: boolean = false,
+    tenantId: string = 'system',
+    userId?: string
   ) => {
     const { title, description } = metadata;
     const embedding = await openAiEmbeddingClient.embedQuery(chunk);
@@ -85,7 +54,7 @@ export const EmbeddingsService = {
 
     const slug = metadata.url.getUrlSlug();
 
-    const embeddingDomain = await db.insert(siteEmbeddings).values({
+    const embeddingData = {
       domainId,
       url: metadata.url.cleanWebsiteUrl(),
       slug,
@@ -100,7 +69,8 @@ export const EmbeddingsService = {
         title,
         description,
       },
-    });
-    return embeddingDomain;
+    };
+
+    return await siteEmbeddingRepository.create(embeddingData, tenantId, userId);
   },
 };
