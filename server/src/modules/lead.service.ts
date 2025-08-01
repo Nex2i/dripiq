@@ -246,7 +246,7 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
     }
 
     // Then, verify that the user exists and belongs to the same tenant
-    const userTenant = await repositories.userTenant.findByUserAndTenantId(userId, tenantId);
+    const userTenant = await repositories.userTenant.findByUserIdForTenant(userId, tenantId);
     if (!userTenant) {
       throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
     }
@@ -451,10 +451,15 @@ export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise
       
       // Create statuses for each lead
       for (let i = 0; i < leadIds.length; i++) {
-        await leadStatusRepository.createForTenant(tenantId, {
-          leadId: leadIds[i],
-          status: statusesToCreate[i],
-        });
+        const leadId = leadIds[i];
+        const status = statusesToCreate[i];
+        
+        if (leadId && status) {
+          await leadStatusRepository.createForTenant(tenantId, {
+            leadId,
+            status,
+          });
+        }
       }
 
       logger.info(`Added default "Unprocessed" status to ${leadsWithoutStatus.length} leads`);
