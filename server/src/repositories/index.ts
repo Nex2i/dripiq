@@ -27,28 +27,31 @@ export type { LeadWithOwner, LeadSearchOptions } from './entities/LeadRepository
 export type { UserTenantWithDetails } from './entities/UserTenantRepository';
 export type { RoleWithPermissions, PermissionWithRoles } from './entities/RolePermissionRepository';
 export type { LeadProductWithDetails } from './entities/LeadProductRepository';
-export type { EmbeddingSearchOptions, EmbeddingWithDomain } from './entities/SiteEmbeddingRepository';
+export type {
+  EmbeddingSearchOptions,
+  EmbeddingWithDomain,
+} from './entities/SiteEmbeddingRepository';
 
 // Export types from transaction repositories
-export type { 
-  CreateLeadWithContactsData, 
-  LeadCreationResult, 
-  BulkLeadCreationData, 
-  BulkLeadCreationResult 
+export type {
+  CreateLeadWithContactsData,
+  LeadCreationResult,
+  BulkLeadCreationData,
+  BulkLeadCreationResult,
 } from './transactions/LeadTransactionRepository';
 
-export type { 
-  InviteUserData, 
-  InviteUserResult, 
-  BulkInviteData, 
-  BulkInviteResult 
+export type {
+  InviteUserData,
+  InviteUserResult,
+  BulkInviteData,
+  BulkInviteResult,
 } from './transactions/UserInvitationTransactionRepository';
 
-export type { 
-  CreateTenantWithOwnerData, 
-  TenantSetupResult, 
-  TenantWithInitialSetupData, 
-  CompleteSetupResult 
+export type {
+  CreateTenantWithOwnerData,
+  TenantSetupResult,
+  TenantWithInitialSetupData,
+  CompleteSetupResult,
 } from './transactions/TenantSetupTransactionRepository';
 
 // Import all repository classes first

@@ -1,5 +1,5 @@
 import { leadProductRepository } from '../repositories';
-import type { NewLeadProduct, LeadProduct } from '../db/schema';
+import type { LeadProduct } from '../db/schema';
 
 /**
  * Get all products attached to a specific lead
@@ -7,12 +7,12 @@ import type { NewLeadProduct, LeadProduct } from '../db/schema';
 export async function getLeadProducts(leadId: string, tenantId: string) {
   try {
     const result = await leadProductRepository.findLeadsWithProductsForTenant(tenantId);
-    
+
     // Filter results for the specific lead
-    const leadProducts = result.filter(item => item.leadId === leadId);
-    
+    const leadProducts = result.filter((item) => item.leadId === leadId);
+
     // Transform to match the expected format
-    return leadProducts.map(item => ({
+    return leadProducts.map((item) => ({
       id: item.id,
       leadId: item.leadId,
       productId: item.productId,

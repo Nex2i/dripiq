@@ -1,8 +1,12 @@
 import { eq, desc, gt, lt } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
 import { siteEmbeddingDomains, SiteEmbeddingDomain, NewSiteEmbeddingDomain } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
-export class SiteEmbeddingDomainRepository extends BaseRepository<typeof siteEmbeddingDomains, SiteEmbeddingDomain, NewSiteEmbeddingDomain> {
+export class SiteEmbeddingDomainRepository extends BaseRepository<
+  typeof siteEmbeddingDomains,
+  SiteEmbeddingDomain,
+  NewSiteEmbeddingDomain
+> {
   constructor() {
     super(siteEmbeddingDomains);
   }
@@ -41,7 +45,10 @@ export class SiteEmbeddingDomainRepository extends BaseRepository<typeof siteEmb
   /**
    * Update scraped timestamp
    */
-  async updateScrapedAt(domainId: string, scrapedAt: Date = new Date()): Promise<SiteEmbeddingDomain | undefined> {
+  async updateScrapedAt(
+    domainId: string,
+    scrapedAt: Date = new Date()
+  ): Promise<SiteEmbeddingDomain | undefined> {
     return await this.updateById(domainId, { scrapedAt });
   }
 
@@ -78,7 +85,8 @@ export class SiteEmbeddingDomainRepository extends BaseRepository<typeof siteEmb
   /**
    * Find stale domains (not scraped recently)
    */
-  async findStaleDomains(hours: number = 168): Promise<SiteEmbeddingDomain[]> { // Default 7 days
+  async findStaleDomains(hours: number = 168): Promise<SiteEmbeddingDomain[]> {
+    // Default 7 days
     const cutoffDate = new Date(Date.now() - hours * 60 * 60 * 1000);
     return await this.findScrapedBefore(cutoffDate);
   }
@@ -96,11 +104,13 @@ export class SiteEmbeddingDomainRepository extends BaseRepository<typeof siteEmb
   /**
    * Get domains with embedding count
    */
-  async findDomainsWithEmbeddingCount(): Promise<Array<SiteEmbeddingDomain & { embeddingCount: number }>> {
+  async findDomainsWithEmbeddingCount(): Promise<
+    Array<SiteEmbeddingDomain & { embeddingCount: number }>
+  > {
     // This would require a join with siteEmbeddings table
     // For now, return domains without count - this can be enhanced later
     const domains = await this.findAll();
-    return domains.map(domain => ({ ...domain, embeddingCount: 0 }));
+    return domains.map((domain) => ({ ...domain, embeddingCount: 0 }));
   }
 
   /**

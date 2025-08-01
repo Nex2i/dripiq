@@ -1,8 +1,12 @@
 import { eq, and } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
 import { permissions, Permission, NewPermission } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
-export class PermissionRepository extends BaseRepository<typeof permissions, Permission, NewPermission> {
+export class PermissionRepository extends BaseRepository<
+  typeof permissions,
+  Permission,
+  NewPermission
+> {
   constructor() {
     super(permissions);
   }
@@ -23,10 +27,7 @@ export class PermissionRepository extends BaseRepository<typeof permissions, Per
    * Find permissions by resource
    */
   async findByResource(resource: string): Promise<Permission[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.resource, resource));
+    return await this.db.select().from(this.table).where(eq(this.table.resource, resource));
   }
 
   /**
@@ -74,14 +75,14 @@ export class PermissionRepository extends BaseRepository<typeof permissions, Per
   async findAllGroupedByResource(): Promise<Record<string, Permission[]>> {
     const allPermissions = await this.findAll();
     const grouped: Record<string, Permission[]> = {};
-    
+
     for (const permission of allPermissions) {
       if (!grouped[permission.resource]) {
         grouped[permission.resource] = [];
       }
       grouped[permission.resource]!.push(permission);
     }
-    
+
     return grouped;
   }
 }

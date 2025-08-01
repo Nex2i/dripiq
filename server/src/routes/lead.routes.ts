@@ -951,15 +951,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
               title: Type.String({ description: 'Product title' }),
               description: Type.Optional(Type.String({ description: 'Product description' })),
               salesVoice: Type.Optional(Type.String({ description: 'Product sales voice' })),
+              siteUrl: Type.Optional(Type.String({ description: 'Product site URL' })),
               tenantId: Type.String({ description: 'Tenant ID' }),
-              createdAt: Type.String({
-                format: 'date-time',
-                description: 'Product created timestamp',
-              }),
-              updatedAt: Type.String({
-                format: 'date-time',
-                description: 'Product updated timestamp',
-              }),
             }),
           }),
           { description: 'List of products attached to the lead' }

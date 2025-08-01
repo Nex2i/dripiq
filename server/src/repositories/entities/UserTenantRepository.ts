@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { TenantAwareRepository } from '../base/TenantAwareRepository';
 import { userTenants, UserTenant, NewUserTenant, users, tenants, roles } from '@/db/schema';
+import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export interface UserTenantWithDetails extends UserTenant {
   user?: {
@@ -21,7 +21,11 @@ export interface UserTenantWithDetails extends UserTenant {
   };
 }
 
-export class UserTenantRepository extends TenantAwareRepository<typeof userTenants, UserTenant, NewUserTenant> {
+export class UserTenantRepository extends TenantAwareRepository<
+  typeof userTenants,
+  UserTenant,
+  NewUserTenant
+> {
   constructor() {
     super(userTenants);
   }
@@ -69,7 +73,7 @@ export class UserTenantRepository extends TenantAwareRepository<typeof userTenan
           id: roles.id,
           name: roles.name,
           description: roles.description,
-        }
+        },
       })
       .from(this.table)
       .innerJoin(users, eq(this.table.userId, users.id))
@@ -109,7 +113,7 @@ export class UserTenantRepository extends TenantAwareRepository<typeof userTenan
           id: roles.id,
           name: roles.name,
           description: roles.description,
-        }
+        },
       })
       .from(this.table)
       .innerJoin(users, eq(this.table.userId, users.id))
@@ -121,7 +125,11 @@ export class UserTenantRepository extends TenantAwareRepository<typeof userTenan
   /**
    * Update user status for tenant
    */
-  async updateStatusForTenant(userId: string, tenantId: string, status: 'pending' | 'active'): Promise<UserTenant | undefined> {
+  async updateStatusForTenant(
+    userId: string,
+    tenantId: string,
+    status: 'pending' | 'active'
+  ): Promise<UserTenant | undefined> {
     return await this.updateByIdForTenant(userId, tenantId, { status });
   }
 
@@ -138,14 +146,22 @@ export class UserTenantRepository extends TenantAwareRepository<typeof userTenan
   /**
    * Update user role for tenant
    */
-  async updateRoleForTenant(userId: string, tenantId: string, roleId: string): Promise<UserTenant | undefined> {
+  async updateRoleForTenant(
+    userId: string,
+    tenantId: string,
+    roleId: string
+  ): Promise<UserTenant | undefined> {
     return await this.updateByIdForTenant(userId, tenantId, { roleId });
   }
 
   /**
    * Set super user status for tenant
    */
-  async setSuperUserForTenant(userId: string, tenantId: string, isSuperUser: boolean): Promise<UserTenant | undefined> {
+  async setSuperUserForTenant(
+    userId: string,
+    tenantId: string,
+    isSuperUser: boolean
+  ): Promise<UserTenant | undefined> {
     return await this.updateByIdForTenant(userId, tenantId, { isSuperUser });
   }
 
@@ -180,7 +196,7 @@ export class UserTenantRepository extends TenantAwareRepository<typeof userTenan
           id: roles.id,
           name: roles.name,
           description: roles.description,
-        }
+        },
       })
       .from(this.table)
       .innerJoin(users, eq(this.table.userId, users.id))
@@ -220,7 +236,7 @@ export class UserTenantRepository extends TenantAwareRepository<typeof userTenan
           id: roles.id,
           name: roles.name,
           description: roles.description,
-        }
+        },
       })
       .from(this.table)
       .innerJoin(users, eq(this.table.userId, users.id))
