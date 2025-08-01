@@ -9,3 +9,115 @@ When making a db migration follow these steps.
 1. Update the schema.ts file
 2. run "npm run db:migrate:new {{MIGRATION_NAME}}" 
 3. From here the sql will be made for you.
+
+## Data Access Layer
+
+This project uses a repository pattern for all database operations. **NEVER access the database directly using `db.` calls outside of repositories.**
+
+### Repository Structure
+
+- **Base Repositories**: `BaseRepository` and `TenantAwareRepository` provide common CRUD operations
+- **Entity Repositories**: Handle specific entity operations (User, Tenant, Lead, etc.)
+- **Transaction Repositories**: Handle complex operations that require transactions
+
+### Repository Usage Rules
+
+1. **Import repositories from the index file**:
+   ```typescript
+   import { repositories } from '@/repositories';
+   // or
+   import { userRepository, leadRepository } from '@/repositories';
+   ```
+
+2. **All tenant-scoped data MUST use tenant-aware methods**:
+   ```typescript
+   // ✅ Correct - includes tenantId
+   const lead = await repositories.lead.findByIdForTenant(leadId, tenantId);
+   
+   // ❌ Wrong - direct methods throw errors for tenant-aware repos
+   const lead = await repositories.lead.findById(leadId);
+   ```
+
+3. **Use transaction repositories for complex operations**:
+   ```typescript
+   // ✅ For creating leads with contacts
+   await repositories.leadTransaction.createLeadWithContacts(tenantId, data);
+   
+   // ✅ For user invitations
+   await repositories.userInvitationTransaction.inviteUserToTenant(tenantId, data);
+   ```
+
+### Available Repositories
+
+#### Entity Repositories
+- `repositories.user` - User operations
+- `repositories.tenant` - Tenant operations  
+- `repositories.role` - Role operations
+- `repositories.permission` - Permission operations
+- `repositories.rolePermission` - Role-permission relationships
+- `repositories.lead` - Lead operations (tenant-aware)
+- `repositories.product` - Product operations (tenant-aware)
+- `repositories.leadPointOfContact` - Contact operations (tenant-aware via lead)
+- `repositories.leadStatus` - Lead status operations (tenant-aware)
+- `repositories.leadProduct` - Lead-product relationships (tenant-aware)
+- `repositories.userTenant` - User-tenant relationships (tenant-aware)
+- `repositories.siteEmbeddingDomain` - Site embedding domain operations
+- `repositories.siteEmbedding` - Site embedding operations
+
+#### Transaction Repositories
+- `repositories.leadTransaction` - Complex lead operations
+- `repositories.userInvitationTransaction` - User invitation flows
+- `repositories.tenantSetupTransaction` - Tenant setup operations
+
+### Tenant Isolation
+
+All repositories that handle tenant-scoped data enforce tenant isolation:
+
+1. **Always pass tenantId** to tenant-aware repository methods
+2. **Validate tenant access** before calling repository methods
+3. **Use `validateUserTenantAccess`** utility when needed
+
+### Service Layer Guidelines
+
+Services should:
+1. **Only use repositories** for data access - no direct `db.` calls
+2. **Focus on business logic** - let repositories handle data access
+3. **Validate input parameters** before calling repositories
+4. **Handle repository errors** appropriately
+5. **Use transaction repositories** for complex multi-entity operations
+
+### Error Handling
+
+Repositories provide consistent error handling:
+- Tenant validation errors for invalid tenant access
+- Not found errors for missing entities
+- Constraint violation errors for duplicate data
+
+### Performance Considerations
+
+- Repositories include optimized queries with proper joins
+- Use `findWithSearch` methods for complex filtering
+- Batch operations available via transaction repositories
+- Tenant-aware repositories automatically filter by tenantId
+
+### Examples
+
+```typescript
+// ✅ Service using repositories correctly
+export class LeadService {
+  async getLeads(tenantId: string, searchQuery?: string) {
+    return await repositories.lead.findWithSearch(tenantId, { searchQuery });
+  }
+
+  async createLeadWithContacts(tenantId: string, data: CreateLeadWithContactsData) {
+    return await repositories.leadTransaction.createLeadWithContacts(tenantId, data);
+  }
+}
+
+// ❌ Service accessing database directly
+export class BadLeadService {
+  async getLeads(tenantId: string) {
+    return await db.select().from(leads).where(eq(leads.tenantId, tenantId)); // DON'T DO THIS
+  }
+}
+```
