@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { eq, and, gte, lte, desc, asc } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
+import { eq, and, gte, lte, asc } from 'drizzle-orm';
 import { siteEmbeddings, SiteEmbedding, NewSiteEmbedding, siteEmbeddingDomains } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
 export interface EmbeddingSearchOptions {
   limit?: number;
@@ -23,7 +22,11 @@ export interface EmbeddingWithDomain extends SiteEmbedding {
   };
 }
 
-export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbeddings, SiteEmbedding, NewSiteEmbedding> {
+export class SiteEmbeddingRepository extends BaseRepository<
+  typeof siteEmbeddings,
+  SiteEmbedding,
+  NewSiteEmbedding
+> {
   constructor() {
     super(siteEmbeddings);
   }
@@ -32,20 +35,20 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
    * Find embeddings by domain ID
    */
   async findByDomainId(domainId: string): Promise<SiteEmbedding[]> {
-    return await this.db
+    return (await this.db
       .select()
       .from(this.table)
-      .where(eq(this.table.domainId, domainId)) as SiteEmbedding[];
+      .where(eq(this.table.domainId, domainId))) as SiteEmbedding[];
   }
 
   /**
    * Find embeddings by URL
    */
   async findByUrl(url: string): Promise<SiteEmbedding[]> {
-    return await this.db
+    return (await this.db
       .select()
       .from(this.table)
-      .where(eq(this.table.url, url)) as SiteEmbedding[];
+      .where(eq(this.table.url, url))) as SiteEmbedding[];
   }
 
   /**
@@ -64,37 +67,29 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
    * Search embeddings with filters
    */
   async search(options: EmbeddingSearchOptions = {}): Promise<SiteEmbedding[]> {
-    const { 
-      limit = 50,
-      offset = 0,
-      minTokenCount,
-      maxTokenCount,
-      domainId,
-      url,
-      slug
-    } = options;
+    const { limit = 50, offset = 0, minTokenCount, maxTokenCount, domainId, url, slug } = options;
 
     let query = this.db.select().from(this.table);
 
     // Build where conditions
     const conditions = [];
-    
+
     if (domainId) {
       conditions.push(eq(this.table.domainId, domainId));
     }
-    
+
     if (url) {
       conditions.push(eq(this.table.url, url));
     }
-    
+
     if (slug) {
       conditions.push(eq(this.table.slug, slug));
     }
-    
+
     if (minTokenCount !== undefined) {
       conditions.push(gte(this.table.tokenCount, minTokenCount));
     }
-    
+
     if (maxTokenCount !== undefined) {
       conditions.push(lte(this.table.tokenCount, maxTokenCount));
     }
@@ -113,15 +108,7 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
    * Find embeddings with domain details
    */
   async findWithDomain(options: EmbeddingSearchOptions = {}): Promise<EmbeddingWithDomain[]> {
-    const { 
-      limit = 50,
-      offset = 0,
-      minTokenCount,
-      maxTokenCount,
-      domainId,
-      url,
-      slug
-    } = options;
+    const { limit = 50, offset = 0, minTokenCount, maxTokenCount, domainId, url, slug } = options;
 
     let query = this.db
       .select({
@@ -141,30 +128,30 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
           scrapedAt: siteEmbeddingDomains.scrapedAt,
           createdAt: siteEmbeddingDomains.createdAt,
           updatedAt: siteEmbeddingDomains.updatedAt,
-        }
+        },
       })
       .from(this.table)
       .leftJoin(siteEmbeddingDomains, eq(this.table.domainId, siteEmbeddingDomains.id));
 
     // Build where conditions
     const conditions = [];
-    
+
     if (domainId) {
       conditions.push(eq(this.table.domainId, domainId));
     }
-    
+
     if (url) {
       conditions.push(eq(this.table.url, url));
     }
-    
+
     if (slug) {
       conditions.push(eq(this.table.slug, slug));
     }
-    
+
     if (minTokenCount !== undefined) {
       conditions.push(gte(this.table.tokenCount, minTokenCount));
     }
-    
+
     if (maxTokenCount !== undefined) {
       conditions.push(lte(this.table.tokenCount, maxTokenCount));
     }
@@ -183,10 +170,7 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
    * Count embeddings for domain
    */
   async countByDomain(domainId: string): Promise<number> {
-    const result = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.domainId, domainId));
+    const result = await this.db.select().from(this.table).where(eq(this.table.domainId, domainId));
     return result.length;
   }
 
@@ -194,26 +178,23 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
    * Delete all embeddings for a domain
    */
   async deleteAllForDomain(domainId: string): Promise<SiteEmbedding[]> {
-    return await this.db
-      .delete(this.table)
-      .where(eq(this.table.domainId, domainId))
-      .returning();
+    return await this.db.delete(this.table).where(eq(this.table.domainId, domainId)).returning();
   }
 
   /**
    * Delete all embeddings for a URL
    */
   async deleteAllForUrl(url: string): Promise<SiteEmbedding[]> {
-    return await this.db
-      .delete(this.table)
-      .where(eq(this.table.url, url))
-      .returning();
+    return await this.db.delete(this.table).where(eq(this.table.url, url)).returning();
   }
 
   /**
    * Update content summary
    */
-  async updateContentSummary(id: string, contentSummary: string): Promise<SiteEmbedding | undefined> {
+  async updateContentSummary(
+    id: string,
+    contentSummary: string
+  ): Promise<SiteEmbedding | undefined> {
     return await this.updateById(id, { contentSummary });
   }
 
@@ -227,9 +208,12 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
   /**
    * Find embeddings with content containing specific text
    */
-  async findByContentText(searchText: string, options: EmbeddingSearchOptions = {}): Promise<SiteEmbedding[]> {
+  async findByContentText(
+    searchText: string,
+    options: EmbeddingSearchOptions = {}
+  ): Promise<SiteEmbedding[]> {
     const { limit = 100, offset = 0 } = options;
-    
+
     // Note: This uses a simple text search. For more advanced text search,
     // you might want to use PostgreSQL's full-text search capabilities
     return await this.db
@@ -255,8 +239,11 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
   async getAverageTokenCountForDomain(domainId: string): Promise<number> {
     const embeddings = await this.findByDomainId(domainId);
     if (embeddings.length === 0) return 0;
-    
-    const totalTokens = embeddings.reduce((total, embedding) => total + (embedding.tokenCount || 0), 0);
+
+    const totalTokens = embeddings.reduce(
+      (total, embedding) => total + (embedding.tokenCount || 0),
+      0
+    );
     return Math.round(totalTokens / embeddings.length);
   }
 
@@ -264,16 +251,20 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
    * Delete embeddings by URL
    */
   async deleteByUrl(url: string): Promise<SiteEmbedding[]> {
-    return await this.db
+    return (await this.db
       .delete(this.table)
       .where(eq(this.table.url, url))
-      .returning() as SiteEmbedding[];
+      .returning()) as SiteEmbedding[];
   }
 
   /**
    * Update embedding content
    */
-  async updateContent(id: string, content: string, tokenCount: number): Promise<SiteEmbedding | undefined> {
+  async updateContent(
+    id: string,
+    content: string,
+    tokenCount: number
+  ): Promise<SiteEmbedding | undefined> {
     const [result] = await this.db
       .update(this.table)
       .set({ content, tokenCount, updatedAt: new Date() })
@@ -297,14 +288,15 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
   /**
    * Find embeddings by text similarity (for future vector search implementation)
    */
-  async findSimilar(queryEmbedding: number[], limit: number = 10, threshold: number = 0.8): Promise<SiteEmbedding[]> {
+  async findSimilar(
+    _queryEmbedding: number[],
+    limit: number = 10,
+    _threshold: number = 0.8
+  ): Promise<SiteEmbedding[]> {
     // This is a placeholder for vector similarity search
     // In production, you would use pgvector extension with cosine similarity
     // For now, return all embeddings limited by count
-    return await this.db
-      .select()
-      .from(this.table)
-      .limit(limit) as SiteEmbedding[];
+    return (await this.db.select().from(this.table).limit(limit)) as SiteEmbedding[];
   }
 
   /**
@@ -316,7 +308,7 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
         count: this.table.id,
         minTokens: this.table.tokenCount,
         maxTokens: this.table.tokenCount,
-        avgTokens: this.table.tokenCount
+        avgTokens: this.table.tokenCount,
       })
       .from(this.table);
 
@@ -326,32 +318,34 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
 
     // Note: This is a simplified version. In production, you'd use proper aggregation functions
     const results = await query;
-    
+
     if (results.length === 0) {
       return {
         count: 0,
         minTokens: 0,
         maxTokens: 0,
-        avgTokens: 0
+        avgTokens: 0,
       };
     }
 
-    const tokenCounts = results.map(r => r.avgTokens).filter((count): count is number => count !== null);
-    
+    const tokenCounts = results
+      .map((r) => r.avgTokens)
+      .filter((count): count is number => count !== null);
+
     if (tokenCounts.length === 0) {
       return {
         count: results.length,
         minTokens: 0,
         maxTokens: 0,
-        avgTokens: 0
+        avgTokens: 0,
       };
     }
-    
+
     return {
       count: results.length,
       minTokens: Math.min(...tokenCounts),
       maxTokens: Math.max(...tokenCounts),
-      avgTokens: Math.round(tokenCounts.reduce((a, b) => a + b, 0) / tokenCounts.length)
+      avgTokens: Math.round(tokenCounts.reduce((a, b) => a + b, 0) / tokenCounts.length),
     };
   }
 
@@ -364,18 +358,15 @@ export class SiteEmbeddingRepository extends BaseRepository<typeof siteEmbedding
       .from(this.table)
       .where(eq(this.table.domainId, domainId))
       .orderBy(asc(this.table.url));
-    
-    return results.map(r => r.url);
+
+    return results.map((r) => r.url);
   }
 
   /**
    * Get chunk count by URL
    */
   async getChunkCountByUrl(url: string): Promise<number> {
-    const results = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.url, url));
+    const results = await this.db.select().from(this.table).where(eq(this.table.url, url));
     return results.length;
   }
 }

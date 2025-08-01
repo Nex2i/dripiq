@@ -1,15 +1,14 @@
-import { db } from '@/db';
 import { eq, and, inArray } from 'drizzle-orm';
-import { 
-  leads, 
-  leadPointOfContacts, 
+import { db } from '@/db';
+import {
+  leads,
+  leadPointOfContacts,
   leadStatuses,
-  NewLead, 
-  NewLeadPointOfContact, 
-  NewLeadStatus,
+  NewLead,
+  NewLeadPointOfContact,
   Lead,
   LeadPointOfContact,
-  LeadStatus
+  LeadStatus,
 } from '@/db/schema';
 
 export interface CreateLeadWithContactsData {
@@ -54,11 +53,14 @@ export class LeadTransactionRepository {
       // Create contacts if any
       let createdContacts: LeadPointOfContact[] = [];
       if (data.contacts.length > 0) {
-        const contactsWithLeadId = data.contacts.map(contact => ({
+        const contactsWithLeadId = data.contacts.map((contact) => ({
           ...contact,
           leadId: createdLead.id,
         }));
-        createdContacts = await tx.insert(leadPointOfContacts).values(contactsWithLeadId).returning();
+        createdContacts = await tx
+          .insert(leadPointOfContacts)
+          .values(contactsWithLeadId)
+          .returning();
       }
 
       // Set primary contact if there's exactly one contact
@@ -68,7 +70,7 @@ export class LeadTransactionRepository {
           .set({ primaryContactId: createdContacts[0]?.id })
           .where(eq(leads.id, createdLead.id))
           .returning();
-        
+
         return {
           lead: updatedLead || createdLead,
           contacts: createdContacts,
@@ -79,7 +81,7 @@ export class LeadTransactionRepository {
       // Create statuses if any
       let createdStatuses: LeadStatus[] = [];
       if (data.statuses && data.statuses.length > 0) {
-        const statusData = data.statuses.map(status => ({
+        const statusData = data.statuses.map((status) => ({
           leadId: createdLead.id,
           status,
           tenantId,
@@ -109,11 +111,11 @@ export class LeadTransactionRepository {
       for (let i = 0; i < data.leadsWithContacts.length; i++) {
         try {
           const leadData = data.leadsWithContacts[i];
-          
+
           if (!leadData) {
             throw new Error(`Lead data at index ${i} is undefined`);
           }
-          
+
           // Create the lead
           const leadWithTenant = { ...leadData.lead, tenantId };
           const [createdLead] = await tx.insert(leads).values(leadWithTenant).returning();
@@ -125,11 +127,14 @@ export class LeadTransactionRepository {
           // Create contacts if any
           let createdContacts: LeadPointOfContact[] = [];
           if (leadData.contacts.length > 0) {
-            const contactsWithLeadId = leadData.contacts.map(contact => ({
+            const contactsWithLeadId = leadData.contacts.map((contact) => ({
               ...contact,
               leadId: createdLead.id,
             }));
-            createdContacts = await tx.insert(leadPointOfContacts).values(contactsWithLeadId).returning();
+            createdContacts = await tx
+              .insert(leadPointOfContacts)
+              .values(contactsWithLeadId)
+              .returning();
           }
 
           // Set primary contact if there's exactly one contact
@@ -147,7 +152,7 @@ export class LeadTransactionRepository {
           let createdStatuses: LeadStatus[] = [];
           const statusesToCreate = leadData.statuses || data.defaultStatuses;
           if (statusesToCreate.length > 0) {
-            const statusData = statusesToCreate.map(status => ({
+            const statusData = statusesToCreate.map((status) => ({
               leadId: createdLead.id,
               status,
               tenantId,
@@ -214,11 +219,14 @@ export class LeadTransactionRepository {
       // Create new contacts
       let createdContacts: LeadPointOfContact[] = [];
       if (data.contacts.length > 0) {
-        const contactsWithLeadId = data.contacts.map(contact => ({
+        const contactsWithLeadId = data.contacts.map((contact) => ({
           ...contact,
           leadId,
         }));
-        createdContacts = await tx.insert(leadPointOfContacts).values(contactsWithLeadId).returning();
+        createdContacts = await tx
+          .insert(leadPointOfContacts)
+          .values(contactsWithLeadId)
+          .returning();
       }
 
       // Update primary contact
@@ -246,7 +254,10 @@ export class LeadTransactionRepository {
   /**
    * Delete lead and all associated data
    */
-  async deleteLeadWithAllData(leadId: string, tenantId: string): Promise<{
+  async deleteLeadWithAllData(
+    leadId: string,
+    tenantId: string
+  ): Promise<{
     lead: Lead | undefined;
     contactsDeleted: number;
     statusesDeleted: number;
@@ -303,19 +314,13 @@ export class LeadTransactionRepository {
       // Delete statuses for all leads
       const deletedStatuses = await tx
         .delete(leadStatuses)
-        .where(and(
-          inArray(leadStatuses.leadId, leadIds),
-          eq(leadStatuses.tenantId, tenantId)
-        ))
+        .where(and(inArray(leadStatuses.leadId, leadIds), eq(leadStatuses.tenantId, tenantId)))
         .returning();
 
       // Delete leads
       const deletedLeads = await tx
         .delete(leads)
-        .where(and(
-          inArray(leads.id, leadIds),
-          eq(leads.tenantId, tenantId)
-        ))
+        .where(and(inArray(leads.id, leadIds), eq(leads.tenantId, tenantId)))
         .returning();
 
       return {

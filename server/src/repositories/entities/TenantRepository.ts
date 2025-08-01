@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
 import { tenants, Tenant, NewTenant } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
 export class TenantRepository extends BaseRepository<typeof tenants, Tenant, NewTenant> {
   constructor() {
@@ -52,7 +52,7 @@ export class TenantRepository extends BaseRepository<typeof tenants, Tenant, New
   async createWithFormattedName(data: Omit<NewTenant, 'name'> & { name: string }): Promise<Tenant> {
     // Auto-format tenant name: lowercase and replace spaces with hyphens
     const formattedName = data.name.toLowerCase().replace(/\s+/g, '-');
-    
+
     const tenantData: NewTenant = {
       ...data,
       name: formattedName,
@@ -64,7 +64,10 @@ export class TenantRepository extends BaseRepository<typeof tenants, Tenant, New
   /**
    * Set site embedding domain for tenant
    */
-  async setSiteEmbeddingDomain(tenantId: string, siteEmbeddingDomainId: string | null): Promise<Tenant | undefined> {
+  async setSiteEmbeddingDomain(
+    tenantId: string,
+    siteEmbeddingDomainId: string | null
+  ): Promise<Tenant | undefined> {
     return await this.updateById(tenantId, { siteEmbeddingDomainId });
   }
 }

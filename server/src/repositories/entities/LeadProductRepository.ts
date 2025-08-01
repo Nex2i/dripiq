@@ -1,6 +1,6 @@
 import { eq, and, inArray } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
 import { leadProducts, LeadProduct, NewLeadProduct, leads, products } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
 export interface LeadProductWithDetails extends LeadProduct {
   lead?: {
@@ -13,11 +13,17 @@ export interface LeadProductWithDetails extends LeadProduct {
     id: string;
     title: string;
     description: string | null;
+    salesVoice: string | null;
+    siteUrl: string | null;
     tenantId: string;
   };
 }
 
-export class LeadProductRepository extends BaseRepository<typeof leadProducts, LeadProduct, NewLeadProduct> {
+export class LeadProductRepository extends BaseRepository<
+  typeof leadProducts,
+  LeadProduct,
+  NewLeadProduct
+> {
   constructor() {
     super(leadProducts);
   }
@@ -31,7 +37,7 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .where(and(eq(this.table.leadId, leadId), eq(leads.tenantId, tenantId)));
-    return results.map(result => result.lead_products);
+    return results.map((result) => result.lead_products);
   }
 
   /**
@@ -43,7 +49,7 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
       .from(this.table)
       .innerJoin(products, eq(this.table.productId, products.id))
       .where(and(eq(this.table.productId, productId), eq(products.tenantId, tenantId)));
-    return results.map(result => result.lead_products);
+    return results.map((result) => result.lead_products);
   }
 
   /**
@@ -55,12 +61,14 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .innerJoin(products, eq(this.table.productId, products.id))
-      .where(and(
-        eq(this.table.leadId, leadId),
-        eq(this.table.productId, productId),
-        eq(leads.tenantId, tenantId),
-        eq(products.tenantId, tenantId)
-      ))
+      .where(
+        and(
+          eq(this.table.leadId, leadId),
+          eq(this.table.productId, productId),
+          eq(leads.tenantId, tenantId),
+          eq(products.tenantId, tenantId)
+        )
+      )
       .limit(1);
     return results.length > 0;
   }
@@ -98,14 +106,14 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
 
     // Get existing associations to avoid duplicates
     const existingAssociations = await this.findByLeadIdForTenant(leadId, tenantId);
-    const existingProductIds = existingAssociations.map(assoc => assoc.productId);
+    const existingProductIds = existingAssociations.map((assoc) => assoc.productId);
 
     // Filter out already attached products
-    const newProductIds = productIds.filter(id => !existingProductIds.includes(id));
-    
+    const newProductIds = productIds.filter((id) => !existingProductIds.includes(id));
+
     if (newProductIds.length === 0) return [];
 
-    const newAttachments = newProductIds.map(productId => ({
+    const newAttachments = newProductIds.map((productId) => ({
       leadId,
       productId,
     }));
@@ -127,12 +135,14 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .innerJoin(products, eq(this.table.productId, products.id))
-      .where(and(
-        eq(this.table.leadId, leadId),
-        eq(this.table.productId, productId),
-        eq(leads.tenantId, tenantId),
-        eq(products.tenantId, tenantId)
-      ))
+      .where(
+        and(
+          eq(this.table.leadId, leadId),
+          eq(this.table.productId, productId),
+          eq(leads.tenantId, tenantId),
+          eq(products.tenantId, tenantId)
+        )
+      )
       .limit(1);
 
     if (verification.length === 0) {
@@ -150,7 +160,10 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
   /**
    * Detach all products from lead with tenant validation
    */
-  async detachAllProductsFromLeadForTenant(leadId: string, tenantId: string): Promise<LeadProduct[]> {
+  async detachAllProductsFromLeadForTenant(
+    leadId: string,
+    tenantId: string
+  ): Promise<LeadProduct[]> {
     // Verify lead belongs to tenant
     const lead = await this.db
       .select()
@@ -162,10 +175,7 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
       return [];
     }
 
-    return await this.db
-      .delete(this.table)
-      .where(eq(this.table.leadId, leadId))
-      .returning();
+    return await this.db.delete(this.table).where(eq(this.table.leadId, leadId)).returning();
   }
 
   /**
@@ -190,8 +200,10 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
           id: products.id,
           title: products.title,
           description: products.description,
+          salesVoice: products.salesVoice,
+          siteUrl: products.siteUrl,
           tenantId: products.tenantId,
-        }
+        },
       })
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))

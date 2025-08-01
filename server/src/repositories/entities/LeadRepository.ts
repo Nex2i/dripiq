@@ -1,6 +1,7 @@
-import { eq, and, or, ilike, inArray, desc } from 'drizzle-orm';
+import { eq, and, or, ilike, desc } from 'drizzle-orm';
+import { leads, Lead, NewLead, users } from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
-import { leads, Lead, NewLead, users, leadPointOfContacts } from '@/db/schema';
 
 export interface LeadWithOwner extends Lead {
   owner?: {
@@ -24,11 +25,27 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
   }
 
   /**
+   * Find lead by id
+   */
+  async findById(id: string): Promise<LeadWithOwner> {
+    const lead = await this.db.select().from(this.table).where(eq(this.table.id, id)).limit(1);
+
+    if (!lead || !lead[0]) {
+      throw new NotFoundError(`Lead not found with id: ${id}`);
+    }
+
+    return lead[0];
+  }
+
+  /**
    * Find leads with search functionality
    */
-  async findWithSearch(tenantId: string, options: LeadSearchOptions = {}): Promise<LeadWithOwner[]> {
+  async findWithSearch(
+    tenantId: string,
+    options: LeadSearchOptions = {}
+  ): Promise<LeadWithOwner[]> {
     const { searchQuery, ownerId, status, limit, offset } = options;
-    
+
     let query = this.db
       .select({
         // Lead fields
@@ -54,7 +71,7 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
           id: users.id,
           name: users.name,
           email: users.email,
-        }
+        },
       })
       .from(this.table)
       .leftJoin(users, eq(this.table.ownerId, users.id));
@@ -64,12 +81,7 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
 
     if (searchQuery && searchQuery.trim()) {
       const searchTerm = `%${searchQuery.trim()}%`;
-      conditions.push(
-        or(
-          ilike(this.table.name, searchTerm),
-          ilike(this.table.url, searchTerm)
-        )!
-      );
+      conditions.push(or(ilike(this.table.name, searchTerm), ilike(this.table.url, searchTerm))!);
     }
 
     if (ownerId) {
@@ -128,21 +140,33 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
   /**
    * Update lead status
    */
-  async updateStatusForTenant(id: string, tenantId: string, status: string): Promise<Lead | undefined> {
+  async updateStatusForTenant(
+    id: string,
+    tenantId: string,
+    status: string
+  ): Promise<Lead | undefined> {
     return await this.updateByIdForTenant(id, tenantId, { status });
   }
 
   /**
    * Assign lead to owner
    */
-  async assignToOwnerForTenant(id: string, tenantId: string, ownerId: string | null): Promise<Lead | undefined> {
+  async assignToOwnerForTenant(
+    id: string,
+    tenantId: string,
+    ownerId: string | null
+  ): Promise<Lead | undefined> {
     return await this.updateByIdForTenant(id, tenantId, { ownerId });
   }
 
   /**
    * Set primary contact for lead
    */
-  async setPrimaryContactForTenant(id: string, tenantId: string, primaryContactId: string | null): Promise<Lead | undefined> {
+  async setPrimaryContactForTenant(
+    id: string,
+    tenantId: string,
+    primaryContactId: string | null
+  ): Promise<Lead | undefined> {
     return await this.updateByIdForTenant(id, tenantId, { primaryContactId });
   }
 
@@ -169,17 +193,29 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
   /**
    * Set site embedding domain for lead
    */
-  async setSiteEmbeddingDomainForTenant(id: string, tenantId: string, siteEmbeddingDomainId: string | null): Promise<Lead | undefined> {
+  async setSiteEmbeddingDomainForTenant(
+    id: string,
+    tenantId: string,
+    siteEmbeddingDomainId: string | null
+  ): Promise<Lead | undefined> {
     return await this.updateByIdForTenant(id, tenantId, { siteEmbeddingDomainId });
   }
 
   /**
    * Find leads with site embedding domain
    */
-  async findWithSiteEmbeddingDomainForTenant(siteEmbeddingDomainId: string, tenantId: string): Promise<Lead[]> {
+  async findWithSiteEmbeddingDomainForTenant(
+    siteEmbeddingDomainId: string,
+    tenantId: string
+  ): Promise<Lead[]> {
     return await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.siteEmbeddingDomainId, siteEmbeddingDomainId), eq(this.table.tenantId, tenantId)));
+      .where(
+        and(
+          eq(this.table.siteEmbeddingDomainId, siteEmbeddingDomainId),
+          eq(this.table.tenantId, tenantId)
+        )
+      );
   }
 }

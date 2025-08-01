@@ -1,8 +1,12 @@
 import { eq, and } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
 import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
-export class LeadPointOfContactRepository extends BaseRepository<typeof leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact> {
+export class LeadPointOfContactRepository extends BaseRepository<
+  typeof leadPointOfContacts,
+  LeadPointOfContact,
+  NewLeadPointOfContact
+> {
   constructor() {
     super(leadPointOfContacts);
   }
@@ -10,12 +14,11 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
   /**
    * Find contacts by lead ID with tenant validation
    */
-  async findByLeadIdForTenant(leadId: string, tenantId: string): Promise<LeadPointOfContact[]> {
+  async findByLeadId(leadId: string): Promise<LeadPointOfContact[]> {
     return await this.db
       .select()
-      .from(this.table)
-      .innerJoin(leads, eq(this.table.leadId, leads.id))
-      .where(and(eq(this.table.leadId, leadId), eq(leads.tenantId, tenantId))) as any;
+      .from(leadPointOfContacts)
+      .where(eq(leadPointOfContacts.leadId, leadId));
   }
 
   /**
@@ -34,7 +37,11 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
   /**
    * Create contact for lead with tenant validation
    */
-  async createForLeadAndTenant(leadId: string, tenantId: string, data: Omit<NewLeadPointOfContact, 'leadId'>): Promise<LeadPointOfContact> {
+  async createForLeadAndTenant(
+    leadId: string,
+    tenantId: string,
+    data: Omit<NewLeadPointOfContact, 'leadId'>
+  ): Promise<LeadPointOfContact> {
     // First verify the lead belongs to the tenant
     const lead = await this.db
       .select()
@@ -86,10 +93,7 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
       return undefined;
     }
 
-    const [result] = await this.db
-      .delete(this.table)
-      .where(eq(this.table.id, id))
-      .returning();
+    const [result] = await this.db.delete(this.table).where(eq(this.table.id, id)).returning();
     return result;
   }
 
@@ -102,7 +106,7 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .where(and(eq(this.table.email, email), eq(leads.tenantId, tenantId)));
-    return results.map(result => result.lead_point_of_contacts);
+    return results.map((result) => result.lead_point_of_contacts);
   }
 
   /**
@@ -114,13 +118,16 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .where(and(eq(this.table.manuallyReviewed, true), eq(leads.tenantId, tenantId)));
-    return results.map(result => result.lead_point_of_contacts);
+    return results.map((result) => result.lead_point_of_contacts);
   }
 
   /**
    * Mark contact as manually reviewed
    */
-  async markAsManuallyReviewedForTenant(id: string, tenantId: string): Promise<LeadPointOfContact | undefined> {
+  async markAsManuallyReviewedForTenant(
+    id: string,
+    tenantId: string
+  ): Promise<LeadPointOfContact | undefined> {
     return await this.updateByIdForTenant(id, tenantId, { manuallyReviewed: true });
   }
 
@@ -128,9 +135,6 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
    * Delete all contacts for a lead
    */
   async deleteAllForLead(leadId: string): Promise<LeadPointOfContact[]> {
-    return await this.db
-      .delete(this.table)
-              .where(eq(this.table.leadId, leadId))
-        .returning();
-    }
+    return await this.db.delete(this.table).where(eq(this.table.leadId, leadId)).returning();
+  }
 }

@@ -1,6 +1,6 @@
 import { eq, and, isNull } from 'drizzle-orm';
-import { TenantAwareRepository } from '../base/TenantAwareRepository';
 import { products, Product, NewProduct } from '@/db/schema';
+import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class ProductRepository extends TenantAwareRepository<typeof products, Product, NewProduct> {
   constructor() {
@@ -66,7 +66,7 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
         .update(this.table)
         .set({ isDefault: false })
         .where(and(eq(this.table.tenantId, tenantId), eq(this.table.isDefault, true)));
-      
+
       productData.isDefault = true;
     }
 
@@ -93,18 +93,22 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
    * Find products with site URL for tenant
    */
   async findWithSiteUrlForTenant(tenantId: string): Promise<Product[]> {
-    return await this.db
+    return (await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), isNull(this.table.siteUrl))) as Product[];
+      .where(and(eq(this.table.tenantId, tenantId), isNull(this.table.siteUrl)))) as Product[];
   }
 
   /**
    * Check if product title exists for tenant
    */
-  async titleExistsForTenant(title: string, tenantId: string, excludeId?: string): Promise<boolean> {
+  async titleExistsForTenant(
+    title: string,
+    tenantId: string,
+    excludeId?: string
+  ): Promise<boolean> {
     let conditions = [eq(this.table.title, title), eq(this.table.tenantId, tenantId)];
-    
+
     if (excludeId) {
       conditions.push(eq(this.table.id, excludeId));
     }
@@ -114,7 +118,7 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
       .from(this.table)
       .where(and(...conditions))
       .limit(1);
-    
+
     return results.length > 0;
   }
 }

@@ -1,6 +1,12 @@
 import { eq, and, inArray } from 'drizzle-orm';
+import {
+  rolePermissions,
+  RolePermission,
+  NewRolePermission,
+  roles,
+  permissions,
+} from '@/db/schema';
 import { BaseRepository } from '../base/BaseRepository';
-import { rolePermissions, RolePermission, NewRolePermission, roles, permissions } from '@/db/schema';
 
 export interface RoleWithPermissions {
   role: typeof roles.$inferSelect;
@@ -12,7 +18,11 @@ export interface PermissionWithRoles {
   roles: (typeof roles.$inferSelect)[];
 }
 
-export class RolePermissionRepository extends BaseRepository<typeof rolePermissions, RolePermission, NewRolePermission> {
+export class RolePermissionRepository extends BaseRepository<
+  typeof rolePermissions,
+  RolePermission,
+  NewRolePermission
+> {
   constructor() {
     super(rolePermissions);
   }
@@ -20,25 +30,25 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
   /**
    * Find permissions for a role
    */
-  async findPermissionsByRoleId(roleId: string): Promise<typeof permissions.$inferSelect[]> {
+  async findPermissionsByRoleId(roleId: string): Promise<(typeof permissions.$inferSelect)[]> {
     const results = await this.db
       .select({ permission: permissions })
       .from(this.table)
       .innerJoin(permissions, eq(this.table.permissionId, permissions.id))
       .where(eq(this.table.roleId, roleId));
-    return results.map(result => result.permission);
+    return results.map((result) => result.permission);
   }
 
   /**
    * Find roles for a permission
    */
-  async findRolesByPermissionId(permissionId: string): Promise<typeof roles.$inferSelect[]> {
+  async findRolesByPermissionId(permissionId: string): Promise<(typeof roles.$inferSelect)[]> {
     const results = await this.db
       .select({ role: roles })
       .from(this.table)
       .innerJoin(roles, eq(this.table.roleId, roles.id))
       .where(eq(this.table.permissionId, permissionId));
-    return results.map(result => result.role);
+    return results.map((result) => result.role);
   }
 
   /**
@@ -81,14 +91,14 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
 
     // Get existing permissions to avoid duplicates
     const existingPermissions = await this.findPermissionsByRoleId(roleId);
-    const existingPermissionIds = existingPermissions.map(p => p.id);
+    const existingPermissionIds = existingPermissions.map((p) => p.id);
 
     // Filter out already granted permissions
-    const newPermissionIds = permissionIds.filter(id => !existingPermissionIds.includes(id));
-    
+    const newPermissionIds = permissionIds.filter((id) => !existingPermissionIds.includes(id));
+
     if (newPermissionIds.length === 0) return [];
 
-    const rolePermissionData = newPermissionIds.map(permissionId => ({
+    const rolePermissionData = newPermissionIds.map((permissionId) => ({
       roleId,
       permissionId,
     }));
@@ -99,7 +109,10 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
   /**
    * Revoke permission from role
    */
-  async revokePermission(roleId: string, permissionId: string): Promise<RolePermission | undefined> {
+  async revokePermission(
+    roleId: string,
+    permissionId: string
+  ): Promise<RolePermission | undefined> {
     const [result] = await this.db
       .delete(this.table)
       .where(and(eq(this.table.roleId, roleId), eq(this.table.permissionId, permissionId)))
@@ -112,7 +125,7 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
    */
   async revokePermissions(roleId: string, permissionIds: string[]): Promise<RolePermission[]> {
     if (permissionIds.length === 0) return [];
-    
+
     return await this.db
       .delete(this.table)
       .where(and(eq(this.table.roleId, roleId), inArray(this.table.permissionId, permissionIds)))
@@ -123,10 +136,7 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
    * Revoke all permissions from role
    */
   async revokeAllPermissions(roleId: string): Promise<RolePermission[]> {
-    return await this.db
-      .delete(this.table)
-      .where(eq(this.table.roleId, roleId))
-      .returning();
+    return await this.db.delete(this.table).where(eq(this.table.roleId, roleId)).returning();
   }
 
   /**
@@ -138,8 +148,8 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
 
     // Then grant the new permissions
     if (permissionIds.length === 0) return [];
-    
-    const rolePermissionData = permissionIds.map(permissionId => ({
+
+    const rolePermissionData = permissionIds.map((permissionId) => ({
       roleId,
       permissionId,
     }));
@@ -182,7 +192,7 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
    */
   async hasAnyPermission(roleId: string, permissionIds: string[]): Promise<boolean> {
     if (permissionIds.length === 0) return false;
-    
+
     const results = await this.db
       .select()
       .from(this.table)
@@ -196,12 +206,12 @@ export class RolePermissionRepository extends BaseRepository<typeof rolePermissi
    */
   async hasAllPermissions(roleId: string, permissionIds: string[]): Promise<boolean> {
     if (permissionIds.length === 0) return true;
-    
+
     const results = await this.db
       .select()
       .from(this.table)
       .where(and(eq(this.table.roleId, roleId), inArray(this.table.permissionId, permissionIds)));
-    
+
     return results.length === permissionIds.length;
   }
 }
