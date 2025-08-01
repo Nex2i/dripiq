@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
 import { Settings } from 'lucide-react'
+import LogoSvg from '../assets/logo.svg'
 
 export default function Header() {
   const { user, logout } = useAuth()
@@ -140,21 +141,7 @@ export default function Header() {
                           </div>
                         )}
                       </div>
-                      <svg
-                        className={`w-4 h-4 text-[var(--color-text-secondary)] transition-transform duration-200 ${
-                          isProfileMenuOpen ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
+                      <LogoSvg />
                     </button>
 
                     {/* Profile Dropdown Menu */}
