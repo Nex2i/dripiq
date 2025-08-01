@@ -13,6 +13,8 @@ export interface LeadProductWithDetails extends LeadProduct {
     id: string;
     title: string;
     description: string | null;
+    salesVoice: string | null;
+    siteUrl: string | null;
     tenantId: string;
   };
 }
@@ -190,6 +192,8 @@ export class LeadProductRepository extends BaseRepository<typeof leadProducts, L
           id: products.id,
           title: products.title,
           description: products.description,
+          salesVoice: products.salesVoice,
+          siteUrl: products.siteUrl,
           tenantId: products.tenantId,
         }
       })

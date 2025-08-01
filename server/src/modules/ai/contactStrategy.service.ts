@@ -114,8 +114,8 @@ export const generateContactStrategy = async (
         id: product.productId,
         title: product.product?.title || '',
         description: product.product?.description || '',
-        salesVoice: '', // TODO: Add salesVoice to product schema after migration
-        siteUrl: '', // TODO: Add siteUrl to product schema after migration
+        salesVoice: product.product?.salesVoice || '',
+        siteUrl: product.product?.siteUrl || '',
       })),
     };
 
