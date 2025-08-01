@@ -44,6 +44,23 @@ export class UserTenantRepository extends TenantAwareRepository<
   }
 
   /**
+   * Find pending user-tenant relationship by user ID
+   */
+  async findPendingByUserId(userId: string): Promise<UserTenant> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.userId, userId), eq(this.table.status, 'pending')))
+      .limit(1);
+
+    if (!results[0]) {
+      throw new NotFoundError(`User ${userId} has no pending user-tenant relationship`);
+    }
+
+    return results[0];
+  }
+
+  /**
    * Find all tenants for a user
    */
   async findTenantsByUserId(
@@ -273,5 +290,19 @@ export class UserTenantRepository extends TenantAwareRepository<
     };
 
     return await this.createForTenant(tenantId, invitationData);
+  }
+
+  /**
+   * Returns boolean if a user already exists in the tenant with the same email
+   */
+  async userExistsInTenant(email: string, tenantId: string): Promise<boolean> {
+    const result = await this.db
+      .select()
+      .from(this.table)
+      .innerJoin(users, eq(this.table.userId, users.id))
+      .where(and(eq(this.table.tenantId, tenantId), eq(users.email, email)))
+      .limit(1);
+
+    return result.length > 0;
   }
 }

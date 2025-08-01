@@ -1,5 +1,6 @@
-import { eq, and, desc } from 'drizzle-orm';
-import { db, userTenants, users, roles, NewUser, UserTenant, NewUserTenant } from '@/db';
+import { eq, and } from 'drizzle-orm';
+import { userTenants, users, roles, NewUser, UserTenant, NewUserTenant, db } from '@/db';
+import { userRepository, userTenantRepository } from '@/repositories';
 
 export interface CreateInviteData {
   tenantId: string;
@@ -41,14 +42,12 @@ export class InviteService {
     supabaseId: string
   ): Promise<{ userTenant: UserTenant; token: string }> {
     // Check if email already exists in this tenant
-    const existingUserTenant = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(users, eq(userTenants.userId, users.id))
-      .where(and(eq(userTenants.tenantId, data.tenantId), eq(users.email, data.email)))
-      .limit(1);
+    const existingUserTenant = await userTenantRepository.userExistsInTenant(
+      data.email,
+      data.tenantId
+    );
 
-    if (existingUserTenant.length > 0) {
+    if (existingUserTenant) {
       throw new Error('User with this email is already a member of this workspace');
     }
 
@@ -61,7 +60,7 @@ export class InviteService {
       name: fullName,
     };
 
-    const [user] = await db.insert(users).values(newUser).returning();
+    const user = await userRepository.create(newUser);
 
     if (!user) {
       throw new Error('Failed to create user');
@@ -76,7 +75,7 @@ export class InviteService {
       invitedAt: new Date(),
     };
 
-    const [userTenant] = await db.insert(userTenants).values(newUserTenant).returning();
+    const userTenant = await userTenantRepository.create(newUserTenant);
 
     if (!userTenant) {
       throw new Error('Failed to create user-tenant relationship');
@@ -106,33 +105,17 @@ export class InviteService {
     const offset = (page - 1) * limit;
 
     // Get all users for this tenant with role information
-    const tenantUsersQuery = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        status: userTenants.status,
-        invitedAt: userTenants.invitedAt,
-        acceptedAt: userTenants.acceptedAt,
-        createdAt: userTenants.createdAt,
-        roleId: userTenants.roleId,
-        roleName: roles.name,
-      })
-      .from(userTenants)
-      .innerJoin(users, eq(userTenants.userId, users.id))
-      .leftJoin(roles, eq(userTenants.roleId, roles.id))
-      .where(eq(userTenants.tenantId, tenantId))
-      .orderBy(desc(userTenants.createdAt));
+    const tenantUsersQuery = await userTenantRepository.findUsersWithDetailsForTenant(tenantId);
 
     // Transform to UserWithInviteInfo format
     const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
-      const [firstName, ...lastNameParts] = (ut.name || '').split(' ');
+      const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
       return {
         id: ut.id,
         firstName: firstName || undefined,
         lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
-        email: ut.email,
-        role: ut.roleName || 'Unknown', // Now returns actual role name
+        email: ut.user?.email || '',
+        role: ut.role?.name || 'Unknown', // Now returns actual role name
         status: ut.status as 'pending' | 'active',
         invitedAt: ut.invitedAt || undefined,
         lastLogin: ut.acceptedAt || undefined,
@@ -173,37 +156,25 @@ export class InviteService {
    */
   static async activateUserBySupabaseId(supabaseId: string): Promise<UserTenant | null> {
     // Find the user by Supabase ID
-    const [userRecord] = await db
-      .select()
-      .from(users)
-      .where(eq(users.supabaseId, supabaseId))
-      .limit(1);
+    const userRecord = await userRepository.findBySupabaseId(supabaseId);
 
     if (!userRecord) {
       return null;
     }
 
     // Find pending user-tenant relationship
-    const [userTenant] = await db
-      .select()
-      .from(userTenants)
-      .where(and(eq(userTenants.userId, userRecord.id), eq(userTenants.status, 'pending')))
-      .limit(1);
+    const userTenant = await userTenantRepository.findPendingByUserId(userRecord.id);
 
     if (!userTenant) {
       return null;
     }
 
     // Update user-tenant status to active
-    const [updatedUserTenant] = await db
-      .update(userTenants)
-      .set({
-        status: 'active',
-        acceptedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(userTenants.id, userTenant.id))
-      .returning();
+    const updatedUserTenant = await userTenantRepository.updateStatusForTenant(
+      userTenant.userId,
+      userTenant.tenantId,
+      'active'
+    );
 
     return updatedUserTenant || null;
   }
