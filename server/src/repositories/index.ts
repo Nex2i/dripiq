@@ -21,6 +21,7 @@ export { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
 export { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 export { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
+export { SiteEmbeddingTransactionRepository } from './transactions/SiteEmbeddingTransactionRepository';
 
 // Export types from entity repositories
 export type { LeadWithOwner, LeadSearchOptions } from './entities/LeadRepository';

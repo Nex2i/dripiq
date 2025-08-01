@@ -1,7 +1,8 @@
-import { eq, desc } from 'drizzle-orm';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
-import db from '@/libs/drizzleClient';
-import { SiteEmbeddingDomain, siteEmbeddingDomains, siteEmbeddings } from '@/db';
+import { SiteEmbeddingTransactionRepository } from '@/repositories/transactions/SiteEmbeddingTransactionRepository';
+import { SiteEmbeddingDomain } from '@/db';
+
+import { siteEmbeddingDomainRepository, siteEmbeddingRepository } from '@/repositories';
 import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
 import { chunkMarkdownForEmbedding } from './chunkMarkdownForEmbedding';
 import { getContentFromMessage } from './langchain/utils/messageUtils';
@@ -21,43 +22,11 @@ export const EmbeddingsService = {
     );
   },
   getOrCreateDomainByUrl: async (url: string): Promise<SiteEmbeddingDomain> => {
-    const result = await db.transaction(async (tx) => {
-      const existing = await tx
-        .select()
-        .from(siteEmbeddingDomains)
-        .where(eq(siteEmbeddingDomains.domain, url))
-        .limit(1);
-
-      if (existing.length > 0) {
-        return existing[0];
-      }
-
-      const inserted = await tx
-        .insert(siteEmbeddingDomains)
-        .values({
-          domain: url,
-          scrapedAt: new Date(),
-        })
-        .returning();
-
-      return inserted[0];
-    });
-
-    if (!result) {
-      throw new Error('Failed to get or create domain');
-    }
-
-    return result;
+    return await SiteEmbeddingTransactionRepository.getOrCreateDomainByUrl(url);
   },
   getDateOfLastDomainScrape: async (domain: string): Promise<Date | undefined> => {
-    const result = await db
-      .select({ scrapedAt: siteEmbeddingDomains.scrapedAt })
-      .from(siteEmbeddingDomains)
-      .where(eq(siteEmbeddingDomains.domain, domain))
-      .orderBy(desc(siteEmbeddingDomains.scrapedAt))
-      .limit(1);
-
-    return result[0]?.scrapedAt;
+    const domainRecord = await siteEmbeddingDomainRepository.findByDomain(domain);
+    return domainRecord?.scrapedAt || undefined;
   },
   embeddAndGetSummary: async (
     domainId: string,
@@ -85,7 +54,7 @@ export const EmbeddingsService = {
 
     const slug = metadata.url.getUrlSlug();
 
-    const embeddingDomain = await db.insert(siteEmbeddings).values({
+    const embeddingRecord = await siteEmbeddingRepository.create({
       domainId,
       url: metadata.url.cleanWebsiteUrl(),
       slug,
@@ -101,6 +70,6 @@ export const EmbeddingsService = {
         description,
       },
     });
-    return embeddingDomain;
+    return embeddingRecord;
   },
 };
