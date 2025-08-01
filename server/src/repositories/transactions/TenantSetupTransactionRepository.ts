@@ -1,11 +1,12 @@
+import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { 
-  tenants, 
+import {
+  tenants,
   users,
   userTenants,
   roles,
   products,
-  NewTenant, 
+  NewTenant,
   NewUser,
   NewUserTenant,
   NewProduct,
@@ -13,9 +14,8 @@ import {
   User,
   UserTenant,
   Role,
-  Product
+  Product,
 } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 
 export interface CreateTenantWithOwnerData {
   tenant: NewTenant;
@@ -54,9 +54,7 @@ export class TenantSetupTransactionRepository {
   /**
    * Create a tenant with an owner user in a single transaction
    */
-  async createTenantWithOwner(
-    data: CreateTenantWithOwnerData
-  ): Promise<TenantSetupResult> {
+  async createTenantWithOwner(data: CreateTenantWithOwnerData): Promise<TenantSetupResult> {
     return await db.transaction(async (tx) => {
       // Create tenant
       const [tenant] = await tx.insert(tenants).values(data.tenant).returning();
@@ -117,11 +115,14 @@ export class TenantSetupTransactionRepository {
       // Create default products if provided
       let createdProducts: Product[] = [];
       if (data.defaultProducts && data.defaultProducts.length > 0) {
-        const productsWithTenant = data.defaultProducts.map(product => ({
+        const productsWithTenant = data.defaultProducts.map((product) => ({
           ...product,
           tenantId: tenant.id,
         }));
-        createdProducts = await tx.insert(products).values(productsWithTenant as any).returning() as Product[];
+        createdProducts = (await tx
+          .insert(products)
+          .values(productsWithTenant as any)
+          .returning()) as Product[];
       }
 
       return {
@@ -204,11 +205,11 @@ export class TenantSetupTransactionRepository {
           };
 
           const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
-          
+
           if (!userTenant) {
             throw new Error('Failed to create user-tenant relationship');
           }
-          
+
           if (!role) {
             throw new Error('Role is undefined');
           }
@@ -252,10 +253,7 @@ export class TenantSetupTransactionRepository {
         .returning();
 
       // Delete tenant (this will cascade delete leads, lead statuses, etc.)
-      const [deletedTenant] = await tx
-        .delete(tenants)
-        .where(eq(tenants.id, tenantId))
-        .returning();
+      const [deletedTenant] = await tx.delete(tenants).where(eq(tenants.id, tenantId)).returning();
 
       return {
         tenant: deletedTenant,
@@ -291,7 +289,7 @@ export class TenantSetupTransactionRepository {
       // Promote new owner
       const [newOwner] = await tx
         .update(userTenants)
-        .set({ 
+        .set({
           isSuperUser: true,
           status: 'active', // Ensure new owner is active
         })
@@ -349,7 +347,7 @@ export class TenantSetupTransactionRepository {
         .where(eq(products.tenantId, sourceTenantId));
 
       // Prepare default products from source (without tenant-specific data)
-      const defaultProducts = sourceProducts.map(product => ({
+      const defaultProducts = sourceProducts.map((product) => ({
         title: product.title,
         description: product.description,
         salesVoice: product.salesVoice,
@@ -384,11 +382,7 @@ export class TenantSetupTransactionRepository {
 
       // Note: We don't have an 'archived' field in tenant schema
       // This could be added later or handled through a separate archival table
-      const [tenant] = await tx
-        .select()
-        .from(tenants)
-        .where(eq(tenants.id, tenantId))
-        .limit(1);
+      const [tenant] = await tx.select().from(tenants).where(eq(tenants.id, tenantId)).limit(1);
 
       return {
         tenant,

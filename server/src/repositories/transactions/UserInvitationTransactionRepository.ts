@@ -1,15 +1,15 @@
+import { eq, and } from 'drizzle-orm';
 import { db } from '@/db';
-import { 
-  users, 
-  userTenants, 
+import {
+  users,
+  userTenants,
   roles,
-  NewUser, 
+  NewUser,
   NewUserTenant,
   User,
   UserTenant,
-  Role
+  Role,
 } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
 
 export interface InviteUserData {
   user: NewUser;
@@ -38,10 +38,7 @@ export class UserInvitationTransactionRepository {
   /**
    * Invite a user to a tenant (create user if doesn't exist, create user-tenant relationship)
    */
-  async inviteUserToTenant(
-    tenantId: string,
-    data: InviteUserData
-  ): Promise<InviteUserResult> {
+  async inviteUserToTenant(tenantId: string, data: InviteUserData): Promise<InviteUserResult> {
     return await db.transaction(async (tx) => {
       // Check if user already exists by email
       const existingUsers = await tx
@@ -82,11 +79,7 @@ export class UserInvitationTransactionRepository {
       }
 
       // Get role information
-      const roleResults = await tx
-        .select()
-        .from(roles)
-        .where(eq(roles.id, data.roleId))
-        .limit(1);
+      const roleResults = await tx.select().from(roles).where(eq(roles.id, data.roleId)).limit(1);
 
       if (roleResults.length === 0) {
         throw new Error('Role not found');
@@ -105,11 +98,11 @@ export class UserInvitationTransactionRepository {
       };
 
       const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
-      
+
       if (!userTenant) {
         throw new Error('Failed to create user-tenant relationship');
       }
-      
+
       if (!role) {
         throw new Error('Role is undefined');
       }
@@ -148,11 +141,7 @@ export class UserInvitationTransactionRepository {
         }
         user = updatedUser;
       } else {
-        const [existingUser] = await tx
-          .select()
-          .from(users)
-          .where(eq(users.id, userId))
-          .limit(1);
+        const [existingUser] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
         if (!existingUser) {
           throw new Error('User not found');
         }
@@ -180,9 +169,7 @@ export class UserInvitationTransactionRepository {
   /**
    * Bulk invite multiple users to a tenant
    */
-  async bulkInviteUsersToTenant(
-    data: BulkInviteData
-  ): Promise<BulkInviteResult> {
+  async bulkInviteUsersToTenant(data: BulkInviteData): Promise<BulkInviteResult> {
     return await db.transaction(async (tx) => {
       const results: InviteUserResult[] = [];
       const errors: { index: number; email: string; error: string }[] = [];
@@ -190,11 +177,11 @@ export class UserInvitationTransactionRepository {
       for (let i = 0; i < data.invitations.length; i++) {
         try {
           const invitation = data.invitations[i];
-          
+
           if (!invitation) {
             throw new Error(`Invitation at index ${i} is undefined`);
           }
-          
+
           // Check if user already exists by email
           const existingUsers = await tx
             .select()
@@ -265,11 +252,11 @@ export class UserInvitationTransactionRepository {
           };
 
           const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
-          
+
           if (!userTenant) {
             throw new Error('Failed to create user-tenant relationship');
           }
-          
+
           if (!role) {
             throw new Error('Role is undefined');
           }
@@ -336,43 +323,6 @@ export class UserInvitationTransactionRepository {
   }
 
   /**
-   * Transfer tenant ownership (make user super user and demote others)
-   */
-  async transferTenantOwnership(
-    newOwnerId: string,
-    tenantId: string,
-    currentOwnerId?: string
-  ): Promise<{
-    newOwner: UserTenant;
-    demotedOwners: UserTenant[];
-  }> {
-    return await db.transaction(async (tx) => {
-      // Demote all current super users
-      const demotedOwners = await tx
-        .update(userTenants)
-        .set({ isSuperUser: false })
-        .where(and(eq(userTenants.tenantId, tenantId), eq(userTenants.isSuperUser, true)))
-        .returning();
-
-      // Promote new owner
-      const [newOwner] = await tx
-        .update(userTenants)
-        .set({ isSuperUser: true })
-        .where(and(eq(userTenants.userId, newOwnerId), eq(userTenants.tenantId, tenantId)))
-        .returning();
-
-      if (!newOwner) {
-        throw new Error('New owner user-tenant relationship not found');
-      }
-
-      return {
-        newOwner,
-        demotedOwners,
-      };
-    });
-  }
-
-  /**
    * Update user role for tenant
    */
   async updateUserRoleForTenant(
@@ -385,18 +335,14 @@ export class UserInvitationTransactionRepository {
   }> {
     return await db.transaction(async (tx) => {
       // Verify role exists
-      const roleResults = await tx
-        .select()
-        .from(roles)
-        .where(eq(roles.id, newRoleId))
-        .limit(1);
+      const roleResults = await tx.select().from(roles).where(eq(roles.id, newRoleId)).limit(1);
 
       if (roleResults.length === 0) {
         throw new Error('Role not found');
       }
 
       const role = roleResults[0];
-      
+
       if (!role) {
         throw new Error('Role is undefined');
       }

@@ -1,8 +1,12 @@
 import { eq, and, inArray } from 'drizzle-orm';
+import { leadStatuses, LeadStatus, NewLeadStatus } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
-import { leadStatuses, LeadStatus, NewLeadStatus, leads } from '@/db/schema';
 
-export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatuses, LeadStatus, NewLeadStatus> {
+export class LeadStatusRepository extends TenantAwareRepository<
+  typeof leadStatuses,
+  LeadStatus,
+  NewLeadStatus
+> {
   constructor() {
     super(leadStatuses);
   }
@@ -31,15 +35,21 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
   /**
    * Find status by lead and status name for tenant
    */
-  async findByLeadAndStatusForTenant(leadId: string, status: string, tenantId: string): Promise<LeadStatus | undefined> {
+  async findByLeadAndStatusForTenant(
+    leadId: string,
+    status: string,
+    tenantId: string
+  ): Promise<LeadStatus | undefined> {
     const results = await this.db
       .select()
       .from(this.table)
-      .where(and(
-        eq(this.table.leadId, leadId),
-        eq(this.table.status, status),
-        eq(this.table.tenantId, tenantId)
-      ))
+      .where(
+        and(
+          eq(this.table.leadId, leadId),
+          eq(this.table.status, status),
+          eq(this.table.tenantId, tenantId)
+        )
+      )
       .limit(1);
     return results[0];
   }
@@ -47,7 +57,11 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
   /**
    * Check if status exists for lead
    */
-  async statusExistsForLeadAndTenant(leadId: string, status: string, tenantId: string): Promise<boolean> {
+  async statusExistsForLeadAndTenant(
+    leadId: string,
+    status: string,
+    tenantId: string
+  ): Promise<boolean> {
     const result = await this.findByLeadAndStatusForTenant(leadId, status, tenantId);
     return !!result;
   }
@@ -55,7 +69,11 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
   /**
    * Create status if it doesn't exist
    */
-  async createIfNotExistsForTenant(leadId: string, status: string, tenantId: string): Promise<LeadStatus> {
+  async createIfNotExistsForTenant(
+    leadId: string,
+    status: string,
+    tenantId: string
+  ): Promise<LeadStatus> {
     const existing = await this.findByLeadAndStatusForTenant(leadId, status, tenantId);
     if (existing) {
       return existing;
@@ -70,8 +88,12 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
   /**
    * Create multiple statuses for a lead
    */
-  async createMultipleForLeadAndTenant(leadId: string, statuses: string[], tenantId: string): Promise<LeadStatus[]> {
-    const statusData = statuses.map(status => ({
+  async createMultipleForLeadAndTenant(
+    leadId: string,
+    statuses: string[],
+    tenantId: string
+  ): Promise<LeadStatus[]> {
+    const statusData = statuses.map((status) => ({
       leadId,
       status,
     }));
@@ -82,14 +104,20 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
   /**
    * Delete status by lead and status name for tenant
    */
-  async deleteByLeadAndStatusForTenant(leadId: string, status: string, tenantId: string): Promise<LeadStatus | undefined> {
+  async deleteByLeadAndStatusForTenant(
+    leadId: string,
+    status: string,
+    tenantId: string
+  ): Promise<LeadStatus | undefined> {
     const [result] = await this.db
       .delete(this.table)
-      .where(and(
-        eq(this.table.leadId, leadId),
-        eq(this.table.status, status),
-        eq(this.table.tenantId, tenantId)
-      ))
+      .where(
+        and(
+          eq(this.table.leadId, leadId),
+          eq(this.table.status, status),
+          eq(this.table.tenantId, tenantId)
+        )
+      )
       .returning();
     return result;
   }
@@ -112,8 +140,8 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
       .select({ status: this.table.status })
       .from(this.table)
       .where(eq(this.table.tenantId, tenantId));
-    
-    const uniqueStatuses = [...new Set(results.map(r => r.status))];
+
+    const uniqueStatuses = [...new Set(results.map((r) => r.status))];
     return uniqueStatuses;
   }
 
@@ -125,27 +153,33 @@ export class LeadStatusRepository extends TenantAwareRepository<typeof leadStatu
       .select({ status: this.table.status })
       .from(this.table)
       .where(eq(this.table.tenantId, tenantId));
-    
+
     const counts: Record<string, number> = {};
-    results.forEach(result => {
+    results.forEach((result) => {
       counts[result.status] = (counts[result.status] || 0) + 1;
     });
-    
+
     return counts;
   }
 
   /**
    * Update status timestamps (for tracking when statuses were added)
    */
-  async touchStatusForTenant(leadId: string, status: string, tenantId: string): Promise<LeadStatus | undefined> {
+  async touchStatusForTenant(
+    leadId: string,
+    status: string,
+    tenantId: string
+  ): Promise<LeadStatus | undefined> {
     const [result] = await this.db
       .update(this.table)
       .set({ updatedAt: new Date() })
-      .where(and(
-        eq(this.table.leadId, leadId),
-        eq(this.table.status, status),
-        eq(this.table.tenantId, tenantId)
-      ))
+      .where(
+        and(
+          eq(this.table.leadId, leadId),
+          eq(this.table.status, status),
+          eq(this.table.tenantId, tenantId)
+        )
+      )
       .returning();
     return result;
   }

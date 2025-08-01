@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { BaseRepository } from '../base/BaseRepository';
 import { users, User, NewUser } from '@/db/schema';
+import { BaseRepository } from '../base/BaseRepository';
 
 export class UserRepository extends BaseRepository<typeof users, User, NewUser> {
   constructor() {

@@ -1,14 +1,10 @@
-import { db } from '@/db';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { PgTable } from 'drizzle-orm/pg-core';
+import { db } from '@/db';
 import * as schema from '@/db/schema';
 
-export abstract class BaseRepository<
-  TTable extends PgTable,
-  TSelect = any,
-  TInsert = any
-> {
+export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TInsert = any> {
   protected db: PostgresJsDatabase<typeof schema>;
   protected table: TTable;
 
@@ -21,7 +17,10 @@ export abstract class BaseRepository<
    * Create a single record
    */
   async create(data: TInsert): Promise<TSelect> {
-    const [result] = await this.db.insert(this.table).values(data as any).returning();
+    const [result] = await this.db
+      .insert(this.table)
+      .values(data as any)
+      .returning();
     return result as TSelect;
   }
 
@@ -29,7 +28,10 @@ export abstract class BaseRepository<
    * Create multiple records
    */
   async createMany(data: TInsert[]): Promise<TSelect[]> {
-    return await this.db.insert(this.table).values(data as any).returning() as TSelect[];
+    return (await this.db
+      .insert(this.table)
+      .values(data as any)
+      .returning()) as TSelect[];
   }
 
   /**
@@ -49,17 +51,17 @@ export abstract class BaseRepository<
    */
   async findByIds(ids: string[]): Promise<TSelect[]> {
     if (ids.length === 0) return [];
-    return await this.db
+    return (await this.db
       .select()
       .from(this.table)
-      .where(inArray((this.table as any).id, ids)) as TSelect[];
+      .where(inArray((this.table as any).id, ids))) as TSelect[];
   }
 
   /**
    * Find all records
    */
   async findAll(): Promise<TSelect[]> {
-    return await this.db.select().from(this.table) as TSelect[];
+    return (await this.db.select().from(this.table)) as TSelect[];
   }
 
   /**
@@ -90,10 +92,10 @@ export abstract class BaseRepository<
    */
   async deleteByIds(ids: string[]): Promise<TSelect[]> {
     if (ids.length === 0) return [];
-    return await this.db
+    return (await this.db
       .delete(this.table)
       .where(inArray((this.table as any).id, ids))
-      .returning() as TSelect[];
+      .returning()) as TSelect[];
   }
 
   /**

@@ -4,15 +4,9 @@ import {
   leadPointOfContactRepository,
   leadStatusRepository,
   leadTransactionRepository,
-  repositories
+  repositories,
 } from '../repositories';
-import {
-  NewLead,
-  NewLeadPointOfContact,
-  Lead,
-  LeadPointOfContact,
-  LeadStatus,
-} from '../db/schema';
+import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
 import { logger } from '../libs/logger';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
 import { storageService } from './storage/storage.service';
@@ -151,15 +145,10 @@ export const getLeadById = async (
 ): Promise<LeadWithPointOfContacts> => {
   try {
     // Get lead with owner information using repository
-    const leadResults = await leadRepository.findWithSearch(tenantId, {});
-    const leadData = leadResults.find(lead => lead.id === id);
-
-    if (!leadData) {
-      throw new Error(`Lead not found with ID: ${id}`);
-    }
+    const leadData = await leadRepository.findById(id);
 
     // Get point of contacts for this lead
-    const contacts = await leadPointOfContactRepository.findByLeadIdForTenant(id, tenantId);
+    const contacts = await leadPointOfContactRepository.findByLeadId(id);
 
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
@@ -246,7 +235,7 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
     }
 
     // Then, verify that the user exists and belongs to the same tenant
-    const userTenant = await repositories.userTenant.findByUserAndTenantId(userId, tenantId);
+    const userTenant = await repositories.userTenant.findByUserIdForTenant(userId, tenantId);
     if (!userTenant) {
       throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
     }
@@ -259,7 +248,7 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
 
     // Get the updated lead with owner information
     const updatedLeadResults = await leadRepository.findWithSearch(tenantId, {});
-    const updatedLeadWithOwner = updatedLeadResults.find(lead => lead.id === leadId);
+    const updatedLeadWithOwner = updatedLeadResults.find((lead) => lead.id === leadId);
 
     if (!updatedLeadWithOwner) {
       throw new Error('Failed to retrieve updated lead with owner information');
@@ -390,7 +379,11 @@ export const hasStatus = async (
   status: LeadStatus['status']
 ): Promise<boolean> => {
   try {
-    const exists = await leadStatusRepository.statusExistsForLeadAndTenant(leadId, status, tenantId);
+    const exists = await leadStatusRepository.statusExistsForLeadAndTenant(
+      leadId,
+      status,
+      tenantId
+    );
     return exists;
   } catch (error) {
     logger.error('Error checking lead status:', error);
@@ -448,13 +441,18 @@ export const ensureAllLeadsHaveDefaultStatus = async (tenantId: string): Promise
       // Create default statuses for leads without any
       const statusesToCreate = leadsWithoutStatus.map(() => LEAD_STATUS.UNPROCESSED);
       const leadIds = leadsWithoutStatus.map((lead) => lead.id);
-      
+
       // Create statuses for each lead
       for (let i = 0; i < leadIds.length; i++) {
-        await leadStatusRepository.createForTenant(tenantId, {
-          leadId: leadIds[i],
-          status: statusesToCreate[i],
-        });
+        const leadId = leadIds[i];
+        const status = statusesToCreate[i];
+
+        if (leadId && status) {
+          await leadStatusRepository.createForTenant(tenantId, {
+            leadId,
+            status,
+          });
+        }
       }
 
       logger.info(`Added default "Unprocessed" status to ${leadsWithoutStatus.length} leads`);

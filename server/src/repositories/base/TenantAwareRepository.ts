@@ -5,9 +5,8 @@ import { BaseRepository } from './BaseRepository';
 export abstract class TenantAwareRepository<
   TTable extends PgTable,
   TSelect = any,
-  TInsert = any
+  TInsert = any,
 > extends BaseRepository<TTable, TSelect, TInsert> {
-  
   /**
    * Create a record with tenant validation
    */
@@ -19,8 +18,11 @@ export abstract class TenantAwareRepository<
   /**
    * Create multiple records with tenant validation
    */
-  async createManyForTenant(tenantId: string, data: Omit<TInsert, 'tenantId'>[]): Promise<TSelect[]> {
-    const dataWithTenant = data.map(item => ({ ...item, tenantId })) as TInsert[];
+  async createManyForTenant(
+    tenantId: string,
+    data: Omit<TInsert, 'tenantId'>[]
+  ): Promise<TSelect[]> {
+    const dataWithTenant = data.map((item) => ({ ...item, tenantId })) as TInsert[];
     return await this.createMany(dataWithTenant);
   }
 
@@ -41,26 +43,32 @@ export abstract class TenantAwareRepository<
    */
   async findByIdsForTenant(ids: string[], tenantId: string): Promise<TSelect[]> {
     if (ids.length === 0) return [];
-    return await this.db
+    return (await this.db
       .select()
       .from(this.table)
-      .where(and(inArray((this.table as any).id, ids), eq((this.table as any).tenantId, tenantId))) as TSelect[];
+      .where(
+        and(inArray((this.table as any).id, ids), eq((this.table as any).tenantId, tenantId))
+      )) as TSelect[];
   }
 
   /**
    * Find all records for a tenant
    */
   async findAllForTenant(tenantId: string): Promise<TSelect[]> {
-    return await this.db
+    return (await this.db
       .select()
       .from(this.table)
-      .where(eq((this.table as any).tenantId, tenantId)) as TSelect[];
+      .where(eq((this.table as any).tenantId, tenantId))) as TSelect[];
   }
 
   /**
    * Update record by ID with tenant validation
    */
-  async updateByIdForTenant(id: string, tenantId: string, data: Partial<Omit<TInsert, 'tenantId'>>): Promise<TSelect | undefined> {
+  async updateByIdForTenant(
+    id: string,
+    tenantId: string,
+    data: Partial<Omit<TInsert, 'tenantId'>>
+  ): Promise<TSelect | undefined> {
     const [result] = await this.db
       .update(this.table)
       .set(data as any)
@@ -85,10 +93,10 @@ export abstract class TenantAwareRepository<
    */
   async deleteByIdsForTenant(ids: string[], tenantId: string): Promise<TSelect[]> {
     if (ids.length === 0) return [];
-    return await this.db
+    return (await this.db
       .delete(this.table)
       .where(and(inArray((this.table as any).id, ids), eq((this.table as any).tenantId, tenantId)))
-      .returning() as TSelect[];
+      .returning()) as TSelect[];
   }
 
   /**
@@ -111,50 +119,70 @@ export abstract class TenantAwareRepository<
    * Delete all records for a tenant (used for tenant cleanup)
    */
   async deleteAllForTenant(tenantId: string): Promise<TSelect[]> {
-    return await this.db
+    return (await this.db
       .delete(this.table)
       .where(eq((this.table as any).tenantId, tenantId))
-      .returning() as TSelect[];
+      .returning()) as TSelect[];
   }
 
   // Override base methods to prevent accidental usage without tenant validation
   async create(_data?: any): Promise<TSelect> {
-    throw new Error('Use createForTenant instead. Direct create is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use createForTenant instead. Direct create is not allowed for tenant-aware repositories.'
+    );
   }
 
   async createMany(_data?: any): Promise<TSelect[]> {
-    throw new Error('Use createManyForTenant instead. Direct createMany is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use createManyForTenant instead. Direct createMany is not allowed for tenant-aware repositories.'
+    );
   }
 
   async findById(_id?: any): Promise<TSelect | undefined> {
-    throw new Error('Use findByIdForTenant instead. Direct findById is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use findByIdForTenant instead. Direct findById is not allowed for tenant-aware repositories.'
+    );
   }
 
   async findByIds(_ids?: any): Promise<TSelect[]> {
-    throw new Error('Use findByIdsForTenant instead. Direct findByIds is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use findByIdsForTenant instead. Direct findByIds is not allowed for tenant-aware repositories.'
+    );
   }
 
   async findAll(): Promise<TSelect[]> {
-    throw new Error('Use findAllForTenant instead. Direct findAll is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use findAllForTenant instead. Direct findAll is not allowed for tenant-aware repositories.'
+    );
   }
 
   async updateById(_id?: any, _data?: any): Promise<TSelect | undefined> {
-    throw new Error('Use updateByIdForTenant instead. Direct updateById is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use updateByIdForTenant instead. Direct updateById is not allowed for tenant-aware repositories.'
+    );
   }
 
   async deleteById(_id?: any): Promise<TSelect | undefined> {
-    throw new Error('Use deleteByIdForTenant instead. Direct deleteById is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use deleteByIdForTenant instead. Direct deleteById is not allowed for tenant-aware repositories.'
+    );
   }
 
   async deleteByIds(_ids?: any): Promise<TSelect[]> {
-    throw new Error('Use deleteByIdsForTenant instead. Direct deleteByIds is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use deleteByIdsForTenant instead. Direct deleteByIds is not allowed for tenant-aware repositories.'
+    );
   }
 
   async exists(_id?: any): Promise<boolean> {
-    throw new Error('Use existsForTenant instead. Direct exists is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use existsForTenant instead. Direct exists is not allowed for tenant-aware repositories.'
+    );
   }
 
   async count(): Promise<number> {
-    throw new Error('Use countForTenant instead. Direct count is not allowed for tenant-aware repositories.');
+    throw new Error(
+      'Use countForTenant instead. Direct count is not allowed for tenant-aware repositories.'
+    );
   }
 }
