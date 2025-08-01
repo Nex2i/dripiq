@@ -1,6 +1,7 @@
 import { eq, and } from 'drizzle-orm';
-import { userTenants, users, roles, NewUser, UserTenant, NewUserTenant, db } from '@/db';
-import { userRepository, userTenantRepository } from '@/repositories';
+import { userTenants, users, roles, NewUser, UserTenant, NewUserTenant } from '@/db';
+import { roleRepository, userRepository, userTenantRepository } from '@/repositories';
+import { NotFoundError } from '@/exceptions/error';
 
 export interface CreateInviteData {
   tenantId: string;
@@ -111,7 +112,7 @@ export class InviteService {
     const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
       const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
       return {
-        id: ut.id,
+        id: ut.userId,
         firstName: firstName || undefined,
         lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
         email: ut.user?.email || '',
@@ -159,15 +160,11 @@ export class InviteService {
     const userRecord = await userRepository.findBySupabaseId(supabaseId);
 
     if (!userRecord) {
-      return null;
+      throw new NotFoundError(`User ${supabaseId} not found`);
     }
 
     // Find pending user-tenant relationship
     const userTenant = await userTenantRepository.findPendingByUserId(userRecord.id);
-
-    if (!userTenant) {
-      return null;
-    }
 
     // Update user-tenant status to active
     const updatedUserTenant = await userTenantRepository.updateStatusForTenant(
@@ -191,39 +188,26 @@ export class InviteService {
     userId: string,
     tenantId: string
   ): Promise<{ userTenant: UserTenant; token: string }> {
-    const [userTenant] = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(users, eq(userTenants.userId, users.id))
-      .where(
-        and(
-          eq(userTenants.userId, userId),
-          eq(userTenants.tenantId, tenantId),
-          eq(userTenants.status, 'pending')
-        )
-      )
-      .limit(1);
+    const userTenant = await userTenantRepository.findPendingByUserId(userId);
 
     if (!userTenant) {
       throw new Error('User invitation not found or already activated');
     }
 
     // Update invite timestamp
-    const [updatedUserTenant] = await db
-      .update(userTenants)
-      .set({
-        invitedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(userTenants.id, userTenant.user_tenants.id))
-      .returning();
+
+    const updatedUserTenant = await userTenantRepository.updateById(userTenant.id, {
+      invitedAt: new Date(),
+    });
 
     if (!updatedUserTenant) {
       throw new Error('Failed to update invitation');
     }
 
+    const user = await userRepository.findById(userTenant.userId);
+
     // Return Supabase ID as token
-    return { userTenant: updatedUserTenant, token: userTenant.users.supabaseId };
+    return { userTenant: updatedUserTenant, token: user.supabaseId };
   }
 
   /**
@@ -234,14 +218,7 @@ export class InviteService {
    * @throws Throws an error if the user is not found in the tenant.
    */
   static async removeUser(userId: string, tenantId: string): Promise<void> {
-    const result = await db
-      .delete(userTenants)
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .returning({ id: userTenants.id });
-
-    if (result.length === 0) {
-      throw new Error('User not found in this workspace');
-    }
+    await userTenantRepository.deleteByIdForTenant(userId, tenantId);
   }
 
   /**
@@ -250,14 +227,8 @@ export class InviteService {
    * @param tenantId - The ID of the tenant.
    * @returns A promise that resolves to the user-tenant relationship object, or null if not found.
    */
-  static async getUserTenant(userId: string, tenantId: string): Promise<UserTenant | null> {
-    const result = await db
-      .select()
-      .from(userTenants)
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .limit(1);
-
-    return result[0] || null;
+  static async getUserTenant(userId: string, tenantId: string): Promise<UserTenant> {
+    return await userTenantRepository.findByUserIdForTenant(userId, tenantId);
   }
 
   /**
@@ -274,20 +245,12 @@ export class InviteService {
     supabaseId: string
   ): Promise<UserTenant> {
     // First update the user record
-    await db
-      .update(users)
-      .set({
-        supabaseId: supabaseId,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId));
+    await userRepository.updateById(userId, {
+      supabaseId: supabaseId,
+    });
 
     // Get the updated user-tenant relationship
-    const [userTenant] = await db
-      .select()
-      .from(userTenants)
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .limit(1);
+    const userTenant = await userTenantRepository.findByUserIdForTenant(userId, tenantId);
 
     if (!userTenant) {
       throw new Error('User-tenant relationship not found');
@@ -310,31 +273,24 @@ export class InviteService {
     roleId: string
   ): Promise<UserTenant> {
     // Verify the role exists
-    const role = await db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
-    if (role.length === 0) {
+    const role = await roleRepository.findById(roleId);
+    if (!role) {
       throw new Error('Invalid role ID');
     }
 
     // Verify the user exists in this tenant
-    const userTenant = await db
-      .select()
-      .from(userTenants)
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .limit(1);
+    const userTenant = await userTenantRepository.findByUserIdForTenant(userId, tenantId);
 
-    if (userTenant.length === 0) {
+    if (!userTenant) {
       throw new Error('User not found in this tenant');
     }
 
     // Update the user's role
-    const [updatedUserTenant] = await db
-      .update(userTenants)
-      .set({
-        roleId: roleId,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .returning();
+    const updatedUserTenant = await userTenantRepository.updateRoleForTenant(
+      userId,
+      tenantId,
+      roleId
+    );
 
     if (!updatedUserTenant) {
       throw new Error('Failed to update user role');

@@ -34,12 +34,17 @@ export class UserTenantRepository extends TenantAwareRepository<
   /**
    * Find user-tenant relationships by user ID for tenant
    */
-  async findByUserIdForTenant(userId: string, tenantId: string): Promise<UserTenant | undefined> {
+  async findByUserIdForTenant(userId: string, tenantId: string): Promise<UserTenant> {
     const results = await this.db
       .select()
       .from(this.table)
       .where(and(eq(this.table.userId, userId), eq(this.table.tenantId, tenantId)))
       .limit(1);
+
+    if (!results[0]) {
+      throw new NotFoundError(`User ${userId} not found in tenant ${tenantId}`);
+    }
+
     return results[0];
   }
 
