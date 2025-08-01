@@ -286,7 +286,7 @@ export class InviteService {
 
     // Update the user's role
     const updatedUserTenant = await userTenantRepository.updateRoleForTenant(
-      userId,
+      userTenant.id,
       tenantId,
       roleId
     );
