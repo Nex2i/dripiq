@@ -2,12 +2,16 @@ import { eq } from 'drizzle-orm';
 import { users, userTenants, tenants, User, NewUser, UserTenant } from '@/db/schema';
 import { BaseRepository, IRepository } from './base.repository';
 
-export class UserRepository extends BaseRepository implements IRepository<User, NewUser> {
+export class UserRepository extends BaseRepository {
   /**
-   * Find user by ID
+   * Find user by ID - Users are global, tenant validation optional for certain operations
    */
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string, tenantId?: string, userId?: string): Promise<User | null> {
     try {
+      if (userId && tenantId) {
+        await this.validateUserTenantAccess(userId, tenantId);
+      }
+
       const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
       return result[0] || null;
     } catch (error) {

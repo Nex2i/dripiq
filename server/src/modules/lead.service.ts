@@ -1,17 +1,11 @@
-import { desc, or, ilike, inArray, eq, and } from 'drizzle-orm';
-import db from '../libs/drizzleClient';
+import { leadRepository } from '@/repositories';
 import {
-  leads,
   NewLead,
-  leadPointOfContacts,
   NewLeadPointOfContact,
   Lead,
   LeadPointOfContact,
-  leadStatuses,
   NewLeadStatus,
   LeadStatus,
-  userTenants,
-  users,
 } from '../db/schema';
 import { logger } from '../libs/logger';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
@@ -36,18 +30,9 @@ const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
  * @param searchQuery - An optional string to search for in the lead's name, email, company, or phone number.
  * @returns A promise that resolves to an array of lead objects with owner information.
  */
-export const getLeads = async (tenantId: string, searchQuery?: string) => {
-  // Build base query with tenant filter
-  const baseWhere = eq(leads.tenantId, tenantId);
-
-  // Add search functionality if searchQuery is provided
-  let leadResults;
-  if (searchQuery && searchQuery.trim()) {
-    const searchTerm = `%${searchQuery.trim()}%`;
-    leadResults = await db
-      .select({
-        // Lead fields
-        id: leads.id,
+export const getLeads = async (tenantId: string, searchQuery?: string, userId?: string) => {
+  // Use repository method for search functionality
+  const leadResults = await leadRepository.findByTenantWithSearch(tenantId, searchQuery, userId);
         name: leads.name,
         url: leads.url,
         status: leads.status,

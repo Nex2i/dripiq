@@ -1,15 +1,11 @@
-import { eq, and } from 'drizzle-orm';
+import { tenantRepository, userTenantRepository } from '@/repositories';
 import {
-  db,
-  tenants,
-  userTenants,
-  users,
   Tenant,
   UserTenant,
   User,
   NewTenant,
   NewUserTenant,
-} from '@/db';
+} from '@/db/schema';
 import { validateUserSuperAccess, validateUserTenantAccess } from '@/utils/tenantValidation';
 
 export interface CreateTenantData {
@@ -47,13 +43,7 @@ export class TenantService {
       name: formattedName,
     };
 
-    const [tenant] = await db.insert(tenants).values(newTenant).returning();
-
-    if (!tenant) {
-      throw new Error('Failed to create tenant');
-    }
-
-    return tenant;
+    return await tenantRepository.create(newTenant);
   }
 
   /**
@@ -62,31 +52,7 @@ export class TenantService {
    * @returns A promise that resolves to the tenant object with its users, or null if not found.
    */
   static async getTenantById(tenantId: string): Promise<TenantWithUsers> {
-    const tenant = await db
-      .select()
-      .from(tenants)
-      .where(eq(tenants.id, tenantId))
-      .limit(1)
-      .then((result) => result[0]);
-
-    if (!tenant) {
-      throw new Error('Tenant not found');
-    }
-
-    // Get users for this tenant
-    const tenantUsers = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(users, eq(userTenants.userId, users.id))
-      .where(eq(userTenants.tenantId, tenantId));
-
-    return {
-      ...tenant,
-      users: tenantUsers.map((row) => ({
-        ...row.user_tenants,
-        user: row.users,
-      })),
-    };
+    return await tenantRepository.findByIdWithUsers(tenantId);
   }
 
   /**
@@ -95,9 +61,7 @@ export class TenantService {
    * @returns A promise that resolves to the tenant object or null if not found.
    */
   static async getTenantByName(name: string): Promise<Tenant | null> {
-    const result = await db.select().from(tenants).where(eq(tenants.name, name)).limit(1);
-
-    return result[0] || null;
+    return await tenantRepository.findByName(name);
   }
 
   /**
@@ -123,17 +87,11 @@ export class TenantService {
         isSuperUser,
       };
 
-      const [userTenant] = await db.insert(userTenants).values(newUserTenant).returning();
-      return userTenant!;
+      return await userTenantRepository.create(newUserTenant, tenantId);
     } catch (error: any) {
       // If relationship already exists (unique constraint violation), fetch and return it
       if (error.code === '23505') {
-        const existingRelation = await db
-          .select()
-          .from(userTenants)
-          .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-          .limit(1)
-          .then((result: any) => result[0]);
+        const existingRelation = await userTenantRepository.findByUserAndTenant(userId, tenantId);
 
         if (!existingRelation) {
           throw new Error('UserTenant creation failed and relation not found');
@@ -150,16 +108,20 @@ export class TenantService {
    * @returns A promise that resolves to an array of user-tenant objects, with the full tenant object nested.
    */
   static async getUserTenants(userId: string): Promise<(UserTenant & { tenant: Tenant })[]> {
-    const result = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(tenants, eq(userTenants.tenantId, tenants.id))
-      .where(eq(userTenants.userId, userId));
-
-    return result.map((row) => ({
-      ...row.user_tenants,
-      tenant: row.tenants,
-    }));
+    const userTenantRelations = await userTenantRepository.findByUser(userId);
+    const results = [];
+    
+    for (const relation of userTenantRelations) {
+      const tenant = await tenantRepository.findById(relation.tenantId);
+      if (tenant) {
+        results.push({
+          ...relation,
+          tenant,
+        });
+      }
+    }
+    
+    return results;
   }
 
   /**
@@ -183,20 +145,7 @@ export class TenantService {
       updateData.name = updateData.name.toLowerCase().replace(/\s+/g, '-');
     }
 
-    const [tenant] = await db
-      .update(tenants)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(tenants.id, tenantId))
-      .returning();
-
-    if (!tenant) {
-      throw new Error('Tenant not found');
-    }
-
-    return tenant;
+    return await tenantRepository.update(tenantId, updateData);
   }
 
   /**
@@ -210,13 +159,7 @@ export class TenantService {
     // Validate user has super user access to this tenant
     await validateUserSuperAccess(userId, tenantId);
 
-    const [tenant] = await db.delete(tenants).where(eq(tenants.id, tenantId)).returning();
-
-    if (!tenant) {
-      throw new Error('Tenant not found');
-    }
-
-    return tenant;
+    return await tenantRepository.delete(tenantId);
   }
 
   /**

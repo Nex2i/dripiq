@@ -1,17 +1,17 @@
-import { eq, and } from 'drizzle-orm';
 import {
-  db,
-  roles,
-  permissions,
-  rolePermissions,
-  userTenants,
+  roleRepository,
+  permissionRepository,
+  rolePermissionRepository,
+  userTenantRepository,
+} from '@/repositories';
+import {
   Role,
   Permission,
   RolePermission,
   NewRole,
   NewPermission,
   NewRolePermission,
-} from '@/db';
+} from '@/db/schema';
 
 export interface CreateRoleData {
   name: string;
@@ -44,19 +44,13 @@ export class RoleService {
    * @returns A promise that resolves to the created role.
    * @throws Throws an error if the role creation fails.
    */
-  static async createRole(roleData: CreateRoleData): Promise<Role> {
+  static async createRole(roleData: CreateRoleData, tenantId: string, userId?: string): Promise<Role> {
     const newRole: NewRole = {
       name: roleData.name,
       description: roleData.description || null,
     };
 
-    const [role] = await db.insert(roles).values(newRole).returning();
-
-    if (!role) {
-      throw new Error('Failed to create role');
-    }
-
-    return role;
+    return await roleRepository.create(newRole, tenantId, userId);
   }
 
   /**
@@ -65,7 +59,7 @@ export class RoleService {
    * @returns A promise that resolves to the created permission.
    * @throws Throws an error if the permission creation fails.
    */
-  static async createPermission(permissionData: CreatePermissionData): Promise<Permission> {
+  static async createPermission(permissionData: CreatePermissionData, tenantId: string, userId?: string): Promise<Permission> {
     const newPermission: NewPermission = {
       name: permissionData.name,
       description: permissionData.description || null,
@@ -73,13 +67,7 @@ export class RoleService {
       action: permissionData.action,
     };
 
-    const [permission] = await db.insert(permissions).values(newPermission).returning();
-
-    if (!permission) {
-      throw new Error('Failed to create permission');
-    }
-
-    return permission;
+    return await permissionRepository.create(newPermission, tenantId, userId);
   }
 
   /**

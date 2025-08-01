@@ -1,6 +1,5 @@
-import { eq, and } from 'drizzle-orm';
-import { db } from '@/db';
-import { leadPointOfContacts, leads, NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
+import { leadPointOfContactRepository } from '@/repositories';
+import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { logger } from '@/libs/logger';
 
 /**
@@ -13,28 +12,11 @@ import { logger } from '@/libs/logger';
 export const getContactById = async (
   tenantId: string,
   leadId: string,
-  contactId: string
+  contactId: string,
+  userId?: string
 ): Promise<LeadPointOfContact | null> => {
   try {
-    // First verify the lead exists and belongs to the tenant
-    const leadExists = await db
-      .select({ id: leads.id })
-      .from(leads)
-      .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
-      .limit(1);
-
-    if (leadExists.length === 0) {
-      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
-    }
-
-    // Get the contact
-    const contacts = await db
-      .select()
-      .from(leadPointOfContacts)
-      .where(and(eq(leadPointOfContacts.id, contactId), eq(leadPointOfContacts.leadId, leadId)))
-      .limit(1);
-
-    return contacts[0] || null;
+    return await leadPointOfContactRepository.findById(contactId, tenantId, userId);
   } catch (error) {
     logger.error('Error getting contact by ID:', error);
     throw error;

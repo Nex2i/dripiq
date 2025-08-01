@@ -1,5 +1,5 @@
-import { eq } from 'drizzle-orm';
-import { db, users, User, NewUser, UserTenant, userTenants, tenants } from '@/db';
+import { userRepository, userTenantRepository } from '@/repositories';
+import { User, NewUser, UserTenant } from '@/db/schema';
 import { validateUserTenantAccess } from '@/utils/tenantValidation';
 
 export interface CreateUserData {
@@ -25,17 +25,11 @@ export class UserService {
         avatar: userData.avatar || null,
       };
 
-      const [user] = await db.insert(users).values(newUser).returning();
-      return user!;
+      return await userRepository.create(newUser);
     } catch (error: any) {
       // If user already exists (unique constraint violation), fetch and return it
       if (error.code === '23505') {
-        const existingUser = await db
-          .select()
-          .from(users)
-          .where(eq(users.supabaseId, userData.supabaseId))
-          .limit(1)
-          .then((result) => result[0]);
+        const existingUser = await userRepository.findBySupabaseId(userData.supabaseId);
 
         if (!existingUser) {
           throw new Error('User creation failed and user not found');
@@ -52,9 +46,7 @@ export class UserService {
    * @returns A promise that resolves to the user object or null if not found.
    */
   static async getUserBySupabaseId(supabaseId: string): Promise<User | null> {
-    const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
-
-    return result[0] || null;
+    return await userRepository.findBySupabaseId(supabaseId);
   }
 
   /**
@@ -63,9 +55,7 @@ export class UserService {
    * @returns A promise that resolves to the user object or null if not found.
    */
   static async getUserByEmail(email: string): Promise<User | null> {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-
-    return result[0] || null;
+    return await userRepository.findByEmail(email);
   }
 
   /**
@@ -74,9 +64,7 @@ export class UserService {
    * @returns A promise that resolves to the user object or null if not found.
    */
   static async getUserById(id: string): Promise<User | null> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-
-    return result[0] || null;
+    return await userRepository.findById(id);
   }
 
   /**
@@ -87,20 +75,7 @@ export class UserService {
    * @throws Throws an error if the user is not found.
    */
   static async updateUser(supabaseId: string, updateData: Partial<CreateUserData>): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.supabaseId, supabaseId))
-      .returning();
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return user;
+    return await userRepository.updateBySupabaseId(supabaseId, updateData);
   }
 
   /**
@@ -110,13 +85,7 @@ export class UserService {
    * @throws Throws an error if the user is not found.
    */
   static async deleteUser(supabaseId: string): Promise<User> {
-    const [user] = await db.delete(users).where(eq(users.supabaseId, supabaseId)).returning();
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    return user;
+    return await userRepository.deleteBySupabaseId(supabaseId);
   }
 
   /**
@@ -133,60 +102,7 @@ export class UserService {
       isSuperUser: boolean;
     }>;
   } | null> {
-    // Single query to get user and all their tenants with JOIN
-    const result = await db
-      .select({
-        // User fields
-        userId: users.id,
-        userSupabaseId: users.supabaseId,
-        userEmail: users.email,
-        userName: users.name,
-        userAvatar: users.avatar,
-        userCreatedAt: users.createdAt,
-        userUpdatedAt: users.updatedAt,
-        // Tenant fields (null if user has no tenants)
-        tenantId: tenants.id,
-        tenantName: tenants.name,
-        isSuperUser: userTenants.isSuperUser,
-      })
-      .from(users)
-      .leftJoin(userTenants, eq(users.id, userTenants.userId))
-      .leftJoin(tenants, eq(userTenants.tenantId, tenants.id))
-      .where(eq(users.supabaseId, supabaseId));
-
-    if (result.length === 0) {
-      return null;
-    }
-
-    // Reconstruct the user object
-    const userRow = result[0]!;
-    const user: User = {
-      id: userRow.userId,
-      supabaseId: userRow.userSupabaseId,
-      email: userRow.userEmail,
-      name: userRow.userName,
-      avatar: userRow.userAvatar,
-      createdAt: userRow.userCreatedAt,
-      updatedAt: userRow.userUpdatedAt,
-    };
-
-    // Build unique tenants list (filter out null tenants)
-    const tenantMap = new Map<string, { id: string; name: string; isSuperUser: boolean }>();
-
-    for (const row of result) {
-      if (row.tenantId && row.tenantName) {
-        tenantMap.set(row.tenantId, {
-          id: row.tenantId,
-          name: row.tenantName,
-          isSuperUser: row.isSuperUser || false,
-        });
-      }
-    }
-
-    return {
-      user,
-      userTenants: Array.from(tenantMap.values()),
-    };
+    return await userRepository.findWithTenantsForAuth(supabaseId);
   }
 
   /**
@@ -203,15 +119,6 @@ export class UserService {
     // Validate requesting user has access to this tenant
     await validateUserTenantAccess(requestingUserId, tenantId);
 
-    const result = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(users, eq(userTenants.userId, users.id))
-      .where(eq(userTenants.tenantId, tenantId));
-
-    return result.map((row) => ({
-      ...row.user_tenants,
-      user: row.users,
-    }));
+    return await userRepository.findByTenant(tenantId);
   }
 }
