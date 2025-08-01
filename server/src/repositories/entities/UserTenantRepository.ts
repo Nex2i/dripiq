@@ -1,19 +1,20 @@
 import { eq, and } from 'drizzle-orm';
-import { userTenants, UserTenant, NewUserTenant, users, tenants, roles } from '@/db/schema';
+import {
+  userTenants,
+  UserTenant,
+  NewUserTenant,
+  users,
+  tenants,
+  roles,
+  User,
+  Tenant,
+} from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export interface UserTenantWithDetails extends UserTenant {
-  user?: {
-    id: string;
-    email: string;
-    name: string | null;
-    avatar: string | null;
-  };
-  tenant?: {
-    id: string;
-    name: string;
-    organizationName: string | null;
-  };
+  user?: User;
+  tenant?: Tenant;
   role?: {
     id: string;
     name: string;
@@ -45,48 +46,30 @@ export class UserTenantRepository extends TenantAwareRepository<
   /**
    * Find all tenants for a user
    */
-  async findTenantsByUserId(userId: string): Promise<UserTenantWithDetails[]> {
-    return await this.db
-      .select({
-        id: this.table.id,
-        userId: this.table.userId,
-        tenantId: this.table.tenantId,
-        roleId: this.table.roleId,
-        isSuperUser: this.table.isSuperUser,
-        status: this.table.status,
-        invitedAt: this.table.invitedAt,
-        acceptedAt: this.table.acceptedAt,
-        createdAt: this.table.createdAt,
-        updatedAt: this.table.updatedAt,
-        user: {
-          id: users.id,
-          email: users.email,
-          name: users.name,
-          avatar: users.avatar,
-        },
-        tenant: {
-          id: tenants.id,
-          name: tenants.name,
-          organizationName: tenants.organizationName,
-        },
-        role: {
-          id: roles.id,
-          name: roles.name,
-          description: roles.description,
-        },
-      })
+  async findTenantsByUserId(
+    userId: string
+  ): Promise<({ userTenant: UserTenant } & { tenant: Tenant })[]> {
+    const results = await this.db
+      .select()
       .from(this.table)
-      .innerJoin(users, eq(this.table.userId, users.id))
-      .innerJoin(tenants, eq(this.table.tenantId, tenants.id))
-      .innerJoin(roles, eq(this.table.roleId, roles.id))
-      .where(eq(this.table.userId, userId));
+      .where(eq(this.table.userId, userId))
+      .innerJoin(tenants, eq(this.table.tenantId, tenants.id));
+
+    if (!results[0]) {
+      throw new NotFoundError(`User ${userId} has no tenants`);
+    }
+
+    return results.map((result) => ({
+      userTenant: result.user_tenants,
+      tenant: result.tenants,
+    }));
   }
 
   /**
    * Find all users for a tenant with details
    */
   async findUsersWithDetailsForTenant(tenantId: string): Promise<UserTenantWithDetails[]> {
-    return await this.db
+    return (await this.db
       .select({
         id: this.table.id,
         userId: this.table.userId,
@@ -119,7 +102,7 @@ export class UserTenantRepository extends TenantAwareRepository<
       .innerJoin(users, eq(this.table.userId, users.id))
       .innerJoin(tenants, eq(this.table.tenantId, tenants.id))
       .innerJoin(roles, eq(this.table.roleId, roles.id))
-      .where(eq(this.table.tenantId, tenantId));
+      .where(eq(this.table.tenantId, tenantId))) as UserTenantWithDetails[];
   }
 
   /**
@@ -169,7 +152,7 @@ export class UserTenantRepository extends TenantAwareRepository<
    * Find pending invitations for tenant
    */
   async findPendingInvitationsForTenant(tenantId: string): Promise<UserTenantWithDetails[]> {
-    return await this.db
+    return (await this.db
       .select({
         id: this.table.id,
         userId: this.table.userId,
@@ -202,14 +185,16 @@ export class UserTenantRepository extends TenantAwareRepository<
       .innerJoin(users, eq(this.table.userId, users.id))
       .innerJoin(tenants, eq(this.table.tenantId, tenants.id))
       .innerJoin(roles, eq(this.table.roleId, roles.id))
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.status, 'pending')));
+      .where(
+        and(eq(this.table.tenantId, tenantId), eq(this.table.status, 'pending'))
+      )) as UserTenantWithDetails[];
   }
 
   /**
    * Find pending invitations for user
    */
   async findPendingInvitationsForUser(userId: string): Promise<UserTenantWithDetails[]> {
-    return await this.db
+    return (await this.db
       .select({
         id: this.table.id,
         userId: this.table.userId,
@@ -242,7 +227,9 @@ export class UserTenantRepository extends TenantAwareRepository<
       .innerJoin(users, eq(this.table.userId, users.id))
       .innerJoin(tenants, eq(this.table.tenantId, tenants.id))
       .innerJoin(roles, eq(this.table.roleId, roles.id))
-      .where(and(eq(this.table.userId, userId), eq(this.table.status, 'pending')));
+      .where(
+        and(eq(this.table.userId, userId), eq(this.table.status, 'pending'))
+      )) as UserTenantWithDetails[];
   }
 
   /**

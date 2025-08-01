@@ -32,10 +32,9 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
     url: `${basePath}/:id`,
     handler: async (request, reply) => {
       try {
-        const { id } = request.params;
-        const user = (request as any).user;
+        const { tenantId } = request as AuthenticatedRequest;
 
-        const tenant = await TenantService.getTenantByIdSecure(user.id, id);
+        const tenant = await TenantService.getTenantById(tenantId);
 
         if (!tenant) {
           return reply.status(404).send({ message: 'Organization not found' });
@@ -53,7 +52,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           differentiators: tenant.differentiators || [],
           targetMarket: tenant.targetMarket || '',
           tone: tenant.tone || '',
-          logo: await generateOrganizationLogoSignedUrl(id, tenant.website),
+          logo: await generateOrganizationLogoSignedUrl(tenantId, tenant.website),
           brandColors: tenant.brandColors || [],
         });
       } catch (error: any) {

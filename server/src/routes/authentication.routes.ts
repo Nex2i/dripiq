@@ -229,7 +229,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
             return {
               id: ut.tenant.id,
               name: ut.tenant.name,
-              isSuperUser: ut.isSuperUser,
+              isSuperUser: ut.userTenant.isSuperUser,
               role: userPermissions
                 ? {
                     id: userPermissions.roleId,
