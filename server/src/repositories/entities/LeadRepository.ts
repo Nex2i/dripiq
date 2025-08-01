@@ -80,17 +80,17 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
       conditions.push(eq(this.table.status, status));
     }
 
-    query = query.where(and(...conditions)).orderBy(desc(this.table.createdAt));
+    (query as any) = (query as any).where(and(...conditions)).orderBy(desc(this.table.createdAt));
 
     if (limit) {
-      query = query.limit(limit);
+      (query as any) = (query as any).limit(limit);
     }
 
     if (offset) {
-      query = query.offset(offset);
+      (query as any) = (query as any).offset(offset);
     }
 
-    return await query;
+    return await (query as any);
   }
 
   /**

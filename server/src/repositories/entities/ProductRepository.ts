@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 import { products, Product, NewProduct } from '@/db/schema';
 
@@ -96,7 +96,7 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
     return await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.siteUrl, null)));
+      .where(and(eq(this.table.tenantId, tenantId), isNull(this.table.siteUrl))) as Product[];
   }
 
   /**

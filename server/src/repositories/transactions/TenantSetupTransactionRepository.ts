@@ -60,6 +60,9 @@ export class TenantSetupTransactionRepository {
     return await db.transaction(async (tx) => {
       // Create tenant
       const [tenant] = await tx.insert(tenants).values(data.tenant).returning();
+      if (!tenant) {
+        throw new Error('Failed to create tenant');
+      }
 
       // Check if owner user already exists
       const existingUsers = await tx
@@ -72,9 +75,12 @@ export class TenantSetupTransactionRepository {
       let wasOwnerCreated = false;
 
       if (existingUsers.length > 0) {
-        owner = existingUsers[0];
+        owner = existingUsers[0]!;
       } else {
         const [createdOwner] = await tx.insert(users).values(data.owner).returning();
+        if (!createdOwner) {
+          throw new Error('Failed to create owner user');
+        }
         owner = createdOwner;
         wasOwnerCreated = true;
       }
@@ -90,7 +96,7 @@ export class TenantSetupTransactionRepository {
         throw new Error('Owner role not found');
       }
 
-      const role = roleResults[0];
+      const role = roleResults[0]!;
 
       // Create user-tenant relationship (owner with super user privileges)
       const userTenantData: NewUserTenant = {
@@ -104,6 +110,9 @@ export class TenantSetupTransactionRepository {
       };
 
       const [userTenant] = await tx.insert(userTenants).values(userTenantData).returning();
+      if (!userTenant) {
+        throw new Error('Failed to create user-tenant relationship');
+      }
 
       // Create default products if provided
       let createdProducts: Product[] = [];

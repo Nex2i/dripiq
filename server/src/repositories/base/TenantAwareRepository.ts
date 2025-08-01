@@ -1,11 +1,11 @@
 import { eq, and, inArray } from 'drizzle-orm';
-import { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
+import { PgTable } from 'drizzle-orm/pg-core';
 import { BaseRepository } from './BaseRepository';
 
 export abstract class TenantAwareRepository<
-  TTable extends PgTableWithColumns<TableConfig>,
-  TSelect = TTable['$inferSelect'],
-  TInsert = TTable['$inferInsert']
+  TTable extends PgTable,
+  TSelect = any,
+  TInsert = any
 > extends BaseRepository<TTable, TSelect, TInsert> {
   
   /**
@@ -31,9 +31,9 @@ export abstract class TenantAwareRepository<
     const results = await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .where(and(eq((this.table as any).id, id), eq((this.table as any).tenantId, tenantId)))
       .limit(1);
-    return results[0];
+    return results[0] as TSelect | undefined;
   }
 
   /**
@@ -44,7 +44,7 @@ export abstract class TenantAwareRepository<
     return await this.db
       .select()
       .from(this.table)
-      .where(and(inArray(this.table.id, ids), eq(this.table.tenantId, tenantId)));
+      .where(and(inArray((this.table as any).id, ids), eq((this.table as any).tenantId, tenantId))) as TSelect[];
   }
 
   /**
@@ -54,7 +54,7 @@ export abstract class TenantAwareRepository<
     return await this.db
       .select()
       .from(this.table)
-      .where(eq(this.table.tenantId, tenantId));
+      .where(eq((this.table as any).tenantId, tenantId)) as TSelect[];
   }
 
   /**
@@ -63,10 +63,10 @@ export abstract class TenantAwareRepository<
   async updateByIdForTenant(id: string, tenantId: string, data: Partial<Omit<TInsert, 'tenantId'>>): Promise<TSelect | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data)
-      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .set(data as any)
+      .where(and(eq((this.table as any).id, id), eq((this.table as any).tenantId, tenantId)))
       .returning();
-    return result;
+    return result as TSelect | undefined;
   }
 
   /**
@@ -75,9 +75,9 @@ export abstract class TenantAwareRepository<
   async deleteByIdForTenant(id: string, tenantId: string): Promise<TSelect | undefined> {
     const [result] = await this.db
       .delete(this.table)
-      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .where(and(eq((this.table as any).id, id), eq((this.table as any).tenantId, tenantId)))
       .returning();
-    return result;
+    return result as TSelect | undefined;
   }
 
   /**
@@ -87,8 +87,8 @@ export abstract class TenantAwareRepository<
     if (ids.length === 0) return [];
     return await this.db
       .delete(this.table)
-      .where(and(inArray(this.table.id, ids), eq(this.table.tenantId, tenantId)))
-      .returning();
+      .where(and(inArray((this.table as any).id, ids), eq((this.table as any).tenantId, tenantId)))
+      .returning() as TSelect[];
   }
 
   /**
@@ -113,24 +113,24 @@ export abstract class TenantAwareRepository<
   async deleteAllForTenant(tenantId: string): Promise<TSelect[]> {
     return await this.db
       .delete(this.table)
-      .where(eq(this.table.tenantId, tenantId))
-      .returning();
+      .where(eq((this.table as any).tenantId, tenantId))
+      .returning() as TSelect[];
   }
 
   // Override base methods to prevent accidental usage without tenant validation
-  async create(): Promise<TSelect> {
+  async create(_data?: any): Promise<TSelect> {
     throw new Error('Use createForTenant instead. Direct create is not allowed for tenant-aware repositories.');
   }
 
-  async createMany(): Promise<TSelect[]> {
+  async createMany(_data?: any): Promise<TSelect[]> {
     throw new Error('Use createManyForTenant instead. Direct createMany is not allowed for tenant-aware repositories.');
   }
 
-  async findById(): Promise<TSelect | undefined> {
+  async findById(_id?: any): Promise<TSelect | undefined> {
     throw new Error('Use findByIdForTenant instead. Direct findById is not allowed for tenant-aware repositories.');
   }
 
-  async findByIds(): Promise<TSelect[]> {
+  async findByIds(_ids?: any): Promise<TSelect[]> {
     throw new Error('Use findByIdsForTenant instead. Direct findByIds is not allowed for tenant-aware repositories.');
   }
 
@@ -138,19 +138,19 @@ export abstract class TenantAwareRepository<
     throw new Error('Use findAllForTenant instead. Direct findAll is not allowed for tenant-aware repositories.');
   }
 
-  async updateById(): Promise<TSelect | undefined> {
+  async updateById(_id?: any, _data?: any): Promise<TSelect | undefined> {
     throw new Error('Use updateByIdForTenant instead. Direct updateById is not allowed for tenant-aware repositories.');
   }
 
-  async deleteById(): Promise<TSelect | undefined> {
+  async deleteById(_id?: any): Promise<TSelect | undefined> {
     throw new Error('Use deleteByIdForTenant instead. Direct deleteById is not allowed for tenant-aware repositories.');
   }
 
-  async deleteByIds(): Promise<TSelect[]> {
+  async deleteByIds(_ids?: any): Promise<TSelect[]> {
     throw new Error('Use deleteByIdsForTenant instead. Direct deleteByIds is not allowed for tenant-aware repositories.');
   }
 
-  async exists(): Promise<boolean> {
+  async exists(_id?: any): Promise<boolean> {
     throw new Error('Use existsForTenant instead. Direct exists is not allowed for tenant-aware repositories.');
   }
 

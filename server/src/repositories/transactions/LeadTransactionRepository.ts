@@ -1,4 +1,5 @@
 import { db } from '@/db';
+import { eq, and, inArray } from 'drizzle-orm';
 import { 
   leads, 
   leadPointOfContacts, 
@@ -46,6 +47,10 @@ export class LeadTransactionRepository {
       const leadData = { ...data.lead, tenantId };
       const [createdLead] = await tx.insert(leads).values(leadData).returning();
 
+      if (!createdLead) {
+        throw new Error('Failed to create lead');
+      }
+
       // Create contacts if any
       let createdContacts: LeadPointOfContact[] = [];
       if (data.contacts.length > 0) {
@@ -60,12 +65,12 @@ export class LeadTransactionRepository {
       if (createdContacts.length === 1) {
         const [updatedLead] = await tx
           .update(leads)
-          .set({ primaryContactId: createdContacts[0].id })
-          .where({ id: createdLead.id })
+          .set({ primaryContactId: createdContacts[0]?.id })
+          .where(eq(leads.id, createdLead.id))
           .returning();
         
         return {
-          lead: updatedLead,
+          lead: updatedLead || createdLead,
           contacts: createdContacts,
           statuses: [],
         };
@@ -109,6 +114,10 @@ export class LeadTransactionRepository {
           const leadWithTenant = { ...leadData.lead, tenantId };
           const [createdLead] = await tx.insert(leads).values(leadWithTenant).returning();
 
+          if (!createdLead) {
+            throw new Error(`Failed to create lead at index ${i}`);
+          }
+
           // Create contacts if any
           let createdContacts: LeadPointOfContact[] = [];
           if (leadData.contacts.length > 0) {
@@ -124,10 +133,10 @@ export class LeadTransactionRepository {
           if (createdContacts.length === 1) {
             const [updatedLead] = await tx
               .update(leads)
-              .set({ primaryContactId: createdContacts[0].id })
-              .where({ id: createdLead.id })
+              .set({ primaryContactId: createdContacts[0]?.id })
+              .where(eq(leads.id, createdLead.id))
               .returning();
-            finalLead = updatedLead;
+            finalLead = updatedLead || createdLead;
           }
 
           // Create default statuses
@@ -177,20 +186,26 @@ export class LeadTransactionRepository {
         const [lead] = await tx
           .update(leads)
           .set(data.lead)
-          .where({ id: leadId, tenantId })
+          .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
           .returning();
+        if (!lead) {
+          throw new Error('Lead not found for update');
+        }
         updatedLead = lead;
       } else {
-        const [lead] = await tx
+        const leadResults = await tx
           .select()
           .from(leads)
-          .where({ id: leadId, tenantId })
+          .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
           .limit(1);
-        updatedLead = lead;
+        if (!leadResults[0]) {
+          throw new Error('Lead not found');
+        }
+        updatedLead = leadResults[0];
       }
 
       // Delete existing contacts
-      await tx.delete(leadPointOfContacts).where({ leadId });
+      await tx.delete(leadPointOfContacts).where(eq(leadPointOfContacts.leadId, leadId));
 
       // Create new contacts
       let createdContacts: LeadPointOfContact[] = [];
@@ -203,21 +218,21 @@ export class LeadTransactionRepository {
       }
 
       // Update primary contact
-      const primaryContactId = createdContacts.length === 1 ? createdContacts[0].id : null;
+      const primaryContactId = createdContacts.length === 1 ? createdContacts[0]?.id : null;
       const [finalLead] = await tx
         .update(leads)
         .set({ primaryContactId })
-        .where({ id: leadId })
+        .where(eq(leads.id, leadId))
         .returning();
 
       // Get existing statuses
       const existingStatuses = await tx
         .select()
         .from(leadStatuses)
-        .where({ leadId, tenantId });
+        .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)));
 
       return {
-        lead: finalLead,
+        lead: finalLead || updatedLead,
         contacts: createdContacts,
         statuses: existingStatuses,
       };
@@ -236,19 +251,19 @@ export class LeadTransactionRepository {
       // Delete contacts
       const deletedContacts = await tx
         .delete(leadPointOfContacts)
-        .where({ leadId })
+        .where(eq(leadPointOfContacts.leadId, leadId))
         .returning();
 
       // Delete statuses
       const deletedStatuses = await tx
         .delete(leadStatuses)
-        .where({ leadId, tenantId })
+        .where(and(eq(leadStatuses.leadId, leadId), eq(leadStatuses.tenantId, tenantId)))
         .returning();
 
       // Delete lead
       const [deletedLead] = await tx
         .delete(leads)
-        .where({ id: leadId, tenantId })
+        .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
         .returning();
 
       return {
@@ -278,23 +293,25 @@ export class LeadTransactionRepository {
       // Delete contacts for all leads
       const deletedContacts = await tx
         .delete(leadPointOfContacts)
-        .where(({ leadId }) => leadIds.includes(leadId))
+        .where(inArray(leadPointOfContacts.leadId, leadIds))
         .returning();
 
       // Delete statuses for all leads
       const deletedStatuses = await tx
         .delete(leadStatuses)
-        .where(({ leadId, tenantId: statusTenantId }) => 
-          leadIds.includes(leadId) && statusTenantId === tenantId
-        )
+        .where(and(
+          inArray(leadStatuses.leadId, leadIds),
+          eq(leadStatuses.tenantId, tenantId)
+        ))
         .returning();
 
       // Delete leads
       const deletedLeads = await tx
         .delete(leads)
-        .where(({ id, tenantId: leadTenantId }) => 
-          leadIds.includes(id) && leadTenantId === tenantId
-        )
+        .where(and(
+          inArray(leads.id, leadIds),
+          eq(leads.tenantId, tenantId)
+        ))
         .returning();
 
       return {

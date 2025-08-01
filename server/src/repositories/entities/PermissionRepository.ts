@@ -79,7 +79,7 @@ export class PermissionRepository extends BaseRepository<typeof permissions, Per
       if (!grouped[permission.resource]) {
         grouped[permission.resource] = [];
       }
-      grouped[permission.resource].push(permission);
+      grouped[permission.resource]!.push(permission);
     }
     
     return grouped;
