@@ -15,7 +15,7 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
       .select()
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
-      .where(and(eq(this.table.leadId, leadId), eq(leads.tenantId, tenantId)));
+      .where(and(eq(this.table.leadId, leadId), eq(leads.tenantId, tenantId))) as any;
   }
 
   /**
@@ -130,7 +130,7 @@ export class LeadPointOfContactRepository extends BaseRepository<typeof leadPoin
   async deleteAllForLead(leadId: string): Promise<LeadPointOfContact[]> {
     return await this.db
       .delete(this.table)
-      .where(eq(this.table.leadId, leadId))
-      .returning();
-  }
+              .where(eq(this.table.leadId, leadId))
+        .returning();
+    }
 }
