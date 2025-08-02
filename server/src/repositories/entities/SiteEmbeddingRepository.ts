@@ -1,6 +1,8 @@
-import { eq, and, gte, lte, asc } from 'drizzle-orm';
-import { siteEmbeddings, SiteEmbedding, NewSiteEmbedding, siteEmbeddingDomains } from '@/db/schema';
+import { eq, and, asc, sql } from 'drizzle-orm';
+import { siteEmbeddings, SiteEmbedding, NewSiteEmbedding } from '@/db/schema';
 import { BaseRepository } from '../base/BaseRepository';
+
+const TOP_K_DEFAULT = 10;
 
 export interface EmbeddingSearchOptions {
   limit?: number;
@@ -61,109 +63,6 @@ export class SiteEmbeddingRepository extends BaseRepository<
       .where(and(eq(this.table.url, url), eq(this.table.chunkIndex, chunkIndex)))
       .limit(1);
     return results[0] as SiteEmbedding | undefined;
-  }
-
-  /**
-   * Search embeddings with filters
-   */
-  async search(options: EmbeddingSearchOptions = {}): Promise<SiteEmbedding[]> {
-    const { limit = 50, offset = 0, minTokenCount, maxTokenCount, domainId, url, slug } = options;
-
-    let query = this.db.select().from(this.table);
-
-    // Build where conditions
-    const conditions = [];
-
-    if (domainId) {
-      conditions.push(eq(this.table.domainId, domainId));
-    }
-
-    if (url) {
-      conditions.push(eq(this.table.url, url));
-    }
-
-    if (slug) {
-      conditions.push(eq(this.table.slug, slug));
-    }
-
-    if (minTokenCount !== undefined) {
-      conditions.push(gte(this.table.tokenCount, minTokenCount));
-    }
-
-    if (maxTokenCount !== undefined) {
-      conditions.push(lte(this.table.tokenCount, maxTokenCount));
-    }
-
-    if (conditions.length > 0) {
-      query = (query as any).where(and(...conditions));
-    }
-
-    return await (query as any)
-      .orderBy(this.table.url, this.table.chunkIndex)
-      .limit(limit)
-      .offset(offset);
-  }
-
-  /**
-   * Find embeddings with domain details
-   */
-  async findWithDomain(options: EmbeddingSearchOptions = {}): Promise<EmbeddingWithDomain[]> {
-    const { limit = 50, offset = 0, minTokenCount, maxTokenCount, domainId, url, slug } = options;
-
-    let query = this.db
-      .select({
-        id: this.table.id,
-        url: this.table.url,
-        slug: this.table.slug,
-        chunkIndex: this.table.chunkIndex,
-        content: this.table.content,
-        tokenCount: this.table.tokenCount,
-        embedding: this.table.embedding,
-        domainId: this.table.domainId,
-        createdAt: this.table.createdAt,
-        updatedAt: this.table.updatedAt,
-        domain: {
-          id: siteEmbeddingDomains.id,
-          domain: siteEmbeddingDomains.domain,
-          scrapedAt: siteEmbeddingDomains.scrapedAt,
-          createdAt: siteEmbeddingDomains.createdAt,
-          updatedAt: siteEmbeddingDomains.updatedAt,
-        },
-      })
-      .from(this.table)
-      .leftJoin(siteEmbeddingDomains, eq(this.table.domainId, siteEmbeddingDomains.id));
-
-    // Build where conditions
-    const conditions = [];
-
-    if (domainId) {
-      conditions.push(eq(this.table.domainId, domainId));
-    }
-
-    if (url) {
-      conditions.push(eq(this.table.url, url));
-    }
-
-    if (slug) {
-      conditions.push(eq(this.table.slug, slug));
-    }
-
-    if (minTokenCount !== undefined) {
-      conditions.push(gte(this.table.tokenCount, minTokenCount));
-    }
-
-    if (maxTokenCount !== undefined) {
-      conditions.push(lte(this.table.tokenCount, maxTokenCount));
-    }
-
-    if (conditions.length > 0) {
-      query = (query as any).where(and(...conditions));
-    }
-
-    return await (query as any)
-      .orderBy(this.table.url, this.table.chunkIndex)
-      .limit(limit)
-      .offset(offset);
   }
 
   /**
@@ -368,5 +267,41 @@ export class SiteEmbeddingRepository extends BaseRepository<
   async getChunkCountByUrl(url: string): Promise<number> {
     const results = await this.db.select().from(this.table).where(eq(this.table.url, url));
     return results.length;
+  }
+
+  /**
+   * Find embeddings by domain ID and text similarity
+   */
+  async findByDomainIdAndTextSimilarity(
+    domainId: string,
+    queryEmbedding: number[],
+    topK: number = TOP_K_DEFAULT
+  ): Promise<SiteEmbedding[]> {
+    return await this.db.execute(sql`
+      SELECT 
+        ${siteEmbeddings.id},
+        ${siteEmbeddings.url},
+        ${siteEmbeddings.title},
+        ${siteEmbeddings.content},
+        ${siteEmbeddings.chunkIndex},
+        ${siteEmbeddings.metadata},
+        (1 - (${siteEmbeddings.embedding} <-> ${JSON.stringify(queryEmbedding)}::vector)) as similarity
+      FROM ${siteEmbeddings}
+      WHERE ${siteEmbeddings.domainId} = ${domainId}
+        AND ${siteEmbeddings.embedding} IS NOT NULL
+      ORDER BY ${siteEmbeddings.embedding} <-> ${JSON.stringify(queryEmbedding)}::vector
+      LIMIT ${topK}
+    `);
+  }
+
+  /**
+   * Get all unique page URLs for a domain
+   */
+  async getUniquePageUrls(domainId: string): Promise<string[]> {
+    const results = await this.db
+      .selectDistinct({ url: this.table.url })
+      .from(this.table)
+      .where(eq(this.table.domainId, domainId));
+    return results.map((r) => r.url);
   }
 }

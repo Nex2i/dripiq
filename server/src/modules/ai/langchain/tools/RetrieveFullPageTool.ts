@@ -1,7 +1,6 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
-import { db, siteEmbeddings } from '@/db';
+import { siteEmbeddingRepository } from '@/repositories';
 
 export const RetrieveFullPageTool = new DynamicStructuredTool({
   name: 'RetrieveFullPageTool',
@@ -20,10 +19,7 @@ export const RetrieveFullPageTool = new DynamicStructuredTool({
 
       const cleanUrl = url.cleanWebsiteUrl();
 
-      const embeddings = await db
-        .select({ id: siteEmbeddings.id, content: siteEmbeddings.content })
-        .from(siteEmbeddings)
-        .where(eq(siteEmbeddings.url, cleanUrl));
+      const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
 
       const fullMarkdown = embeddings.map((embedding) => embedding.content).join('\n');
 

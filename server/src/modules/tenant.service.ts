@@ -1,5 +1,4 @@
 import { Tenant, UserTenant, User, NewTenant, NewUserTenant } from '@/db';
-import { validateUserSuperAccess } from '@/utils/tenantValidation';
 import { tenantRepository, userTenantRepository } from '@/repositories';
 
 export interface CreateTenantData {
@@ -143,26 +142,6 @@ export class TenantService {
     }
 
     const tenant = await tenantRepository.updateById(tenantId, updateData);
-
-    if (!tenant) {
-      throw new Error('Tenant not found');
-    }
-
-    return tenant;
-  }
-
-  /**
-   * Deletes a tenant after validating that the requesting user has super user access.
-   * @param userId - The ID of the user making the request.
-   * @param tenantId - The ID of the tenant to delete.
-   * @returns A promise that resolves to the deleted tenant object.
-   * @throws Throws an error if the tenant is not found.
-   */
-  static async deleteTenant(userId: string, tenantId: string): Promise<Tenant> {
-    // Validate user has super user access to this tenant
-    await validateUserSuperAccess(userId, tenantId);
-
-    const tenant = await tenantRepository.deleteById(tenantId);
 
     if (!tenant) {
       throw new Error('Tenant not found');

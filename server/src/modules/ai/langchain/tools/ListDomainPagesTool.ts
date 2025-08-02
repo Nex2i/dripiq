@@ -1,7 +1,6 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
-import { db, siteEmbeddingDomains, siteEmbeddings } from '@/db';
+import { siteEmbeddingDomainRepository, siteEmbeddingRepository } from '@/repositories';
 
 export const ListDomainPagesTool = new DynamicStructuredTool({
   name: 'ListDomainPages',
@@ -26,12 +25,9 @@ export const ListDomainPagesTool = new DynamicStructuredTool({
       }
 
       // Query that gets all unique page URLs for a given domain
-      const domainId = await db
-        .select({ id: siteEmbeddingDomains.id })
-        .from(siteEmbeddingDomains)
-        .where(eq(siteEmbeddingDomains.domain, domain));
+      const domainRecord = await siteEmbeddingDomainRepository.findByDomain(domain);
 
-      if (!domainId.length) {
+      if (!domainRecord) {
         return JSON.stringify({
           success: true,
           domain: domain,
@@ -40,18 +36,13 @@ export const ListDomainPagesTool = new DynamicStructuredTool({
         });
       }
 
-      const pages = await db
-        .selectDistinct({ url: siteEmbeddings.url })
-        .from(siteEmbeddings)
-        .where(eq(siteEmbeddings.domainId, domainId[0]!.id));
-
-      const pageUrls = pages.map((page) => page.url);
+      const pages = await siteEmbeddingRepository.getUniquePageUrls(domainRecord.id);
 
       return JSON.stringify({
         success: true,
         domain: domain,
-        totalPages: pageUrls.length,
-        pages: pageUrls,
+        totalPages: pages.length,
+        pages: pages,
       });
     } catch (error) {
       return JSON.stringify({
