@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X, Mail, User, Shield } from 'lucide-react'
 import { invitesService } from '../services/invites.service'
 import type { CreateInviteData } from '../services/invites.service'
-import { rolesService } from '../services/roles.service'
-import type { Role } from '../services/roles.service'
+import { useRoles } from '../hooks/useRolesQuery'
 
 interface InviteUserModalProps {
   isOpen: boolean
@@ -34,33 +33,29 @@ export function InviteUserModal({
     Partial<Record<keyof InviteFormData, string>>
   >({})
   const [isLoading, setIsLoading] = useState(false)
-  const [roles, setRoles] = useState<Role[]>([])
-  const [isLoadingRoles, setIsLoadingRoles] = useState(false)
 
-  // Fetch roles when modal opens
+  // Use the new useRoles hook
+  const { data: roles = [], isLoading: isLoadingRoles, error: rolesError } = useRoles()
+
+  // Set default role when roles are loaded
+  useEffect(() => {
+    if (roles.length > 0 && !formData.role) {
+      setFormData((prev) => ({ ...prev, role: roles[0].name }))
+    }
+  }, [roles, formData.role])
+
+  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      fetchRoles()
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        role: roles.length > 0 ? roles[0].name : '',
+      })
+      setErrors({})
     }
-  }, [isOpen])
-
-  const fetchRoles = async () => {
-    setIsLoadingRoles(true)
-    try {
-      const fetchedRoles = await rolesService.getRoles()
-      setRoles(fetchedRoles)
-
-      // Set default role to the first available role
-      if (fetchedRoles.length > 0 && !formData.role) {
-        setFormData((prev) => ({ ...prev, role: fetchedRoles[0].name }))
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error)
-      // You could show an error message to the user here
-    } finally {
-      setIsLoadingRoles(false)
-    }
-  }
+  }, [isOpen, roles])
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof InviteFormData, string>> = {}
@@ -270,6 +265,8 @@ export function InviteUserModal({
               >
                 {isLoadingRoles ? (
                   <option value="">Loading roles...</option>
+                ) : rolesError ? (
+                  <option value="">Error loading roles</option>
                 ) : (
                   <>
                     {roles.length === 0 ? (
@@ -287,6 +284,11 @@ export function InviteUserModal({
               {errors.role && (
                 <p className="mt-1 text-sm text-red-600">{errors.role}</p>
               )}
+              {rolesError && (
+                <p className="mt-1 text-sm text-red-600">
+                  Failed to load roles. Please try again.
+                </p>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -300,7 +302,7 @@ export function InviteUserModal({
               </button>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isLoadingRoles}
                 className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary-600)] border border-transparent rounded-md hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Sending...' : 'Send invitation'}

@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { authService } from './auth.service'
 
 export interface Role {
@@ -18,10 +19,23 @@ export interface ApiError {
   error?: string
 }
 
+// Query keys for roles (centralized)
+export const rolesQueryKeys = {
+  all: ['roles'] as const,
+  lists: () => [...rolesQueryKeys.all, 'list'] as const,
+  list: (filters?: Record<string, any>) =>
+    [...rolesQueryKeys.lists(), filters] as const,
+}
+
 class RolesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
-  // Get all available roles
+  constructor(_queryClient?: QueryClient) {
+    // QueryClient integration reserved for future use
+    // Currently roles service only needs read operations
+  }
+
+  // Get all available roles - raw fetch for use with useQuery
   async getRoles(): Promise<Role[]> {
     try {
       const authHeaders = await authService.getAuthHeaders()
@@ -48,4 +62,25 @@ class RolesService {
   }
 }
 
+// Create a singleton instance that will be initialized with QueryClient
+let rolesServiceInstance: RolesService | null = null
+
+export const createRolesService = (queryClient: QueryClient): RolesService => {
+  if (!rolesServiceInstance) {
+    rolesServiceInstance = new RolesService(queryClient)
+  }
+  return rolesServiceInstance
+}
+
+// Export a function to get the service instance
+export const getRolesService = (): RolesService => {
+  if (!rolesServiceInstance) {
+    throw new Error(
+      'RolesService not initialized. Call createRolesService() first.',
+    )
+  }
+  return rolesServiceInstance
+}
+
+// Legacy export for backward compatibility - now creates a new instance without QueryClient for raw fetch operations
 export const rolesService = new RolesService()
