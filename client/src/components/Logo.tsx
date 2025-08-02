@@ -1,5 +1,6 @@
 // @ts-ignore
-import LogoSvg from '../assets/logo.svg?react'
+// import LogoImg from '../assets/logo.svg?react'
+import LogoImg from '../assets/logo.png'
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
@@ -13,9 +14,9 @@ export default function Logo({
   className = '',
 }: LogoProps) {
   const sizeClasses = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
+    sm: 'h-6 w-auto',
+    md: 'h-8 w-auto',
+    lg: 'h-12 w-auto',
   }
 
   const textSizeClasses = {
@@ -27,14 +28,16 @@ export default function Logo({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Logo SVG */}
-      <div className={`${sizeClasses[size]} flex-shrink-0`}>
-        <LogoSvg />
-      </div>
+      <img
+        src={LogoImg}
+        alt="Logo"
+        className={`${sizeClasses[size]} flex-shrink-0`}
+      />
 
       {/* Brand text */}
       {showText && (
         <span
-          className={`font-bold bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-800)] bg-clip-text text-transparent ${textSizeClasses[size]}`}
+          className={`font-bold bg-gradient-to-r from-[var(--color-accent-500)] to-[var(--color-primary-600)] bg-clip-text text-transparent ${textSizeClasses[size]}`}
         >
           dripIq
         </span>

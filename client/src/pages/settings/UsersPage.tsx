@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Plus,
   MoreVertical,
@@ -12,29 +12,53 @@ import {
   Edit3,
 } from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
-import { invitesService } from '../../services/invites.service'
-import type { User, Role } from '../../services/invites.service'
+import { 
+  useUsers, 
+  useRoles, 
+  useUpdateUserRole, 
+  useResendInvite, 
+  useRemoveUser 
+} from '../../hooks/useInvitesQuery'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function UsersPage() {
   const { user } = useAuth()
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
-  const [users, setUsers] = useState<User[]>([])
-  const [roles, setRoles] = useState<Role[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [editingRole, setEditingRole] = useState<{
     userId: string
     currentRole: string
     newRoleId: string
   } | null>(null)
-  const [updatingRole, setUpdatingRole] = useState<string | null>(null)
-  const [pagination, setPagination] = useState({
+  const [pagination] = useState({
     page: 1,
     limit: 25,
-    total: 0,
-    totalPages: 0,
   })
+
+  // Fetch data using hooks
+  const { 
+    data: usersResponse, 
+    isLoading: usersLoading, 
+    error: usersError, 
+    refetch: refetchUsers 
+  } = useUsers(pagination.page, pagination.limit)
+  
+  const { 
+    data: roles = [], 
+    isLoading: rolesLoading, 
+    error: rolesError 
+  } = useRoles()
+
+  // Mutation hooks
+  const updateUserRoleMutation = useUpdateUserRole()
+  const resendInviteMutation = useResendInvite()
+  const removeUserMutation = useRemoveUser()
+
+  // Derived state
+  const users = usersResponse?.data || []
+  const paginationData = usersResponse?.pagination || { page: 1, limit: 25, total: 0, totalPages: 0 }
+  const loading = usersLoading || rolesLoading
+  const error = usersError || rolesError
+  const updatingRole = updateUserRoleMutation.isPending ? editingRole?.userId : null
 
   // Check if current user is admin
   const isAdmin = user?.tenants?.[0]?.role?.name === 'Admin'
@@ -60,90 +84,31 @@ export default function UsersPage() {
     }).format(new Date(dateString))
   }
 
-  // Load users and roles on component mount and when tenant changes
-  useEffect(() => {
-    loadData()
-  }, [user])
-
-  const loadData = async () => {
-    if (!user?.tenants?.[0]?.id) {
-      setLoading(false)
-      setError('No tenant found')
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-
-      // Load users and roles in parallel
-      const [usersResponse, rolesResponse] = await Promise.all([
-        invitesService.getUsers(pagination.page, pagination.limit),
-        invitesService.getRoles(),
-      ])
-
-      setUsers(usersResponse.data)
-      setPagination(usersResponse.pagination)
-      setRoles(rolesResponse)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data')
-      console.error('Error loading data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadUsers = async () => {
-    if (!user?.tenants?.[0]?.id) {
-      setLoading(false)
-      setError('No tenant found')
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await invitesService.getUsers(
-        pagination.page,
-        pagination.limit,
-      )
-      setUsers(response.data)
-      setPagination(response.pagination)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load users')
-      console.error('Error loading users:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleInviteSuccess = () => {
     setIsInviteModalOpen(false)
-    // Reload the users list to show the new invite
-    loadUsers()
+    // The cache will be automatically updated via the mutation
   }
 
   const handleResendInvite = async (userId: string) => {
-    try {
-      await invitesService.resendInvite(userId)
-      // Could show a success message here
-      console.log('Invite resent successfully')
-    } catch (err) {
-      console.error('Error resending invite:', err)
-      // Could show an error message here
-    }
+    resendInviteMutation.mutate(userId, {
+      onSuccess: () => {
+        console.log('Invite resent successfully')
+      },
+      onError: (err) => {
+        console.error('Error resending invite:', err)
+      },
+    })
   }
 
   const handleRemoveUser = async (userId: string) => {
-    try {
-      await invitesService.removeUser(userId)
-      // Remove the user from the local state
-      setUsers((prev) => prev.filter((user) => user.id !== userId))
-      console.log('User removed successfully')
-    } catch (err) {
-      console.error('Error removing user:', err)
-      // Could show an error message here
-    }
+    removeUserMutation.mutate(userId, {
+      onSuccess: () => {
+        console.log('User removed successfully')
+      },
+      onError: (err) => {
+        console.error('Error removing user:', err)
+      },
+    })
   }
 
   const handleEditRole = (userId: string, currentRole: string) => {
@@ -167,33 +132,18 @@ export default function UsersPage() {
   const handleSaveRole = async () => {
     if (!editingRole) return
 
-    try {
-      setUpdatingRole(editingRole.userId)
-      await invitesService.updateUserRole(
-        editingRole.userId,
-        editingRole.newRoleId,
-      )
-
-      // Update the local state
-      const newRole = roles.find((role) => role.id === editingRole.newRoleId)
-      if (newRole) {
-        setUsers((prev) =>
-          prev.map((user) =>
-            user.id === editingRole.userId
-              ? { ...user, role: newRole.name }
-              : user,
-          ),
-        )
-      }
-
-      setEditingRole(null)
-      console.log('User role updated successfully')
-    } catch (err) {
-      console.error('Error updating user role:', err)
-      // Could show an error message here
-    } finally {
-      setUpdatingRole(null)
-    }
+    updateUserRoleMutation.mutate(
+      { userId: editingRole.userId, roleId: editingRole.newRoleId },
+      {
+        onSuccess: () => {
+          setEditingRole(null)
+          console.log('User role updated successfully')
+        },
+        onError: (err) => {
+          console.error('Error updating user role:', err)
+        },
+      },
+    )
   }
 
   const handleCancelEdit = () => {
@@ -242,10 +192,10 @@ export default function UsersPage() {
             <h3 className="mt-2 text-sm font-medium text-gray-900">
               Error loading users
             </h3>
-            <p className="mt-1 text-sm text-gray-500">{error}</p>
+            <p className="mt-1 text-sm text-gray-500">{error?.message || 'Unknown error'}</p>
             <div className="mt-6">
               <button
-                onClick={loadData}
+                onClick={() => refetchUsers()}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
               >
                 Try again
@@ -436,16 +386,16 @@ export default function UsersPage() {
                     <p className="text-sm text-gray-700">
                       Showing{' '}
                       <span className="font-medium">
-                        {(pagination.page - 1) * pagination.limit + 1}
+                        {(paginationData.page - 1) * paginationData.limit + 1}
                       </span>{' '}
                       to{' '}
                       <span className="font-medium">
                         {Math.min(
-                          pagination.page * pagination.limit,
-                          pagination.total,
+                          paginationData.page * paginationData.limit,
+                          paginationData.total,
                         )}
                       </span>{' '}
-                      of <span className="font-medium">{pagination.total}</span>{' '}
+                      of <span className="font-medium">{paginationData.total}</span>{' '}
                       results
                     </p>
                   </div>

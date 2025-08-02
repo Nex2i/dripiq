@@ -234,7 +234,7 @@ export class RoleService {
    * @returns A promise that resolves to true if the user is an admin, false otherwise.
    */
   static async userIsAdmin(userId: string, tenantId: string): Promise<boolean> {
-    const userTenant = await userTenantRepository.findByIdForTenant(userId, tenantId);
+    const userTenant = await userTenantRepository.findByUserIdForTenant(userId, tenantId);
 
     if (!userTenant) {
       return false;

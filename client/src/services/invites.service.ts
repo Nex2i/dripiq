@@ -1,4 +1,14 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { authService } from './auth.service'
+
+// Query keys for invites (centralized)
+export const inviteQueryKeys = {
+  all: ['invites'] as const,
+  usersList: () => [...inviteQueryKeys.all, 'users'] as const,
+  users: (filters?: Record<string, any>) =>
+    [...inviteQueryKeys.usersList(), filters] as const,
+  roles: () => [...inviteQueryKeys.all, 'roles'] as const,
+}
 
 export interface User {
   id: string
@@ -59,6 +69,13 @@ export interface RolesResponse {
 
 class InvitesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
+  private queryClient: QueryClient | null = null
+
+  constructor(queryClient?: QueryClient) {
+    if (queryClient) {
+      this.queryClient = queryClient
+    }
+  }
 
   // Get all users for a tenant
   async getUsers(page = 1, limit = 25): Promise<UsersResponse> {
@@ -108,7 +125,17 @@ class InvitesService {
         throw new Error(errorData.message || 'Failed to send invitation')
       }
 
-      return response.json()
+      const result = await response.json()
+
+      // Update cache after successful creation if queryClient is available
+      if (this.queryClient) {
+        // Invalidate users list to refresh
+        this.queryClient.invalidateQueries({
+          queryKey: inviteQueryKeys.usersList(),
+        })
+      }
+
+      return result
     } catch (error) {
       console.error('Error creating invite:', error)
       throw error
@@ -166,7 +193,17 @@ class InvitesService {
         throw new Error(errorData.message || 'Failed to resend invitation')
       }
 
-      return response.json()
+      const result = await response.json()
+
+      // Update cache after successful resend if queryClient is available
+      if (this.queryClient) {
+        // Invalidate users list to refresh
+        this.queryClient.invalidateQueries({
+          queryKey: inviteQueryKeys.usersList(),
+        })
+      }
+
+      return result
     } catch (error) {
       console.error('Error resending invite:', error)
       throw error
@@ -190,7 +227,17 @@ class InvitesService {
         throw new Error(errorData.message || 'Failed to remove user')
       }
 
-      return response.json()
+      const result = await response.json()
+
+      // Update cache after successful removal if queryClient is available
+      if (this.queryClient) {
+        // Invalidate users list to refresh
+        this.queryClient.invalidateQueries({
+          queryKey: inviteQueryKeys.usersList(),
+        })
+      }
+
+      return result
     } catch (error) {
       console.error('Error removing user:', error)
       throw error
@@ -219,7 +266,17 @@ class InvitesService {
         throw new Error(errorData.message || 'Failed to update user role')
       }
 
-      return response.json()
+      const result = await response.json()
+
+      // Update cache after successful update if queryClient is available
+      if (this.queryClient) {
+        // Invalidate users list to refresh
+        this.queryClient.invalidateQueries({
+          queryKey: inviteQueryKeys.usersList(),
+        })
+      }
+
+      return result
     } catch (error) {
       console.error('Error updating user role:', error)
       throw error
@@ -253,4 +310,25 @@ class InvitesService {
   }
 }
 
+// Create a singleton instance that will be initialized with QueryClient
+let invitesServiceInstance: InvitesService | null = null
+
+export const createInvitesService = (queryClient: QueryClient): InvitesService => {
+  if (!invitesServiceInstance) {
+    invitesServiceInstance = new InvitesService(queryClient)
+  }
+  return invitesServiceInstance
+}
+
+// Export a function to get the service instance
+export const getInvitesService = (): InvitesService => {
+  if (!invitesServiceInstance) {
+    throw new Error(
+      'InvitesService not initialized. Call createInvitesService() first.',
+    )
+  }
+  return invitesServiceInstance
+}
+
+// Legacy export for backward compatibility - now creates a new instance without QueryClient for raw fetch operations
 export const invitesService = new InvitesService()

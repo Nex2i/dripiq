@@ -1,11 +1,7 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { sql, eq } from 'drizzle-orm';
 import z from 'zod';
-import db from '@/libs/drizzleClient';
-import { siteEmbeddings, siteEmbeddingDomains } from '@/db/schema';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
-
-const TOP_K = 10;
+import { siteEmbeddingDomainRepository, siteEmbeddingRepository } from '@/repositories';
 
 export const GetInformationAboutDomainTool = new DynamicStructuredTool({
   name: 'GetInformationAboutDomainTool',
@@ -30,20 +26,14 @@ export const GetInformationAboutDomainTool = new DynamicStructuredTool({
       const cleanDomain = domain.getDomain();
       console.log(`Searching for "${queryText}" in domain: ${cleanDomain}`);
 
-      const domainRecord = await db
-        .select()
-        .from(siteEmbeddingDomains)
-        .where(eq(siteEmbeddingDomains.domain, cleanDomain))
-        .limit(1);
+      const domainRecord = await siteEmbeddingDomainRepository.findByDomain(cleanDomain);
 
-      if (!domainRecord.length || !domainRecord[0]) {
+      if (!domainRecord) {
         return JSON.stringify({
           domain: cleanDomain,
           error: `No embedding data found for domain: ${cleanDomain}`,
         });
       }
-
-      const domainId = domainRecord[0].id;
 
       const queryEmbedding = await openAiEmbeddingClient.embedQuery(queryText);
 
@@ -54,21 +44,10 @@ export const GetInformationAboutDomainTool = new DynamicStructuredTool({
         });
       }
 
-      const similarityResults = await db.execute(sql`
-        SELECT 
-          ${siteEmbeddings.id},
-          ${siteEmbeddings.url},
-          ${siteEmbeddings.title},
-          ${siteEmbeddings.content},
-          ${siteEmbeddings.chunkIndex},
-          ${siteEmbeddings.metadata},
-          (1 - (${siteEmbeddings.embedding} <-> ${JSON.stringify(queryEmbedding)}::vector)) as similarity
-        FROM ${siteEmbeddings}
-        WHERE ${siteEmbeddings.domainId} = ${domainId}
-          AND ${siteEmbeddings.embedding} IS NOT NULL
-        ORDER BY ${siteEmbeddings.embedding} <-> ${JSON.stringify(queryEmbedding)}::vector
-        LIMIT ${TOP_K}
-      `);
+      const similarityResults = await siteEmbeddingRepository.findByDomainIdAndTextSimilarity(
+        domainRecord.id,
+        queryEmbedding
+      );
 
       const searchResults = (similarityResults as any[])
         .map((row: any) => ({
