@@ -12,12 +12,16 @@ export const CreateInviteRequestSchema = Type.Object({
 export const CreateInviteResponseSchema = Type.Object({
   success: Type.Boolean({ description: 'Indicates successful operation' }),
   message: Type.String({ description: 'Success message' }),
-  data: Type.Optional(Type.Object({
-    id: Type.String({ description: 'Invite or user tenant ID' }),
-    email: Type.String({ description: 'Email of the invited user' }),
-    status: Type.String({ description: 'Status of the invitation' }),
-    invitedAt: Type.Optional(Type.String({ format: 'date-time', description: 'Invitation timestamp' })),
-  })),
+  data: Type.Optional(
+    Type.Object({
+      id: Type.String({ description: 'Invite or user tenant ID' }),
+      email: Type.String({ description: 'Email of the invited user' }),
+      status: Type.String({ description: 'Status of the invitation' }),
+      invitedAt: Type.Optional(
+        Type.String({ format: 'date-time', description: 'Invitation timestamp' })
+      ),
+    })
+  ),
 });
 
 // Complete schema for the create invite route

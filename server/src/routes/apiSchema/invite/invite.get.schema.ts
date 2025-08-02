@@ -17,7 +17,9 @@ export const GetInviteResponseSchema = Type.Object({
     status: Type.String({ description: 'Status of the invitation' }),
     tenantId: Type.String({ description: 'Tenant ID' }),
     invitedAt: Type.String({ format: 'date-time', description: 'Invitation timestamp' }),
-    expiresAt: Type.Optional(Type.String({ format: 'date-time', description: 'Invite expiration timestamp' })),
+    expiresAt: Type.Optional(
+      Type.String({ format: 'date-time', description: 'Invite expiration timestamp' })
+    ),
   }),
 });
 

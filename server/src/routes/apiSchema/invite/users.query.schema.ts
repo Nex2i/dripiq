@@ -1,4 +1,3 @@
-import { Type } from '@sinclair/typebox';
 import { PaginationQuerySchema } from '../shared/pagination.schema';
 
 // Query parameters for users list endpoint

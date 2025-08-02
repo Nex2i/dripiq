@@ -13,8 +13,12 @@ export const UserListItemSchema = Type.Object({
     name: Type.String({ description: 'Role name' }),
   }),
   status: Type.String({ description: 'User status in tenant (active, pending, etc.)' }),
-  invitedAt: Type.Optional(Type.String({ format: 'date-time', description: 'Invitation timestamp' })),
-  acceptedAt: Type.Optional(Type.String({ format: 'date-time', description: 'Acceptance timestamp' })),
+  invitedAt: Type.Optional(
+    Type.String({ format: 'date-time', description: 'Invitation timestamp' })
+  ),
+  acceptedAt: Type.Optional(
+    Type.String({ format: 'date-time', description: 'Acceptance timestamp' })
+  ),
   createdAt: Type.String({ format: 'date-time', description: 'User creation timestamp' }),
 });
 

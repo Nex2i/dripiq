@@ -3,7 +3,9 @@ import { Type } from '@sinclair/typebox';
 // Reusable pagination query schema
 export const PaginationQuerySchema = Type.Object({
   page: Type.Optional(Type.Integer({ minimum: 1, default: 1, description: 'Page number' })),
-  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100, default: 25, description: 'Items per page' })),
+  limit: Type.Optional(
+    Type.Integer({ minimum: 1, maximum: 100, default: 25, description: 'Items per page' })
+  ),
 });
 
 // Reusable pagination response schema
