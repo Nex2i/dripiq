@@ -122,4 +122,38 @@ export class BadLeadService {
 }
 ```
 
+## API Schema Structure
+
+API schemas are organized by feature domain under `src/routes/apiSchema/`:
+
+### Schema Organization Guidelines
+
+1. **Group by feature domain** - Each major feature gets its own schema directory
+2. **Separate request/response schemas** - Keep input and output schemas organized
+3. **Reusable components** - Extract common schemas (like `userObjectSchema`) for reuse
+4. **Index exports** - Use index.ts files for clean imports
+5. **Consistent naming** - Use descriptive names ending in `Schema`
+
+### Usage Example
+
+```typescript
+// Import all authentication schemas
+import { 
+  registerBodySchema, 
+  currentUserResponseSchema,
+  errorResponseSchema 
+} from './apiSchema/authentication';
+
+// Use in route definition
+fastify.route({
+  schema: {
+    body: registerBodySchema,
+    response: {
+      201: registerSuccessResponseSchema,
+      400: errorResponseSchema,
+    }
+  }
+});
+```
+
 Whenever comitting code run `npm run lint:fix` to have consistent formatting. 
