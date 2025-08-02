@@ -16,13 +16,16 @@ export const UserPermissionsResponseSchema = Type.Object({
       name: Type.String({ description: 'Role name' }),
       description: Type.Optional(Type.String({ description: 'Role description' })),
     }),
-    permissions: Type.Array(Type.Object({
-      id: Type.String({ description: 'Permission ID' }),
-      name: Type.String({ description: 'Permission name' }),
-      description: Type.Optional(Type.String({ description: 'Permission description' })),
-      resource: Type.String({ description: 'Resource name' }),
-      action: Type.String({ description: 'Action name' }),
-    }), { description: 'User permissions' }),
+    permissions: Type.Array(
+      Type.Object({
+        id: Type.String({ description: 'Permission ID' }),
+        name: Type.String({ description: 'Permission name' }),
+        description: Type.Optional(Type.String({ description: 'Permission description' })),
+        resource: Type.String({ description: 'Resource name' }),
+        action: Type.String({ description: 'Action name' }),
+      }),
+      { description: 'User permissions' }
+    ),
   }),
 });
 

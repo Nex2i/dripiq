@@ -10,13 +10,18 @@ export const RoleResponseSchema = Type.Object({
   id: Type.String({ description: 'Role ID' }),
   name: Type.String({ description: 'Role name' }),
   description: Type.Optional(Type.String({ description: 'Role description' })),
-  permissions: Type.Optional(Type.Array(Type.Object({
-    id: Type.String({ description: 'Permission ID' }),
-    name: Type.String({ description: 'Permission name' }),
-    description: Type.Optional(Type.String({ description: 'Permission description' })),
-    resource: Type.String({ description: 'Resource name' }),
-    action: Type.String({ description: 'Action name' }),
-  }), { description: 'Role permissions' })),
+  permissions: Type.Optional(
+    Type.Array(
+      Type.Object({
+        id: Type.String({ description: 'Permission ID' }),
+        name: Type.String({ description: 'Permission name' }),
+        description: Type.Optional(Type.String({ description: 'Permission description' })),
+        resource: Type.String({ description: 'Resource name' }),
+        action: Type.String({ description: 'Action name' }),
+      }),
+      { description: 'Role permissions' }
+    )
+  ),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
 });

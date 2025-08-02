@@ -121,3 +121,5 @@ export class BadLeadService {
   }
 }
 ```
+
+Whenever comitting code run `npm run lint:fix` to have consistent formatting. 
