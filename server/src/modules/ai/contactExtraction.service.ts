@@ -1,8 +1,7 @@
 import { compareTwoStrings } from 'string-similarity';
-import { eq } from 'drizzle-orm';
 import { logger } from '@/libs/logger';
-import { NewLeadPointOfContact, LeadPointOfContact, leadPointOfContacts, leads } from '@/db/schema';
-import db from '@/libs/drizzleClient';
+import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
+import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { createContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
 import { ExtractedContact } from './schemas/contactExtractionSchema';
@@ -173,7 +172,7 @@ export const ContactExtractionService = {
    */
   updateLeadPrimaryContact: async (leadId: string, primaryContactId: string): Promise<void> => {
     try {
-      await db.update(leads).set({ primaryContactId }).where(eq(leads.id, leadId));
+      await leadRepository.updateById(leadId, { primaryContactId });
     } catch (error) {
       logger.error('Error updating lead primary contact:', error);
       throw error;
@@ -185,10 +184,7 @@ export const ContactExtractionService = {
    */
   getExistingContacts: async (leadId: string): Promise<LeadPointOfContact[]> => {
     try {
-      const contacts = await db
-        .select()
-        .from(leadPointOfContacts)
-        .where(eq(leadPointOfContacts.leadId, leadId));
+      const contacts = await leadPointOfContactRepository.findByLeadId(leadId);
 
       return contacts;
     } catch (error) {
@@ -441,11 +437,7 @@ export const ContactExtractionService = {
     updates: Partial<LeadPointOfContact>
   ): Promise<LeadPointOfContact | null> => {
     try {
-      const [updatedContact] = await db
-        .update(leadPointOfContacts)
-        .set(updates)
-        .where(eq(leadPointOfContacts.id, contactId))
-        .returning();
+      const updatedContact = await leadPointOfContactRepository.updateById(contactId, updates);
 
       return updatedContact || null;
     } catch (error) {

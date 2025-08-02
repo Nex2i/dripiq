@@ -1,17 +1,20 @@
-import { eq, and } from 'drizzle-orm';
 import {
-  db,
   roles,
   permissions,
-  rolePermissions,
-  userTenants,
   Role,
   Permission,
   RolePermission,
   NewRole,
   NewPermission,
   NewRolePermission,
+  db,
 } from '@/db';
+import {
+  permissionRepository,
+  rolePermissionRepository,
+  roleRepository,
+  userTenantRepository,
+} from '@/repositories';
 
 export interface CreateRoleData {
   name: string;
@@ -23,12 +26,6 @@ export interface CreatePermissionData {
   description?: string;
   resource: string;
   action: string;
-}
-
-export interface RoleWithPermissions extends Role {
-  permissions: (RolePermission & {
-    permission: Permission;
-  })[];
 }
 
 export interface UserPermissions {
@@ -50,7 +47,7 @@ export class RoleService {
       description: roleData.description || null,
     };
 
-    const [role] = await db.insert(roles).values(newRole).returning();
+    const role = await roleRepository.create(newRole);
 
     if (!role) {
       throw new Error('Failed to create role');
@@ -73,7 +70,7 @@ export class RoleService {
       action: permissionData.action,
     };
 
-    const [permission] = await db.insert(permissions).values(newPermission).returning();
+    const permission = await permissionRepository.create(newPermission);
 
     if (!permission) {
       throw new Error('Failed to create permission');
@@ -99,22 +96,15 @@ export class RoleService {
         permissionId,
       };
 
-      const [rolePermission] = await db
-        .insert(rolePermissions)
-        .values(newRolePermission)
-        .returning();
+      const rolePermission = await rolePermissionRepository.create(newRolePermission);
       return rolePermission!;
     } catch (error: any) {
       // If relationship already exists (unique constraint violation), fetch and return it
       if (error.code === '23505') {
-        const existingRelation = await db
-          .select()
-          .from(rolePermissions)
-          .where(
-            and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId))
-          )
-          .limit(1)
-          .then((result) => result[0]);
+        const existingRelation = await rolePermissionRepository.findByRoleIdAndPermissionId(
+          roleId,
+          permissionId
+        );
 
         if (!existingRelation) {
           throw new Error('RolePermission creation failed and relation not found');
@@ -132,11 +122,7 @@ export class RoleService {
    * @returns A promise that resolves when the permission is removed.
    */
   static async removePermissionFromRole(roleId: string, permissionId: string): Promise<void> {
-    await db
-      .delete(rolePermissions)
-      .where(
-        and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId))
-      );
+    await rolePermissionRepository.deleteByIds([roleId, permissionId]);
   }
 
   /**
@@ -160,31 +146,13 @@ export class RoleService {
    * @param roleId - The ID of the role to retrieve.
    * @returns A promise that resolves to the role object with its permissions, or null if not found.
    */
-  static async getRoleById(roleId: string): Promise<RoleWithPermissions | null> {
-    const role = await db
-      .select()
-      .from(roles)
-      .where(eq(roles.id, roleId))
-      .limit(1)
-      .then((result) => result[0]);
-
-    if (!role) {
-      return null;
-    }
-
+  static async getRoleById(roleId: string): Promise<{ role: Role; permissions: Permission[] }> {
     // Get permissions for this role
-    const rolePermissionsData = await db
-      .select()
-      .from(rolePermissions)
-      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-      .where(eq(rolePermissions.roleId, roleId));
+    const rolePermissionsData = await rolePermissionRepository.findByRoleId(roleId);
 
     return {
-      ...role,
-      permissions: rolePermissionsData.map((row) => ({
-        ...row.role_permissions,
-        permission: row.permissions,
-      })),
+      role: rolePermissionsData.role,
+      permissions: rolePermissionsData.permissions,
     };
   }
 
@@ -194,8 +162,8 @@ export class RoleService {
    * @returns A promise that resolves to the role object or null if not found.
    */
   static async getRoleByName(name: string): Promise<Role | null> {
-    const result = await db.select().from(roles).where(eq(roles.name, name)).limit(1);
-    return result[0] || null;
+    const result = await roleRepository.findByName(name);
+    return result || null;
   }
 
   /**
@@ -204,8 +172,8 @@ export class RoleService {
    * @returns A promise that resolves to the permission object or null if not found.
    */
   static async getPermissionByName(name: string): Promise<Permission | null> {
-    const result = await db.select().from(permissions).where(eq(permissions.name, name)).limit(1);
-    return result[0] || null;
+    const result = await permissionRepository.findByName(name);
+    return result || null;
   }
 
   /**
@@ -218,29 +186,19 @@ export class RoleService {
     userId: string,
     tenantId: string
   ): Promise<UserPermissions | null> {
-    const userTenant = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(roles, eq(userTenants.roleId, roles.id))
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .limit(1)
-      .then((result) => result[0]);
+    const userTenant = await userTenantRepository.findByIdForTenant(userId, tenantId);
 
     if (!userTenant) {
       return null;
     }
 
     // Get permissions for the user's role
-    const rolePermissionsData = await db
-      .select()
-      .from(rolePermissions)
-      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-      .where(eq(rolePermissions.roleId, userTenant.roles.id));
+    const rolePermissionsData = await rolePermissionRepository.findByRoleId(userTenant.roleId);
 
     return {
-      roleId: userTenant.roles.id,
-      roleName: userTenant.roles.name,
-      permissions: rolePermissionsData.map((row) => row.permissions),
+      roleId: userTenant.roleId,
+      roleName: rolePermissionsData.role.name,
+      permissions: rolePermissionsData.permissions,
     };
   }
 
@@ -276,20 +234,16 @@ export class RoleService {
    * @returns A promise that resolves to true if the user is an admin, false otherwise.
    */
   static async userIsAdmin(userId: string, tenantId: string): Promise<boolean> {
-    const userTenant = await db
-      .select()
-      .from(userTenants)
-      .innerJoin(roles, eq(userTenants.roleId, roles.id))
-      .where(and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)))
-      .limit(1)
-      .then((result) => result[0]);
+    const userTenant = await userTenantRepository.findByIdForTenant(userId, tenantId);
 
     if (!userTenant) {
       return false;
     }
 
+    const role = await roleRepository.findById(userTenant.roleId);
+
     // Check if user is super user or has admin role
-    return userTenant.user_tenants.isSuperUser || userTenant.roles.name === 'Admin';
+    return userTenant.isSuperUser || role?.name === 'Admin';
   }
 
   /**
@@ -300,14 +254,7 @@ export class RoleService {
    * @throws Throws an error if the role is not found.
    */
   static async updateRole(roleId: string, updateData: Partial<CreateRoleData>): Promise<Role> {
-    const [role] = await db
-      .update(roles)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(roles.id, roleId))
-      .returning();
+    const role = await roleRepository.updateById(roleId, updateData);
 
     if (!role) {
       throw new Error('Role not found');
@@ -323,7 +270,7 @@ export class RoleService {
    * @throws Throws an error if the role is not found.
    */
   static async deleteRole(roleId: string): Promise<Role> {
-    const [role] = await db.delete(roles).where(eq(roles.id, roleId)).returning();
+    const role = await roleRepository.deleteById(roleId);
 
     if (!role) {
       throw new Error('Role not found');

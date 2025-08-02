@@ -5,7 +5,10 @@ import {
   NewRolePermission,
   roles,
   permissions,
+  Permission,
+  Role,
 } from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
 
 export interface RoleWithPermissions {
@@ -49,6 +52,41 @@ export class RolePermissionRepository extends BaseRepository<
       .innerJoin(roles, eq(this.table.roleId, roles.id))
       .where(eq(this.table.permissionId, permissionId));
     return results.map((result) => result.role);
+  }
+
+  async findByRoleId(roleId: string): Promise<{ role: Role; permissions: Permission[] }> {
+    // First get the role
+    const roleResult = await this.db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
+
+    if (!roleResult[0]) {
+      throw new NotFoundError(`Role not found with id ${roleId}`);
+    }
+
+    // Then get all permissions for this role
+    const permissions = await this.findPermissionsByRoleId(roleId);
+
+    return {
+      role: roleResult[0],
+      permissions,
+    };
+  }
+
+  /**
+   * Find role permission by role id and permission id
+   */
+  async findByRoleIdAndPermissionId(roleId: string, permissionId: string): Promise<RolePermission> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.roleId, roleId), eq(this.table.permissionId, permissionId)));
+
+    if (!results[0]) {
+      throw new NotFoundError(
+        `Role permission not found for role ${roleId} and permission ${permissionId}`
+      );
+    }
+
+    return results[0];
   }
 
   /**
