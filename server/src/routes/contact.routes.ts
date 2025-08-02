@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
 import {
@@ -10,43 +9,15 @@ import {
   toggleContactManuallyReviewed,
 } from '../modules/contact.service';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
+import {
+  ContactCreateSchema,
+  ContactGetSchema,
+  ContactUpdateSchema,
+  ContactDeleteSchema,
+  ContactManualReviewSchema,
+} from './apiSchema/contact';
 
 const basePath = '/leads/:leadId/contacts';
-
-// Schema for point of contact
-const pointOfContactSchema = Type.Object({
-  name: Type.String({ minLength: 1, description: 'Contact name' }),
-  email: Type.String({ format: 'email', description: 'Contact email address' }),
-  phone: Type.Optional(Type.String({ description: 'Contact phone number' })),
-  title: Type.Optional(Type.String({ description: 'Contact job title' })),
-  company: Type.Optional(Type.String({ description: 'Contact company' })),
-});
-
-// Schema for point of contact update (all fields optional except validation constraints)
-const pointOfContactUpdateSchema = Type.Object({
-  name: Type.Optional(Type.String({ minLength: 1, description: 'Contact name' })),
-  email: Type.Optional(Type.String({ format: 'email', description: 'Contact email address' })),
-  phone: Type.Optional(
-    Type.Union([Type.String({ description: 'Contact phone number' }), Type.Null()])
-  ),
-  title: Type.Optional(
-    Type.Union([Type.String({ description: 'Contact job title' }), Type.Null()])
-  ),
-});
-
-// Schema for point of contact response
-const pointOfContactResponseSchema = Type.Object({
-  id: Type.String({ description: 'Contact ID' }),
-  name: Type.String({ description: 'Contact name' }),
-  email: Type.String({ description: 'Contact email' }),
-  phone: Type.Optional(Type.String({ description: 'Contact phone' })),
-  title: Type.Optional(Type.String({ description: 'Contact job title' })),
-  company: Type.Optional(Type.String({ description: 'Contact company' })),
-  sourceUrl: Type.Optional(Type.String({ description: 'URL where contact information was found' })),
-  manuallyReviewed: Type.Boolean({ description: 'Whether the contact has been manually reviewed' }),
-  createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
-  updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
-});
 
 export default async function contactRoutes(fastify: FastifyInstance) {
   // Get a contact by ID
@@ -57,14 +28,9 @@ export default async function contactRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'Get a contact by ID',
       tags: ['Contacts'],
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact ID' }),
-      }),
+      ...ContactGetSchema,
       response: {
-        200: Type.Object({
-          contact: pointOfContactResponseSchema,
-        }),
+        ...ContactGetSchema.response,
         ...defaultRouteResponse,
       },
     },
@@ -148,16 +114,9 @@ export default async function contactRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'Update a contact',
       tags: ['Contacts'],
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact ID' }),
-      }),
-      body: pointOfContactUpdateSchema,
+      ...ContactUpdateSchema,
       response: {
-        200: Type.Object({
-          message: Type.String(),
-          contact: pointOfContactResponseSchema,
-        }),
+        ...ContactUpdateSchema.response,
         ...defaultRouteResponse,
       },
     },
@@ -270,15 +229,9 @@ export default async function contactRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'Create a new contact for a lead',
       tags: ['Contacts'],
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-      }),
-      body: pointOfContactSchema,
+      ...ContactCreateSchema,
       response: {
-        201: Type.Object({
-          message: Type.String(),
-          contact: pointOfContactResponseSchema,
-        }),
+        ...ContactCreateSchema.response,
         ...defaultRouteResponse,
       },
     },
@@ -369,14 +322,9 @@ export default async function contactRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'Delete a contact',
       tags: ['Contacts'],
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact ID' }),
-      }),
+      ...ContactDeleteSchema,
       response: {
-        200: Type.Object({
-          message: Type.String(),
-        }),
+        ...ContactDeleteSchema.response,
         ...defaultRouteResponse,
       },
     },
@@ -459,18 +407,9 @@ export default async function contactRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'Toggle contact manually reviewed status',
       tags: ['Contacts'],
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact ID' }),
-      }),
-      body: Type.Object({
-        manuallyReviewed: Type.Boolean({ description: 'Manually reviewed status' }),
-      }),
+      ...ContactManualReviewSchema,
       response: {
-        200: Type.Object({
-          message: Type.String(),
-          contact: pointOfContactResponseSchema,
-        }),
+        ...ContactManualReviewSchema.response,
         ...defaultRouteResponse,
       },
     },
