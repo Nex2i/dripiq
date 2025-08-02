@@ -1,8 +1,8 @@
 import { FastifyInstance, RouteOptions, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
-import { ProductsService } from '../modules/products.service';
 import { defaultRouteResponse } from '@/types/response';
 import { HttpMethods } from '@/utils/HttpMethods';
+import { ProductsService } from '../modules/products.service';
 import {
   ProductCreateSchema,
   ProductUpdateSchema,

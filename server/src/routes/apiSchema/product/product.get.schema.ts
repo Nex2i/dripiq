@@ -3,21 +3,25 @@ import { PaginationQuerySchema, PaginationResponseSchema } from '../shared/pagin
 
 // Parameters schema for get single product route
 export const GetProductParamsSchema = Type.Object({
-  id: Type.String({ 
+  id: Type.String({
     description: 'Product ID',
-    format: 'uuid'
+    format: 'uuid',
   }),
 });
 
 // Query schema for listing products with filtering and pagination
 export const GetProductsQuerySchema = Type.Object({
-  title: Type.Optional(Type.String({ 
-    description: 'Filter by product title (partial match)',
-    maxLength: 255
-  })),
-  isDefault: Type.Optional(Type.Boolean({ 
-    description: 'Filter by default products only'
-  })),
+  title: Type.Optional(
+    Type.String({
+      description: 'Filter by product title (partial match)',
+      maxLength: 255,
+    })
+  ),
+  isDefault: Type.Optional(
+    Type.Boolean({
+      description: 'Filter by default products only',
+    })
+  ),
   ...PaginationQuerySchema.properties,
 });
 

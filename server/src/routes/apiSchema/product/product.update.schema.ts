@@ -2,34 +2,44 @@ import { Type } from '@sinclair/typebox';
 
 // Parameters schema for update product route
 export const UpdateProductParamsSchema = Type.Object({
-  id: Type.String({ 
+  id: Type.String({
     description: 'Product ID',
-    format: 'uuid'
+    format: 'uuid',
   }),
 });
 
 // Request body schema for updating a product (all fields optional)
 export const UpdateProductRequestSchema = Type.Object({
-  title: Type.Optional(Type.String({ 
-    description: 'Product title',
-    minLength: 1,
-    maxLength: 255
-  })),
-  description: Type.Optional(Type.String({ 
-    description: 'Product description',
-    maxLength: 1000 
-  })),
-  salesVoice: Type.Optional(Type.String({ 
-    description: 'Sales voice/pitch for the product',
-    maxLength: 2000 
-  })),
-  siteUrl: Type.Optional(Type.String({ 
-    description: 'Product website URL',
-    format: 'uri'
-  })),
-  isDefault: Type.Optional(Type.Boolean({ 
-    description: 'Whether this is the default product'
-  })),
+  title: Type.Optional(
+    Type.String({
+      description: 'Product title',
+      minLength: 1,
+      maxLength: 255,
+    })
+  ),
+  description: Type.Optional(
+    Type.String({
+      description: 'Product description',
+      maxLength: 1000,
+    })
+  ),
+  salesVoice: Type.Optional(
+    Type.String({
+      description: 'Sales voice/pitch for the product',
+      maxLength: 2000,
+    })
+  ),
+  siteUrl: Type.Optional(
+    Type.String({
+      description: 'Product website URL',
+      format: 'uri',
+    })
+  ),
+  isDefault: Type.Optional(
+    Type.Boolean({
+      description: 'Whether this is the default product',
+    })
+  ),
 });
 
 // Response schema for product update

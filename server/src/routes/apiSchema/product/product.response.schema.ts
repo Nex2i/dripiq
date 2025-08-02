@@ -5,7 +5,9 @@ export const ProductResponseSchema = Type.Object({
   id: Type.String({ description: 'Product ID', format: 'uuid' }),
   title: Type.String({ description: 'Product title' }),
   description: Type.Union([Type.String(), Type.Null()], { description: 'Product description' }),
-  salesVoice: Type.Union([Type.String(), Type.Null()], { description: 'Sales voice/pitch for the product' }),
+  salesVoice: Type.Union([Type.String(), Type.Null()], {
+    description: 'Sales voice/pitch for the product',
+  }),
   siteUrl: Type.Union([Type.String(), Type.Null()], { description: 'Product website URL' }),
   isDefault: Type.Boolean({ description: 'Whether this is the default product' }),
   tenantId: Type.String({ description: 'Tenant ID' }),

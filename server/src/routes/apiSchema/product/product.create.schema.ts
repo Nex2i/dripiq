@@ -2,27 +2,35 @@ import { Type } from '@sinclair/typebox';
 
 // Request body schema for creating a product
 export const CreateProductRequestSchema = Type.Object({
-  title: Type.String({ 
+  title: Type.String({
     description: 'Product title',
     minLength: 1,
-    maxLength: 255
+    maxLength: 255,
   }),
-  description: Type.Optional(Type.String({ 
-    description: 'Product description',
-    maxLength: 1000 
-  })),
-  salesVoice: Type.Optional(Type.String({ 
-    description: 'Sales voice/pitch for the product',
-    maxLength: 2000 
-  })),
-  siteUrl: Type.Optional(Type.String({ 
-    description: 'Product website URL',
-    format: 'uri'
-  })),
-  isDefault: Type.Optional(Type.Boolean({ 
-    description: 'Whether this is the default product',
-    default: false 
-  })),
+  description: Type.Optional(
+    Type.String({
+      description: 'Product description',
+      maxLength: 1000,
+    })
+  ),
+  salesVoice: Type.Optional(
+    Type.String({
+      description: 'Sales voice/pitch for the product',
+      maxLength: 2000,
+    })
+  ),
+  siteUrl: Type.Optional(
+    Type.String({
+      description: 'Product website URL',
+      format: 'uri',
+    })
+  ),
+  isDefault: Type.Optional(
+    Type.Boolean({
+      description: 'Whether this is the default product',
+      default: false,
+    })
+  ),
 });
 
 // Response schema for product creation

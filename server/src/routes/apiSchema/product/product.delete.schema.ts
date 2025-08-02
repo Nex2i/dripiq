@@ -2,9 +2,9 @@ import { Type } from '@sinclair/typebox';
 
 // Parameters schema for delete product route
 export const DeleteProductParamsSchema = Type.Object({
-  id: Type.String({ 
+  id: Type.String({
     description: 'Product ID',
-    format: 'uuid'
+    format: 'uuid',
   }),
 });
 
