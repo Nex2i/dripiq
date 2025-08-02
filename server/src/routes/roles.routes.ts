@@ -1,29 +1,21 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
-import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { RoleService, CreateRoleData, CreatePermissionData } from '@/modules/role.service';
 import { UserService } from '@/modules/user.service';
+import {
+  RoleCreateSchema,
+  RoleGetAllSchema,
+  RoleGetByIdSchema,
+  RoleUpdateSchema,
+  RoleDeleteSchema,
+  PermissionCreateSchema,
+  PermissionGetAllSchema,
+  PermissionAssignSchema,
+  PermissionRemoveSchema,
+  UserPermissionsGetSchema,
+} from '@/routes/apiSchema/role';
 
 const basePath = '/roles';
-
-// Schema for create role endpoint
-const createRoleBodySchema = Type.Object({
-  name: Type.String(),
-  description: Type.Optional(Type.String()),
-});
-
-// Schema for create permission endpoint
-const createPermissionBodySchema = Type.Object({
-  name: Type.String(),
-  description: Type.Optional(Type.String()),
-  resource: Type.String(),
-  action: Type.String(),
-});
-
-// Schema for assign permission to role endpoint
-const assignPermissionBodySchema = Type.Object({
-  permissionId: Type.String(),
-});
 
 export default async function RolesRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
   // Get all roles
@@ -32,6 +24,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}`,
     preHandler: [fastify.authPrehandler],
     schema: {
+      ...RoleGetAllSchema,
       tags: ['Roles'],
       summary: 'Get All Roles',
       description: 'Get all available roles in the system',
@@ -59,6 +52,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: '/permissions',
     preHandler: [fastify.authPrehandler],
     schema: {
+      ...PermissionGetAllSchema,
       tags: ['Roles'],
       summary: 'Get All Permissions',
       description: 'Get all available permissions in the system',
@@ -86,12 +80,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}/:roleId`,
     preHandler: [fastify.authPrehandler],
     schema: {
+      ...RoleGetByIdSchema,
       tags: ['Roles'],
       summary: 'Get Role by ID',
       description: 'Get a specific role with its permissions',
-      params: Type.Object({
-        roleId: Type.String(),
-      }),
     },
     handler: async (
       request: FastifyRequest<{ Params: { roleId: string } }>,
@@ -126,7 +118,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      body: createRoleBodySchema,
+      ...RoleCreateSchema,
       tags: ['Roles'],
       summary: 'Create Role',
       description: 'Create a new role (Admin only)',
@@ -156,7 +148,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: '/permissions',
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      body: createPermissionBodySchema,
+      ...PermissionCreateSchema,
       tags: ['Roles'],
       summary: 'Create Permission',
       description: 'Create a new permission (Admin only)',
@@ -189,13 +181,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}/:roleId/permissions`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      body: assignPermissionBodySchema,
+      ...PermissionAssignSchema,
       tags: ['Roles'],
       summary: 'Assign Permission to Role',
       description: 'Assign a permission to a role (Admin only)',
-      params: Type.Object({
-        roleId: Type.String(),
-      }),
     },
     handler: async (
       request: FastifyRequest<{
@@ -230,13 +219,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}/:roleId/permissions/:permissionId`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
+      ...PermissionRemoveSchema,
       tags: ['Roles'],
       summary: 'Remove Permission from Role',
       description: 'Remove a permission from a role (Admin only)',
-      params: Type.Object({
-        roleId: Type.String(),
-        permissionId: Type.String(),
-      }),
     },
     handler: async (
       request: FastifyRequest<{
@@ -268,12 +254,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: '/user-permissions/:tenantId',
     preHandler: [fastify.authPrehandler],
     schema: {
+      ...UserPermissionsGetSchema,
       tags: ['Roles'],
       summary: 'Get User Permissions',
       description: 'Get current user permissions for a specific tenant',
-      params: Type.Object({
-        tenantId: Type.String(),
-      }),
     },
     handler: async (
       request: FastifyRequest<{ Params: { tenantId: string } }>,
@@ -322,13 +306,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}/:roleId`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      body: createRoleBodySchema,
+      ...RoleUpdateSchema,
       tags: ['Roles'],
       summary: 'Update Role',
       description: 'Update a role (Admin only)',
-      params: Type.Object({
-        roleId: Type.String(),
-      }),
     },
     handler: async (
       request: FastifyRequest<{
@@ -363,12 +344,10 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
     url: `${basePath}/:roleId`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
+      ...RoleDeleteSchema,
       tags: ['Roles'],
       summary: 'Delete Role',
       description: 'Delete a role (Admin only)',
-      params: Type.Object({
-        roleId: Type.String(),
-      }),
     },
     handler: async (
       request: FastifyRequest<{ Params: { roleId: string } }>,
