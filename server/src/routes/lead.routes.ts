@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
-import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
@@ -22,98 +21,24 @@ import {
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 
+// Import all lead schemas
+import {
+  LeadCreateSchema,
+  LeadGetAllSchema,
+  LeadGetByIdSchema,
+  LeadUpdateSchema,
+  LeadDeleteSchema,
+  LeadBulkDeleteSchema,
+  LeadAssignOwnerSchema,
+  LeadVendorFitSchema,
+  LeadResyncSchema,
+  LeadContactStrategySchema,
+  LeadAttachProductsSchema,
+  LeadDetachProductSchema,
+  LeadGetProductsSchema,
+} from './apiSchema/lead';
+
 const basePath = '/leads';
-
-// Schema for point of contact
-const pointOfContactSchema = Type.Object({
-  name: Type.String({ minLength: 1, description: 'Contact name' }),
-  email: Type.String({ format: 'email', description: 'Contact email address' }),
-  phone: Type.Optional(Type.String({ description: 'Contact phone number' })),
-  title: Type.Optional(Type.String({ description: 'Contact job title' })),
-  company: Type.Optional(Type.String({ description: 'Contact company' })),
-});
-
-// Schema for point of contact response
-const pointOfContactResponseSchema = Type.Object({
-  id: Type.String({ description: 'Contact ID' }),
-  name: Type.String({ description: 'Contact name' }),
-  email: Type.String({ description: 'Contact email' }),
-  phone: Type.Optional(Type.String({ description: 'Contact phone' })),
-  title: Type.Optional(Type.String({ description: 'Contact job title' })),
-  company: Type.Optional(Type.String({ description: 'Contact company' })),
-  sourceUrl: Type.Optional(Type.String({ description: 'URL where contact information was found' })),
-  manuallyReviewed: Type.Boolean({ description: 'Whether the contact has been manually reviewed' }),
-  createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
-  updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
-});
-
-// Schema for lead status response
-const leadStatusResponseSchema = Type.Object({
-  id: Type.String({ description: 'Status ID' }),
-  status: Type.String({
-    enum: [
-      'Unprocessed',
-      'Syncing Site',
-      'Scraping Site',
-      'Analyzing Site',
-      'Extracting Contacts',
-      'Processed',
-    ],
-    description: 'Status value',
-  }),
-  createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
-  updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
-});
-
-// Schema for create lead endpoint
-const createLeadBodySchema = Type.Object({
-  name: Type.String({ minLength: 1, description: 'Lead name' }),
-  url: Type.String({ format: 'uri', minLength: 1, description: 'Lead website URL' }),
-  status: Type.Optional(
-    Type.String({
-      enum: ['new', 'contacted', 'qualified', 'lost'],
-      default: 'new',
-      description: 'Lead status',
-    })
-  ),
-  pointOfContacts: Type.Optional(
-    Type.Array(pointOfContactSchema, {
-      description: 'Array of point of contacts for the lead',
-    })
-  ),
-});
-
-// Schema for lead response
-const leadResponseSchema = Type.Object({
-  id: Type.String({ description: 'Lead ID' }),
-  name: Type.String({ description: 'Lead name' }),
-  url: Type.String({ description: 'Lead website URL' }),
-  status: Type.String({ description: 'Lead status' }),
-  summary: Type.Optional(Type.String({ description: 'Lead summary' })),
-  products: Type.Optional(Type.Array(Type.String(), { description: 'Lead products' })),
-  services: Type.Optional(Type.Array(Type.String(), { description: 'Lead services' })),
-  differentiators: Type.Optional(
-    Type.Array(Type.String(), { description: 'Lead differentiators' })
-  ),
-  targetMarket: Type.Optional(Type.String({ description: 'Lead target market' })),
-  tone: Type.Optional(Type.String({ description: 'Lead tone' })),
-  logo: Type.Optional(Type.Union([Type.String(), Type.Null()], { description: 'Lead logo URL' })),
-  brandColors: Type.Optional(Type.Array(Type.String(), { description: 'Lead brand colors' })),
-  primaryContactId: Type.Optional(Type.String({ description: 'Primary contact ID' })),
-  ownerId: Type.Optional(Type.String({ description: 'Lead owner ID' })),
-  createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
-  updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
-  pointOfContacts: Type.Optional(
-    Type.Array(pointOfContactResponseSchema, {
-      description: 'Array of point of contacts for the lead',
-    })
-  ),
-  statuses: Type.Optional(
-    Type.Array(leadStatusResponseSchema, {
-      description: 'Array of processing statuses for the lead',
-    })
-  ),
-});
 
 export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
   // Get all leads route
@@ -125,12 +50,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Leads'],
       summary: 'Get All Leads',
       description: 'Retrieve all leads from the database with optional search (tenant-scoped)',
-      querystring: Type.Object({
-        search: Type.Optional(Type.String({ description: 'Search term to filter leads' })),
-      }),
+      ...LeadGetAllSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Array(leadResponseSchema, { description: 'List of leads for the tenant' }),
+        ...LeadGetAllSchema.response,
       },
     },
     handler: async (
@@ -176,17 +99,14 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: basePath,
     preHandler: [fastify.authPrehandler],
     schema: {
-      body: createLeadBodySchema,
       tags: ['Leads'],
       summary: 'Create New Lead',
       description:
         'Create a new lead in the database with optional point of contacts (tenant-scoped)',
+      ...LeadCreateSchema,
       response: {
         ...defaultRouteResponse(),
-        201: Type.Object({
-          message: Type.String(),
-          lead: leadResponseSchema,
-        }),
+        ...LeadCreateSchema.response,
       },
     },
     handler: async (
@@ -289,15 +209,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/:id`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
       tags: ['Leads'],
       summary: 'Get Lead by ID',
       description: 'Get a single lead by ID with associated point of contacts (tenant-scoped)',
+      ...LeadGetByIdSchema,
       response: {
         ...defaultRouteResponse(),
-        200: leadResponseSchema,
+        ...LeadGetByIdSchema.response,
       },
     },
     handler: async (
@@ -359,19 +277,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/:id`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
-      body: Type.Partial(createLeadBodySchema),
       tags: ['Leads'],
       summary: 'Update Lead',
       description: 'Update a lead by ID (tenant-scoped)',
+      ...LeadUpdateSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          message: Type.String(),
-          lead: leadResponseSchema,
-        }),
+        ...LeadUpdateSchema.response,
       },
     },
     handler: async (
@@ -457,18 +369,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/:id`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
       tags: ['Leads'],
       summary: 'Delete Lead',
       description: 'Delete a single lead by ID (tenant-scoped)',
+      ...LeadDeleteSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          message: Type.String(),
-          deletedLead: leadResponseSchema,
-        }),
+        ...LeadDeleteSchema.response,
       },
     },
     handler: async (
@@ -537,18 +444,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/bulk`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      body: Type.Object({
-        ids: Type.Array(Type.String(), { minItems: 1, description: 'Array of lead IDs to delete' }),
-      }),
       tags: ['Leads'],
       summary: 'Bulk Delete Leads',
       description: 'Delete multiple leads by their IDs (tenant-scoped)',
+      ...LeadBulkDeleteSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          message: Type.String(),
-          deletedLeads: Type.Array(leadResponseSchema),
-        }),
+        ...LeadBulkDeleteSchema.response,
       },
     },
     handler: async (
@@ -621,11 +523,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/:id/vendor-fit`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
       tags: ['Leads'],
       summary: 'Generate Vendor Fit Report',
+      ...LeadVendorFitSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...LeadVendorFitSchema.response,
+      },
     },
     handler: async (
       request: FastifyRequest<{
@@ -664,18 +568,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/:id/resync`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
       tags: ['Leads'],
       summary: 'Resync Lead',
       description: 'Resync a lead by ID (tenant-scoped)',
+      ...LeadResyncSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          message: Type.String(),
-          leadId: Type.String(),
-        }),
+        ...LeadResyncSchema.response,
       },
     },
     handler: async (
@@ -733,21 +632,13 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/:id/assign-owner`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      params: Type.Object({
-        id: Type.String({ description: 'Lead ID' }),
-      }),
-      body: Type.Object({
-        userId: Type.String({ description: 'User ID to assign as owner' }),
-      }),
       tags: ['Leads'],
       summary: 'Assign Lead Owner',
       description: 'Assign a user as the owner of a lead (tenant-scoped)',
+      ...LeadAssignOwnerSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          message: Type.String(),
-          lead: leadResponseSchema,
-        }),
+        ...LeadAssignOwnerSchema.response,
       },
     },
     handler: async (
@@ -839,22 +730,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       description: 'Generate contact strategy and outreach plan for a specific contact',
       tags: ['Leads'],
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID' }),
-        contactId: Type.String({ description: 'Contact ID' }),
-      }),
-
+      ...LeadContactStrategySchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          success: Type.Boolean(),
-          message: Type.String(),
-          data: Type.Any(), // Simplified schema - using Any for complex nested structure
-          metadata: Type.Object({
-            totalIterations: Type.Number(),
-            processingTime: Type.Number(),
-          }),
-        }),
+        ...LeadContactStrategySchema.response,
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
@@ -930,33 +809,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Lead Products'],
       summary: 'Get Lead Products',
       description: 'Get all products attached to a specific lead (tenant-scoped)',
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID to get products for' }),
-      }),
+      ...LeadGetProductsSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Array(
-          Type.Object({
-            id: Type.String({ description: 'Lead-Product attachment ID' }),
-            leadId: Type.String({ description: 'Lead ID' }),
-            productId: Type.String({ description: 'Product ID' }),
-            attachedAt: Type.String({
-              format: 'date-time',
-              description: 'When the product was attached',
-            }),
-            createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
-            updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
-            product: Type.Object({
-              id: Type.String({ description: 'Product ID' }),
-              title: Type.String({ description: 'Product title' }),
-              description: Type.Optional(Type.String({ description: 'Product description' })),
-              salesVoice: Type.Optional(Type.String({ description: 'Product sales voice' })),
-              siteUrl: Type.Optional(Type.String({ description: 'Product site URL' })),
-              tenantId: Type.String({ description: 'Tenant ID' }),
-            }),
-          }),
-          { description: 'List of products attached to the lead' }
-        ),
+        ...LeadGetProductsSchema.response,
       },
     },
     preHandler: [fastify.authPrehandler],
@@ -1010,36 +866,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Lead Products'],
       summary: 'Attach Products to Lead',
       description: 'Attach one or more products to a lead (tenant-scoped)',
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID to attach products to' }),
-      }),
-      body: Type.Object({
-        productIds: Type.Array(Type.String(), {
-          description: 'Array of product IDs to attach to the lead',
-          minItems: 1,
-        }),
-      }),
+      ...LeadAttachProductsSchema,
       response: {
         ...defaultRouteResponse(),
-        201: Type.Object({
-          success: Type.Boolean({ description: 'Whether the operation was successful' }),
-          message: Type.String({ description: 'Success message' }),
-          attachedCount: Type.Number({ description: 'Number of products attached' }),
-          attachments: Type.Array(
-            Type.Object({
-              id: Type.String({ description: 'Attachment ID' }),
-              leadId: Type.String({ description: 'Lead ID' }),
-              productId: Type.String({ description: 'Product ID' }),
-              attachedAt: Type.String({
-                format: 'date-time',
-                description: 'When the product was attached',
-              }),
-              createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
-              updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
-            }),
-            { description: 'List of created attachments' }
-          ),
-        }),
+        ...LeadAttachProductsSchema.response,
       },
     },
     preHandler: [fastify.authPrehandler],
@@ -1118,16 +948,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Lead Products'],
       summary: 'Detach Product from Lead',
       description: 'Detach a specific product from a lead (tenant-scoped)',
-      params: Type.Object({
-        leadId: Type.String({ description: 'Lead ID to detach product from' }),
-        productId: Type.String({ description: 'Product ID to detach from the lead' }),
-      }),
+      ...LeadDetachProductSchema,
       response: {
         ...defaultRouteResponse(),
-        200: Type.Object({
-          success: Type.Boolean({ description: 'Whether the operation was successful' }),
-          message: Type.String({ description: 'Success message' }),
-        }),
+        ...LeadDetachProductSchema.response,
       },
     },
     preHandler: [fastify.authPrehandler],
