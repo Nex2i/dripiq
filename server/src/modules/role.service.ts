@@ -186,7 +186,7 @@ export class RoleService {
     userId: string,
     tenantId: string
   ): Promise<UserPermissions | null> {
-    const userTenant = await userTenantRepository.findByIdForTenant(userId, tenantId);
+    const userTenant = await userTenantRepository.findByUserIdForTenant(userId, tenantId);
 
     if (!userTenant) {
       return null;
