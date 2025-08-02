@@ -1,36 +1,46 @@
-import { FastifyInstance, RouteOptions } from 'fastify';
+import { FastifyInstance, FastifyRequest, RouteOptions } from 'fastify';
+import { Static } from '@sinclair/typebox';
 import { TenantService } from '@/modules/tenant.service';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 import { storageService } from '@/modules/storage/storage.service';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
+import { defaultRouteResponse } from '@/types/response';
+
+// Import organization schemas
+import {
+  OrganizationGetSchema,
+  OrganizationUpdateSchema,
+  OrganizationAnalyzeSchema,
+  GetOrganizationParamsSchema,
+  UpdateOrganizationParamsSchema,
+  UpdateOrganizationRequestSchema,
+  AnalyzeOrganizationParamsSchema,
+} from './apiSchema/organization';
 
 const basePath = '/organizations';
 
-interface OrganizationParams {
-  id: string;
-}
-
-interface UpdateOrganizationBody {
-  name?: string;
-  organizationName?: string;
-  organizationWebsite?: string;
-  summary?: string;
-  differentiators?: string[];
-  targetMarket?: string;
-  tone?: string;
-  logo?: string | null;
-  brandColors?: string[];
-}
-
 export default async function OrganizationRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
   // GET /organizations/:id - Get organization details
-  fastify.route<{
-    Params: OrganizationParams;
-  }>({
+  fastify.route({
     method: 'GET',
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
-    handler: async (request, reply) => {
+    schema: {
+      tags: ['Organizations'],
+      summary: 'Get Organization Details',
+      description: 'Retrieve organization details by ID',
+      ...OrganizationGetSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...OrganizationGetSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: Static<typeof GetOrganizationParamsSchema>;
+      }>,
+      reply
+    ) => {
       try {
         const { tenantId } = request as AuthenticatedRequest;
 
@@ -66,14 +76,27 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
   });
 
   // PUT /organizations/:id - Update organization details
-  fastify.route<{
-    Params: OrganizationParams;
-    Body: UpdateOrganizationBody;
-  }>({
+  fastify.route({
     method: 'PUT',
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
-    handler: async (request, reply) => {
+    schema: {
+      tags: ['Organizations'],
+      summary: 'Update Organization',
+      description: 'Update organization details',
+      ...OrganizationUpdateSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...OrganizationUpdateSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: Static<typeof UpdateOrganizationParamsSchema>;
+        Body: Static<typeof UpdateOrganizationRequestSchema>;
+      }>,
+      reply
+    ) => {
       try {
         const { id } = request.params;
         const updateData = request.body;
@@ -116,13 +139,26 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
   });
 
   // POST /organizations/:id/resync - Resync organization details
-  fastify.route<{
-    Params: OrganizationParams;
-  }>({
+  fastify.route({
     method: 'POST',
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id/resync`,
-    handler: async (request, reply) => {
+    schema: {
+      tags: ['Organizations'],
+      summary: 'Resync Organization',
+      description: 'Analyze and resync organization details',
+      ...OrganizationAnalyzeSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...OrganizationAnalyzeSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: Static<typeof AnalyzeOrganizationParamsSchema>;
+      }>,
+      reply
+    ) => {
       try {
         const { id } = request.params;
         const { tenantId } = request as AuthenticatedRequest;

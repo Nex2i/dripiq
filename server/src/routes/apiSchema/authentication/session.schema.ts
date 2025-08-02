@@ -20,17 +20,3 @@ export const sessionInfoResponseSchema = Type.Object({
   created_at: Type.String(),
   updated_at: Type.String(),
 });
-
-// Refresh token request schema
-export const refreshTokenBodySchema = Type.Object({
-  refresh_token: Type.String(),
-});
-
-// Refresh token response schema
-export const refreshTokenResponseSchema = Type.Object({
-  access_token: Type.String(),
-  refresh_token: Type.String(),
-  expires_in: Type.Number(),
-  token_type: Type.String(),
-  user: sessionInfoResponseSchema,
-});
