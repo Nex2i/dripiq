@@ -126,32 +126,6 @@ export class BadLeadService {
 
 API schemas are organized by feature domain under `src/routes/apiSchema/`:
 
-### Authentication Schemas
-Located in `src/routes/apiSchema/authentication/`:
-
-- `register.schema.ts` - User registration schemas
-  - `registerBodySchema` - Registration request body
-  - `registerSuccessResponseSchema` - Successful registration response
-  - `registerWithoutSignInResponseSchema` - Registration without auto sign-in
-  
-- `createUser.schema.ts` - User creation schemas  
-  - `createUserBodySchema` - Create user request body
-  - `createUserResponseSchema` - User creation response
-  
-- `auth.response.schema.ts` - Authentication response schemas
-  - `userObjectSchema` - Common user object structure
-  - `tenantWithRoleSchema` - Tenant with role information
-  - `currentUserResponseSchema` - Current user endpoint response
-  - `loginResponseSchema` - Login endpoint response
-  - `logoutResponseSchema` - Logout endpoint response
-  - `errorResponseSchema` - Common error response
-  
-- `session.schema.ts` - Session management schemas
-  - `loginBodySchema` - Login request body
-  - `sessionInfoResponseSchema` - Session info response
-  - `refreshTokenBodySchema` - Refresh token request
-  - `refreshTokenResponseSchema` - Refresh token response
-
 ### Schema Organization Guidelines
 
 1. **Group by feature domain** - Each major feature gets its own schema directory
