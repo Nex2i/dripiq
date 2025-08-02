@@ -3,5 +3,158 @@ globs: **/client/**
 alwaysApply: false
 ---
 
-This is the frontend, written in React and typescript.
-This project uses tanstack and tailwind css.
+This is the frontend, written in React and TypeScript.
+This project uses TanStack Query (@tanstack/react-query) and Tailwind CSS.
+
+## API Request Structure Guidelines
+
+### Service Layer Pattern (see `leads.service.ts` and `organization.service.ts`)
+
+#### Service File Structure (`*.service.ts`)
+
+```typescript
+import type { QueryClient } from '@tanstack/react-query'
+import { authService } from './auth.service'
+
+export interface EntityType { id: string; /* ... */ }
+export interface CreateEntityData { /* ... */ }
+export interface UpdateEntityData { /* ... optional fields */ }
+
+// Centralized query keys - ALWAYS export from service
+export const entityQueryKeys = {
+  all: ['entities'] as const,
+  lists: () => [...entityQueryKeys.all, 'list'] as const,
+  list: (filters?: Record<string, any>) => [...entityQueryKeys.lists(), filters] as const,
+  details: () => [...entityQueryKeys.all, 'detail'] as const,
+  detail: (id: string) => [...entityQueryKeys.details(), id] as const,
+}
+
+class EntityService {
+  private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
+  private queryClient: QueryClient | null = null
+
+  constructor(queryClient?: QueryClient) {
+    if (queryClient) this.queryClient = queryClient
+  }
+
+  // Raw fetch methods (no cache management)
+  async getEntity(id: string): Promise<EntityType> {
+    const authHeaders = await authService.getAuthHeaders()
+    const response = await fetch(`${this.baseUrl}/entities/${id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
+    })
+    if (!response.ok) throw new Error(`Failed to fetch entity: ${response.statusText}`)
+    return response.json()
+  }
+
+  // Mutation methods with cache management
+  async updateEntity(id: string, data: UpdateEntityData): Promise<EntityType> {
+    const authHeaders = await authService.getAuthHeaders()
+    const response = await fetch(`${this.baseUrl}/entities/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to update entity')
+    }
+    const result = await response.json()
+
+    // Update cache if queryClient available
+    if (this.queryClient) {
+      this.queryClient.setQueryData(entityQueryKeys.detail(id), result)
+      this.queryClient.invalidateQueries({ queryKey: entityQueryKeys.lists() })
+    }
+    return result
+  }
+}
+
+// Singleton pattern - REQUIRED
+let entityServiceInstance: EntityService | null = null
+
+export const createEntityService = (queryClient: QueryClient): EntityService => {
+  if (!entityServiceInstance) entityServiceInstance = new EntityService(queryClient)
+  return entityServiceInstance
+}
+
+export const getEntityService = (): EntityService => {
+  if (!entityServiceInstance) {
+    throw new Error('EntityService not initialized. Call createEntityService() first.')
+  }
+  return entityServiceInstance
+}
+
+// Legacy export for backward compatibility
+export const entityService = new EntityService()
+```
+
+#### Query Hook File Structure (`use*Query.ts`)
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { 
+  entityService, 
+  entityQueryKeys,
+  type EntityType,
+  type UpdateEntityData,
+} from '../services/entity.service'
+
+// Import query keys from service - NEVER define locally
+
+export function useEntity(id: string) {
+  return useQuery({
+    queryKey: entityQueryKeys.detail(id),
+    queryFn: () => entityService.getEntity(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+export function useUpdateEntity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateEntityData }) =>
+      entityService.updateEntity(id, data),
+    onSuccess: (result) => {
+      queryClient.setQueryData(entityQueryKeys.detail(result.id), result)
+      queryClient.invalidateQueries({ queryKey: entityQueryKeys.lists() })
+    },
+  })
+}
+```
+
+### Key Requirements
+
+1. **ALWAYS use `authService.getAuthHeaders()`** for authenticated requests
+2. **Export query keys from service files**, not from hook files
+3. **Use singleton pattern** with `createService()` and `getService()` functions
+4. **Include QueryClient integration** in service constructors
+5. **Handle cache management** in mutation methods when queryClient available
+6. **Maintain backward compatibility** with legacy service exports
+7. **Use consistent error handling** with meaningful error messages
+8. **Follow naming conventions**: `entityService`, `entityQueryKeys`, `useEntity*`
+9. **Import types explicitly** using `type` keyword for interfaces
+
+### Common Patterns
+
+```typescript
+// Auth headers
+const authHeaders = await authService.getAuthHeaders()
+
+// API base URL
+private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
+
+// Error handling
+if (!response.ok) {
+  const errorData = await response.json()
+  throw new Error(errorData.message || 'Failed to perform operation')
+}
+
+// Cache management after mutations
+if (this.queryClient) {
+  this.queryClient.setQueryData(entityQueryKeys.detail(id), updatedData)
+  this.queryClient.invalidateQueries({ queryKey: entityQueryKeys.lists() })
+}
+```
