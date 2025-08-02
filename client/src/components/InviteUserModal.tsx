@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, Mail, User, Shield } from 'lucide-react'
-import { invitesService } from '../services/invites.service'
 import type { CreateInviteData } from '../services/invites.service'
-import { useRoles } from '../hooks/useRolesQuery'
+import { useRoles, useInviteUser } from '../hooks/useInvitesQuery'
 
 interface InviteUserModalProps {
   isOpen: boolean
@@ -32,10 +31,10 @@ export function InviteUserModal({
   const [errors, setErrors] = useState<
     Partial<Record<keyof InviteFormData, string>>
   >({})
-  const [isLoading, setIsLoading] = useState(false)
 
-  // Use the new useRoles hook
+  // Use the new useRoles hook and invite mutation
   const { data: roles = [], isLoading: isLoadingRoles, error: rolesError } = useRoles()
+  const inviteUserMutation = useInviteUser()
 
   // Set default role when roles are loaded
   useEffect(() => {
@@ -98,38 +97,34 @@ export function InviteUserModal({
       return
     }
 
-    setIsLoading(true)
-
-    try {
-      const inviteData: CreateInviteData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName || undefined,
-        email: formData.email,
-        role: formData.role, // Send actual role name from database
-      }
-
-      await invitesService.createInvite(inviteData)
-
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        role: roles.length > 0 ? roles[0].name : '',
-      })
-      setErrors({})
-
-      onSuccess()
-    } catch (error) {
-      console.error('Error sending invite:', error)
-      // Show error to user
-      setErrors({
-        email:
-          error instanceof Error ? error.message : 'Failed to send invitation',
-      })
-    } finally {
-      setIsLoading(false)
+    const inviteData: CreateInviteData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName || undefined,
+      email: formData.email,
+      role: formData.role, // Send actual role name from database
     }
+
+    inviteUserMutation.mutate(inviteData, {
+      onSuccess: () => {
+        // Reset form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          role: roles.length > 0 ? roles[0].name : '',
+        })
+        setErrors({})
+        onSuccess()
+      },
+      onError: (error) => {
+        console.error('Error sending invite:', error)
+        // Show error to user
+        setErrors({
+          email:
+            error instanceof Error ? error.message : 'Failed to send invitation',
+        })
+      },
+    })
   }
 
   const handleChange = (
@@ -302,10 +297,10 @@ export function InviteUserModal({
               </button>
               <button
                 type="submit"
-                disabled={isLoading || isLoadingRoles}
+                disabled={inviteUserMutation.isPending || isLoadingRoles}
                 className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary-600)] border border-transparent rounded-md hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Sending...' : 'Send invitation'}
+                {inviteUserMutation.isPending ? 'Sending...' : 'Send invitation'}
               </button>
             </div>
           </form>
