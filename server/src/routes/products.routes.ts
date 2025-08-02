@@ -1,48 +1,50 @@
-import { FastifyInstance, RouteOptions } from 'fastify';
+import { FastifyInstance, RouteOptions, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
+import { defaultRouteResponse } from '@/types/response';
+import { HttpMethods } from '@/utils/HttpMethods';
 import { ProductsService } from '../modules/products.service';
+import {
+  ProductCreateSchema,
+  ProductUpdateSchema,
+  ProductGetSchema,
+  ProductsListSchema,
+  ProductDeleteSchema,
+} from './apiSchema/product';
 
 const basePath = '/products';
 
-interface CreateProductBody {
-  title: string;
-  description?: string;
-  salesVoice?: string;
-  siteUrl?: string;
-  isDefault?: boolean;
-  tenantId: string;
-}
-
-interface UpdateProductBody {
-  title?: string;
-  description?: string;
-  salesVoice?: string;
-  siteUrl?: string;
-  isDefault?: boolean;
-}
-
-interface ProductParams {
-  id: string;
-}
-
-interface ProductQuery {
-  tenantId: string;
-}
-
 export default async function ProductsRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
-  fastify.route<{
-    Querystring: ProductQuery;
-  }>({
-    method: 'GET',
+  // GET /products - List all products
+  fastify.route({
+    method: HttpMethods.GET,
     preHandler: [fastify.authPrehandler],
     url: basePath,
-    handler: async (request, reply) => {
+    schema: {
+      description: 'Get all products for a tenant',
+      tags: ['Products'],
+      ...ProductsListSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...ProductsListSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Querystring: {
+          title?: string;
+          isDefault?: boolean;
+          page?: number;
+          limit?: number;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { tenantId } = authenticatedRequest;
 
         const productsList = await ProductsService.getProducts(tenantId);
-        return reply.send(productsList);
+        return reply.status(200).send(productsList);
       } catch (error: any) {
         fastify.log.error(error);
         return reply.status(500).send({
@@ -54,13 +56,27 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
   });
 
   // GET /products/:id - Get a single product
-  fastify.route<{
-    Params: ProductParams;
-  }>({
-    method: 'GET',
+  fastify.route({
+    method: HttpMethods.GET,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
-    handler: async (request, reply) => {
+    schema: {
+      description: 'Get a product by ID',
+      tags: ['Products'],
+      ...ProductGetSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...ProductGetSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
         const { id } = request.params;
         const authenticatedRequest = request as AuthenticatedRequest;
@@ -86,13 +102,31 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
   });
 
   // POST /products - Create a new product
-  fastify.route<{
-    Body: CreateProductBody;
-  }>({
-    method: 'POST',
+  fastify.route({
+    method: HttpMethods.POST,
     preHandler: [fastify.authPrehandler],
     url: basePath,
-    handler: async (request, reply) => {
+    schema: {
+      description: 'Create a new product',
+      tags: ['Products'],
+      ...ProductCreateSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...ProductCreateSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Body: {
+          title: string;
+          description?: string;
+          salesVoice?: string;
+          siteUrl?: string;
+          isDefault?: boolean;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
         const { title, description, salesVoice, siteUrl, isDefault } = request.body;
         const authenticatedRequest = request as AuthenticatedRequest;
@@ -122,14 +156,34 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
   });
 
   // PUT /products/:id - Update a product
-  fastify.route<{
-    Params: ProductParams;
-    Body: UpdateProductBody;
-  }>({
-    method: 'PUT',
+  fastify.route({
+    method: HttpMethods.PUT,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
-    handler: async (request, reply) => {
+    schema: {
+      description: 'Update a product by ID',
+      tags: ['Products'],
+      ...ProductUpdateSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...ProductUpdateSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+        Body: {
+          title?: string;
+          description?: string;
+          salesVoice?: string;
+          siteUrl?: string;
+          isDefault?: boolean;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
         const { id } = request.params;
         const updateData = request.body;
@@ -152,13 +206,27 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
   });
 
   // DELETE /products/:id - Delete a product
-  fastify.route<{
-    Params: ProductParams;
-  }>({
-    method: 'DELETE',
+  fastify.route({
+    method: HttpMethods.DELETE,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
-    handler: async (request, reply) => {
+    schema: {
+      description: 'Delete a product by ID',
+      tags: ['Products'],
+      ...ProductDeleteSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...ProductDeleteSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
       try {
         const { id } = request.params;
         const authenticatedRequest = request as AuthenticatedRequest;
