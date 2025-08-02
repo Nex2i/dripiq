@@ -1,24 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { productsService } from '../services/products.service'
+import { productsService, productQueryKeys } from '../services/products.service'
 import type {
   Product,
   CreateProductData,
   UpdateProductData,
 } from '../services/products.service'
 
-// Query keys for products
-export const productsQueryKeys = {
-  all: ['products'] as const,
-  lists: () => [...productsQueryKeys.all, 'list'] as const,
-  list: (tenantId: string) => [...productsQueryKeys.lists(), tenantId] as const,
-  details: () => [...productsQueryKeys.all, 'detail'] as const,
-  detail: (id: string) => [...productsQueryKeys.details(), id] as const,
-}
-
 // Hook to get all products for a tenant
 export function useProducts(tenantId: string) {
   return useQuery({
-    queryKey: productsQueryKeys.list(tenantId),
+    queryKey: productQueryKeys.list(tenantId),
     queryFn: () => productsService.getProducts(),
     enabled: !!tenantId,
     staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
@@ -31,7 +22,7 @@ export function useProducts(tenantId: string) {
 // Hook to get a single product
 export function useProduct(id: string) {
   return useQuery({
-    queryKey: productsQueryKeys.detail(id),
+    queryKey: productQueryKeys.detail(id),
     queryFn: () => productsService.getProduct(id),
     enabled: !!id,
     staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
@@ -56,7 +47,7 @@ export function useCreateProduct() {
     onSuccess: (newProduct: Product) => {
       // Add the new product to the list cache
       queryClient.setQueryData(
-        productsQueryKeys.list(newProduct.tenantId),
+        productQueryKeys.list(newProduct.tenantId),
         (oldData: Product[] | undefined) => {
           return oldData ? [...oldData, newProduct] : [newProduct]
         },
@@ -64,7 +55,7 @@ export function useCreateProduct() {
 
       // Invalidate products cache to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: productsQueryKeys.all,
+        queryKey: productQueryKeys.all,
       })
     },
     onError: (error) => {
@@ -83,13 +74,13 @@ export function useUpdateProduct() {
     onSuccess: (updatedProduct: Product) => {
       // Update the product detail cache
       queryClient.setQueryData(
-        productsQueryKeys.detail(updatedProduct.id),
+        productQueryKeys.detail(updatedProduct.id),
         updatedProduct,
       )
 
       // Update the product in the list cache
       queryClient.setQueryData(
-        productsQueryKeys.list(updatedProduct.tenantId),
+        productQueryKeys.list(updatedProduct.tenantId),
         (oldData: Product[] | undefined) => {
           if (!oldData) return [updatedProduct]
           return oldData.map((product) =>
@@ -100,7 +91,7 @@ export function useUpdateProduct() {
 
       // Invalidate products cache to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: productsQueryKeys.all,
+        queryKey: productQueryKeys.all,
       })
     },
     onError: (error) => {
@@ -118,7 +109,7 @@ export function useDeleteProduct() {
     onSuccess: (_, deletedProductId) => {
       // Remove the product from all list caches
       queryClient.setQueriesData(
-        { queryKey: productsQueryKeys.lists() },
+        { queryKey: productQueryKeys.lists() },
         (oldData: Product[] | undefined) => {
           if (!oldData) return []
           return oldData.filter((product) => product.id !== deletedProductId)
@@ -127,12 +118,12 @@ export function useDeleteProduct() {
 
       // Remove the product detail cache
       queryClient.removeQueries({
-        queryKey: productsQueryKeys.detail(deletedProductId),
+        queryKey: productQueryKeys.detail(deletedProductId),
       })
 
       // Invalidate products cache to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: productsQueryKeys.all,
+        queryKey: productQueryKeys.all,
       })
     },
     onError: (error) => {
@@ -147,7 +138,7 @@ export function useInvalidateProducts() {
 
   return () => {
     queryClient.invalidateQueries({
-      queryKey: productsQueryKeys.all,
+      queryKey: productQueryKeys.all,
     })
   }
 }
