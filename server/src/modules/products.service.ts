@@ -1,6 +1,6 @@
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import type { Product, NewProduct } from '../db/schema';
 import { productRepository } from '@/repositories';
+import type { Product, NewProduct } from '../db/schema';
 
 export const ProductsService = {
   // Get all products for a tenant
