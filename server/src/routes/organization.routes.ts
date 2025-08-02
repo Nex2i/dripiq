@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, RouteOptions } from 'fastify';
+import { Static } from '@sinclair/typebox';
 import { TenantService } from '@/modules/tenant.service';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 import { storageService } from '@/modules/storage/storage.service';
@@ -15,7 +16,6 @@ import {
   UpdateOrganizationRequestSchema,
   AnalyzeOrganizationParamsSchema,
 } from './apiSchema/organization';
-import { Static } from '@sinclair/typebox';
 
 const basePath = '/organizations';
 

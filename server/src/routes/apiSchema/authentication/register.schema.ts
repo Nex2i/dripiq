@@ -22,17 +22,3 @@ export const registerSuccessResponseSchema = Type.Object({
   }),
   session: Type.Optional(Type.Any()), // Supabase session object
 });
-
-// Response schema for registration without auto sign-in
-export const registerWithoutSignInResponseSchema = Type.Object({
-  message: Type.String(),
-  user: Type.Object({
-    id: Type.String(),
-    email: Type.String(),
-    name: Type.String(),
-  }),
-  tenant: Type.Object({
-    id: Type.String(),
-    name: Type.String(),
-  }),
-});

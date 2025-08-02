@@ -37,13 +37,6 @@ export const currentUserResponseSchema = Type.Object({
   }),
 });
 
-// Login response schema (if implemented)
-export const loginResponseSchema = Type.Object({
-  message: Type.String(),
-  session: Type.Any(), // Supabase session object
-  user: userObjectSchema,
-});
-
 // Logout response schema
 export const logoutResponseSchema = Type.Object({
   message: Type.String(),
