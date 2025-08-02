@@ -24,8 +24,8 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
       tags: ['Products'],
       ...ProductsListSchema,
       response: {
-        ...ProductsListSchema.response,
         ...defaultRouteResponse(),
+        ...ProductsListSchema.response,
       },
     },
     handler: async (
@@ -44,7 +44,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
         const { tenantId } = authenticatedRequest;
 
         const productsList = await ProductsService.getProducts(tenantId);
-        return reply.send(productsList);
+        return reply.status(200).send(productsList);
       } catch (error: any) {
         fastify.log.error(error);
         return reply.status(500).send({
@@ -65,8 +65,8 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
       tags: ['Products'],
       ...ProductGetSchema,
       response: {
-        ...ProductGetSchema.response,
         ...defaultRouteResponse(),
+        ...ProductGetSchema.response,
       },
     },
     handler: async (
@@ -111,8 +111,8 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
       tags: ['Products'],
       ...ProductCreateSchema,
       response: {
-        ...ProductCreateSchema.response,
         ...defaultRouteResponse(),
+        ...ProductCreateSchema.response,
       },
     },
     handler: async (
@@ -165,8 +165,8 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
       tags: ['Products'],
       ...ProductUpdateSchema,
       response: {
-        ...ProductUpdateSchema.response,
         ...defaultRouteResponse(),
+        ...ProductUpdateSchema.response,
       },
     },
     handler: async (
@@ -215,8 +215,8 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
       tags: ['Products'],
       ...ProductDeleteSchema,
       response: {
-        ...ProductDeleteSchema.response,
         ...defaultRouteResponse(),
+        ...ProductDeleteSchema.response,
       },
     },
     handler: async (

@@ -30,8 +30,8 @@ export default async function contactRoutes(fastify: FastifyInstance) {
       tags: ['Contacts'],
       ...ContactGetSchema,
       response: {
-        ...ContactGetSchema.response,
         ...defaultRouteResponse,
+        ...ContactGetSchema.response,
       },
     },
     handler: async (
@@ -116,8 +116,8 @@ export default async function contactRoutes(fastify: FastifyInstance) {
       tags: ['Contacts'],
       ...ContactUpdateSchema,
       response: {
-        ...ContactUpdateSchema.response,
         ...defaultRouteResponse,
+        ...ContactUpdateSchema.response,
       },
     },
     handler: async (
@@ -231,8 +231,8 @@ export default async function contactRoutes(fastify: FastifyInstance) {
       tags: ['Contacts'],
       ...ContactCreateSchema,
       response: {
-        ...ContactCreateSchema.response,
         ...defaultRouteResponse,
+        ...ContactCreateSchema.response,
       },
     },
     handler: async (
@@ -324,8 +324,8 @@ export default async function contactRoutes(fastify: FastifyInstance) {
       tags: ['Contacts'],
       ...ContactDeleteSchema,
       response: {
-        ...ContactDeleteSchema.response,
         ...defaultRouteResponse,
+        ...ContactDeleteSchema.response,
       },
     },
     handler: async (
@@ -409,8 +409,8 @@ export default async function contactRoutes(fastify: FastifyInstance) {
       tags: ['Contacts'],
       ...ContactManualReviewSchema,
       response: {
-        ...ContactManualReviewSchema.response,
         ...defaultRouteResponse,
+        ...ContactManualReviewSchema.response,
       },
     },
     handler: async (

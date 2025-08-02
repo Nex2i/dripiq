@@ -1,5 +1,5 @@
 import { Type } from '@sinclair/typebox';
-import { PaginationQuerySchema, PaginationResponseSchema } from '../shared/pagination.schema';
+import { PaginationQuerySchema } from '../shared/pagination.schema';
 
 // Parameters schema for get single product route
 export const GetProductParamsSchema = Type.Object({
@@ -41,12 +41,6 @@ export const ProductResponseSchema = Type.Object({
 // Response schema for getting a single product
 export const GetProductResponseSchema = ProductResponseSchema;
 
-// Response schema for listing products
-export const GetProductsResponseSchema = Type.Object({
-  products: Type.Array(ProductResponseSchema, { description: 'Array of products' }),
-  pagination: PaginationResponseSchema,
-});
-
 // Complete schema for the get single product route
 export const ProductGetSchema = {
   params: GetProductParamsSchema,
@@ -59,6 +53,6 @@ export const ProductGetSchema = {
 export const ProductsListSchema = {
   querystring: GetProductsQuerySchema,
   response: {
-    200: GetProductsResponseSchema,
+    200: Type.Array(ProductResponseSchema, { description: 'Array of products' }),
   },
 } as const;
