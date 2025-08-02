@@ -7,33 +7,20 @@ import { TenantService } from '@/modules/tenant.service';
 import { RoleService } from '@/modules/role.service';
 import { authCache } from '@/cache/AuthCache';
 
+// Import all authentication schemas from organized schema files
+import {
+  registerBodySchema,
+  registerSuccessResponseSchema,
+  createUserBodySchema,
+  createUserResponseSchema,
+  currentUserResponseSchema,
+  logoutResponseSchema,
+  errorResponseSchema,
+  loginBodySchema,
+  sessionInfoResponseSchema,
+} from './apiSchema/authentication';
+
 const basePath = '/auth';
-
-// Schema for create user endpoint
-const createUserBodySchema = Type.Object({
-  supabaseId: Type.String(),
-  email: Type.String({ format: 'email' }),
-  name: Type.Optional(Type.String()),
-  avatar: Type.Optional(Type.String()),
-});
-
-// Schema for registration endpoint
-const registerBodySchema = Type.Object({
-  email: Type.String({ format: 'email' }),
-  password: Type.String({ minLength: 8 }),
-  name: Type.String(),
-  tenantName: Type.String(),
-});
-
-// Define schema for login if you were to implement it fully
-// const loginBodySchema = {
-//   type: 'object',
-//   properties: {
-//     email: { type: 'string', format: 'email' },
-//     password: { type: 'string' },
-//   },
-//   required: ['email', 'password'],
-// } as const;
 
 export default async function Authentication(fastify: FastifyInstance, _opts: RouteOptions) {
   // Registration route - Complete onboarding flow
@@ -42,6 +29,11 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     url: `${basePath}/register`,
     schema: {
       body: registerBodySchema,
+      response: {
+        201: registerSuccessResponseSchema,
+        400: errorResponseSchema,
+        500: errorResponseSchema,
+      },
       tags: ['Authentication'],
       summary: 'Register User and Tenant',
       description:
@@ -160,6 +152,10 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     url: `${basePath}/users`,
     schema: {
       body: createUserBodySchema,
+      response: {
+        201: createUserResponseSchema,
+        500: errorResponseSchema,
+      },
       tags: ['Authentication'],
       summary: 'Create User',
       description: 'Create a new user in the database after Supabase signup',
@@ -195,6 +191,12 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     url: `${basePath}/me`,
     preHandler: [fastify.authPrehandler], // Ensures user is authenticated
     schema: {
+      response: {
+        200: currentUserResponseSchema,
+        401: errorResponseSchema,
+        404: errorResponseSchema,
+        500: errorResponseSchema,
+      },
       tags: ['Authentication'],
       summary: 'Get Current User',
       description: 'Get the current authenticated user data from database',
@@ -274,12 +276,19 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/login`,
-    // schema: { // Uncomment and define if you build out this endpoint
-    //   body: loginBodySchema,
-    //   tags: ['Authentication'],
-    //   summary: 'Login',
-    //   description: 'Authenticate a user and return a JWT. (Currently informational)',
-    // },
+    schema: {
+      body: loginBodySchema,
+      response: {
+        200: Type.Object({
+          message: Type.String(),
+        }),
+        401: errorResponseSchema,
+        500: errorResponseSchema,
+      },
+      tags: ['Authentication'],
+      summary: 'Login',
+      description: 'Authenticate a user and return a JWT. (Currently informational)',
+    },
     handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       // const { email, password } = request.body as FromSchema<typeof loginBodySchema>;
       // try {
@@ -304,6 +313,12 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     url: `${basePath}/logout`,
     preHandler: [fastify.authPrehandler], // Ensures user is authenticated
     schema: {
+      response: {
+        200: logoutResponseSchema,
+        400: errorResponseSchema,
+        401: errorResponseSchema,
+        500: errorResponseSchema,
+      },
       tags: ['Authentication'],
       summary: 'Logout',
       description: 'Logout the currently authenticated user.',
@@ -353,6 +368,10 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     url: `${basePath}`,
     preHandler: [fastify.authPrehandler], // Ensures user is authenticated
     schema: {
+      response: {
+        200: sessionInfoResponseSchema,
+        401: errorResponseSchema,
+      },
       tags: ['Authentication'],
       summary: 'Get Auth Info',
       description: 'Get authentication info for the current user.',
