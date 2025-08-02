@@ -12,26 +12,3 @@ export function useRoles() {
     refetchOnReconnect: true,
   })
 }
-
-/**
- * Usage example:
- * 
- * import { useRoles } from '../hooks/useRolesQuery'
- * 
- * function MyComponent() {
- *   const { data: roles, isLoading, error } = useRoles()
- * 
- *   if (isLoading) return <div>Loading roles...</div>
- *   if (error) return <div>Error: {error.message}</div>
- * 
- *   return (
- *     <select>
- *       {roles?.map(role => (
- *         <option key={role.id} value={role.id}>
- *           {role.name}
- *         </option>
- *       ))}
- *     </select>
- *   )
- * }
- */
