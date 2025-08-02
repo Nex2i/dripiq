@@ -1,42 +1,32 @@
-import { eq, and } from 'drizzle-orm';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { db } from '../db';
-import { products, userTenants } from '../db/schema';
 import type { Product, NewProduct } from '../db/schema';
+import { productRepository } from '@/repositories';
 
 export const ProductsService = {
   // Get all products for a tenant
   async getProducts(tenantId: string): Promise<Product[]> {
-    const productsList = await db.query.products.findMany({
-      where: eq(products.tenantId, tenantId),
-      orderBy: (products, { desc }) => [desc(products.createdAt)],
-    });
+    const productsList = await productRepository.findByTenantId(tenantId);
 
     return productsList;
   },
 
   // Get default products for a tenant (for internal use)
   async getDefaultProducts(tenantId: string): Promise<Product[]> {
-    const defaultProducts = await db.query.products.findMany({
-      where: and(eq(products.tenantId, tenantId), eq(products.isDefault, true)),
-      orderBy: (products, { desc }) => [desc(products.createdAt)],
-    });
+    const defaultProducts = await productRepository.findDefaultForTenant(tenantId);
 
     return defaultProducts;
   },
 
   // Get a single product by ID
-  async getProduct(id: string): Promise<Product | null> {
-    const product = await db.query.products.findFirst({
-      where: eq(products.id, id),
-    });
+  async getProduct(productId: string, tenantId: string): Promise<Product | null> {
+    const product = await productRepository.findByIdForTenant(productId, tenantId);
 
     return product || null;
   },
 
   // Create a new product
-  async createProduct(data: NewProduct): Promise<Product> {
-    const [newProduct] = await db.insert(products).values(data).returning();
+  async createProduct(data: NewProduct, tenantId: string): Promise<Product> {
+    const newProduct = await productRepository.createForTenant(tenantId, data);
     if (!newProduct) {
       throw new Error('Failed to create product');
     }
@@ -48,15 +38,12 @@ export const ProductsService = {
   },
 
   // Update a product
-  async updateProduct(id: string, data: Partial<NewProduct>): Promise<Product> {
-    const [updatedProduct] = await db
-      .update(products)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(products.id, id))
-      .returning();
+  async updateProduct(
+    productId: string,
+    data: Partial<NewProduct>,
+    tenantId: string
+  ): Promise<Product> {
+    const updatedProduct = await productRepository.updateByIdForTenant(productId, tenantId, data);
 
     if (!updatedProduct) {
       throw new Error('Failed to update product');
@@ -69,32 +56,7 @@ export const ProductsService = {
   },
 
   // Delete a product
-  async deleteProduct(id: string): Promise<void> {
-    await db.delete(products).where(eq(products.id, id));
-  },
-
-  // Check if user has access to a tenant
-  async checkUserAccess(userId: string, tenantId: string): Promise<boolean> {
-    const userTenant = await db.query.userTenants.findFirst({
-      where: and(eq(userTenants.userId, userId), eq(userTenants.tenantId, tenantId)),
-    });
-
-    return !!userTenant;
-  },
-
-  // Get product with access check
-  async getProductWithAccess(userId: string, productId: string): Promise<Product | null> {
-    const product = await this.getProduct(productId);
-
-    if (!product) {
-      return null;
-    }
-
-    const hasAccess = await this.checkUserAccess(userId, product.tenantId);
-    if (!hasAccess) {
-      throw new Error('Access denied');
-    }
-
-    return product;
+  async deleteProduct(productId: string, tenantId: string): Promise<void> {
+    await productRepository.deleteByIdForTenant(productId, tenantId);
   },
 };

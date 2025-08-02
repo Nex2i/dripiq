@@ -8,15 +8,20 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
   }
 
   /**
-   * Find default product for tenant
+   * Get all products for a tenant
    */
-  async findDefaultForTenant(tenantId: string): Promise<Product | undefined> {
-    const results = await this.db
+  async findByTenantId(tenantId: string): Promise<Product[]> {
+    return await this.db.select().from(this.table).where(eq(this.table.tenantId, tenantId));
+  }
+
+  /**
+   * Get default products for a tenant
+   */
+  async findDefaultForTenant(tenantId: string): Promise<Product[]> {
+    return await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.isDefault, true)))
-      .limit(1);
-    return results[0];
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.isDefault, true)));
   }
 
   /**
