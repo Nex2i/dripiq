@@ -1,31 +1,20 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
-import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { InviteService, InviteDto, CreateInviteData } from '@/modules/invite.service';
 import { SupabaseAdminService } from '@/modules/supabase-admin.service';
 import { handleExistingSupabaseUser, createNewUserInvite } from '@/modules/invite.handlers';
 import { UserService } from '@/modules/user.service';
+import {
+  CreateInviteRequestSchema,
+  UsersQuerySchema,
+  UsersQuery,
+  UpdateUserRoleRequestSchema,
+  UpdateUserRoleParamsSchema,
+  ActivateInviteRequestSchema,
+  ResendInviteParamsSchema,
+} from './apiSchema/invite';
 
 const basePath = '';
-
-// Schema for invite creation
-const createInviteSchema = Type.Object({
-  email: Type.String({ format: 'email' }),
-  firstName: Type.String({ minLength: 1, maxLength: 50 }),
-  lastName: Type.Optional(Type.String({ maxLength: 50 })),
-  role: Type.String({ minLength: 1 }), // Accept any valid role name from database
-});
-
-// Schema for users list query params
-const usersQuerySchema = Type.Object({
-  page: Type.Optional(Type.Integer({ minimum: 1 })),
-  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
-});
-
-// Schema for updating user role
-const updateUserRoleSchema = Type.Object({
-  roleId: Type.String({ minLength: 1 }),
-});
 
 export default async function InviteRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
   // Get users for a tenant (Authenticated users only)
@@ -34,17 +23,14 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     url: `${basePath}/users`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      querystring: usersQuerySchema,
+      querystring: UsersQuerySchema,
       tags: ['Invites'],
       summary: 'Get Users for Tenant',
       description: 'Get all users (seats + invites) for a tenant. Requires authentication.',
     },
     handler: async (
       request: FastifyRequest<{
-        Querystring: {
-          page?: number;
-          limit?: number;
-        };
+        Querystring: UsersQuery;
       }>,
       reply: FastifyReply
     ) => {
@@ -80,7 +66,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     url: `${basePath}/invites`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      body: createInviteSchema,
+      body: CreateInviteRequestSchema,
       tags: ['Invites'],
       summary: 'Create User Invitation',
       description: 'Create a new user invitation. Admin only.',
@@ -145,9 +131,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     method: HttpMethods.POST,
     url: `${basePath}/invites/activate`,
     schema: {
-      body: Type.Object({
-        supabaseId: Type.String(),
-      }),
+      body: ActivateInviteRequestSchema,
       tags: ['Invites'],
       summary: 'Activate User Account',
       description: 'Activate a user account when they complete password setup.',
@@ -194,7 +178,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     url: `${basePath}/users/:userId/resend`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      params: Type.Object({ userId: Type.String() }),
+      params: ResendInviteParamsSchema,
       tags: ['Invites'],
       summary: 'Resend Invitation',
       description: 'Resend an invitation email for a pending user. Admin only.',
@@ -257,8 +241,8 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
     url: `${basePath}/users/:userId/role`,
     preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
     schema: {
-      params: Type.Object({ userId: Type.String() }),
-      body: updateUserRoleSchema,
+      params: UpdateUserRoleParamsSchema,
+      body: UpdateUserRoleRequestSchema,
       tags: ['Invites'],
       summary: 'Update User Role',
       description: "Update a user's role in the tenant. Admin only.",
