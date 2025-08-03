@@ -4,6 +4,12 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
+import {
+  leadPointOfContactRepository,
+  leadProductRepository,
+  leadRepository,
+} from '@/repositories';
+import { TenantService } from '@/modules/tenant.service';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -23,12 +29,6 @@ import {
   outreachStrategyOutputSchema,
 } from '../../schemas/contactStrategySchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
-import {
-  leadPointOfContactRepository,
-  leadProductRepository,
-  leadRepository,
-} from '@/repositories';
-import { TenantService } from '@/modules/tenant.service';
 
 export type ContactStrategyResult = {
   finalResponse: string;

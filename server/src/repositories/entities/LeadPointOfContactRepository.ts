@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm';
 import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads } from '@/db/schema';
-import { BaseRepository } from '../base/BaseRepository';
 import { NotFoundError } from '@/exceptions/error';
+import { BaseRepository } from '../base/BaseRepository';
 
 export class LeadPointOfContactRepository extends BaseRepository<
   typeof leadPointOfContacts,
