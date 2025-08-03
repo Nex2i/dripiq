@@ -68,16 +68,3 @@ export async function detachProductFromLead(
     throw error;
   }
 }
-
-/**
- * Get the count of products attached to a lead
- */
-export async function getLeadProductCount(leadId: string, tenantId: string): Promise<number> {
-  try {
-    const count = await leadProductRepository.countProductsForLeadAndTenant(leadId, tenantId);
-    return count;
-  } catch (error) {
-    console.error('Error getting lead product count:', error);
-    throw new Error('Failed to get lead product count');
-  }
-}

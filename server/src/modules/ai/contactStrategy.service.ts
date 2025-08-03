@@ -1,9 +1,5 @@
 import { logger } from '@/libs/logger';
 import { supabaseStorage } from '@/libs/supabase.storage';
-import { getLeadById } from '../lead.service';
-import { TenantService } from '../tenant.service';
-import { UserService } from '../user.service';
-import { getLeadProducts } from '../leadProduct.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
 
@@ -44,85 +40,10 @@ export const generateContactStrategy = async (
       return cachedResult;
     }
 
-    // Get lead details
-    const lead = await getLeadById(tenantId, leadId);
-    if (!lead) {
-      throw new Error(`Lead not found: ${leadId}`);
-    }
-
-    // Get lead contacts
-    const leadContacts = lead.pointOfContacts || [];
-    if (leadContacts.length === 0) {
-      throw new Error('No contacts found for this lead');
-    }
-
-    // Get specific contact by ID
-    const contact = leadContacts.find((c) => c.id === contactId);
-    if (!contact) {
-      throw new Error(`Contact not found with ID ${contactId}`);
-    }
-
-    // Get tenant details
-    const tenant = await TenantService.getTenantById(tenantId);
-    if (!tenant) {
-      throw new Error(`Tenant not found: ${tenantId}`);
-    }
-
-    // Get lead products
-    const leadProducts = await getLeadProducts(leadId, tenantId);
-
-    let getLeadOwner;
-
-    if (lead.ownerId) {
-      getLeadOwner = await UserService.getUserById(lead.ownerId);
-    } else {
-      throw new Error('Lead owner not found');
-    }
-
-    // Prepare agent input
-    const agentInput = {
-      leadDetails: {
-        id: lead.id,
-        name: lead.name,
-        url: lead.url,
-        summary: lead.summary,
-        products: lead.products || [],
-        services: lead.services || [],
-        differentiators: lead.differentiators || [],
-        targetMarket: lead.targetMarket,
-        tone: lead.tone,
-        status: lead.status,
-      },
-      contactDetails: contact,
-      partnerDetails: {
-        id: tenant.id,
-        name: tenant.name,
-        website: tenant.website,
-        organizationName: tenant.organizationName,
-        summary: tenant.summary,
-        differentiators: tenant.differentiators,
-        targetMarket: tenant.targetMarket,
-        tone: tenant.tone,
-        // Add any other relevant tenant information
-      },
-      salesman: {
-        id: getLeadOwner?.id,
-        name: getLeadOwner?.name,
-        email: getLeadOwner?.email,
-      },
-      partnerProducts: leadProducts.map((product) => ({
-        id: product.productId,
-        title: product.product?.title || '',
-        description: product.product?.description || '',
-        salesVoice: product.product?.salesVoice || '',
-        siteUrl: product.product?.siteUrl || '',
-      })),
-    };
-
     // Execute agent analysis
     try {
       const agent = createContactStrategyAgent({ ...defaultLangChainConfig, model: 'gpt-4.1' });
-      const result = await agent.generateContactStrategy(agentInput);
+      const result = await agent.generateContactStrategy(tenantId, leadId, contactId);
 
       // Save result to cache
       try {

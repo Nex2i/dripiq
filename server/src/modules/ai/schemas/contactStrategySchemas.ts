@@ -124,6 +124,6 @@ export {
   salesmanSchema,
   partnerProductSchema,
   contactStrategyInputSchema,
+  outreachTouchpointSchema,
+  outreachStrategyOutputSchema,
 };
-
-export default outreachStrategyOutputSchema;

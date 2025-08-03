@@ -65,13 +65,6 @@ Instructions:
 - Output ONLY valid JSON—no markdown, no comments.
 - Use double quotes for all keys/values.
 - Prioritize personalization and emphasize product value in every message.
-
-## CONTEXT VARIABLES
-Lead Details: {{lead_details}}
-Contact Details: {{contact_details}}
-Partner Details: {{partner_details}}
-Partner Products: {{partner_products}}
-Salesman: {{salesman}}
 `;
 
 export default contactStrategyPrompt;

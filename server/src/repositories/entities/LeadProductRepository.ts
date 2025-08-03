@@ -1,5 +1,5 @@
 import { eq, and, inArray } from 'drizzle-orm';
-import { leadProducts, LeadProduct, NewLeadProduct, leads, products } from '@/db/schema';
+import { leadProducts, LeadProduct, NewLeadProduct, leads, products, Product } from '@/db/schema';
 import { BaseRepository } from '../base/BaseRepository';
 
 export interface LeadProductWithDetails extends LeadProduct {
@@ -29,6 +29,26 @@ export class LeadProductRepository extends BaseRepository<
   }
 
   /**
+   * Get all products that are attatched to a lead, joining the associated lead and products
+   */
+
+  async findByLeadId(leadId: string, tenantId: string): Promise<Product[]> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(eq(this.table.leadId, leadId))
+      .innerJoin(products, eq(this.table.productId, products.id));
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    return results
+      .map((result) => result.products)
+      .filter((product) => product.tenantId === tenantId);
+  }
+
+  /**
    * Find lead-product associations by lead ID with tenant validation
    */
   async findByLeadIdForTenant(leadId: string, tenantId: string): Promise<LeadProduct[]> {
@@ -38,39 +58,6 @@ export class LeadProductRepository extends BaseRepository<
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .where(and(eq(this.table.leadId, leadId), eq(leads.tenantId, tenantId)));
     return results.map((result) => result.lead_products);
-  }
-
-  /**
-   * Find lead-product associations by product ID with tenant validation
-   */
-  async findByProductIdForTenant(productId: string, tenantId: string): Promise<LeadProduct[]> {
-    const results = await this.db
-      .select()
-      .from(this.table)
-      .innerJoin(products, eq(this.table.productId, products.id))
-      .where(and(eq(this.table.productId, productId), eq(products.tenantId, tenantId)));
-    return results.map((result) => result.lead_products);
-  }
-
-  /**
-   * Check if lead-product association exists with tenant validation
-   */
-  async existsForTenant(leadId: string, productId: string, tenantId: string): Promise<boolean> {
-    const results = await this.db
-      .select()
-      .from(this.table)
-      .innerJoin(leads, eq(this.table.leadId, leads.id))
-      .innerJoin(products, eq(this.table.productId, products.id))
-      .where(
-        and(
-          eq(this.table.leadId, leadId),
-          eq(this.table.productId, productId),
-          eq(leads.tenantId, tenantId),
-          eq(products.tenantId, tenantId)
-        )
-      )
-      .limit(1);
-    return results.length > 0;
   }
 
   /**
@@ -158,27 +145,6 @@ export class LeadProductRepository extends BaseRepository<
   }
 
   /**
-   * Detach all products from lead with tenant validation
-   */
-  async detachAllProductsFromLeadForTenant(
-    leadId: string,
-    tenantId: string
-  ): Promise<LeadProduct[]> {
-    // Verify lead belongs to tenant
-    const lead = await this.db
-      .select()
-      .from(leads)
-      .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
-      .limit(1);
-
-    if (!lead[0]) {
-      return [];
-    }
-
-    return await this.db.delete(this.table).where(eq(this.table.leadId, leadId)).returning();
-  }
-
-  /**
    * Get leads with attached products for tenant
    */
   async findLeadsWithProductsForTenant(tenantId: string): Promise<LeadProductWithDetails[]> {
@@ -209,21 +175,5 @@ export class LeadProductRepository extends BaseRepository<
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .innerJoin(products, eq(this.table.productId, products.id))
       .where(and(eq(leads.tenantId, tenantId), eq(products.tenantId, tenantId)));
-  }
-
-  /**
-   * Count products attached to lead
-   */
-  async countProductsForLeadAndTenant(leadId: string, tenantId: string): Promise<number> {
-    const results = await this.findByLeadIdForTenant(leadId, tenantId);
-    return results.length;
-  }
-
-  /**
-   * Count leads attached to product
-   */
-  async countLeadsForProductAndTenant(productId: string, tenantId: string): Promise<number> {
-    const results = await this.findByProductIdForTenant(productId, tenantId);
-    return results.length;
   }
 }
