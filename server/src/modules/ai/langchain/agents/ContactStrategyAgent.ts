@@ -38,6 +38,7 @@ export type ContactStrategyResult = {
 };
 
 type ValueSchema<T> = {
+  description: string;
   value: T;
   schema: any;
 };
@@ -105,15 +106,11 @@ export class ContactStrategyAgent {
     try {
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
-        lead_details:
-          'Lead Details: ' + JSON.stringify(await this.getLeadDetails(tenantId, leadId)),
-        contact_details:
-          'Contact Details: ' + JSON.stringify(await this.getContactDetails(contactId)),
-        partner_details:
-          'Partner Details: ' + JSON.stringify(await this.getPartnerDetails(tenantId)),
-        partner_products:
-          'Partner Products: ' + JSON.stringify(await this.getPartnerProducts(tenantId, leadId)),
-        salesman: 'Salesman: ' + JSON.stringify(await this.getSalesman(tenantId, leadId)),
+        lead_details: await this.getLeadDetails(tenantId, leadId),
+        contact_details: await this.getContactDetails(contactId),
+        partner_details: await this.getPartnerDetails(tenantId),
+        partner_products: await this.getPartnerProducts(tenantId, leadId),
+        salesman: await this.getSalesman(tenantId, leadId),
       });
 
       let finalResponse = getContentFromMessage(result.output);
@@ -147,6 +144,7 @@ export class ContactStrategyAgent {
     const leadDetails = await leadRepository.findByIdForTenant(leadId, tenantId);
 
     return {
+      description: 'Lead Details',
       value: {
         id: leadDetails.id,
         name: leadDetails.name || '',
@@ -167,6 +165,7 @@ export class ContactStrategyAgent {
     const contactDetails = await leadPointOfContactRepository.findById(contactId);
 
     return {
+      description: 'Contact Details',
       value: {
         id: contactDetails.id,
         name: contactDetails.name || '',
@@ -179,6 +178,7 @@ export class ContactStrategyAgent {
     const tenant = await TenantService.getTenantById(tenantId);
 
     return {
+      description: 'Partner Details',
       value: {
         id: tenant.id,
         name: tenant.name,
@@ -200,6 +200,7 @@ export class ContactStrategyAgent {
     const leadProducts = await leadProductRepository.findByLeadId(leadId, tenantId);
 
     return {
+      description: 'Partner Products',
       value: leadProducts.map((product) => ({
         id: product.id,
         title: product.title || '',
@@ -215,6 +216,7 @@ export class ContactStrategyAgent {
     const lead = await leadRepository.findOwnerForLead(leadId, tenantId);
 
     return {
+      description: 'Salesman',
       value: {
         id: lead.id,
         name: lead.name || '',
