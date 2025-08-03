@@ -10,6 +10,8 @@ import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomai
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import contactStrategyOutputSchema, {
   OutreachStrategyOutput,
+  contactStrategyInputSchema,
+  ContactStrategyInput as TypedContactStrategyInput,
 } from '../../schemas/contactStrategyOutputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
 
@@ -27,6 +29,9 @@ export interface ContactStrategyInput {
   partnerProducts: any[];
   salesman: any;
 }
+
+// Updated interface with proper typing - using the exported type from schemas
+export type ContactStrategyInputTyped = TypedContactStrategyInput;
 
 export class ContactStrategyAgent {
   private agent: AgentExecutor;
@@ -64,14 +69,29 @@ export class ContactStrategyAgent {
   }
 
   async generateContactStrategy(input: ContactStrategyInput): Promise<ContactStrategyResult> {
-    // Ensure all input properties exist and are serializable
-    const safeInput = {
-      leadDetails: input.leadDetails || {},
-      contactDetails: input.contactDetails || {},
-      partnerDetails: input.partnerDetails || {},
-      partnerProducts: input.partnerProducts || [],
-      salesman: input.salesman || {},
-    };
+    // Validate input with Zod schema and provide fallbacks
+    let validatedInput: TypedContactStrategyInput | null = null;
+    let safeInput: any;
+
+    try {
+      validatedInput = contactStrategyInputSchema.parse(input);
+      safeInput = validatedInput;
+      logger.info('Contact strategy input validation successful');
+    } catch (error) {
+      logger.warn('Contact strategy input validation failed', {
+        error: error instanceof Error ? error.message : 'Unknown validation error',
+        input: JSON.stringify(input, null, 2),
+      });
+
+      // Use existing safeInput logic with warnings for backward compatibility
+      safeInput = {
+        leadDetails: input.leadDetails || {},
+        contactDetails: input.contactDetails || {},
+        partnerDetails: input.partnerDetails || {},
+        partnerProducts: input.partnerProducts || [],
+        salesman: input.salesman || {},
+      };
+    }
 
     let systemPrompt: string;
     try {
