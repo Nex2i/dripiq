@@ -105,11 +105,15 @@ export class ContactStrategyAgent {
     try {
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
-        lead_details: 'Lead Details: ' + (await this.getLeadDetails(tenantId, leadId)),
-        contact_details: 'Contact Details: ' + (await this.getContactDetails(contactId)),
-        partner_details: 'Partner Details: ' + (await this.getPartnerDetails(tenantId)),
-        partner_products: 'Partner Products: ' + (await this.getPartnerProducts(tenantId, leadId)),
-        salesman: 'Salesman: ' + (await this.getSalesman(tenantId, leadId)),
+        lead_details:
+          'Lead Details: ' + JSON.stringify(await this.getLeadDetails(tenantId, leadId)),
+        contact_details:
+          'Contact Details: ' + JSON.stringify(await this.getContactDetails(contactId)),
+        partner_details:
+          'Partner Details: ' + JSON.stringify(await this.getPartnerDetails(tenantId)),
+        partner_products:
+          'Partner Products: ' + JSON.stringify(await this.getPartnerProducts(tenantId, leadId)),
+        salesman: 'Salesman: ' + JSON.stringify(await this.getSalesman(tenantId, leadId)),
       });
 
       let finalResponse = getContentFromMessage(result.output);
