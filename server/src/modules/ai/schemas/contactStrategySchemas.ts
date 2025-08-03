@@ -11,15 +11,15 @@ const leadDetailsSchema = z.object({
     .optional()
     .describe('AI-generated company overview for context understanding'),
   products: z
-    .array(z.string())
+    .string()
     .optional()
     .describe("Company's product offerings to identify integration opportunities"),
   services: z
-    .array(z.string())
+    .string()
     .optional()
     .describe("Company's service offerings to find complementary solutions"),
   differentiators: z
-    .array(z.string())
+    .string()
     .optional()
     .describe('Unique value propositions to understand competitive positioning'),
   targetMarket: z.string().optional().describe("Company's target audience to align messaging"),
@@ -30,15 +30,12 @@ const leadDetailsSchema = z.object({
 const contactDetailsSchema = z.object({
   id: z.string().describe('Unique contact identifier'),
   name: z.string().describe("Contact's full name for personalization"),
-  email: z.string().optional().describe('Primary communication channel'),
-  phone: z.string().optional().describe('Alternative contact method for calls'),
   title: z
     .string()
     .optional()
     .describe('Job title to understand decision-making authority and pain points'),
   company: z.string().optional().describe('Company affiliation for context'),
   sourceUrl: z.string().optional().describe('Where contact info was found for credibility'),
-  manuallyReviewed: z.boolean().describe('Data quality indicator for trust level'),
 });
 
 const partnerDetailsSchema = z.object({

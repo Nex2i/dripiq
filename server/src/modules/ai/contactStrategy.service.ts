@@ -45,25 +45,7 @@ export const generateContactStrategy = async (
       const agent = createContactStrategyAgent({ ...defaultLangChainConfig, model: 'gpt-4.1' });
       const result = await agent.generateContactStrategy(tenantId, leadId, contactId);
 
-      // Save result to cache
-      try {
-        await supabaseStorage.uploadJsonFile(cacheKey, result);
-        logger.info('Successfully cached contact strategy result', {
-          leadId,
-          contactId,
-          tenantId,
-          cacheKey,
-        });
-      } catch (cacheError) {
-        logger.error('Failed to cache contact strategy result', {
-          leadId,
-          contactId,
-          tenantId,
-          cacheKey,
-          error: cacheError instanceof Error ? cacheError.message : 'Unknown cache error',
-        });
-        // Don't throw error for cache failures - return the result anyway
-      }
+      await cacheContactStrategy(result, cacheKey);
 
       return result;
     } catch (agentError) {
@@ -88,3 +70,16 @@ export const generateContactStrategy = async (
     throw error;
   }
 };
+
+async function cacheContactStrategy(result: ContactStrategyResult, cacheKey: string) {
+  // Save result to cache
+  try {
+    await supabaseStorage.uploadJsonFile(cacheKey, result);
+  } catch (cacheError) {
+    logger.error('Failed to cache contact strategy result', {
+      cacheKey,
+      error: cacheError instanceof Error ? cacheError.message : 'Unknown cache error',
+    });
+    // Don't throw error for cache failures - return the result anyway
+  }
+}

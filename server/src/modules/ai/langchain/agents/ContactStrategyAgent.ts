@@ -59,12 +59,11 @@ export class ContactStrategyAgent {
 
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `{system_prompt}`],
-      ['lead_details', `{lead_details}`],
-      ['contact_details', `{contact_details}`],
-      ['partner_details', `{partner_details}`],
-      ['partner_products', `{partner_products}`],
-      ['salesman', `{salesman}`],
-      ['output_schema', `{output_schema}`],
+      ['human', `{lead_details}`],
+      ['human', `{contact_details}`],
+      ['human', `{partner_details}`],
+      ['human', `{partner_products}`],
+      ['human', `{salesman}`],
       ['placeholder', '{agent_scratchpad}'],
     ]);
 
@@ -104,17 +103,14 @@ export class ContactStrategyAgent {
     }
 
     try {
-      const result = await this.agent.invoke(
-        {
-          system_prompt: systemPrompt,
-          lead_details: await this.getLeadDetails(tenantId, leadId),
-          contact_details: await this.getContactDetails(contactId),
-          partner_details: await this.getPartnerDetails(tenantId),
-          partner_products: await this.getPartnerProducts(tenantId, leadId),
-          salesman: await this.getSalesman(tenantId, leadId),
-        },
-        this.config
-      );
+      const result = await this.agent.invoke({
+        system_prompt: systemPrompt,
+        lead_details: await this.getLeadDetails(tenantId, leadId),
+        contact_details: await this.getContactDetails(contactId),
+        partner_details: await this.getPartnerDetails(tenantId),
+        partner_products: await this.getPartnerProducts(tenantId, leadId),
+        salesman: await this.getSalesman(tenantId, leadId),
+      });
 
       let finalResponse = getContentFromMessage(result.output);
 
@@ -144,10 +140,21 @@ export class ContactStrategyAgent {
     tenantId: string,
     leadId: string
   ): Promise<ValueSchema<LeadDetails>> {
-    const leadDetails = await leadRepository.findByIdForTenant(tenantId, leadId);
+    const leadDetails = await leadRepository.findByIdForTenant(leadId, tenantId);
 
     return {
-      value: leadDetailsSchema.parse(leadDetails),
+      value: {
+        id: leadDetails.id,
+        name: leadDetails.name || '',
+        url: leadDetails.url || '',
+        status: leadDetails.status || '',
+        summary: leadDetails.summary || '',
+        products: JSON.stringify(leadDetails.products) || '',
+        services: JSON.stringify(leadDetails.services) || '',
+        differentiators: JSON.stringify(leadDetails.differentiators) || '',
+        targetMarket: leadDetails.targetMarket || '',
+        tone: leadDetails.tone || '',
+      },
       schema: z.toJSONSchema(leadDetailsSchema),
     };
   }
@@ -156,7 +163,11 @@ export class ContactStrategyAgent {
     const contactDetails = await leadPointOfContactRepository.findById(contactId);
 
     return {
-      value: contactDetailsSchema.parse(contactDetails),
+      value: {
+        id: contactDetails.id,
+        name: contactDetails.name || '',
+        title: contactDetails.title || '',
+      },
       schema: z.toJSONSchema(contactDetailsSchema),
     };
   }
