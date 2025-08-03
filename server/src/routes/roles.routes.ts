@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { RoleService, CreateRoleData, CreatePermissionData } from '@/modules/role.service';
-import { UserService } from '@/modules/user.service';
 import {
   RoleCreateSchema,
   RoleGetAllSchema,
@@ -12,7 +11,6 @@ import {
   PermissionGetAllSchema,
   PermissionAssignSchema,
   PermissionRemoveSchema,
-  UserPermissionsGetSchema,
 } from '@/routes/apiSchema/role';
 
 const basePath = '/roles';
@@ -242,58 +240,6 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
         fastify.log.error(`Error removing permission from role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to remove permission from role',
-          error: error.message,
-        });
-      }
-    },
-  });
-
-  // Get user permissions for a tenant
-  fastify.route({
-    method: HttpMethods.GET,
-    url: '/user-permissions/:tenantId',
-    preHandler: [fastify.authPrehandler],
-    schema: {
-      ...UserPermissionsGetSchema,
-      tags: ['Roles'],
-      summary: 'Get User Permissions',
-      description: 'Get current user permissions for a specific tenant',
-    },
-    handler: async (
-      request: FastifyRequest<{ Params: { tenantId: string } }>,
-      reply: FastifyReply
-    ) => {
-      try {
-        const { tenantId } = request.params;
-        const supabaseUser = (request as any).user;
-
-        if (!supabaseUser?.id) {
-          reply.status(401).send({ message: 'Authentication required' });
-          return;
-        }
-
-        // Get user from database using Supabase ID
-        const dbUser = await UserService.getUserBySupabaseId(supabaseUser.id);
-        if (!dbUser) {
-          reply.status(404).send({ message: 'User not found' });
-          return;
-        }
-
-        const userPermissions = await RoleService.getUserPermissions(dbUser.id, tenantId);
-
-        if (!userPermissions) {
-          reply.status(404).send({ message: 'User not found in tenant or no role assigned' });
-          return;
-        }
-
-        reply.send({
-          message: 'User permissions retrieved successfully',
-          userPermissions,
-        });
-      } catch (error: any) {
-        fastify.log.error(`Error fetching user permissions: ${error.message}`);
-        reply.status(500).send({
-          message: 'Failed to fetch user permissions',
           error: error.message,
         });
       }
