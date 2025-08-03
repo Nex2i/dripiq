@@ -4,13 +4,30 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
+import {
+  leadPointOfContactRepository,
+  leadProductRepository,
+  leadRepository,
+} from '@/repositories';
+import { TenantService } from '@/modules/tenant.service';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import contactStrategyOutputSchema, {
+import {
   OutreachStrategyOutput,
-} from '../../schemas/contactStrategyOutputSchema';
+  LeadDetails,
+  leadDetailsSchema,
+  contactDetailsSchema,
+  ContactDetails,
+  partnerDetailsSchema,
+  PartnerDetails,
+  PartnerProduct,
+  partnerProductSchema,
+  salesmanSchema,
+  Salesman,
+  outreachStrategyOutputSchema,
+} from '../../schemas/contactStrategySchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
 
 export type ContactStrategyResult = {
@@ -20,13 +37,10 @@ export type ContactStrategyResult = {
   functionCalls: any[];
 };
 
-export interface ContactStrategyInput {
-  leadDetails: any;
-  contactDetails: any;
-  partnerDetails: any;
-  partnerProducts: any[];
-  salesman: any;
-}
+type ValueSchema<T> = {
+  value: T;
+  schema: any;
+};
 
 export class ContactStrategyAgent {
   private agent: AgentExecutor;
@@ -45,6 +59,11 @@ export class ContactStrategyAgent {
 
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `{system_prompt}`],
+      ['human', `{lead_details}`],
+      ['human', `{contact_details}`],
+      ['human', `{partner_details}`],
+      ['human', `{partner_products}`],
+      ['human', `{salesman}`],
       ['placeholder', '{agent_scratchpad}'],
     ]);
 
@@ -63,25 +82,15 @@ export class ContactStrategyAgent {
     });
   }
 
-  async generateContactStrategy(input: ContactStrategyInput): Promise<ContactStrategyResult> {
-    // Ensure all input properties exist and are serializable
-    const safeInput = {
-      leadDetails: input.leadDetails || {},
-      contactDetails: input.contactDetails || {},
-      partnerDetails: input.partnerDetails || {},
-      partnerProducts: input.partnerProducts || [],
-      salesman: input.salesman || {},
-    };
-
+  async generateContactStrategy(
+    tenantId: string,
+    leadId: string,
+    contactId: string
+  ): Promise<ContactStrategyResult> {
     let systemPrompt: string;
     try {
       const basePrompt = promptHelper.getPromptAndInject('contact_strategy', {
-        lead_details: JSON.stringify(safeInput.leadDetails, null, 2),
-        contact_details: JSON.stringify(safeInput.contactDetails, null, 2),
-        partner_details: JSON.stringify(safeInput.partnerDetails, null, 2),
-        partner_products: JSON.stringify(safeInput.partnerProducts, null, 2),
-        salesman: JSON.stringify(safeInput.salesman, null, 2),
-        output_schema: JSON.stringify(z.toJSONSchema(contactStrategyOutputSchema), null, 2),
+        output_schema: JSON.stringify(z.toJSONSchema(outreachStrategyOutputSchema), null, 2),
       });
 
       // Add explicit JSON mode instruction
@@ -96,19 +105,19 @@ export class ContactStrategyAgent {
     try {
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
+        lead_details: 'Lead Details: ' + (await this.getLeadDetails(tenantId, leadId)),
+        contact_details: 'Contact Details: ' + (await this.getContactDetails(contactId)),
+        partner_details: 'Partner Details: ' + (await this.getPartnerDetails(tenantId)),
+        partner_products: 'Partner Products: ' + (await this.getPartnerProducts(tenantId, leadId)),
+        salesman: 'Salesman: ' + (await this.getSalesman(tenantId, leadId)),
       });
 
       let finalResponse = getContentFromMessage(result.output);
 
       // If agent didn't provide a direct response, try to generate from steps
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.generateSummaryFromSteps(input, result, systemPrompt);
-      }
-
-      // If we still don't have a response, try direct model call with structured output
-      if (!finalResponse || finalResponse.length < 50) {
-        logger.warn('Agent did not provide sufficient response, trying direct model approach');
-        finalResponse = await this.tryDirectModelApproach(systemPrompt);
+        logger.error('Agent did not provide a direct response, trying direct model approach');
+        throw new Error('Agent did not provide a direct response');
       }
 
       // Enhanced JSON parsing with better error handling
@@ -127,76 +136,88 @@ export class ContactStrategyAgent {
     }
   }
 
-  private async tryDirectModelApproach(systemPrompt: string): Promise<string> {
-    try {
-      // Create a direct model instance for structured output
-      const model = createChatModel(this.config);
+  private async getLeadDetails(
+    tenantId: string,
+    leadId: string
+  ): Promise<ValueSchema<LeadDetails>> {
+    const leadDetails = await leadRepository.findByIdForTenant(leadId, tenantId);
 
-      // Try using withStructuredOutput if available
-      const structuredModel = model.withStructuredOutput(contactStrategyOutputSchema);
-
-      const response = await structuredModel.invoke([
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: 'Please provide the contact strategy analysis in the specified JSON format.',
-        },
-      ]);
-
-      return JSON.stringify(response, null, 2);
-    } catch (error) {
-      logger.warn(
-        'Direct model approach with structured output failed, falling back to text approach',
-        error
-      );
-
-      // Fallback to regular model call
-      const model = createChatModel(this.config);
-      const response = await model.invoke([
-        { role: 'system', content: systemPrompt + '\n\nRESPOND WITH VALID JSON ONLY.' },
-        { role: 'user', content: 'Please provide the contact strategy analysis in JSON format.' },
-      ]);
-
-      return response.content as string;
-    }
+    return {
+      value: {
+        id: leadDetails.id,
+        name: leadDetails.name || '',
+        url: leadDetails.url || '',
+        status: leadDetails.status || '',
+        summary: leadDetails.summary || '',
+        products: JSON.stringify(leadDetails.products) || '',
+        services: JSON.stringify(leadDetails.services) || '',
+        differentiators: JSON.stringify(leadDetails.differentiators) || '',
+        targetMarket: leadDetails.targetMarket || '',
+        tone: leadDetails.tone || '',
+      },
+      schema: z.toJSONSchema(leadDetailsSchema),
+    };
   }
 
-  private async generateSummaryFromSteps(
-    input: ContactStrategyInput,
-    result: any,
-    systemPrompt: string
-  ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(contactStrategyOutputSchema));
+  private async getContactDetails(contactId: string): Promise<ValueSchema<ContactDetails>> {
+    const contactDetails = await leadPointOfContactRepository.findById(contactId);
 
-    const gatheredInfo = (result.intermediateSteps || [])
-      .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
-          step.observation || 'No result'
-        }\n`;
-      })
-      .join('\n---\n');
-
-    const summaryPrompt = `
-You are a contact strategy expert. Based on the research conducted below, provide a comprehensive contact strategy and outreach plan for the contact at ${input.leadDetails.name}.
-
-Research conducted so far:
-${gatheredInfo}
-
-${systemPrompt}
-
-Even if the research is incomplete, provide the best possible contact strategy analysis and outreach plan based on what was found.
-Return your answer as valid JSON matching the provided schema.
-    `;
-
-    const summary = await structuredModel.invoke([
-      {
-        role: 'system',
-        content: summaryPrompt,
+    return {
+      value: {
+        id: contactDetails.id,
+        name: contactDetails.name || '',
+        title: contactDetails.title || '',
       },
-    ]);
-    return getContentFromMessage(summary.content ?? summary);
+      schema: z.toJSONSchema(contactDetailsSchema),
+    };
+  }
+  private async getPartnerDetails(tenantId: string): Promise<ValueSchema<PartnerDetails>> {
+    const tenant = await TenantService.getTenantById(tenantId);
+
+    return {
+      value: {
+        id: tenant.id,
+        name: tenant.name,
+        website: tenant.website,
+        organizationName: tenant.organizationName,
+        summary: tenant.summary,
+        differentiators: tenant.differentiators,
+        targetMarket: tenant.targetMarket,
+        tone: tenant.tone,
+      } as PartnerDetails,
+      schema: z.toJSONSchema(partnerDetailsSchema),
+    };
+  }
+
+  private async getPartnerProducts(
+    tenantId: string,
+    leadId: string
+  ): Promise<ValueSchema<PartnerProduct[]>> {
+    const leadProducts = await leadProductRepository.findByLeadId(leadId, tenantId);
+
+    return {
+      value: leadProducts.map((product) => ({
+        id: product.id,
+        title: product.title || '',
+        description: product.description || '',
+        salesVoice: product.salesVoice || '',
+        siteUrl: product.siteUrl || '',
+      })),
+      schema: z.toJSONSchema(partnerProductSchema),
+    };
+  }
+
+  private async getSalesman(tenantId: string, leadId: string): Promise<ValueSchema<Salesman>> {
+    const lead = await leadRepository.findOwnerForLead(leadId, tenantId);
+
+    return {
+      value: {
+        id: lead.id,
+        name: lead.name || '',
+        email: lead.email || '',
+      },
+      schema: z.toJSONSchema(salesmanSchema),
+    };
   }
 }
 
@@ -226,7 +247,7 @@ function parseWithSchema(content: string): OutreachStrategyOutput {
     });
 
     const parsed = JSON.parse(jsonText);
-    return contactStrategyOutputSchema.parse(parsed);
+    return outreachStrategyOutputSchema.parse(parsed);
   } catch (parseError) {
     logger.warn('Contact strategy JSON parsing failed', {
       error: parseError instanceof Error ? parseError.message : 'Unknown error',

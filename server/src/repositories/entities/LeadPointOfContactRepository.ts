@@ -1,5 +1,6 @@
 import { eq, and } from 'drizzle-orm';
 import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads } from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
 
 export class LeadPointOfContactRepository extends BaseRepository<
@@ -23,15 +24,23 @@ export class LeadPointOfContactRepository extends BaseRepository<
 
   /**
    * Find contact by ID with tenant validation (through lead)
+   * @param id - The ID of the contact to find.
+   * @param tenantId - The ID of the tenant to find the contact for.
+   * @returns The contact if found, otherwise undefined.
    */
-  async findByIdForTenant(id: string, tenantId: string): Promise<LeadPointOfContact | undefined> {
+  async findByIdForTenant(id: string, tenantId: string): Promise<LeadPointOfContact> {
     const results = await this.db
       .select()
       .from(this.table)
       .innerJoin(leads, eq(this.table.leadId, leads.id))
       .where(and(eq(this.table.id, id), eq(leads.tenantId, tenantId)))
       .limit(1);
-    return results[0]?.lead_point_of_contacts;
+
+    if (!results[0]) {
+      throw new NotFoundError(`Contact not found with id ${id} for tenant ${tenantId}`);
+    }
+
+    return results[0].lead_point_of_contacts;
   }
 
   /**

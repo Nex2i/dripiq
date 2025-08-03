@@ -299,52 +299,6 @@ export const createContact = async (
 };
 
 /**
- * Toggles the manually reviewed status of a contact.
- * @param tenantId - The ID of the tenant.
- * @param leadId - The ID of the lead the contact belongs to.
- * @param contactId - The ID of the contact to toggle.
- * @param manuallyReviewed - The new manually reviewed status.
- * @returns A promise that resolves to the updated contact.
- */
-export const toggleContactManuallyReviewed = async (
-  tenantId: string,
-  leadId: string,
-  contactId: string,
-  manuallyReviewed: boolean
-): Promise<LeadPointOfContact> => {
-  try {
-    // Verify the lead exists and belongs to the tenant
-    const lead = await getLeadById(tenantId, leadId);
-    if (!lead) {
-      throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
-    }
-
-    // Verify the contact exists and belongs to the tenant/lead
-    const contact = await leadPointOfContactRepository.findByIdForTenant(contactId, tenantId);
-    if (!contact || contact.leadId !== leadId) {
-      throw new Error(`Contact not found with ID: ${contactId} for lead: ${leadId}`);
-    }
-
-    // Update the contact's manually reviewed status
-    const updatedContact = await leadPointOfContactRepository.updateByIdForTenant(
-      contactId,
-      tenantId,
-      { manuallyReviewed }
-    );
-
-    if (!updatedContact) {
-      throw new Error('Failed to update contact manually reviewed status');
-    }
-
-    logger.info(`Updated contact ${contactId} manually reviewed status to ${manuallyReviewed}`);
-    return updatedContact;
-  } catch (error) {
-    logger.error('Error toggling contact manually reviewed status:', error);
-    throw error;
-  }
-};
-
-/**
  * Get all statuses for a lead
  * @param tenantId - The ID of the tenant
  * @param leadId - The ID of the lead

@@ -1,5 +1,5 @@
 import { eq, and, or, ilike, desc } from 'drizzle-orm';
-import { leads, Lead, NewLead, users } from '@/db/schema';
+import { leads, Lead, NewLead, users, User } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
@@ -35,6 +35,27 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
     }
 
     return lead[0];
+  }
+
+  /**
+   * Get a user from lead owner
+   * @param leadId
+   * @param tenantId
+   * @returns User
+   */
+  async findOwnerForLead(leadId: string, tenantId: string): Promise<User> {
+    const result = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.id, leadId), eq(this.table.tenantId, tenantId)))
+      .innerJoin(users, eq(this.table.ownerId, users.id))
+      .limit(1);
+
+    if (!result || !result[0]) {
+      throw new NotFoundError(`Lead not found with id: ${leadId} for tenant: ${tenantId}`);
+    }
+
+    return result[0].users;
   }
 
   async findByIdForTenant(id: string, tenantId: string): Promise<LeadWithOwner> {
