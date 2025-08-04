@@ -21,8 +21,8 @@ jest.mock('@mendable/firecrawl-js', () => {
   }));
 });
 
-import firecrawlClient from './firecrawl.client';
 import { createSignedJwt } from '../jwt';
+import firecrawlClient from './firecrawl.client';
 import '../../extensions/string.extensions';
 
 // Mock JWT creation

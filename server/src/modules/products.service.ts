@@ -21,7 +21,7 @@ const hasUrlBeenScraped = async (siteUrl: string): Promise<boolean> => {
     const cleanUrl = siteUrl.cleanWebsiteUrl();
     const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
     return embeddings.length > 0;
-  } catch (error) {
+  } catch (_) {
     // If there's an error checking, err on the side of caution and scrape
     return false;
   }

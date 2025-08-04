@@ -5,4 +5,7 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv extends Static<typeof schema> {}
   }
+
+  // Add Node.js global object for tests
+  var global: typeof globalThis;
 }

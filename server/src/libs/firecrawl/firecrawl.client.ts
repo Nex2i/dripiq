@@ -145,7 +145,7 @@ const firecrawlClient = {
 
       // Consider any 2xx or 3xx status code as existing
       return response.ok || (response.status >= 300 && response.status < 400);
-    } catch (error) {
+    } catch (_) {
       // If any error occurs (network, timeout, etc.), consider the site as not existing/accessible
       return false;
     }
