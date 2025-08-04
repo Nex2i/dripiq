@@ -2,6 +2,19 @@ import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { productRepository, siteEmbeddingRepository } from '@/repositories';
 import type { Product, NewProduct } from '../db/schema';
 
+// Helper function to ensure a site is scraped and embedded
+const ensureSiteScraped = async (siteUrl?: string | null): Promise<void> => {
+  if (!siteUrl) {
+    return;
+  }
+
+  if (await hasUrlBeenScraped(siteUrl)) {
+    return;
+  }
+
+  await firecrawlClient.batchScrapeUrls([siteUrl]);
+};
+
 // Helper function to check if a URL has been scraped and embedded
 const hasUrlBeenScraped = async (siteUrl: string): Promise<boolean> => {
   try {
@@ -43,12 +56,8 @@ export const ProductsService = {
       throw new Error('Failed to create product');
     }
 
-    if (newProduct.siteUrl) {
-      const hasBeenScraped = await hasUrlBeenScraped(newProduct.siteUrl);
-      if (!hasBeenScraped) {
-        await firecrawlClient.batchScrapeUrls([newProduct.siteUrl]);
-      }
-    }
+    await ensureSiteScraped(newProduct.siteUrl);
+
     return newProduct;
   },
 
@@ -64,12 +73,8 @@ export const ProductsService = {
       throw new Error('Failed to update product');
     }
 
-    if (updatedProduct.siteUrl) {
-      const hasBeenScraped = await hasUrlBeenScraped(updatedProduct.siteUrl);
-      if (!hasBeenScraped) {
-        await firecrawlClient.batchScrapeUrls([updatedProduct.siteUrl]);
-      }
-    }
+    await ensureSiteScraped(updatedProduct.siteUrl);
+
     return updatedProduct;
   },
 
