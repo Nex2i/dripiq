@@ -51,7 +51,7 @@ export const ProductsService = {
 
   // Create a new product
   async createProduct(data: NewProduct, tenantId: string): Promise<Product> {
-    const newProduct = await productRepository.createForTenant(tenantId, data);
+    const newProduct = await productRepository.createForTenantWithDefault(tenantId, data);
     if (!newProduct) {
       throw new Error('Failed to create product');
     }

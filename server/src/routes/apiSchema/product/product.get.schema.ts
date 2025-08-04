@@ -5,7 +5,6 @@ import { PaginationQuerySchema } from '../shared/pagination.schema';
 export const GetProductParamsSchema = Type.Object({
   id: Type.String({
     description: 'Product ID',
-    format: 'uuid',
   }),
 });
 
@@ -27,7 +26,7 @@ export const GetProductsQuerySchema = Type.Object({
 
 // Single product response schema
 export const ProductResponseSchema = Type.Object({
-  id: Type.String({ description: 'Product ID', format: 'uuid' }),
+  id: Type.String({ description: 'Product ID' }),
   title: Type.String({ description: 'Product title' }),
   description: Type.Union([Type.String(), Type.Null()], { description: 'Product description' }),
   salesVoice: Type.Union([Type.String(), Type.Null()], { description: 'Sales voice/pitch' }),

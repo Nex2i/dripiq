@@ -2,7 +2,7 @@ import { Type } from '@sinclair/typebox';
 
 // Base product response schema that can be reused across different endpoints
 export const ProductResponseSchema = Type.Object({
-  id: Type.String({ description: 'Product ID', format: 'uuid' }),
+  id: Type.String({ description: 'Product ID' }),
   title: Type.String({ description: 'Product title' }),
   description: Type.Union([Type.String(), Type.Null()], { description: 'Product description' }),
   salesVoice: Type.Union([Type.String(), Type.Null()], {
@@ -17,7 +17,7 @@ export const ProductResponseSchema = Type.Object({
 
 // Minimal product response schema for listings
 export const ProductSummaryResponseSchema = Type.Object({
-  id: Type.String({ description: 'Product ID', format: 'uuid' }),
+  id: Type.String({ description: 'Product ID' }),
   title: Type.String({ description: 'Product title' }),
   isDefault: Type.Boolean({ description: 'Whether this is the default product' }),
   tenantId: Type.String({ description: 'Tenant ID' }),

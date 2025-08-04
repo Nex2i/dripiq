@@ -19,10 +19,10 @@ export const CreateProductRequestSchema = Type.Object({
       maxLength: 2000,
     })
   ),
+  // format: 'uri',
   siteUrl: Type.Optional(
     Type.String({
       description: 'Product website URL',
-      format: 'uri',
     })
   ),
   isDefault: Type.Optional(
@@ -35,7 +35,7 @@ export const CreateProductRequestSchema = Type.Object({
 
 // Response schema for product creation
 export const CreateProductResponseSchema = Type.Object({
-  id: Type.String({ description: 'Product ID', format: 'uuid' }),
+  id: Type.String({ description: 'Product ID', format: 'string' }),
   title: Type.String({ description: 'Product title' }),
   description: Type.Union([Type.String(), Type.Null()], { description: 'Product description' }),
   salesVoice: Type.Union([Type.String(), Type.Null()], { description: 'Sales voice/pitch' }),

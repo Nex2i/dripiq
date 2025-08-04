@@ -4,7 +4,6 @@ import { Type } from '@sinclair/typebox';
 export const UpdateProductParamsSchema = Type.Object({
   id: Type.String({
     description: 'Product ID',
-    format: 'uuid',
   }),
 });
 
@@ -44,7 +43,7 @@ export const UpdateProductRequestSchema = Type.Object({
 
 // Response schema for product update
 export const UpdateProductResponseSchema = Type.Object({
-  id: Type.String({ description: 'Product ID', format: 'uuid' }),
+  id: Type.String({ description: 'Product ID' }),
   title: Type.String({ description: 'Product title' }),
   description: Type.Union([Type.String(), Type.Null()], { description: 'Product description' }),
   salesVoice: Type.Union([Type.String(), Type.Null()], { description: 'Sales voice/pitch' }),

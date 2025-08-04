@@ -60,7 +60,7 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
    */
   async createForTenantWithDefault(
     tenantId: string,
-    data: Omit<NewProduct, 'tenantId'>,
+    data: Omit<NewProduct, 'id'>,
     setAsDefault = false
   ): Promise<Product> {
     let productData = { ...data };
@@ -84,12 +84,7 @@ export class ProductRepository extends TenantAwareRepository<typeof products, Pr
   async updateDetailsForTenant(
     id: string,
     tenantId: string,
-    data: {
-      title?: string;
-      description?: string;
-      salesVoice?: string;
-      siteUrl?: string;
-    }
+    data: Partial<Product>
   ): Promise<Product | undefined> {
     return await this.updateByIdForTenant(id, tenantId, data);
   }

@@ -4,7 +4,6 @@ import { Type } from '@sinclair/typebox';
 export const DeleteProductParamsSchema = Type.Object({
   id: Type.String({
     description: 'Product ID',
-    format: 'uuid',
   }),
 });
 
