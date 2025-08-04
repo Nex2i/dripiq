@@ -1,6 +1,31 @@
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { productRepository } from '@/repositories';
+import { productRepository, siteEmbeddingRepository } from '@/repositories';
 import type { Product, NewProduct } from '../db/schema';
+
+// Helper function to ensure a site is scraped and embedded
+const ensureSiteScraped = async (siteUrl?: string | null): Promise<void> => {
+  if (!siteUrl) {
+    return;
+  }
+
+  if (await hasUrlBeenScraped(siteUrl)) {
+    return;
+  }
+
+  await firecrawlClient.batchScrapeUrls([siteUrl]);
+};
+
+// Helper function to check if a URL has been scraped and embedded
+const hasUrlBeenScraped = async (siteUrl: string): Promise<boolean> => {
+  try {
+    const cleanUrl = siteUrl.cleanWebsiteUrl();
+    const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
+    return embeddings.length > 0;
+  } catch (error) {
+    // If there's an error checking, err on the side of caution and scrape
+    return false;
+  }
+};
 
 export const ProductsService = {
   // Get all products for a tenant
@@ -31,9 +56,8 @@ export const ProductsService = {
       throw new Error('Failed to create product');
     }
 
-    if (newProduct.siteUrl) {
-      await firecrawlClient.batchScrapeUrls([newProduct.siteUrl]);
-    }
+    await ensureSiteScraped(newProduct.siteUrl);
+
     return newProduct;
   },
 
@@ -49,9 +73,8 @@ export const ProductsService = {
       throw new Error('Failed to update product');
     }
 
-    if (updatedProduct.siteUrl) {
-      await firecrawlClient.batchScrapeUrls([updatedProduct.siteUrl]);
-    }
+    await ensureSiteScraped(updatedProduct.siteUrl);
+
     return updatedProduct;
   },
 

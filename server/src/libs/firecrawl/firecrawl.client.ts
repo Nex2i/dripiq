@@ -53,6 +53,16 @@ const firecrawlClient = {
     return crawlResult;
   },
   batchScrapeUrls: async (urls: string[], metadata: Record<string, any> = {}) => {
+    if (urls.length === 0) {
+      return;
+    }
+
+    if (urls.length === 1) {
+      if (!(await firecrawlClient.checkSiteExists(urls[0]))) {
+        throw new Error('Site does not exist');
+      }
+    }
+
     const jwt = createSignedJwt(firecrawlApiKey);
 
     const crawlResult = await firecrawlApp.asyncBatchScrapeUrls(
@@ -78,6 +88,10 @@ const firecrawlClient = {
     return crawlResult;
   },
   getSiteMap: async (url: string): Promise<string[]> => {
+    if (!(await firecrawlClient.checkSiteExists(url))) {
+      throw new Error('Site does not exist');
+    }
+
     const siteMap = await firecrawlApp.mapUrl(siteMapOptimizedUrl(url), {
       ignoreSitemap: true,
       includeSubdomains: false,
@@ -114,6 +128,27 @@ const firecrawlClient = {
       url: metadata.url,
       description: metadata.description,
     };
+  },
+  checkSiteExists: async (url?: string | null): Promise<boolean> => {
+    if (!url) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)',
+        },
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      });
+
+      // Consider any 2xx or 3xx status code as existing
+      return response.ok || (response.status >= 300 && response.status < 400);
+    } catch (error) {
+      // If any error occurs (network, timeout, etc.), consider the site as not existing/accessible
+      return false;
+    }
   },
 };
 
