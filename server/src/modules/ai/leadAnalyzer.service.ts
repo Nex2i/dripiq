@@ -1,3 +1,4 @@
+import { firecrawlTypes } from '@/libs/firecrawl/firecrawl.metadata';
 import { getLeadById, updateLead, updateLeadStatuses } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { siteAnalysisAgent } from './langchain';
@@ -84,7 +85,7 @@ export const LeadAnalyzerService = {
     const metadata = {
       leadId,
       tenantId,
-      type: 'lead_site',
+      type: firecrawlTypes.lead_site,
     };
 
     await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata, 'lead_site');

@@ -1,3 +1,4 @@
+import { firecrawlTypes } from '@/libs/firecrawl/firecrawl.metadata';
 import { TenantService } from '../tenant.service';
 import { EmbeddingsService } from './embeddings.service';
 import { siteAnalysisAgent } from './langchain';
@@ -13,7 +14,7 @@ export const OrganizationAnalyzerService = {
 
     const metadata = {
       tenantId,
-      type: 'organization_site',
+      type: firecrawlTypes.organization_site,
     };
 
     if (await OrganizationAnalyzerService.wasLastScrapeTooRecent(website.cleanWebsiteUrl())) {
