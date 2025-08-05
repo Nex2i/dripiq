@@ -32,6 +32,7 @@ import { EmptyState } from '../components/leads/EmptyState'
 import { useLeadsColumns } from '../components/leads/LeadsTableColumns'
 import { fuzzyFilter } from '../utils/tableFilters'
 import { formatDate } from '../utils/dateUtils'
+import { Plus, RefreshCw, AlertCircle, Search, X } from 'lucide-react'
 
 const LeadsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -179,14 +180,7 @@ const LeadsPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-8 text-center">
               <div className="w-12 h-12 mx-auto mb-4 text-red-500">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <AlertCircle className="w-12 h-12" />
               </div>
               <p className="text-gray-900 font-medium mb-2">
                 Error loading leads
@@ -233,19 +227,7 @@ const LeadsPage: React.FC = () => {
               onClick={() => navigate({ to: '/leads/new' })}
               className="inline-flex items-center px-4 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
             >
-              <svg
-                className="h-4 w-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
+              <Plus className="h-4 w-4 mr-2" />
               New Lead
             </button>
             <button
@@ -254,19 +236,7 @@ const LeadsPage: React.FC = () => {
               className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
               title="Refresh leads"
             >
-              <svg
-                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="ml-2">Refresh</span>
             </button>
           </div>
@@ -276,19 +246,7 @@ const LeadsPage: React.FC = () => {
         <div className="mb-6">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
             <DebouncedInput
               value={searchQuery}
@@ -302,19 +260,7 @@ const LeadsPage: React.FC = () => {
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 title="Clear search"
               >
-                <svg
-                  className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
               </button>
             )}
           </div>

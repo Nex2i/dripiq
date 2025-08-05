@@ -15,6 +15,7 @@ import {
   Palette,
   Brain,
   Package,
+  AlertCircle,
 } from 'lucide-react'
 import VendorFitModal from '../components/VendorFitModal'
 import Tabs from '../components/Tabs'
@@ -149,14 +150,7 @@ const LeadDetailPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-8 text-center">
               <div className="w-12 h-12 mx-auto mb-4 text-red-500">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <AlertCircle className="w-12 h-12" />
               </div>
               <p className="text-gray-900 font-medium mb-2">
                 Error loading lead
