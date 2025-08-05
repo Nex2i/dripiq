@@ -3,11 +3,21 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFacetedMinMaxValues,
 } from '@tanstack/react-table'
 import type {
   ColumnDef,
   FilterFn,
   RowSelectionState,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  PaginationState,
 } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
 import { useNavigate } from '@tanstack/react-router'
@@ -63,6 +73,80 @@ function DebouncedInput({
   )
 }
 
+// Column Filter Component
+function Filter({
+  column,
+  table,
+}: {
+  column: any
+  table: any
+}) {
+  const firstValue = table
+    .getPreFilteredRowModel()
+    .flatRows[0]?.getValue(column.id)
+
+  const columnFilterValue = column.getFilterValue()
+
+  const sortedUniqueValues = React.useMemo(
+    () =>
+      typeof firstValue === 'number'
+        ? []
+        : Array.from(column.getFacetedUniqueValues().keys()).sort(),
+    [column.getFacetedUniqueValues()]
+  )
+
+  return typeof firstValue === 'number' ? (
+    <div className="flex space-x-2">
+      <DebouncedInput
+        type="number"
+        min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
+        max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
+        value={(columnFilterValue as [number, number])?.[0] ?? ''}
+        onChange={value =>
+          column.setFilterValue((old: [number, number]) => [value, old?.[1]])
+        }
+        placeholder={`Min ${
+          column.getFacetedMinMaxValues()?.[0]
+            ? `(${column.getFacetedMinMaxValues()?.[0]})`
+            : ''
+        }`}
+        className="w-24 border border-gray-300 rounded px-2 py-1 text-xs"
+      />
+      <DebouncedInput
+        type="number"
+        min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
+        max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
+        value={(columnFilterValue as [number, number])?.[1] ?? ''}
+        onChange={value =>
+          column.setFilterValue((old: [number, number]) => [old?.[0], value])
+        }
+        placeholder={`Max ${
+          column.getFacetedMinMaxValues()?.[1]
+            ? `(${column.getFacetedMinMaxValues()?.[1]})`
+            : ''
+        }`}
+        className="w-24 border border-gray-300 rounded px-2 py-1 text-xs"
+      />
+    </div>
+  ) : (
+    <>
+      <datalist id={column.id + 'list'}>
+        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
+          <option value={value} key={value} />
+        ))}
+      </datalist>
+      <DebouncedInput
+        type="text"
+        value={(columnFilterValue ?? '') as string}
+        onChange={value => column.setFilterValue(value)}
+        placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
+        className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+        list={column.id + 'list'}
+      />
+    </>
+  )
+}
+
 // Status Header Component with Info Modal
 function StatusHeader() {
   const [isModalOpen, setIsModalOpen] = React.useState(false)
@@ -104,6 +188,13 @@ const LeadsPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = React.useState('')
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
   const [assigningOwner, setAssigningOwner] = React.useState<string | null>(
     null,
   )
@@ -273,39 +364,83 @@ const LeadsPage: React.FC = () => {
       },
       {
         accessorKey: 'name',
-        header: 'Name',
+        header: ({ column }) => (
+          <button
+            className="flex items-center space-x-1 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <span>Name</span>
+            <span className="ml-1">
+              {column.getIsSorted() === 'asc' ? '↑' : column.getIsSorted() === 'desc' ? '↓' : '↕'}
+            </span>
+          </button>
+        ),
         cell: (info) => (
           <div className="text-sm font-medium text-gray-900">
             {info.getValue() as string}
           </div>
         ),
+        filterFn: 'includesString',
       },
       {
         accessorKey: 'company',
-        header: 'Company',
+        header: ({ column }) => (
+          <button
+            className="flex items-center space-x-1 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <span>Company</span>
+            <span className="ml-1">
+              {column.getIsSorted() === 'asc' ? '↑' : column.getIsSorted() === 'desc' ? '↓' : '↕'}
+            </span>
+          </button>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-500">
             {(info.getValue() as string) || '-'}
           </div>
         ),
+        filterFn: 'includesString',
       },
       {
         accessorKey: 'email',
-        header: 'Email',
+        header: ({ column }) => (
+          <button
+            className="flex items-center space-x-1 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <span>Email</span>
+            <span className="ml-1">
+              {column.getIsSorted() === 'asc' ? '↑' : column.getIsSorted() === 'desc' ? '↓' : '↕'}
+            </span>
+          </button>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-500">
             {info.getValue() as string}
           </div>
         ),
+        filterFn: 'includesString',
       },
       {
         accessorKey: 'phone',
-        header: 'Phone',
+        header: ({ column }) => (
+          <button
+            className="flex items-center space-x-1 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <span>Phone</span>
+            <span className="ml-1">
+              {column.getIsSorted() === 'asc' ? '↑' : column.getIsSorted() === 'desc' ? '↓' : '↕'}
+            </span>
+          </button>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-500">
             {(info.getValue() as string) || '-'}
           </div>
         ),
+        filterFn: 'includesString',
       },
       {
         accessorKey: 'statuses',
@@ -316,20 +451,44 @@ const LeadsPage: React.FC = () => {
             compact
           />
         ),
+        enableSorting: false,
+        enableColumnFilter: false,
       },
       {
         accessorKey: 'ownerId',
-        header: 'Owner',
+        header: ({ column }) => (
+          <button
+            className="flex items-center space-x-1 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <span>Owner</span>
+            <span className="ml-1">
+              {column.getIsSorted() === 'asc' ? '↑' : column.getIsSorted() === 'desc' ? '↓' : '↕'}
+            </span>
+          </button>
+        ),
         cell: (info) => getOwnerDisplay(info.row.original),
+        filterFn: 'includesString',
       },
       {
         accessorKey: 'createdAt',
-        header: 'Created',
+        header: ({ column }) => (
+          <button
+            className="flex items-center space-x-1 hover:bg-gray-100 rounded px-2 py-1 -mx-2 -my-1"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            <span>Created</span>
+            <span className="ml-1">
+              {column.getIsSorted() === 'asc' ? '↑' : column.getIsSorted() === 'desc' ? '↓' : '↕'}
+            </span>
+          </button>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-500">
             {formatDate(info.getValue() as string)}
           </div>
         ),
+        sortingFn: 'datetime',
       },
     ],
     [users, usersLoading, usersError, assigningOwner],
@@ -341,14 +500,29 @@ const LeadsPage: React.FC = () => {
     columns,
     state: {
       rowSelection,
+      sorting,
+      columnFilters,
+      columnVisibility,
+      pagination,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getRowId: (row) => row.id,
     filterFns: {
       fuzzy: fuzzyFilter,
     },
+    globalFilterFn: fuzzyFilter,
   })
 
   const selectedRowCount = Object.keys(rowSelection).filter(
@@ -418,11 +592,11 @@ const LeadsPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
             <p className="mt-2 text-gray-600">
-              {leads.length === 0 && !searchQuery
+              {table.getFilteredRowModel().rows.length === 0 && !searchQuery && columnFilters.length === 0
                 ? 'No leads yet'
-                : searchQuery
-                  ? `${leads.length} lead${leads.length === 1 ? '' : 's'} found for "${searchQuery}"`
-                  : `${leads.length} lead${leads.length === 1 ? '' : 's'} total`}
+                : searchQuery || columnFilters.length > 0
+                  ? `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} found`
+                  : `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} total`}
               {selectedRowCount > 0 && (
                 <span className="ml-2 text-[var(--color-primary-600)] font-medium">
                   ({selectedRowCount} selected)
@@ -522,6 +696,70 @@ const LeadsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Table Controls */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* Column Visibility */}
+            <div className="relative">
+              <details className="relative">
+                <summary className="cursor-pointer bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  Columns ▼
+                </summary>
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[200px]">
+                  <div className="p-3 space-y-2">
+                    {table.getAllLeafColumns().map(column => (
+                      column.id !== 'select' && (
+                        <label key={column.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={column.getIsVisible()}
+                            onChange={column.getToggleVisibilityHandler()}
+                            className="rounded border-gray-300 text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
+                          />
+                          <span className="text-sm text-gray-700 capitalize">
+                            {typeof column.columnDef.header === 'string' 
+                              ? column.columnDef.header 
+                              : column.id}
+                          </span>
+                        </label>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            {/* Clear Filters */}
+            {columnFilters.length > 0 && (
+              <button
+                onClick={() => setColumnFilters([])}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Clear Filters ({columnFilters.length})
+              </button>
+            )}
+          </div>
+
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-700">Show:</span>
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value))
+              }}
+              className="border border-gray-300 rounded px-2 py-1 text-sm"
+            >
+              {[10, 20, 30, 40, 50].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </select>
+            <span className="text-sm text-gray-700">entries</span>
+          </div>
+        </div>
+
         {/* Bulk Actions */}
         {selectedRowCount > 0 && (
           <div className="mb-4 bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-lg p-4 flex items-center justify-between">
@@ -603,7 +841,7 @@ const LeadsPage: React.FC = () => {
         )}
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {leads.length === 0 ? (
+          {table.getFilteredRowModel().rows.length === 0 ? (
             <div className="p-12 text-center">
               <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -616,74 +854,212 @@ const LeadsPage: React.FC = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchQuery ? 'No leads found' : 'No leads yet'}
+                {searchQuery || columnFilters.length > 0 ? 'No leads found' : 'No leads yet'}
               </h3>
               <p className="text-gray-500 mb-6">
-                {searchQuery
-                  ? `No leads match your search for "${searchQuery}". Try a different search term.`
+                {searchQuery || columnFilters.length > 0
+                  ? 'No leads match your current search and filters. Try adjusting your criteria.'
                   : 'Get started by adding your first lead using the + button in the header.'}
               </p>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Clear Search
-                </button>
+              {(searchQuery || columnFilters.length > 0) && (
+                <div className="flex justify-center gap-2">
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Clear Search
+                    </button>
+                  )}
+                  {columnFilters.length > 0 && (
+                    <button
+                      onClick={() => setColumnFilters([])}
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider"
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <th
+                            key={header.id}
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider"
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                    <tr>
+                      {table.getHeaderGroups()[0].headers.map((header) => (
+                        <th key={`${header.id}-filter`} className="px-6 py-2 bg-gray-50 border-t border-gray-200">
+                          {header.column.getCanFilter() ? (
+                            <Filter column={header.column} table={table} />
+                          ) : null}
                         </th>
                       ))}
                     </tr>
-                  ))}
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className={`hover:bg-gray-50 transition-colors cursor-pointer ${
-                        row.getIsSelected()
-                          ? 'bg-[var(--color-primary-50)]'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        navigate({ to: `/leads/${row.original.id}` })
-                      }
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-6 py-4 whitespace-nowrap"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {table.getRowModel().rows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className={`hover:bg-gray-50 transition-colors cursor-pointer ${
+                          row.getIsSelected()
+                            ? 'bg-[var(--color-primary-50)]'
+                            : ''
+                        }`}
+                        onClick={() =>
+                          navigate({ to: `/leads/${row.original.id}` })
+                        }
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td
+                            key={cell.id}
+                            className="px-6 py-4 whitespace-nowrap"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(
+                          (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                          table.getFilteredRowModel().rows.length
+                        )}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium">{table.getFilteredRowModel().rows.length}</span>{' '}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={() => table.setPageIndex(0)}
+                        disabled={!table.getCanPreviousPage()}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">First</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+
+                      {/* Page Numbers */}
+                      {Array.from({ length: Math.min(5, table.getPageCount()) }, (_, i) => {
+                        const pageIndex = table.getState().pagination.pageIndex
+                        let targetPage = i
+                        
+                        if (table.getPageCount() > 5) {
+                          if (pageIndex < 3) {
+                            targetPage = i
+                          } else if (pageIndex > table.getPageCount() - 4) {
+                            targetPage = table.getPageCount() - 5 + i
+                          } else {
+                            targetPage = pageIndex - 2 + i
+                          }
+                        }
+                        
+                        return (
+                          <button
+                            key={targetPage}
+                            onClick={() => table.setPageIndex(targetPage)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              pageIndex === targetPage
+                                ? 'z-10 bg-[var(--color-primary-50)] border-[var(--color-primary-500)] text-[var(--color-primary-600)]'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {targetPage + 1}
+                          </button>
+                        )
+                      })}
+
+                      <button
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Next</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                        disabled={!table.getCanNextPage()}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Last</span>
+                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0zm-6 0a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
