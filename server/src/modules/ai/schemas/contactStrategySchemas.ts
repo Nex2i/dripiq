@@ -73,6 +73,10 @@ const partnerProductSchema = z
     description: z.string().optional().describe('Product overview for value proposition'),
     salesVoice: z.string().optional().describe('Tailored messaging for this product'),
     siteUrl: z.string().optional().describe('Product-specific landing page for referrals'),
+    siteContent: z
+      .string()
+      .optional()
+      .describe('Combined content from product website for context'),
   })
   .describe('Represents products/services being sold to match with prospect needs');
 
