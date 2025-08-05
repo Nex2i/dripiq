@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
 import ContactSalesModal from '../components/ContactSalesModal'
+import { HOME_URL } from '../constants/navigation'
 
 function LandingPage() {
   const navigate = useNavigate()
@@ -92,7 +93,7 @@ function LandingPage() {
                 </>
               ) : (
                 <button
-                  onClick={() => navigate({ to: '/leads' })}
+                  onClick={() => navigate({ to: HOME_URL })}
                   className="bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white px-6 py-2 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   Go to Leads
@@ -142,7 +143,7 @@ function LandingPage() {
                 </>
               ) : (
                 <button
-                  onClick={() => navigate({ to: '/leads' })}
+                  onClick={() => navigate({ to: HOME_URL })}
                   className="bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 >
                   Go to Leads
@@ -237,7 +238,7 @@ function LandingPage() {
               </>
             ) : (
               <button
-                onClick={() => navigate({ to: '/leads' })}
+                onClick={() => navigate({ to: HOME_URL })}
                 className="bg-white hover:bg-gray-100 text-[var(--color-primary-600)] px-8 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
                 Go to Leads

@@ -25,6 +25,7 @@ import BrandingTab from '../components/tabs/BrandingTab'
 import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
 import ProductsTab from '../components/tabs/ProductsTab'
 import LeadStatusBadges from '../components/LeadStatusBadges'
+import { HOME_URL } from '../constants/navigation'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -39,7 +40,7 @@ const LeadDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('contacts')
 
   const handleBack = () => {
-    navigate({ to: '/leads' })
+    navigate({ to: HOME_URL })
   }
 
   const handleResync = () => {

@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useCreateLead } from '../hooks/useLeadsQuery'
 import type { CreateLeadData } from '../services/leads.service'
 import { Plus, X, User, Crown } from 'lucide-react'
+import { HOME_URL } from '../constants/navigation'
 
 interface ContactFormData {
   name: string
@@ -79,7 +80,7 @@ const NewLeadPage: React.FC = () => {
   }
 
   const handleCancel = () => {
-    navigate({ to: '/leads' })
+    navigate({ to: HOME_URL })
   }
 
   return (

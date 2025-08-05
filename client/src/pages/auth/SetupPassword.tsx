@@ -4,6 +4,7 @@ import { KeyRound, CheckCircle, XCircle } from 'lucide-react'
 import Logo from '../../components/Logo'
 import { supabase } from '../../lib/supabaseClient'
 import { invitesService } from '../../services/invites.service'
+import { HOME_URL } from '../../constants/navigation'
 
 export default function SetupPassword() {
   const router = useRouter()
@@ -109,8 +110,8 @@ export default function SetupPassword() {
 
               // Redirect to leads after success
         setTimeout(() => {
-          router.navigate({ to: '/leads' })
-      }, 2000)
+          router.navigate({ to: HOME_URL })
+        }, 2000)
     } catch (err: any) {
       console.error('Password setup error:', err)
       setError(

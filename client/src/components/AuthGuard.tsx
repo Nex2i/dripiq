@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
+import { HOME_URL } from '../constants/navigation'
 
 interface AuthGuardProps {
   children: ReactNode
@@ -45,7 +46,7 @@ export function PublicOnlyGuard({ children }: PublicOnlyGuardProps) {
   }
 
   if (session && user) {
-    return <Navigate to="/leads" replace />
+    return <Navigate to={HOME_URL} replace />
   }
 
   return <>{children}</>
