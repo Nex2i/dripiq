@@ -28,10 +28,10 @@ export const UpdateProductRequestSchema = Type.Object({
       maxLength: 2000,
     })
   ),
+  // format: 'uri',
   siteUrl: Type.Optional(
     Type.String({
       description: 'Product website URL',
-      format: 'uri',
     })
   ),
   isDefault: Type.Optional(
