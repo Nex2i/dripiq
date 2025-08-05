@@ -13,7 +13,6 @@ import {
 import type {
   RowSelectionState,
   SortingState,
-  ColumnFiltersState,
   VisibilityState,
   PaginationState,
 } from '@tanstack/react-table'
@@ -26,7 +25,6 @@ import {
   useUsers,
 } from '../hooks/useLeadsQuery'
 import { DebouncedInput } from '../components/table/DebouncedInput'
-import { ColumnFilter } from '../components/table/ColumnFilter'
 import { TableControls } from '../components/table/TableControls'
 import { TablePagination } from '../components/table/TablePagination'
 import { BulkActions } from '../components/leads/BulkActions'
@@ -40,13 +38,13 @@ const LeadsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   })
   const [assigningOwner, setAssigningOwner] = React.useState<string | null>(null)
+  const [selectedUserId, setSelectedUserId] = React.useState<string>('')
 
   const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
   const {
@@ -106,21 +104,28 @@ const LeadsPage: React.FC = () => {
     formatDate,
   })
 
+  // Filter leads by selected user
+  const filteredLeads = React.useMemo(() => {
+    if (!selectedUserId) return leads
+    if (selectedUserId === 'unassigned') {
+      return leads.filter(lead => !lead.ownerId)
+    }
+    return leads.filter(lead => lead.ownerId === selectedUserId)
+  }, [leads, selectedUserId])
+
   // Create table instance
   const table = useReactTable({
-    data: leads,
+    data: filteredLeads,
     columns,
     state: {
       rowSelection,
       sorting,
-      columnFilters,
       columnVisibility,
       pagination,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -141,7 +146,7 @@ const LeadsPage: React.FC = () => {
     (id) => rowSelection[id],
   ).length
 
-  const hasSearchOrFilters = searchQuery || columnFilters.length > 0
+  const hasSearchOrFilters = searchQuery || selectedUserId
 
   if (isLoading) {
     return (
@@ -285,7 +290,7 @@ const LeadsPage: React.FC = () => {
               value={searchQuery}
               onChange={(value) => setSearchQuery(String(value))}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] bg-white text-gray-900 placeholder-gray-500"
-              placeholder="Search leads by name, email, company, or phone..."
+              placeholder="Search leads by name or website..."
             />
             {searchQuery && (
               <button
@@ -314,8 +319,12 @@ const LeadsPage: React.FC = () => {
         {/* Table Controls */}
         <TableControls
           table={table}
-          columnFilters={columnFilters}
-          onClearFilters={() => setColumnFilters([])}
+          users={users}
+          usersLoading={usersLoading}
+          usersError={usersError}
+          selectedUserId={selectedUserId}
+          onUserChange={setSelectedUserId}
+          showUserFilter={true}
         />
 
         {/* Bulk Actions */}
@@ -332,7 +341,7 @@ const LeadsPage: React.FC = () => {
             <EmptyState
               hasSearchOrFilters={hasSearchOrFilters}
               onClearSearch={searchQuery ? () => setSearchQuery('') : undefined}
-              onClearFilters={columnFilters.length > 0 ? () => setColumnFilters([]) : undefined}
+              onClearFilters={selectedUserId ? () => setSelectedUserId('') : undefined}
             />
           ) : (
             <>
@@ -357,15 +366,6 @@ const LeadsPage: React.FC = () => {
                         ))}
                       </tr>
                     ))}
-                    <tr>
-                      {table.getHeaderGroups()[0].headers.map((header) => (
-                        <th key={`${header.id}-filter`} className="px-6 py-2 bg-gray-50 border-t border-gray-200">
-                          {header.column.getCanFilter() ? (
-                            <ColumnFilter column={header.column} table={table} />
-                          ) : null}
-                        </th>
-                      ))}
-                    </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {table.getRowModel().rows.map((row) => (

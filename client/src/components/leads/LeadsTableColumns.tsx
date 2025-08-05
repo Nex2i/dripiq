@@ -176,43 +176,30 @@ export function useLeadsColumns({
             {info.getValue() as string}
           </div>
         ),
-        filterFn: 'includesString',
+        enableColumnFilter: false,
       },
       {
-        accessorKey: 'company',
+        accessorKey: 'url',
         header: ({ header }) => (
-          <SortableHeader header={header}>Company</SortableHeader>
+          <SortableHeader header={header}>Website</SortableHeader>
         ),
-        cell: (info) => (
-          <div className="text-sm text-gray-500">
-            {(info.getValue() as string) || '-'}
-          </div>
-        ),
-        filterFn: 'includesString',
-      },
-      {
-        accessorKey: 'email',
-        header: ({ header }) => (
-          <SortableHeader header={header}>Email</SortableHeader>
-        ),
-        cell: (info) => (
-          <div className="text-sm text-gray-500">
-            {info.getValue() as string}
-          </div>
-        ),
-        filterFn: 'includesString',
-      },
-      {
-        accessorKey: 'phone',
-        header: ({ header }) => (
-          <SortableHeader header={header}>Phone</SortableHeader>
-        ),
-        cell: (info) => (
-          <div className="text-sm text-gray-500">
-            {(info.getValue() as string) || '-'}
-          </div>
-        ),
-        filterFn: 'includesString',
+        cell: (info) => {
+          const url = info.getValue() as string
+          return url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {url.replace(/^https?:\/\//, '').replace(/^www\./, '')}
+            </a>
+          ) : (
+            <span className="text-sm text-gray-500">-</span>
+          )
+        },
+        enableColumnFilter: false,
       },
       {
         accessorKey: 'statuses',
@@ -229,10 +216,10 @@ export function useLeadsColumns({
       {
         accessorKey: 'ownerId',
         header: ({ header }) => (
-          <SortableHeader header={header}>Owner</SortableHeader>
+          <SortableHeader header={header}>Assigned To</SortableHeader>
         ),
         cell: (info) => getOwnerDisplay(info.row.original),
-        filterFn: 'includesString',
+        enableColumnFilter: false,
       },
       {
         accessorKey: 'createdAt',
@@ -245,6 +232,7 @@ export function useLeadsColumns({
           </div>
         ),
         sortingFn: 'datetime',
+        enableColumnFilter: false,
       },
     ],
     [users, usersLoading, usersError, assigningOwner, onAssignOwner, formatDate],

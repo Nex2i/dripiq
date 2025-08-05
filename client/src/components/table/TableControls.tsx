@@ -1,13 +1,26 @@
 import React from 'react'
 import type { Table } from '@tanstack/react-table'
+import { UserFilter } from '../leads/UserFilter'
 
 interface TableControlsProps {
   table: Table<any>
-  columnFilters: any[]
-  onClearFilters: () => void
+  users?: any[]
+  usersLoading?: boolean
+  usersError?: any
+  selectedUserId?: string
+  onUserChange?: (userId: string) => void
+  showUserFilter?: boolean
 }
 
-export function TableControls({ table, columnFilters, onClearFilters }: TableControlsProps) {
+export function TableControls({ 
+  table, 
+  users = [], 
+  usersLoading = false, 
+  usersError = null,
+  selectedUserId = '',
+  onUserChange,
+  showUserFilter = false
+}: TableControlsProps) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-4">
@@ -41,14 +54,15 @@ export function TableControls({ table, columnFilters, onClearFilters }: TableCon
           </details>
         </div>
 
-        {/* Clear Filters */}
-        {columnFilters.length > 0 && (
-          <button
-            onClick={onClearFilters}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            Clear Filters ({columnFilters.length})
-          </button>
+        {/* User Filter */}
+        {showUserFilter && onUserChange && (
+          <UserFilter
+            users={users}
+            usersLoading={usersLoading}
+            usersError={usersError}
+            selectedUserId={selectedUserId}
+            onUserChange={onUserChange}
+          />
         )}
       </div>
 
