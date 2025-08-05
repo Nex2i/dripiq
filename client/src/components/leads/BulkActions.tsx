@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface BulkActionsProps {
   selectedRowCount: number
   onClearSelection: () => void
@@ -7,11 +5,11 @@ interface BulkActionsProps {
   isDeleting: boolean
 }
 
-export function BulkActions({ 
-  selectedRowCount, 
-  onClearSelection, 
-  onBulkDelete, 
-  isDeleting 
+export function BulkActions({
+  selectedRowCount,
+  onClearSelection,
+  onBulkDelete,
+  isDeleting,
 }: BulkActionsProps) {
   if (selectedRowCount === 0) return null
 
@@ -32,8 +30,7 @@ export function BulkActions({
           />
         </svg>
         <span className="text-[var(--color-primary-900)] font-medium">
-          {selectedRowCount} lead{selectedRowCount === 1 ? '' : 's'}{' '}
-          selected
+          {selectedRowCount} lead{selectedRowCount === 1 ? '' : 's'} selected
         </span>
       </div>
       <div className="flex items-center gap-2">

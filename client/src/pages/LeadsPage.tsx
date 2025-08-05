@@ -38,12 +38,15 @@ const LeadsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({})
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   })
-  const [assigningOwner, setAssigningOwner] = React.useState<string | null>(null)
+  const [assigningOwner, setAssigningOwner] = React.useState<string | null>(
+    null,
+  )
   const [selectedUserId, setSelectedUserId] = React.useState<string>('')
 
   const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
@@ -108,9 +111,9 @@ const LeadsPage: React.FC = () => {
   const filteredLeads = React.useMemo(() => {
     if (!selectedUserId) return leads
     if (selectedUserId === 'unassigned') {
-      return leads.filter(lead => !lead.ownerId)
+      return leads.filter((lead) => !lead.ownerId)
     }
-    return leads.filter(lead => lead.ownerId === selectedUserId)
+    return leads.filter((lead) => lead.ownerId === selectedUserId)
   }, [leads, selectedUserId])
 
   // Create table instance
@@ -146,7 +149,7 @@ const LeadsPage: React.FC = () => {
     (id) => rowSelection[id],
   ).length
 
-  const hasSearchOrFilters = searchQuery || selectedUserId
+  const hasSearchOrFilters = Boolean(searchQuery || selectedUserId)
 
   if (isLoading) {
     return (
@@ -212,7 +215,8 @@ const LeadsPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
             <p className="mt-2 text-gray-600">
-              {table.getFilteredRowModel().rows.length === 0 && !hasSearchOrFilters
+              {table.getFilteredRowModel().rows.length === 0 &&
+              !hasSearchOrFilters
                 ? 'No leads yet'
                 : hasSearchOrFilters
                   ? `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} found`
@@ -341,7 +345,9 @@ const LeadsPage: React.FC = () => {
             <EmptyState
               hasSearchOrFilters={hasSearchOrFilters}
               onClearSearch={searchQuery ? () => setSearchQuery('') : undefined}
-              onClearFilters={selectedUserId ? () => setSelectedUserId('') : undefined}
+              onClearFilters={
+                selectedUserId ? () => setSelectedUserId('') : undefined
+              }
             />
           ) : (
             <>
@@ -396,7 +402,7 @@ const LeadsPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
-              
+
               {/* Pagination */}
               <TablePagination table={table} />
             </>

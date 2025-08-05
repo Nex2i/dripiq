@@ -1,4 +1,3 @@
-import React from 'react'
 import type { Table } from '@tanstack/react-table'
 
 interface TablePaginationProps {
@@ -29,22 +28,30 @@ export function TablePagination({ table }: TablePaginationProps) {
           <p className="text-sm text-gray-700">
             Showing{' '}
             <span className="font-medium">
-              {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+              {table.getState().pagination.pageIndex *
+                table.getState().pagination.pageSize +
+                1}
             </span>{' '}
             to{' '}
             <span className="font-medium">
               {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                table.getFilteredRowModel().rows.length
+                (table.getState().pagination.pageIndex + 1) *
+                  table.getState().pagination.pageSize,
+                table.getFilteredRowModel().rows.length,
               )}
             </span>{' '}
             of{' '}
-            <span className="font-medium">{table.getFilteredRowModel().rows.length}</span>{' '}
+            <span className="font-medium">
+              {table.getFilteredRowModel().rows.length}
+            </span>{' '}
             results
           </p>
         </div>
         <div>
-          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+          <nav
+            className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+            aria-label="Pagination"
+          >
             <button
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
@@ -52,7 +59,11 @@ export function TablePagination({ table }: TablePaginationProps) {
             >
               <span className="sr-only">First</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
             <button
@@ -62,39 +73,46 @@ export function TablePagination({ table }: TablePaginationProps) {
             >
               <span className="sr-only">Previous</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
 
             {/* Page Numbers */}
-            {Array.from({ length: Math.min(5, table.getPageCount()) }, (_, i) => {
-              const pageIndex = table.getState().pagination.pageIndex
-              let targetPage = i
-              
-              if (table.getPageCount() > 5) {
-                if (pageIndex < 3) {
-                  targetPage = i
-                } else if (pageIndex > table.getPageCount() - 4) {
-                  targetPage = table.getPageCount() - 5 + i
-                } else {
-                  targetPage = pageIndex - 2 + i
+            {Array.from(
+              { length: Math.min(5, table.getPageCount()) },
+              (_, i) => {
+                const pageIndex = table.getState().pagination.pageIndex
+                let targetPage = i
+
+                if (table.getPageCount() > 5) {
+                  if (pageIndex < 3) {
+                    targetPage = i
+                  } else if (pageIndex > table.getPageCount() - 4) {
+                    targetPage = table.getPageCount() - 5 + i
+                  } else {
+                    targetPage = pageIndex - 2 + i
+                  }
                 }
-              }
-              
-              return (
-                <button
-                  key={targetPage}
-                  onClick={() => table.setPageIndex(targetPage)}
-                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                    pageIndex === targetPage
-                      ? 'z-10 bg-[var(--color-primary-50)] border-[var(--color-primary-500)] text-[var(--color-primary-600)]'
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  {targetPage + 1}
-                </button>
-              )
-            })}
+
+                return (
+                  <button
+                    key={targetPage}
+                    onClick={() => table.setPageIndex(targetPage)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      pageIndex === targetPage
+                        ? 'z-10 bg-[var(--color-primary-50)] border-[var(--color-primary-500)] text-[var(--color-primary-600)]'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {targetPage + 1}
+                  </button>
+                )
+              },
+            )}
 
             <button
               onClick={() => table.nextPage()}
@@ -103,7 +121,11 @@ export function TablePagination({ table }: TablePaginationProps) {
             >
               <span className="sr-only">Next</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
             <button
@@ -113,7 +135,11 @@ export function TablePagination({ table }: TablePaginationProps) {
             >
               <span className="sr-only">Last</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0zm-6 0a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0zm-6 0a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
           </nav>

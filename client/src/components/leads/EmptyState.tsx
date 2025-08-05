@@ -1,12 +1,14 @@
-import React from 'react'
-
 interface EmptyStateProps {
   hasSearchOrFilters: boolean
   onClearSearch?: () => void
   onClearFilters?: () => void
 }
 
-export function EmptyState({ hasSearchOrFilters, onClearSearch, onClearFilters }: EmptyStateProps) {
+export function EmptyState({
+  hasSearchOrFilters,
+  onClearSearch,
+  onClearFilters,
+}: EmptyStateProps) {
   return (
     <div className="p-12 text-center">
       <div className="w-16 h-16 mx-auto mb-4 text-gray-400">

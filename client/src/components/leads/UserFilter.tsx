@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface UserFilterProps {
   users: any[]
   usersLoading: boolean
@@ -8,12 +6,12 @@ interface UserFilterProps {
   onUserChange: (userId: string) => void
 }
 
-export function UserFilter({ 
-  users, 
-  usersLoading, 
-  usersError, 
-  selectedUserId, 
-  onUserChange 
+export function UserFilter({
+  users,
+  usersLoading,
+  usersError,
+  selectedUserId,
+  onUserChange,
 }: UserFilterProps) {
   return (
     <div className="flex items-center gap-2">
