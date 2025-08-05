@@ -27,8 +27,8 @@ export function TableControls({
         {/* Column Visibility */}
         <div className="relative">
           <details className="relative">
-            <summary className="cursor-pointer bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-              Columns ▼
+            <summary className="cursor-pointer bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 select-none">
+              Columns
             </summary>
             <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-[200px]">
               <div className="p-3 space-y-2">
@@ -37,7 +37,7 @@ export function TableControls({
                     column.id !== 'select' && (
                       <label
                         key={column.id}
-                        className="flex items-center space-x-2"
+                        className="flex items-center space-x-2 select-none"
                       >
                         <input
                           type="checkbox"
