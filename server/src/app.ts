@@ -42,13 +42,8 @@ async function startServer() {
         return callback(null, true);
       }
 
-      // Allow any Netlify domain
-      if (origin.includes('.netlify.app')) {
-        return callback(null, true);
-      }
-
-      // Allow your production backend domain
-      if (origin.includes('.onrender.com')) {
+      // Allow any DripIQ domain
+      if (origin.includes('.dripiq.ai')) {
         return callback(null, true);
       }
 
