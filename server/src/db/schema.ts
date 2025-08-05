@@ -457,7 +457,11 @@ export const campaignStepTemplates = appSchema.table('campaign_step_templates', 
     .references(() => tenants.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => [
+  index('idx_campaign_step_templates_campaign_template_id').on(table.campaignTemplateId),
+  index('idx_campaign_step_templates_tenant_id').on(table.tenantId),
+  index('idx_campaign_step_templates_channel').on(table.channel),
+]);
 
 // Contact Campaign Instances table
 export const contactCampaignInstances = appSchema.table('contact_campaign_instances', {
@@ -478,7 +482,12 @@ export const contactCampaignInstances = appSchema.table('contact_campaign_instan
   completedAt: timestamp('completed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => [
+  index('idx_contact_campaign_instances_contact_id').on(table.contactId),
+  index('idx_contact_campaign_instances_campaign_template_id').on(table.campaignTemplateId),
+  index('idx_contact_campaign_instances_tenant_id').on(table.tenantId),
+  index('idx_contact_campaign_instances_status').on(table.status),
+]);
 
 // Campaign Step Instances table
 export const campaignStepInstances = appSchema.table('campaign_step_instances', {
@@ -502,7 +511,14 @@ export const campaignStepInstances = appSchema.table('campaign_step_instances', 
     .references(() => tenants.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => [
+  index('idx_campaign_step_instances_contact_campaign_instance_id').on(table.contactCampaignInstanceId),
+  index('idx_campaign_step_instances_campaign_step_template_id').on(table.campaignStepTemplateId),
+  index('idx_campaign_step_instances_tenant_id').on(table.tenantId),
+  index('idx_campaign_step_instances_status').on(table.status),
+  index('idx_campaign_step_instances_scheduled_at').on(table.scheduledAt),
+  index('idx_campaign_step_instances_channel').on(table.channel),
+]);
 
 // Step Events table (engagement tracking, channel-agnostic)
 export const stepEvents = appSchema.table('step_events', {
@@ -519,7 +535,12 @@ export const stepEvents = appSchema.table('step_events', {
     .references(() => tenants.id, { onDelete: 'cascade' }),
   occurredAt: timestamp('occurred_at').notNull().defaultNow(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (table) => [
+  index('idx_step_events_campaign_step_instance_id').on(table.campaignStepInstanceId),
+  index('idx_step_events_tenant_id').on(table.tenantId),
+  index('idx_step_events_event_type').on(table.eventType),
+  index('idx_step_events_occurred_at').on(table.occurredAt),
+]);
 
 // Campaign Relations
 export const campaignTemplatesRelations = relations(campaignTemplates, ({ one, many }) => ({

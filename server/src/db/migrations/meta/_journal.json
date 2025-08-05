@@ -176,6 +176,20 @@
       "when": 1753648436301,
       "tag": "0024_product_site_url",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1754434304977,
+      "tag": "0025_campaign",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1754434369119,
+      "tag": "0026_campaign_indexes",
+      "breakpoints": true
     }
   ]
 }
