@@ -33,7 +33,11 @@ export function InviteUserModal({
   >({})
 
   // Use the new useRoles hook and invite mutation
-  const { data: roles = [], isLoading: isLoadingRoles, error: rolesError } = useRoles()
+  const {
+    data: roles = [],
+    isLoading: isLoadingRoles,
+    error: rolesError,
+  } = useRoles()
   const inviteUserMutation = useInviteUser()
 
   // Set default role when roles are loaded
@@ -90,7 +94,7 @@ export function InviteUserModal({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!validateForm()) {
@@ -121,7 +125,9 @@ export function InviteUserModal({
         // Show error to user
         setErrors({
           email:
-            error instanceof Error ? error.message : 'Failed to send invitation',
+            error instanceof Error
+              ? error.message
+              : 'Failed to send invitation',
         })
       },
     })
@@ -300,7 +306,9 @@ export function InviteUserModal({
                 disabled={inviteUserMutation.isPending || isLoadingRoles}
                 className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary-600)] border border-transparent rounded-md hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {inviteUserMutation.isPending ? 'Sending...' : 'Send invitation'}
+                {inviteUserMutation.isPending
+                  ? 'Sending...'
+                  : 'Send invitation'}
               </button>
             </div>
           </form>
