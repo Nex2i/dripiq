@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useCreateLead } from '../hooks/useLeadsQuery'
 import type { CreateLeadData } from '../services/leads.service'
-import { Plus, X, User, Crown, Check, Loader2 } from 'lucide-react'
+import { Plus, X, User, Crown, Loader2 } from 'lucide-react'
 import { HOME_URL } from '../constants/navigation'
 
 interface ContactFormData {

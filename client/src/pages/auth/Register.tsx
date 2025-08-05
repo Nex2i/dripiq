@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { Check, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import Logo from '../../components/Logo'
 
@@ -251,7 +251,7 @@ export default function Register() {
               )}
             </button>
           </form>
-          
+
           <div className="mt-6 text-center">
             <button
               onClick={() => router.navigate({ to: '/privacy-policy' } as any)}

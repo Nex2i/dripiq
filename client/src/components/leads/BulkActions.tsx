@@ -1,4 +1,4 @@
-import { CheckCircle, Trash2, X, Loader2 } from 'lucide-react'
+import { CheckCircle, Trash2, Loader2 } from 'lucide-react'
 
 interface BulkActionsProps {
   selectedRowCount: number
