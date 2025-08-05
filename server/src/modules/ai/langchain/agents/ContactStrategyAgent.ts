@@ -8,6 +8,7 @@ import {
   leadPointOfContactRepository,
   leadProductRepository,
   leadRepository,
+  siteEmbeddingRepository,
 } from '@/repositories';
 import { TenantService } from '@/modules/tenant.service';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
@@ -199,17 +200,55 @@ export class ContactStrategyAgent {
   ): Promise<ValueSchema<PartnerProduct[]>> {
     const leadProducts = await leadProductRepository.findByLeadId(leadId, tenantId);
 
+    // Fetch site content for each product that has a siteUrl
+    const productsWithContent = await Promise.all(
+      leadProducts.map(async (product) => {
+        let siteContent = '';
+
+        // Only fetch site content if siteUrl is not null or empty
+        if (!product.siteUrl?.isNullOrEmpty()) {
+          siteContent = await this.getSiteContentForUrl(product.siteUrl!);
+        }
+
+        return {
+          id: product.id,
+          title: product.title || '',
+          description: product.description || '',
+          salesVoice: product.salesVoice || '',
+          siteUrl: product.siteUrl || '',
+          siteContent,
+        };
+      })
+    );
+
     return {
       description: 'Partner Products',
-      value: leadProducts.map((product) => ({
-        id: product.id,
-        title: product.title || '',
-        description: product.description || '',
-        salesVoice: product.salesVoice || '',
-        siteUrl: product.siteUrl || '',
-      })),
+      value: productsWithContent,
       schema: z.toJSONSchema(partnerProductSchema),
     };
+  }
+
+  private async getSiteContentForUrl(siteUrl: string): Promise<string> {
+    try {
+      const cleanUrl = siteUrl.cleanWebsiteUrl();
+      const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
+
+      if (!embeddings || embeddings.length === 0) {
+        return '';
+      }
+
+      // Sort by chunk index ascending to maintain proper order
+      const sortedEmbeddings = embeddings.sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0));
+
+      // Combine all content into a single string
+      return sortedEmbeddings
+        .map((embedding) => embedding.content)
+        .filter((content) => content && content.trim())
+        .join('\n\n');
+    } catch (error) {
+      logger.warn('Failed to fetch site content for URL', { siteUrl, error });
+      return '';
+    }
   }
 
   private async getSalesman(tenantId: string, leadId: string): Promise<ValueSchema<Salesman>> {
