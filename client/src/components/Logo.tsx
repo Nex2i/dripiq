@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-ignore SVG import with ?react suffix not recognized by TypeScript
 // import LogoImg from '../assets/logo.svg?react'
 import LogoImg from '../assets/logo.png'
 
