@@ -206,8 +206,8 @@ export class ContactStrategyAgent {
         let siteContent = '';
 
         // Only fetch site content if siteUrl is not null or empty
-        if (product.siteUrl && product.siteUrl.trim()) {
-          siteContent = await this.getSiteContentForUrl(product.siteUrl);
+        if (!product.siteUrl?.isNullOrEmpty()) {
+          siteContent = await this.getSiteContentForUrl(product.siteUrl!);
         }
 
         return {
