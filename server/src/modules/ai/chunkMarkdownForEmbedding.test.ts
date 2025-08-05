@@ -142,6 +142,37 @@ describe('chunkMarkdownForEmbedding', () => {
     expect(result[0]).toBe('Some text');
   });
 
+  test('filters out empty chunks after cleaning', () => {
+    // Create markdown that will result in some chunks becoming empty after cleanMarkdown
+    const input = [
+      '# First Section',
+      makeMarkdown(600, 'a'), // This will remain
+      '# Social Section',
+      '[Twitter](https://twitter.com/test)', // This will be removed
+      '[LinkedIn](https://linkedin.com/test)', // This will be removed
+      '```code block```', // This will be removed
+      '   ', // Whitespace only
+      '# Third Section',
+      makeMarkdown(600, 'c'), // This will remain
+    ].join('\n');
+
+    const result = chunkMarkdownForEmbedding(input);
+
+    // Verify no empty chunks are returned
+    expect(result.every((chunk) => chunk.trim().length > 0)).toBe(true);
+
+    // Verify we get the expected non-empty chunks
+    expect(result.length).toBe(2); // Should only have first and third sections
+    expect(result[0]).toMatch(/a{600}/); // First section content
+    expect(result[1]).toMatch(/c{600}/); // Third section content
+
+    // Verify social links and code blocks are not present
+    expect(result.join('')).not.toContain('Twitter');
+    expect(result.join('')).not.toContain('LinkedIn');
+    expect(result.join('')).not.toContain('twitter.com');
+    expect(result.join('')).not.toContain('code block');
+  });
+
   describe('cleanMarkdown social link filtering', () => {
     test('removes markdown social links but keeps others', () => {
       const input = `

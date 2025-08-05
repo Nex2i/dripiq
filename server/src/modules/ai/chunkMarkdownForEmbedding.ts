@@ -55,7 +55,7 @@ export function chunkMarkdownForEmbedding(pureMarkdown: string): string[] {
     }
   }
   flushChunk(true); // force flush last
-  return chunks.map(cleanMarkdown); // Clean after chunking
+  return chunks.map(cleanMarkdown).filter((chunk) => chunk && chunk.trim().length > 0); // Clean after chunking and filter out empty chunks
 }
 
 const SOCIAL_DOMAINS = [

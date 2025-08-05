@@ -34,7 +34,7 @@ export const SiteAnalyzerService = {
         const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getDomain());
 
         const markdownFile = firecrawlClient.createFirecrawlMarkdownFile(id, page);
-        await supabaseStorage.uploadFile(url.getDomain(), markdownFile);
+        await supabaseStorage.uploadFile(markdownFile.slug, markdownFile);
 
         await EmbeddingsService.createFirecrawlSiteEmbedding(domain, markdown, metadata);
       })
