@@ -79,7 +79,7 @@ const authRoute = createRoute({
   ),
 })
 
-// Landing page route - public
+// Home route - public (landing page)
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',

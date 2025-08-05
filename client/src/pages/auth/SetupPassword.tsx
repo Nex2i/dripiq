@@ -4,6 +4,7 @@ import { KeyRound, CheckCircle, XCircle } from 'lucide-react'
 import Logo from '../../components/Logo'
 import { supabase } from '../../lib/supabaseClient'
 import { invitesService } from '../../services/invites.service'
+import { HOME_URL } from '../../constants/navigation'
 
 export default function SetupPassword() {
   const router = useRouter()
@@ -107,10 +108,10 @@ export default function SetupPassword() {
 
       setStatus('success')
 
-      // Redirect to dashboard after success
-      setTimeout(() => {
-        router.navigate({ to: '/dashboard' })
-      }, 2000)
+              // Redirect to leads after success
+        setTimeout(() => {
+          router.navigate({ to: HOME_URL })
+        }, 2000)
     } catch (err: any) {
       console.error('Password setup error:', err)
       setError(
@@ -132,7 +133,7 @@ export default function SetupPassword() {
               Password Set Successfully!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Your password has been set. You'll be redirected to the dashboard
+              Your password has been set. You'll be redirected to the leads page
               shortly.
             </p>
             <div className="mt-4 animate-pulse">

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
 import { Settings } from 'lucide-react'
+import { HOME_URL } from '../constants/navigation'
 
 export default function Header() {
   const { user, logout } = useAuth()
@@ -72,7 +73,7 @@ export default function Header() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
               <Link
-                to="/dashboard"
+                to={HOME_URL}
                 className="flex items-center hover:scale-105 transition-transform duration-200 cursor-pointer"
               >
                 <Logo size="md" showText={true} />
@@ -81,7 +82,7 @@ export default function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-6">
                 <button
-                  onClick={() => navigate({ to: '/leads' })}
+                  onClick={() => navigate({ to: HOME_URL })}
                   className="text-[var(--color-surface-950)] hover:text-[var(--color-primary-600)] px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-[var(--color-primary-50)] hover:shadow-sm transform hover:-translate-y-0.5"
                 >
                   Leads
@@ -196,7 +197,7 @@ export default function Header() {
           <div className="px-4 py-6 bg-[var(--color-surface-100)]/95 backdrop-blur-sm border-t border-[var(--color-border-light)]/50">
             <nav className="flex flex-col space-y-4">
               <button
-                onClick={() => navigateAndClose('/leads')}
+                onClick={() => navigateAndClose(HOME_URL)}
                 className="text-[var(--color-surface-950)] hover:text-[var(--color-primary-600)] px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-[var(--color-primary-50)] text-left hover:shadow-sm transform hover:translate-x-2"
               >
                 Leads
