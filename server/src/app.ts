@@ -47,6 +47,11 @@ async function startServer() {
         return callback(null, true);
       }
 
+      // Allow base DripIQ domain
+      if (origin.includes('dripiq.ai')) {
+        return callback(null, true);
+      }
+
       // Allow any other origin for now (you can make this more restrictive later)
       return callback(null, true);
     },
