@@ -10,7 +10,7 @@ export default function NotFoundPage() {
 
   const handleGoHome = () => {
     if (isAuthenticated) {
-      navigate({ to: '/dashboard' })
+      navigate({ to: '/leads' })
     } else {
       navigate({ to: '/' })
     }
@@ -66,7 +66,7 @@ export default function NotFoundPage() {
               onClick={handleGoHome}
               className="w-full bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             >
-              {isAuthenticated ? 'Go to Dashboard' : 'Go to Home'}
+              {isAuthenticated ? 'Go to Leads' : 'Go to Home'}
             </button>
 
             <button

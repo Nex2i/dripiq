@@ -107,9 +107,9 @@ export default function SetupPassword() {
 
       setStatus('success')
 
-      // Redirect to dashboard after success
-      setTimeout(() => {
-        router.navigate({ to: '/dashboard' })
+              // Redirect to leads after success
+        setTimeout(() => {
+          router.navigate({ to: '/leads' })
       }, 2000)
     } catch (err: any) {
       console.error('Password setup error:', err)
@@ -132,7 +132,7 @@ export default function SetupPassword() {
               Password Set Successfully!
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Your password has been set. You'll be redirected to the dashboard
+              Your password has been set. You'll be redirected to the leads page
               shortly.
             </p>
             <div className="mt-4 animate-pulse">

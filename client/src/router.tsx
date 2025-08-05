@@ -79,11 +79,16 @@ const authRoute = createRoute({
   ),
 })
 
-// Landing page route - public
+// Home route - protected (leads page)
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <LandingPage />,
+  component: () => (
+    <AuthGuard>
+      <Header />
+      <LeadsPage />
+    </AuthGuard>
+  ),
 })
 
 // Setup password route - public (for invited users who don't have passwords yet)

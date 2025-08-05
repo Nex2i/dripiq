@@ -45,7 +45,7 @@ export function PublicOnlyGuard({ children }: PublicOnlyGuardProps) {
   }
 
   if (session && user) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/leads" replace />
   }
 
   return <>{children}</>

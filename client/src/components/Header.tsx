@@ -72,7 +72,7 @@ export default function Header() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">
               <Link
-                to="/dashboard"
+                to="/leads"
                 className="flex items-center hover:scale-105 transition-transform duration-200 cursor-pointer"
               >
                 <Logo size="md" showText={true} />
