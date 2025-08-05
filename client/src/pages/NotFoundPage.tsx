@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import { FileX } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
 import { HOME_URL } from '../constants/navigation'
@@ -33,19 +34,7 @@ export default function NotFoundPage() {
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-16 h-16 text-[var(--color-primary-600)]">
-                <svg
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
+                <FileX className="w-16 h-16" />
               </div>
             </div>
           </div>

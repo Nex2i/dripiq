@@ -1,4 +1,5 @@
 import React from 'react'
+import { Info, Edit } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import type { Lead } from '../../types/lead.types'
 import { SortableHeader } from '../table/SortableHeader'
@@ -18,19 +19,7 @@ function StatusHeader() {
           className="flex items-center justify-center"
           title="View status definitions"
         >
-          <svg
-            className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
         </button>
       </div>
 
@@ -80,19 +69,7 @@ export function useLeadsColumns({
             }}
             title="Change owner"
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>
+            <Edit className="h-4 w-4" />
           </button>
         </div>
 

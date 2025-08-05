@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Check, Loader2 } from 'lucide-react'
 
 interface ContactSalesModalProps {
   isOpen: boolean
@@ -136,19 +137,7 @@ export default function ContactSalesModal({
               {isSubmitted ? (
                 <div className="text-center py-8">
                   <div className="mb-4">
-                    <svg
-                      className="mx-auto h-12 w-12 text-green-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    <Check className="mx-auto h-12 w-12 text-green-500" />
                   </div>
                   <h4 className="text-lg font-medium text-gray-900 mb-2">
                     Thank you!
@@ -280,26 +269,7 @@ export default function ContactSalesModal({
                       className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary-600)] border border-transparent rounded-md hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 min-w-[80px]"
                     >
                       {isSubmitting ? (
-                        <svg
-                          className="animate-spin h-4 w-4 mx-auto"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
+                        <Loader2 className="animate-spin h-4 w-4 mx-auto" />
                       ) : (
                         'Send Message'
                       )}
