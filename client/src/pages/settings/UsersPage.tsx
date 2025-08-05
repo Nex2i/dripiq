@@ -12,12 +12,12 @@ import {
   Edit3,
 } from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
-import { 
-  useUsers, 
-  useRoles, 
-  useUpdateUserRole, 
-  useResendInvite, 
-  useRemoveUser 
+import {
+  useUsers,
+  useRoles,
+  useUpdateUserRole,
+  useResendInvite,
+  useRemoveUser,
 } from '../../hooks/useInvitesQuery'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -35,17 +35,17 @@ export default function UsersPage() {
   })
 
   // Fetch data using hooks
-  const { 
-    data: usersResponse, 
-    isLoading: usersLoading, 
-    error: usersError, 
-    refetch: refetchUsers 
+  const {
+    data: usersResponse,
+    isLoading: usersLoading,
+    error: usersError,
+    refetch: refetchUsers,
   } = useUsers(pagination.page, pagination.limit)
-  
-  const { 
-    data: roles = [], 
-    isLoading: rolesLoading, 
-    error: rolesError 
+
+  const {
+    data: roles = [],
+    isLoading: rolesLoading,
+    error: rolesError,
   } = useRoles()
 
   // Mutation hooks
@@ -55,10 +55,17 @@ export default function UsersPage() {
 
   // Derived state
   const users = usersResponse?.data || []
-  const paginationData = usersResponse?.pagination || { page: 1, limit: 25, total: 0, totalPages: 0 }
+  const paginationData = usersResponse?.pagination || {
+    page: 1,
+    limit: 25,
+    total: 0,
+    totalPages: 0,
+  }
   const loading = usersLoading || rolesLoading
   const error = usersError || rolesError
-  const updatingRole = updateUserRoleMutation.isPending ? editingRole?.userId : null
+  const updatingRole = updateUserRoleMutation.isPending
+    ? editingRole?.userId
+    : null
 
   // Check if current user is admin
   const isAdmin = user?.tenants?.[0]?.role?.name === 'Admin'
@@ -89,7 +96,7 @@ export default function UsersPage() {
     // The cache will be automatically updated via the mutation
   }
 
-  const handleResendInvite = async (userId: string) => {
+  const handleResendInvite = (userId: string) => {
     resendInviteMutation.mutate(userId, {
       onSuccess: () => {
         console.log('Invite resent successfully')
@@ -100,7 +107,7 @@ export default function UsersPage() {
     })
   }
 
-  const handleRemoveUser = async (userId: string) => {
+  const handleRemoveUser = (userId: string) => {
     removeUserMutation.mutate(userId, {
       onSuccess: () => {
         console.log('User removed successfully')
@@ -129,7 +136,7 @@ export default function UsersPage() {
     }
   }
 
-  const handleSaveRole = async () => {
+  const handleSaveRole = () => {
     if (!editingRole) return
 
     updateUserRoleMutation.mutate(
@@ -192,7 +199,9 @@ export default function UsersPage() {
             <h3 className="mt-2 text-sm font-medium text-gray-900">
               Error loading users
             </h3>
-            <p className="mt-1 text-sm text-gray-500">{error?.message || 'Unknown error'}</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {error?.message || 'Unknown error'}
+            </p>
             <div className="mt-6">
               <button
                 onClick={() => refetchUsers()}
@@ -395,7 +404,10 @@ export default function UsersPage() {
                           paginationData.total,
                         )}
                       </span>{' '}
-                      of <span className="font-medium">{paginationData.total}</span>{' '}
+                      of{' '}
+                      <span className="font-medium">
+                        {paginationData.total}
+                      </span>{' '}
                       results
                     </p>
                   </div>
