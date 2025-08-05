@@ -418,3 +418,186 @@ export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;
 export type NewSiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferInsert;
 export type LeadProduct = typeof leadProducts.$inferSelect;
 export type NewLeadProduct = typeof leadProducts.$inferInsert;
+
+// Campaign Tables
+
+// Campaign Templates table
+export const campaignTemplates = appSchema.table('campaign_templates', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Campaign Step Templates table (channel-agnostic with config)
+export const campaignStepTemplates = appSchema.table('campaign_step_templates', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  campaignTemplateId: text('campaign_template_id')
+    .notNull()
+    .references(() => campaignTemplates.id, { onDelete: 'cascade' }),
+  stepOrder: integer('step_order').notNull(),
+  stepName: text('step_name').notNull(),
+  channel: text('channel').notNull(), // e.g., 'email', 'sms', 'video', etc.
+  config: jsonb('config'), // channel-specific config: subject/body, sms_text, video_url, etc.
+  sendTimeWindowStart: text('send_time_window_start'), // Using text for TIME type compatibility
+  sendTimeWindowEnd: text('send_time_window_end'), // Using text for TIME type compatibility
+  delayAfterPrevious: text('delay_after_previous').notNull().default('0'), // Using text for INTERVAL type
+  branching: jsonb('branching'), // branch logic: event-driven sequencing
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Contact Campaign Instances table
+export const contactCampaignInstances = appSchema.table('contact_campaign_instances', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  contactId: text('contact_id')
+    .notNull()
+    .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+  campaignTemplateId: text('campaign_template_id')
+    .notNull()
+    .references(() => campaignTemplates.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('active'), // 'active', 'paused', 'completed'
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  startedAt: timestamp('started_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Campaign Step Instances table
+export const campaignStepInstances = appSchema.table('campaign_step_instances', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  contactCampaignInstanceId: text('contact_campaign_instance_id')
+    .notNull()
+    .references(() => contactCampaignInstances.id, { onDelete: 'cascade' }),
+  campaignStepTemplateId: text('campaign_step_template_id')
+    .notNull()
+    .references(() => campaignStepTemplates.id, { onDelete: 'cascade' }),
+  scheduledAt: timestamp('scheduled_at').notNull(),
+  sentAt: timestamp('sent_at'),
+  status: text('status').notNull().default('pending'), // 'pending', 'sent', 'completed', 'skipped'
+  branchOutcome: text('branch_outcome'),
+  channel: text('channel').notNull(), // Redundant, but helps with queries and auditing
+  renderedConfig: jsonb('rendered_config'), // the personalized config actually sent
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Step Events table (engagement tracking, channel-agnostic)
+export const stepEvents = appSchema.table('step_events', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  campaignStepInstanceId: text('campaign_step_instance_id')
+    .notNull()
+    .references(() => campaignStepInstances.id, { onDelete: 'cascade' }),
+  eventType: text('event_type').notNull(), // 'open', 'click', 'reply', 'sms_delivered', 'vm_played', etc.
+  eventData: jsonb('event_data'),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  occurredAt: timestamp('occurred_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Campaign Relations
+export const campaignTemplatesRelations = relations(campaignTemplates, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [campaignTemplates.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [campaignTemplates.createdBy],
+    references: [users.id],
+  }),
+  steps: many(campaignStepTemplates),
+  instances: many(contactCampaignInstances),
+}));
+
+export const campaignStepTemplatesRelations = relations(campaignStepTemplates, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [campaignStepTemplates.tenantId],
+    references: [tenants.id],
+  }),
+  campaignTemplate: one(campaignTemplates, {
+    fields: [campaignStepTemplates.campaignTemplateId],
+    references: [campaignTemplates.id],
+  }),
+  instances: many(campaignStepInstances),
+}));
+
+export const contactCampaignInstancesRelations = relations(contactCampaignInstances, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [contactCampaignInstances.tenantId],
+    references: [tenants.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [contactCampaignInstances.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  campaignTemplate: one(campaignTemplates, {
+    fields: [contactCampaignInstances.campaignTemplateId],
+    references: [campaignTemplates.id],
+  }),
+  stepInstances: many(campaignStepInstances),
+}));
+
+export const campaignStepInstancesRelations = relations(campaignStepInstances, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [campaignStepInstances.tenantId],
+    references: [tenants.id],
+  }),
+  contactCampaignInstance: one(contactCampaignInstances, {
+    fields: [campaignStepInstances.contactCampaignInstanceId],
+    references: [contactCampaignInstances.id],
+  }),
+  campaignStepTemplate: one(campaignStepTemplates, {
+    fields: [campaignStepInstances.campaignStepTemplateId],
+    references: [campaignStepTemplates.id],
+  }),
+  events: many(stepEvents),
+}));
+
+export const stepEventsRelations = relations(stepEvents, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [stepEvents.tenantId],
+    references: [tenants.id],
+  }),
+  campaignStepInstance: one(campaignStepInstances, {
+    fields: [stepEvents.campaignStepInstanceId],
+    references: [campaignStepInstances.id],
+  }),
+}));
+
+// Campaign Type Exports
+export type CampaignTemplate = typeof campaignTemplates.$inferSelect;
+export type NewCampaignTemplate = typeof campaignTemplates.$inferInsert;
+export type CampaignStepTemplate = typeof campaignStepTemplates.$inferSelect;
+export type NewCampaignStepTemplate = typeof campaignStepTemplates.$inferInsert;
+export type ContactCampaignInstance = typeof contactCampaignInstances.$inferSelect;
+export type NewContactCampaignInstance = typeof contactCampaignInstances.$inferInsert;
+export type CampaignStepInstance = typeof campaignStepInstances.$inferSelect;
+export type NewCampaignStepInstance = typeof campaignStepInstances.$inferInsert;
+export type StepEvent = typeof stepEvents.$inferSelect;
+export type NewStepEvent = typeof stepEvents.$inferInsert;

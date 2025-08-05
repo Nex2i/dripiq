@@ -16,6 +16,11 @@ export { LeadProductRepository } from './entities/LeadProductRepository';
 export { UserTenantRepository } from './entities/UserTenantRepository';
 export { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 export { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+export { CampaignTemplateRepository } from './entities/CampaignTemplateRepository';
+export { CampaignStepTemplateRepository } from './entities/CampaignStepTemplateRepository';
+export { ContactCampaignInstanceRepository } from './entities/ContactCampaignInstanceRepository';
+export { CampaignStepInstanceRepository } from './entities/CampaignStepInstanceRepository';
+export { StepEventRepository } from './entities/StepEventRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -32,6 +37,27 @@ export type {
   EmbeddingSearchOptions,
   EmbeddingWithDomain,
 } from './entities/SiteEmbeddingRepository';
+export type {
+  CampaignTemplateWithDetails,
+  CampaignTemplateSearchOptions,
+} from './entities/CampaignTemplateRepository';
+export type {
+  CampaignStepTemplateWithCampaign,
+  CampaignStepTemplateSearchOptions,
+} from './entities/CampaignStepTemplateRepository';
+export type {
+  ContactCampaignInstanceWithDetails,
+  ContactCampaignInstanceSearchOptions,
+} from './entities/ContactCampaignInstanceRepository';
+export type {
+  CampaignStepInstanceWithDetails,
+  CampaignStepInstanceSearchOptions,
+} from './entities/CampaignStepInstanceRepository';
+export type {
+  StepEventWithDetails,
+  StepEventSearchOptions,
+  EventAnalytics,
+} from './entities/StepEventRepository';
 
 // Export types from transaction repositories
 export type {
