@@ -52,6 +52,8 @@ export const ProductsService = {
 
   // Create a new product
   async createProduct(data: NewProduct, tenantId: string): Promise<Product> {
+    data.siteUrl = data.siteUrl?.cleanWebsiteUrl();
+
     const newProduct = await productRepository.createForTenantWithDefault(tenantId, data);
     if (!newProduct) {
       throw new Error('Failed to create product');
@@ -68,6 +70,8 @@ export const ProductsService = {
     data: Partial<NewProduct>,
     tenantId: string
   ): Promise<Product> {
+    data.siteUrl = data.siteUrl?.cleanWebsiteUrl();
+
     const updatedProduct = await productRepository.updateByIdForTenant(productId, tenantId, data);
 
     if (!updatedProduct) {

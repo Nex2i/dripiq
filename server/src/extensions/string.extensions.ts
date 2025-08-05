@@ -2,10 +2,28 @@
 
 // eslint-disable-next-line
 interface String {
+  /**
+   * Check if a string is a valid email address
+   */
   isValidEmail(): boolean;
+  /**
+   * Check if a string is null or empty
+   */
   isNullOrEmpty(): boolean;
+  /**
+   * Get a URL slug by removing protocol, www, query parameters, and fragments, and trailing slash
+   */
+  /**
+   * Get a URL slug by removing protocol, www, query parameters, and fragments, and trailing slash
+   */
   getUrlSlug(): string;
+  /**
+   * Get the domain of a website URL without the protocol or www
+   */
   getDomain(): string;
+  /**
+   * Clean a website URL by adding https:// if missing, adding www. if missing, and removing trailing slash
+   */
   cleanWebsiteUrl(): string;
 }
 
