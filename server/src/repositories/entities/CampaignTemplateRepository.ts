@@ -65,15 +65,24 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
     tenantId: string,
     options: CampaignTemplateSearchOptions = {}
   ): Promise<CampaignTemplateWithDetails[]> {
-    const { searchQuery, createdBy, includeGlobal = true, globalOnly = false, limit = 50, offset = 0 } = options;
+    const {
+      searchQuery,
+      createdBy,
+      includeGlobal = true,
+      globalOnly = false,
+      limit = 50,
+      offset = 0,
+    } = options;
 
     // Build where conditions
     let whereConditions = [];
-    
+
     if (globalOnly) {
       whereConditions.push(isNull(campaignTemplates.tenantId));
     } else if (includeGlobal) {
-      whereConditions.push(or(eq(campaignTemplates.tenantId, tenantId), isNull(campaignTemplates.tenantId)));
+      whereConditions.push(
+        or(eq(campaignTemplates.tenantId, tenantId), isNull(campaignTemplates.tenantId))
+      );
     } else {
       whereConditions.push(eq(campaignTemplates.tenantId, tenantId));
     }
@@ -241,12 +250,15 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
   /**
    * Find template with fallback logic (prefer tenant-specific, fallback to global)
    */
-  async findTemplateWithFallback(templateId: string, tenantId: string): Promise<CampaignTemplateWithDetails | null> {
+  async findTemplateWithFallback(
+    templateId: string,
+    tenantId: string
+  ): Promise<CampaignTemplateWithDetails | null> {
     // First try tenant-specific template
     try {
       const tenantTemplate = await this.findByIdWithDetails(templateId, tenantId);
       return { ...tenantTemplate, isGlobal: false };
-    } catch (error) {
+    } catch (_error) {
       // If not found, try global template
       const result = await this.db
         .select({
@@ -277,7 +289,9 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
   /**
    * Create global template (no tenant_id)
    */
-  async createGlobalTemplate(data: Omit<NewCampaignTemplate, 'tenantId'>): Promise<CampaignTemplate> {
+  async createGlobalTemplate(
+    data: Omit<NewCampaignTemplate, 'tenantId'>
+  ): Promise<CampaignTemplate> {
     return await this.create({ ...data, tenantId: null });
   }
 
@@ -291,6 +305,6 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
       .where(eq(campaignTemplates.id, templateId))
       .limit(1);
 
-    return result.length > 0 && result[0].tenantId === null;
+    return result.length > 0 && result[0]?.tenantId === null;
   }
 }

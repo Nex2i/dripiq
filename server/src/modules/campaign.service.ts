@@ -116,7 +116,10 @@ export async function getCampaignTemplate(
 ): Promise<CampaignTemplateWithDetails> {
   try {
     // Use fallback logic to find tenant-specific or global template
-    const template = await campaignTemplateRepository.findTemplateWithFallback(templateId, tenantId);
+    const template = await campaignTemplateRepository.findTemplateWithFallback(
+      templateId,
+      tenantId
+    );
     if (!template) {
       throw new NotFoundError(`Campaign template not found with id: ${templateId}`);
     }
@@ -140,7 +143,7 @@ export async function searchCampaignTemplates(
   try {
     // Include global templates by default
     const searchOptions = { includeGlobal: true, ...options };
-    
+
     const [templates, total] = await Promise.all([
       campaignTemplateRepository.searchForTenant(tenantId, searchOptions),
       campaignTemplateRepository.getCountForTenant(tenantId, searchOptions),
@@ -242,7 +245,9 @@ export async function createGlobalCampaignTemplate(
 /**
  * Get available templates for a tenant (includes global)
  */
-export async function getAvailableTemplates(tenantId: string): Promise<CampaignTemplateWithDetails[]> {
+export async function getAvailableTemplates(
+  tenantId: string
+): Promise<CampaignTemplateWithDetails[]> {
   try {
     return await campaignTemplateRepository.findTemplatesForTenantWithGlobal(tenantId);
   } catch (error) {

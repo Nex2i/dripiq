@@ -151,8 +151,11 @@ async function createSeedUser() {
 
 async function seedGlobalCampaignTemplates() {
   // Check if global templates already exist
-  const existingTemplates = await db.select().from(campaignTemplates).where(eq(campaignTemplates.tenantId, null));
-  
+  const existingTemplates = await db
+    .select()
+    .from(campaignTemplates)
+    .where(isNull(campaignTemplates.tenantId));
+
   if (existingTemplates.length > 0) {
     console.log('ℹ️  Global campaign templates already exist, skipping creation');
     return;
@@ -161,137 +164,139 @@ async function seedGlobalCampaignTemplates() {
   // 12-Step Cold Leads Campaign
   const coldLeadsTemplate = await createGlobalCampaignTemplate({
     name: 'Cold Leads Nurture - 12 Step Email Series',
-    description: '12-step email sequence structure to warm up and convert cold leads into prospects',
+    description:
+      '12-step email sequence structure to warm up and convert cold leads into prospects',
     steps: [
       {
         stepName: 'Welcome & Introduction',
         channel: 'email',
-        delayAfterPrevious: '0'
+        delayAfterPrevious: '0',
       },
       {
         stepName: 'Value Proposition',
         channel: 'email',
-        delayAfterPrevious: '3 days'
+        delayAfterPrevious: '3 days',
       },
       {
         stepName: 'Social Proof & Case Study',
         channel: 'email',
-        delayAfterPrevious: '2 days'
+        delayAfterPrevious: '2 days',
       },
       {
         stepName: 'Educational Content',
         channel: 'email',
-        delayAfterPrevious: '4 days'
+        delayAfterPrevious: '4 days',
       },
       {
         stepName: 'Industry Insights',
         channel: 'email',
-        delayAfterPrevious: '3 days'
+        delayAfterPrevious: '3 days',
       },
       {
         stepName: 'Personal Story',
         channel: 'email',
-        delayAfterPrevious: '5 days'
+        delayAfterPrevious: '5 days',
       },
       {
         stepName: 'Problem Agitation',
         channel: 'email',
-        delayAfterPrevious: '3 days'
+        delayAfterPrevious: '3 days',
       },
       {
         stepName: 'Solution Preview',
         channel: 'email',
-        delayAfterPrevious: '4 days'
+        delayAfterPrevious: '4 days',
       },
       {
         stepName: 'Urgency & FOMO',
         channel: 'email',
-        delayAfterPrevious: '6 days'
+        delayAfterPrevious: '6 days',
       },
       {
         stepName: 'Soft CTA',
         channel: 'email',
-        delayAfterPrevious: '5 days'
+        delayAfterPrevious: '5 days',
       },
       {
         stepName: 'Direct Offer',
         channel: 'email',
-        delayAfterPrevious: '7 days'
+        delayAfterPrevious: '7 days',
       },
       {
         stepName: 'Final Follow-up',
         channel: 'email',
-        delayAfterPrevious: '5 days'
-      }
-    ]
+        delayAfterPrevious: '5 days',
+      },
+    ],
   });
 
-  // 12-Step Lost Leads Campaign  
+  // 12-Step Lost Leads Campaign
   const lostLeadsTemplate = await createGlobalCampaignTemplate({
     name: 'Lost Leads Re-engagement - 12 Step Email Series',
-    description: '12-step email sequence structure to re-engage and convert lost leads who went cold',
+    description:
+      '12-step email sequence structure to re-engage and convert lost leads who went cold',
     steps: [
       {
         stepName: 'Checking In',
         channel: 'email',
-        delayAfterPrevious: '0'
+        delayAfterPrevious: '0',
       },
       {
         stepName: 'What Changed',
         channel: 'email',
-        delayAfterPrevious: '4 days'
+        delayAfterPrevious: '4 days',
       },
       {
         stepName: 'New Solution/Update',
         channel: 'email',
-        delayAfterPrevious: '3 days'
+        delayAfterPrevious: '3 days',
       },
       {
         stepName: 'Success Story',
         channel: 'email',
-        delayAfterPrevious: '5 days'
+        delayAfterPrevious: '5 days',
       },
       {
         stepName: 'New Opportunity',
         channel: 'email',
-        delayAfterPrevious: '6 days'
+        delayAfterPrevious: '6 days',
       },
       {
         stepName: 'Addressing Objections',
         channel: 'email',
-        delayAfterPrevious: '4 days'
+        delayAfterPrevious: '4 days',
       },
       {
         stepName: 'Timing Discussion',
         channel: 'email',
-        delayAfterPrevious: '7 days'
+        delayAfterPrevious: '7 days',
       },
       {
         stepName: 'Value Reinforcement',
         channel: 'email',
-        delayAfterPrevious: '5 days'
+        delayAfterPrevious: '5 days',
       },
       {
         stepName: 'Limited Time Offer',
         channel: 'email',
-        delayAfterPrevious: '8 days'
+        delayAfterPrevious: '8 days',
       },
       {
         stepName: 'Urgency & Scarcity',
         channel: 'email',
-        delayAfterPrevious: '3 days'
+        delayAfterPrevious: '3 days',
       },
       {
         stepName: 'Soft Close',
         channel: 'email',
-        delayAfterPrevious: '6 days'
+        delayAfterPrevious: '6 days',
       },
       {
         stepName: 'Final Goodbye',
         channel: 'email',
-        delayAfterPrevious: '7 days'
-      }
-    ]
+        delayAfterPrevious: '7 days',
+      },
+    ],
   });
 
   console.log(`✅ Created global template: ${coldLeadsTemplate.name}`);
