@@ -56,6 +56,11 @@ async function seed() {
     await createSeedUser();
     console.log('✅ Seed user created');
 
+    // Seed global campaign templates
+    console.log('📧 Seeding global campaign templates...');
+    await seedGlobalCampaignTemplates();
+    console.log('✅ Global campaign templates seeded');
+
     console.log('✅ Database seed completed successfully!');
   } catch (error) {
     console.error('❌ Error seeding database:', error);
@@ -142,11 +147,6 @@ async function createSeedUser() {
   console.log(
     `✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`
   );
-
-  // Seed global campaign templates
-  console.log('📧 Seeding global campaign templates...');
-  await seedGlobalCampaignTemplates();
-  console.log('✅ Global campaign templates seeded');
 }
 
 async function seedGlobalCampaignTemplates() {

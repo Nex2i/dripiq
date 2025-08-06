@@ -98,6 +98,11 @@ import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
 import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
 import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
+import { CampaignTemplateRepository } from './entities/CampaignTemplateRepository';
+import { CampaignStepInstanceRepository } from './entities/CampaignStepInstanceRepository';
+import { CampaignStepTemplateRepository } from './entities/CampaignStepTemplateRepository';
+import { ContactCampaignInstanceRepository } from './entities/ContactCampaignInstanceRepository';
+import { StepEventRepository } from './entities/StepEventRepository';
 
 // Repository instances - Singleton pattern for easy access
 const userRepository = new UserRepository();
@@ -113,6 +118,11 @@ const leadProductRepository = new LeadProductRepository();
 const userTenantRepository = new UserTenantRepository();
 const siteEmbeddingDomainRepository = new SiteEmbeddingDomainRepository();
 const siteEmbeddingRepository = new SiteEmbeddingRepository();
+const campaignTemplateRepository = new CampaignTemplateRepository();
+const campaignStepTemplateRepository = new CampaignStepTemplateRepository();
+const contactCampaignInstanceRepository = new ContactCampaignInstanceRepository();
+const campaignStepInstanceRepository = new CampaignStepInstanceRepository();
+const stepEventRepository = new StepEventRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -140,6 +150,13 @@ export const repositories = {
   leadTransaction: leadTransactionRepository,
   userInvitationTransaction: userInvitationTransactionRepository,
   tenantSetupTransaction: tenantSetupTransactionRepository,
+
+  // Campaign repositories
+  campaignTemplate: campaignTemplateRepository,
+  campaignStepTemplate: campaignStepTemplateRepository,
+  contactCampaignInstance: contactCampaignInstanceRepository,
+  campaignStepInstance: campaignStepInstanceRepository,
+  stepEvent: stepEventRepository,
 };
 
 // Export individual repository instances for direct import
@@ -160,6 +177,13 @@ export {
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,
+
+  // Campaign repositories
+  campaignTemplateRepository,
+  campaignStepTemplateRepository,
+  contactCampaignInstanceRepository,
+  campaignStepInstanceRepository,
+  stepEventRepository,
 };
 
 // Default export

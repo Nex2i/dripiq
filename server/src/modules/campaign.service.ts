@@ -1,14 +1,14 @@
 import {
-  CampaignTemplateRepository,
-  CampaignStepTemplateRepository,
-  ContactCampaignInstanceRepository,
-  CampaignStepInstanceRepository,
-  StepEventRepository,
-  LeadPointOfContactRepository,
   type CampaignTemplateWithDetails,
   type CampaignTemplateSearchOptions,
   type ContactCampaignInstanceWithDetails,
   type StepEventWithDetails,
+  leadPointOfContactRepository,
+  campaignStepInstanceRepository,
+  campaignStepTemplateRepository,
+  campaignTemplateRepository,
+  contactCampaignInstanceRepository,
+  stepEventRepository,
 } from '@/repositories';
 import type {
   CampaignTemplate,
@@ -20,14 +20,6 @@ import type {
   NewStepEvent,
 } from '@/db/schema';
 import { NotFoundError, ValidationError } from '@/exceptions/error';
-
-// Initialize repositories
-const campaignTemplateRepository = new CampaignTemplateRepository();
-const campaignStepTemplateRepository = new CampaignStepTemplateRepository();
-const contactCampaignInstanceRepository = new ContactCampaignInstanceRepository();
-const campaignStepInstanceRepository = new CampaignStepInstanceRepository();
-const stepEventRepository = new StepEventRepository();
-const leadPointOfContactRepository = new LeadPointOfContactRepository();
 
 // Types for service operations
 export interface CreateCampaignTemplateData {
@@ -226,10 +218,11 @@ export async function createGlobalCampaignTemplate(
     // Create steps if provided (these will be global template steps)
     if (steps && steps.length > 0) {
       const stepPromises = steps.map((step, index) =>
-        campaignStepTemplateRepository.createForTenant('global', {
+        campaignStepTemplateRepository.create({
           ...step,
           campaignTemplateId: template.id,
           stepOrder: step.stepOrder || index + 1,
+          tenantId: null, // Global templates have no tenant
         })
       );
       await Promise.all(stepPromises);

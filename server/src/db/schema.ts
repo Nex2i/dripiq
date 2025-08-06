@@ -459,9 +459,7 @@ export const campaignStepTemplates = appSchema.table(
     sendTimeWindowEnd: text('send_time_window_end'), // Using text for TIME type compatibility
     delayAfterPrevious: text('delay_after_previous').notNull().default('0'), // Using text for INTERVAL type
     branching: jsonb('branching'), // branch logic: event-driven sequencing
-    tenantId: text('tenant_id')
-      .notNull()
-      .references(() => tenants.id, { onDelete: 'cascade' }),
+    tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // Nullable for global step templates
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -469,6 +467,7 @@ export const campaignStepTemplates = appSchema.table(
     index('idx_campaign_step_templates_campaign_template_id').on(table.campaignTemplateId),
     index('idx_campaign_step_templates_tenant_id').on(table.tenantId),
     index('idx_campaign_step_templates_channel').on(table.channel),
+    index('idx_campaign_step_templates_global').on(table.tenantId).where(isNull(table.tenantId)),
   ]
 );
 

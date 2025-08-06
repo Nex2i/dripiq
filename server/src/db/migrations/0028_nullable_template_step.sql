@@ -1,0 +1,2 @@
+ALTER TABLE "dripiq_app"."campaign_step_templates" ALTER COLUMN "tenant_id" DROP NOT NULL;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_campaign_step_templates_global" ON "dripiq_app"."campaign_step_templates" USING btree ("tenant_id") WHERE "dripiq_app"."campaign_step_templates"."tenant_id" is null;
