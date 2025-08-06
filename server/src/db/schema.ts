@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, isNull } from 'drizzle-orm';
 import {
   text,
   timestamp,
@@ -429,12 +429,13 @@ export const campaignTemplates = appSchema.table('campaign_templates', {
   name: text('name').notNull(),
   description: text('description'),
   createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }), // Now nullable for global templates
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => [
+  index('idx_campaign_templates_tenant_id').on(table.tenantId),
+  index('idx_campaign_templates_global').on(table.tenantId).where(isNull(table.tenantId)),
+]);
 
 // Campaign Step Templates table (channel-agnostic with config)
 export const campaignStepTemplates = appSchema.table(

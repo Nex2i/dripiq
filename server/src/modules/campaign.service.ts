@@ -108,14 +108,19 @@ export async function createCampaignTemplate(
 }
 
 /**
- * Get campaign template with details
+ * Get campaign template with details (supports global templates)
  */
 export async function getCampaignTemplate(
   templateId: string,
   tenantId: string
 ): Promise<CampaignTemplateWithDetails> {
   try {
-    return await campaignTemplateRepository.findByIdWithDetails(templateId, tenantId);
+    // Use fallback logic to find tenant-specific or global template
+    const template = await campaignTemplateRepository.findTemplateWithFallback(templateId, tenantId);
+    if (!template) {
+      throw new NotFoundError(`Campaign template not found with id: ${templateId}`);
+    }
+    return template;
   } catch (error) {
     console.error('Error getting campaign template:', error);
     throw error;
@@ -123,7 +128,7 @@ export async function getCampaignTemplate(
 }
 
 /**
- * Search campaign templates
+ * Search campaign templates (includes global templates by default)
  */
 export async function searchCampaignTemplates(
   tenantId: string,
@@ -133,9 +138,12 @@ export async function searchCampaignTemplates(
   total: number;
 }> {
   try {
+    // Include global templates by default
+    const searchOptions = { includeGlobal: true, ...options };
+    
     const [templates, total] = await Promise.all([
-      campaignTemplateRepository.searchForTenant(tenantId, options),
-      campaignTemplateRepository.getCountForTenant(tenantId, options),
+      campaignTemplateRepository.searchForTenant(tenantId, searchOptions),
+      campaignTemplateRepository.getCountForTenant(tenantId, searchOptions),
     ]);
 
     return { templates, total };
@@ -185,6 +193,61 @@ export async function deleteCampaignTemplate(templateId: string, tenantId: strin
   } catch (error) {
     console.error('Error deleting campaign template:', error);
     throw error;
+  }
+}
+
+/**
+ * Get global templates only
+ */
+export async function getGlobalTemplates(): Promise<CampaignTemplateWithDetails[]> {
+  try {
+    return await campaignTemplateRepository.findGlobalTemplates();
+  } catch (error) {
+    console.error('Error getting global templates:', error);
+    throw new Error('Failed to get global templates');
+  }
+}
+
+/**
+ * Create global campaign template (admin only)
+ */
+export async function createGlobalCampaignTemplate(
+  data: CreateCampaignTemplateData
+): Promise<CampaignTemplate> {
+  try {
+    const { steps, ...templateData } = data;
+
+    // Create the global campaign template (no tenantId)
+    const template = await campaignTemplateRepository.createGlobalTemplate(templateData);
+
+    // Create steps if provided (these will be global template steps)
+    if (steps && steps.length > 0) {
+      const stepPromises = steps.map((step, index) =>
+        campaignStepTemplateRepository.createForTenant('global', {
+          ...step,
+          campaignTemplateId: template.id,
+          stepOrder: step.stepOrder || index + 1,
+        })
+      );
+      await Promise.all(stepPromises);
+    }
+
+    return template;
+  } catch (error) {
+    console.error('Error creating global campaign template:', error);
+    throw new Error('Failed to create global campaign template');
+  }
+}
+
+/**
+ * Get available templates for a tenant (includes global)
+ */
+export async function getAvailableTemplates(tenantId: string): Promise<CampaignTemplateWithDetails[]> {
+  try {
+    return await campaignTemplateRepository.findTemplatesForTenantWithGlobal(tenantId);
+  } catch (error) {
+    console.error('Error getting available templates:', error);
+    throw new Error('Failed to get available templates');
   }
 }
 

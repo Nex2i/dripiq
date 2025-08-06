@@ -1,4 +1,4 @@
-import { eq, and, desc, ilike } from 'drizzle-orm';
+import { eq, and, desc, ilike, isNull, or } from 'drizzle-orm';
 import { campaignTemplates, CampaignTemplate, NewCampaignTemplate, users } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -9,11 +9,14 @@ export interface CampaignTemplateWithDetails extends Omit<CampaignTemplate, 'cre
     name: string | null;
     email: string;
   } | null;
+  isGlobal?: boolean;
 }
 
 export interface CampaignTemplateSearchOptions {
   searchQuery?: string;
   createdBy?: string;
+  includeGlobal?: boolean;
+  globalOnly?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -62,10 +65,18 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
     tenantId: string,
     options: CampaignTemplateSearchOptions = {}
   ): Promise<CampaignTemplateWithDetails[]> {
-    const { searchQuery, createdBy, limit = 50, offset = 0 } = options;
+    const { searchQuery, createdBy, includeGlobal = true, globalOnly = false, limit = 50, offset = 0 } = options;
 
     // Build where conditions
-    const whereConditions = [eq(campaignTemplates.tenantId, tenantId)];
+    let whereConditions = [];
+    
+    if (globalOnly) {
+      whereConditions.push(isNull(campaignTemplates.tenantId));
+    } else if (includeGlobal) {
+      whereConditions.push(or(eq(campaignTemplates.tenantId, tenantId), isNull(campaignTemplates.tenantId)));
+    } else {
+      whereConditions.push(eq(campaignTemplates.tenantId, tenantId));
+    }
 
     if (searchQuery) {
       whereConditions.push(ilike(campaignTemplates.name, `%${searchQuery}%`));
@@ -94,6 +105,7 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
     return results.map((result) => ({
       ...result.template,
       createdBy: result.createdBy,
+      isGlobal: result.template.tenantId === null,
     }));
   }
 
@@ -174,5 +186,111 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
       .limit(1);
 
     return result.length > 0;
+  }
+
+  /**
+   * Get global templates only
+   */
+  async findGlobalTemplates(): Promise<CampaignTemplateWithDetails[]> {
+    const results = await this.db
+      .select({
+        template: campaignTemplates,
+        createdBy: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(campaignTemplates)
+      .leftJoin(users, eq(campaignTemplates.createdBy, users.id))
+      .where(isNull(campaignTemplates.tenantId))
+      .orderBy(desc(campaignTemplates.createdAt));
+
+    return results.map((result) => ({
+      ...result.template,
+      createdBy: result.createdBy,
+      isGlobal: true,
+    }));
+  }
+
+  /**
+   * Get templates for tenant including global templates
+   */
+  async findTemplatesForTenantWithGlobal(tenantId: string): Promise<CampaignTemplateWithDetails[]> {
+    const results = await this.db
+      .select({
+        template: campaignTemplates,
+        createdBy: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(campaignTemplates)
+      .leftJoin(users, eq(campaignTemplates.createdBy, users.id))
+      .where(or(eq(campaignTemplates.tenantId, tenantId), isNull(campaignTemplates.tenantId)))
+      .orderBy(desc(campaignTemplates.createdAt));
+
+    return results.map((result) => ({
+      ...result.template,
+      createdBy: result.createdBy,
+      isGlobal: result.template.tenantId === null,
+    }));
+  }
+
+  /**
+   * Find template with fallback logic (prefer tenant-specific, fallback to global)
+   */
+  async findTemplateWithFallback(templateId: string, tenantId: string): Promise<CampaignTemplateWithDetails | null> {
+    // First try tenant-specific template
+    try {
+      const tenantTemplate = await this.findByIdWithDetails(templateId, tenantId);
+      return { ...tenantTemplate, isGlobal: false };
+    } catch (error) {
+      // If not found, try global template
+      const result = await this.db
+        .select({
+          template: campaignTemplates,
+          createdBy: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+          },
+        })
+        .from(campaignTemplates)
+        .leftJoin(users, eq(campaignTemplates.createdBy, users.id))
+        .where(and(eq(campaignTemplates.id, templateId), isNull(campaignTemplates.tenantId)))
+        .limit(1);
+
+      if (!result || !result[0]) {
+        return null;
+      }
+
+      return {
+        ...result[0].template,
+        createdBy: result[0].createdBy,
+        isGlobal: true,
+      };
+    }
+  }
+
+  /**
+   * Create global template (no tenant_id)
+   */
+  async createGlobalTemplate(data: Omit<NewCampaignTemplate, 'tenantId'>): Promise<CampaignTemplate> {
+    return await this.create({ ...data, tenantId: null });
+  }
+
+  /**
+   * Check if template is global
+   */
+  async isGlobalTemplate(templateId: string): Promise<boolean> {
+    const result = await this.db
+      .select({ tenantId: campaignTemplates.tenantId })
+      .from(campaignTemplates)
+      .where(eq(campaignTemplates.id, templateId))
+      .limit(1);
+
+    return result.length > 0 && result[0].tenantId === null;
   }
 }
