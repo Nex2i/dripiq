@@ -1,11 +1,11 @@
-import { eq, and, desc, ilike, inArray } from 'drizzle-orm';
-import { 
-  contactCampaignInstances, 
-  ContactCampaignInstance, 
+import { eq, and, desc } from 'drizzle-orm';
+import {
+  contactCampaignInstances,
+  ContactCampaignInstance,
   NewContactCampaignInstance,
   campaignTemplates,
   leadPointOfContacts,
-  leads
+  leads,
 } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -50,7 +50,10 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
   /**
    * Find campaign instance by ID with full details
    */
-  async findByIdWithDetails(id: string, tenantId: string): Promise<ContactCampaignInstanceWithDetails> {
+  async findByIdWithDetails(
+    id: string,
+    tenantId: string
+  ): Promise<ContactCampaignInstanceWithDetails> {
     const result = await this.db
       .select({
         instance: contactCampaignInstances,
@@ -74,8 +77,13 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
       .from(contactCampaignInstances)
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .leftJoin(leads, eq(leadPointOfContacts.leadId, leads.id))
-      .leftJoin(campaignTemplates, eq(contactCampaignInstances.campaignTemplateId, campaignTemplates.id))
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .leftJoin(
+        campaignTemplates,
+        eq(contactCampaignInstances.campaignTemplateId, campaignTemplates.id)
+      )
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .limit(1);
 
     if (!result || !result[0]) {
@@ -84,10 +92,12 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
 
     return {
       ...result[0].instance,
-      contact: result[0].contact ? {
-        ...result[0].contact,
-        lead: result[0].lead,
-      } : null,
+      contact: result[0].contact
+        ? {
+            ...result[0].contact,
+            lead: result[0].lead,
+          }
+        : null,
       campaignTemplate: result[0].campaignTemplate,
     };
   }
@@ -142,7 +152,10 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
       .from(contactCampaignInstances)
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .leftJoin(leads, eq(leadPointOfContacts.leadId, leads.id))
-      .leftJoin(campaignTemplates, eq(contactCampaignInstances.campaignTemplateId, campaignTemplates.id))
+      .leftJoin(
+        campaignTemplates,
+        eq(contactCampaignInstances.campaignTemplateId, campaignTemplates.id)
+      )
       .where(and(...whereConditions))
       .orderBy(desc(contactCampaignInstances.startedAt))
       .limit(limit)
@@ -150,10 +163,12 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
 
     return results.map((result) => ({
       ...result.instance,
-      contact: result.contact ? {
-        ...result.contact,
-        lead: result.lead,
-      } : null,
+      contact: result.contact
+        ? {
+            ...result.contact,
+            lead: result.lead,
+          }
+        : null,
       campaignTemplate: result.campaignTemplate,
     }));
   }
@@ -184,16 +199,19 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
     if (leadId) {
       // Join with contacts to filter by leadId
       const result = await this.db
-        .select({ count: this.db.count() })
+        .select({ count: this.db.$count(contactCampaignInstances.id) })
         .from(contactCampaignInstances)
-        .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
+        .leftJoin(
+          leadPointOfContacts,
+          eq(contactCampaignInstances.contactId, leadPointOfContacts.id)
+        )
         .where(and(...whereConditions, eq(leadPointOfContacts.leadId, leadId)));
-      
+
       return result[0]?.count || 0;
     }
 
     const result = await this.db
-      .select({ count: this.db.count() })
+      .select({ count: this.db.$count(contactCampaignInstances.id) })
       .from(contactCampaignInstances)
       .where(and(...whereConditions));
 
@@ -214,7 +232,9 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
         ...data,
         updatedAt: new Date(),
       })
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .returning();
 
     if (!updated || !updated[0]) {
@@ -230,7 +250,9 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
   async deleteForTenant(id: string, tenantId: string): Promise<void> {
     const deleted = await this.db
       .delete(contactCampaignInstances)
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .returning();
 
     if (!deleted || !deleted[0]) {
@@ -300,7 +322,9 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
         completedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .returning();
 
     if (!updated || !updated[0]) {
@@ -320,7 +344,9 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
         status: 'paused',
         updatedAt: new Date(),
       })
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .returning();
 
     if (!updated || !updated[0]) {
@@ -340,7 +366,9 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
         status: 'active',
         updatedAt: new Date(),
       })
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .returning();
 
     if (!updated || !updated[0]) {
@@ -357,7 +385,9 @@ export class ContactCampaignInstanceRepository extends TenantAwareRepository<
     const result = await this.db
       .select({ id: contactCampaignInstances.id })
       .from(contactCampaignInstances)
-      .where(and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId)))
+      .where(
+        and(eq(contactCampaignInstances.id, id), eq(contactCampaignInstances.tenantId, tenantId))
+      )
       .limit(1);
 
     return result.length > 0;

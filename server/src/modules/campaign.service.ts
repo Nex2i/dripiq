@@ -8,16 +8,12 @@ import {
   type CampaignTemplateWithDetails,
   type CampaignTemplateSearchOptions,
   type ContactCampaignInstanceWithDetails,
-  type CampaignStepInstanceWithDetails,
   type StepEventWithDetails,
 } from '@/repositories';
 import type {
   CampaignTemplate,
-  NewCampaignTemplate,
   CampaignStepTemplate,
-  NewCampaignStepTemplate,
   ContactCampaignInstance,
-  NewContactCampaignInstance,
   CampaignStepInstance,
   NewCampaignStepInstance,
   StepEvent,
@@ -183,10 +179,7 @@ export async function updateCampaignTemplate(
 /**
  * Delete campaign template
  */
-export async function deleteCampaignTemplate(
-  templateId: string,
-  tenantId: string
-): Promise<void> {
+export async function deleteCampaignTemplate(templateId: string, tenantId: string): Promise<void> {
   try {
     await campaignTemplateRepository.deleteForTenant(templateId, tenantId);
   } catch (error) {
@@ -226,8 +219,9 @@ export async function addCampaignStep(
 ): Promise<CampaignStepTemplate> {
   try {
     // Get next step order if not provided
-    const stepOrder = data.stepOrder || 
-      await campaignStepTemplateRepository.getNextStepOrder(data.campaignTemplateId, tenantId);
+    const stepOrder =
+      data.stepOrder ||
+      (await campaignStepTemplateRepository.getNextStepOrder(data.campaignTemplateId, tenantId));
 
     return await campaignStepTemplateRepository.createForTenant(tenantId, {
       ...data,
@@ -292,7 +286,7 @@ export async function launchCampaign(
 
     // Create step instances for each campaign instance
     const stepInstanceData: Omit<NewCampaignStepInstance, 'tenantId'>[] = [];
-    
+
     for (const instance of instances) {
       let currentScheduledTime = new Date(startDate);
 
@@ -303,12 +297,16 @@ export async function launchCampaign(
           const delayMatch = step.delayAfterPrevious.match(/(\d+)\s*(day|hour|minute)s?/i);
           if (delayMatch) {
             const [, amount, unit] = delayMatch;
-            const delayMs = parseInt(amount) * (
-              unit.toLowerCase().startsWith('day') ? 24 * 60 * 60 * 1000 :
-              unit.toLowerCase().startsWith('hour') ? 60 * 60 * 1000 :
-              60 * 1000
-            );
-            currentScheduledTime = new Date(currentScheduledTime.getTime() + delayMs);
+            if (amount && unit) {
+              const delayMs =
+                parseInt(amount) *
+                (unit.toLowerCase().startsWith('day')
+                  ? 24 * 60 * 60 * 1000
+                  : unit.toLowerCase().startsWith('hour')
+                    ? 60 * 60 * 1000
+                    : 60 * 1000);
+              currentScheduledTime = new Date(currentScheduledTime.getTime() + delayMs);
+            }
           }
         }
 
@@ -401,10 +399,7 @@ export async function resumeCampaign(
 /**
  * Get pending step instances (for execution)
  */
-export async function getPendingStepInstances(
-  tenantId: string,
-  limit = 100
-): Promise<CampaignStepInstance[]> {
+export async function getPendingStepInstances(tenantId: string): Promise<CampaignStepInstance[]> {
   try {
     return await campaignStepInstanceRepository.findDueStepInstances(tenantId, new Date());
   } catch (error) {
@@ -502,22 +497,17 @@ export async function getCampaignAnalytics(
     const { startDate, endDate } = options;
 
     // Get basic counts
-    const [
-      totalCampaigns,
-      activeCampaigns,
-      completedCampaigns,
-      totalStepsSent,
-      totalEvents,
-    ] = await Promise.all([
-      contactCampaignInstanceRepository.getCountForTenant(tenantId),
-      contactCampaignInstanceRepository.getCountForTenant(tenantId, { status: 'active' }),
-      contactCampaignInstanceRepository.getCountForTenant(tenantId, { status: 'completed' }),
-      campaignStepInstanceRepository.getCountForTenant(tenantId, { status: 'sent' }),
-      stepEventRepository.getCountForTenant(tenantId, {
-        occurredAfter: startDate,
-        occurredBefore: endDate,
-      }),
-    ]);
+    const [totalCampaigns, activeCampaigns, completedCampaigns, totalStepsSent, totalEvents] =
+      await Promise.all([
+        contactCampaignInstanceRepository.getCountForTenant(tenantId),
+        contactCampaignInstanceRepository.getCountForTenant(tenantId, { status: 'active' }),
+        contactCampaignInstanceRepository.getCountForTenant(tenantId, { status: 'completed' }),
+        campaignStepInstanceRepository.getCountForTenant(tenantId, { status: 'sent' }),
+        stepEventRepository.getCountForTenant(tenantId, {
+          occurredAfter: startDate,
+          occurredBefore: endDate,
+        }),
+      ]);
 
     // Calculate engagement rate
     const engagementRate = totalStepsSent > 0 ? (totalEvents / totalStepsSent) * 100 : 0;

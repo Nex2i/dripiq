@@ -1,11 +1,11 @@
 import { eq, and, desc, asc, gte, lte, inArray } from 'drizzle-orm';
-import { 
-  stepEvents, 
-  StepEvent, 
+import {
+  stepEvents,
+  StepEvent,
   NewStepEvent,
   campaignStepInstances,
   contactCampaignInstances,
-  leadPointOfContacts
+  leadPointOfContacts,
 } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -72,8 +72,14 @@ export class StepEventRepository extends TenantAwareRepository<
         },
       })
       .from(stepEvents)
-      .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
-      .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+      .leftJoin(
+        campaignStepInstances,
+        eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+      )
+      .leftJoin(
+        contactCampaignInstances,
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+      )
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .where(and(eq(stepEvents.id, id), eq(stepEvents.tenantId, tenantId)))
       .limit(1);
@@ -96,15 +102,15 @@ export class StepEventRepository extends TenantAwareRepository<
     tenantId: string,
     options: StepEventSearchOptions = {}
   ): Promise<StepEventWithDetails[]> {
-    const { 
-      campaignStepInstanceId, 
-      eventType, 
+    const {
+      campaignStepInstanceId,
+      eventType,
       contactId,
       channel,
       occurredAfter,
       occurredBefore,
-      limit = 50, 
-      offset = 0 
+      limit = 50,
+      offset = 0,
     } = options;
 
     let whereConditions = [eq(stepEvents.tenantId, tenantId)];
@@ -150,8 +156,14 @@ export class StepEventRepository extends TenantAwareRepository<
         },
       })
       .from(stepEvents)
-      .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
-      .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+      .leftJoin(
+        campaignStepInstances,
+        eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+      )
+      .leftJoin(
+        contactCampaignInstances,
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+      )
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .where(and(...whereConditions))
       .orderBy(desc(stepEvents.occurredAt))
@@ -187,20 +199,11 @@ export class StepEventRepository extends TenantAwareRepository<
   /**
    * Get events by type for a tenant
    */
-  async findByEventType(
-    eventType: string,
-    tenantId: string,
-    limit = 100
-  ): Promise<StepEvent[]> {
+  async findByEventType(eventType: string, tenantId: string, limit = 100): Promise<StepEvent[]> {
     return await this.db
       .select()
       .from(stepEvents)
-      .where(
-        and(
-          eq(stepEvents.eventType, eventType),
-          eq(stepEvents.tenantId, tenantId)
-        )
-      )
+      .where(and(eq(stepEvents.eventType, eventType), eq(stepEvents.tenantId, tenantId)))
       .orderBy(desc(stepEvents.occurredAt))
       .limit(limit);
   }
@@ -208,10 +211,7 @@ export class StepEventRepository extends TenantAwareRepository<
   /**
    * Get events for a specific contact across all campaigns
    */
-  async findByContactId(
-    contactId: string,
-    tenantId: string
-  ): Promise<StepEventWithDetails[]> {
+  async findByContactId(contactId: string, tenantId: string): Promise<StepEventWithDetails[]> {
     const results = await this.db
       .select({
         event: stepEvents,
@@ -224,13 +224,16 @@ export class StepEventRepository extends TenantAwareRepository<
         },
       })
       .from(stepEvents)
-      .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
-      .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+      .leftJoin(
+        campaignStepInstances,
+        eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+      )
+      .leftJoin(
+        contactCampaignInstances,
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+      )
       .where(
-        and(
-          eq(contactCampaignInstances.contactId, contactId),
-          eq(stepEvents.tenantId, tenantId)
-        )
+        and(eq(contactCampaignInstances.contactId, contactId), eq(stepEvents.tenantId, tenantId))
       )
       .orderBy(desc(stepEvents.occurredAt));
 
@@ -272,13 +275,16 @@ export class StepEventRepository extends TenantAwareRepository<
       .select({
         eventType: stepEvents.eventType,
         channel: campaignStepInstances.channel,
-        count: this.db.count(),
+        count: this.db.$count(stepEvents.id),
       })
       .from(stepEvents)
-      .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
+      .leftJoin(
+        campaignStepInstances,
+        eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+      )
       .where(and(...whereConditions))
       .groupBy(stepEvents.eventType, campaignStepInstances.channel)
-      .orderBy(desc(this.db.count()));
+      .orderBy(desc(this.db.$count(stepEvents.id)));
 
     return results.map((result) => ({
       eventType: result.eventType,
@@ -290,10 +296,7 @@ export class StepEventRepository extends TenantAwareRepository<
   /**
    * Get recent events for a tenant (for dashboards)
    */
-  async getRecentEvents(
-    tenantId: string,
-    limit = 50
-  ): Promise<StepEventWithDetails[]> {
+  async getRecentEvents(tenantId: string, limit = 50): Promise<StepEventWithDetails[]> {
     const results = await this.db
       .select({
         event: stepEvents,
@@ -311,8 +314,14 @@ export class StepEventRepository extends TenantAwareRepository<
         },
       })
       .from(stepEvents)
-      .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
-      .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+      .leftJoin(
+        campaignStepInstances,
+        eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+      )
+      .leftJoin(
+        contactCampaignInstances,
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+      )
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .where(eq(stepEvents.tenantId, tenantId))
       .orderBy(desc(stepEvents.occurredAt))
@@ -367,14 +376,8 @@ export class StepEventRepository extends TenantAwareRepository<
     tenantId: string,
     options: Omit<StepEventSearchOptions, 'limit' | 'offset'> = {}
   ): Promise<number> {
-    const { 
-      campaignStepInstanceId, 
-      eventType, 
-      contactId,
-      channel,
-      occurredAfter,
-      occurredBefore
-    } = options;
+    const { campaignStepInstanceId, eventType, contactId, channel, occurredAfter, occurredBefore } =
+      options;
 
     let whereConditions = [eq(stepEvents.tenantId, tenantId)];
 
@@ -397,21 +400,29 @@ export class StepEventRepository extends TenantAwareRepository<
     if (contactId || channel) {
       // Need to join with step instances for these filters
       const result = await this.db
-        .select({ count: this.db.count() })
+        .select({ count: this.db.$count(stepEvents.id) })
         .from(stepEvents)
-        .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
-        .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
-        .where(and(
-          ...whereConditions,
-          ...(contactId ? [eq(contactCampaignInstances.contactId, contactId)] : []),
-          ...(channel ? [eq(campaignStepInstances.channel, channel)] : [])
-        ));
-      
+        .leftJoin(
+          campaignStepInstances,
+          eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+        )
+        .leftJoin(
+          contactCampaignInstances,
+          eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+        )
+        .where(
+          and(
+            ...whereConditions,
+            ...(contactId ? [eq(contactCampaignInstances.contactId, contactId)] : []),
+            ...(channel ? [eq(campaignStepInstances.channel, channel)] : [])
+          )
+        );
+
       return result[0]?.count || 0;
     }
 
     const result = await this.db
-      .select({ count: this.db.count() })
+      .select({ count: this.db.$count(stepEvents.id) })
       .from(stepEvents)
       .where(and(...whereConditions));
 
@@ -449,7 +460,7 @@ export class StepEventRepository extends TenantAwareRepository<
 
     let whereConditions = [
       eq(stepEvents.tenantId, tenantId),
-      eq(campaignStepInstances.channel, channel)
+      eq(campaignStepInstances.channel, channel),
     ];
 
     if (occurredAfter) {
@@ -462,7 +473,7 @@ export class StepEventRepository extends TenantAwareRepository<
 
     // Get total sent count
     const sentResult = await this.db
-      .select({ count: this.db.count() })
+      .select({ count: this.db.$count(campaignStepInstances.id) })
       .from(campaignStepInstances)
       .where(
         and(
@@ -474,13 +485,13 @@ export class StepEventRepository extends TenantAwareRepository<
 
     // Get engagement count
     const engagementResult = await this.db
-      .select({ count: this.db.count() })
+      .select({ count: this.db.$count(stepEvents.id) })
       .from(stepEvents)
-      .leftJoin(campaignStepInstances, eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id))
-      .where(and(
-        ...whereConditions,
-        inArray(stepEvents.eventType, engagementEvents)
-      ));
+      .leftJoin(
+        campaignStepInstances,
+        eq(stepEvents.campaignStepInstanceId, campaignStepInstances.id)
+      )
+      .where(and(...whereConditions, inArray(stepEvents.eventType, engagementEvents)));
 
     const totalSent = sentResult[0]?.count || 0;
     const totalEngagements = engagementResult[0]?.count || 0;

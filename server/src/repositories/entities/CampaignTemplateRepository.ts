@@ -3,7 +3,7 @@ import { campaignTemplates, CampaignTemplate, NewCampaignTemplate, users } from 
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
-export interface CampaignTemplateWithDetails extends CampaignTemplate {
+export interface CampaignTemplateWithDetails extends Omit<CampaignTemplate, 'createdBy'> {
   createdBy?: {
     id: string;
     name: string | null;
@@ -64,7 +64,18 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
   ): Promise<CampaignTemplateWithDetails[]> {
     const { searchQuery, createdBy, limit = 50, offset = 0 } = options;
 
-    let query = this.db
+    // Build where conditions
+    const whereConditions = [eq(campaignTemplates.tenantId, tenantId)];
+
+    if (searchQuery) {
+      whereConditions.push(ilike(campaignTemplates.name, `%${searchQuery}%`));
+    }
+
+    if (createdBy) {
+      whereConditions.push(eq(campaignTemplates.createdBy, createdBy));
+    }
+
+    const results = await this.db
       .select({
         template: campaignTemplates,
         createdBy: {
@@ -75,28 +86,7 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
       })
       .from(campaignTemplates)
       .leftJoin(users, eq(campaignTemplates.createdBy, users.id))
-      .where(eq(campaignTemplates.tenantId, tenantId));
-
-    // Apply filters
-    if (searchQuery) {
-      query = query.where(
-        and(
-          eq(campaignTemplates.tenantId, tenantId),
-          ilike(campaignTemplates.name, `%${searchQuery}%`)
-        )
-      );
-    }
-
-    if (createdBy) {
-      query = query.where(
-        and(
-          eq(campaignTemplates.tenantId, tenantId),
-          eq(campaignTemplates.createdBy, createdBy)
-        )
-      );
-    }
-
-    const results = await query
+      .where(and(...whereConditions))
       .orderBy(desc(campaignTemplates.createdAt))
       .limit(limit)
       .offset(offset);
@@ -116,31 +106,22 @@ export class CampaignTemplateRepository extends TenantAwareRepository<
   ): Promise<number> {
     const { searchQuery, createdBy } = options;
 
-    let query = this.db
-      .select({ count: this.db.count() })
-      .from(campaignTemplates)
-      .where(eq(campaignTemplates.tenantId, tenantId));
+    // Build where conditions
+    const whereConditions = [eq(campaignTemplates.tenantId, tenantId)];
 
-    // Apply filters
     if (searchQuery) {
-      query = query.where(
-        and(
-          eq(campaignTemplates.tenantId, tenantId),
-          ilike(campaignTemplates.name, `%${searchQuery}%`)
-        )
-      );
+      whereConditions.push(ilike(campaignTemplates.name, `%${searchQuery}%`));
     }
 
     if (createdBy) {
-      query = query.where(
-        and(
-          eq(campaignTemplates.tenantId, tenantId),
-          eq(campaignTemplates.createdBy, createdBy)
-        )
-      );
+      whereConditions.push(eq(campaignTemplates.createdBy, createdBy));
     }
 
-    const result = await query;
+    const result = await this.db
+      .select({ count: this.db.$count(campaignTemplates.id) })
+      .from(campaignTemplates)
+      .where(and(...whereConditions));
+
     return result[0]?.count || 0;
   }
 

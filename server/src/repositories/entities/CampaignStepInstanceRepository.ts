@@ -1,11 +1,11 @@
-import { eq, and, desc, asc, lte, gte, inArray } from 'drizzle-orm';
-import { 
-  campaignStepInstances, 
-  CampaignStepInstance, 
+import { eq, and, asc, lte, gte } from 'drizzle-orm';
+import {
+  campaignStepInstances,
+  CampaignStepInstance,
   NewCampaignStepInstance,
   campaignStepTemplates,
   contactCampaignInstances,
-  leadPointOfContacts
+  leadPointOfContacts,
 } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -53,7 +53,10 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
   /**
    * Find step instance by ID with full details
    */
-  async findByIdWithDetails(id: string, tenantId: string): Promise<CampaignStepInstanceWithDetails> {
+  async findByIdWithDetails(
+    id: string,
+    tenantId: string
+  ): Promise<CampaignStepInstanceWithDetails> {
     const result = await this.db
       .select({
         stepInstance: campaignStepInstances,
@@ -75,8 +78,14 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
         },
       })
       .from(campaignStepInstances)
-      .leftJoin(campaignStepTemplates, eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplates.id))
-      .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+      .leftJoin(
+        campaignStepTemplates,
+        eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplates.id)
+      )
+      .leftJoin(
+        contactCampaignInstances,
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+      )
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .where(and(eq(campaignStepInstances.id, id), eq(campaignStepInstances.tenantId, tenantId)))
       .limit(1);
@@ -88,10 +97,12 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
     return {
       ...result[0].stepInstance,
       stepTemplate: result[0].stepTemplate,
-      contactCampaignInstance: result[0].contactCampaignInstance ? {
-        ...result[0].contactCampaignInstance,
-        contact: result[0].contact,
-      } : null,
+      contactCampaignInstance: result[0].contactCampaignInstance
+        ? {
+            ...result[0].contactCampaignInstance,
+            contact: result[0].contact,
+          }
+        : null,
     };
   }
 
@@ -102,26 +113,30 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
     tenantId: string,
     options: CampaignStepInstanceSearchOptions = {}
   ): Promise<CampaignStepInstanceWithDetails[]> {
-    const { 
-      contactCampaignInstanceId, 
-      campaignStepTemplateId, 
-      status, 
+    const {
+      contactCampaignInstanceId,
+      campaignStepTemplateId,
+      status,
       channel,
       scheduledBefore,
       scheduledAfter,
       contactId,
-      limit = 50, 
-      offset = 0 
+      limit = 50,
+      offset = 0,
     } = options;
 
     let whereConditions = [eq(campaignStepInstances.tenantId, tenantId)];
 
     if (contactCampaignInstanceId) {
-      whereConditions.push(eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstanceId));
+      whereConditions.push(
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstanceId)
+      );
     }
 
     if (campaignStepTemplateId) {
-      whereConditions.push(eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplateId));
+      whereConditions.push(
+        eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplateId)
+      );
     }
 
     if (status) {
@@ -165,8 +180,14 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
         },
       })
       .from(campaignStepInstances)
-      .leftJoin(campaignStepTemplates, eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplates.id))
-      .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+      .leftJoin(
+        campaignStepTemplates,
+        eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplates.id)
+      )
+      .leftJoin(
+        contactCampaignInstances,
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+      )
       .leftJoin(leadPointOfContacts, eq(contactCampaignInstances.contactId, leadPointOfContacts.id))
       .where(and(...whereConditions))
       .orderBy(asc(campaignStepInstances.scheduledAt))
@@ -176,17 +197,22 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
     return results.map((result) => ({
       ...result.stepInstance,
       stepTemplate: result.stepTemplate,
-      contactCampaignInstance: result.contactCampaignInstance ? {
-        ...result.contactCampaignInstance,
-        contact: result.contact,
-      } : null,
+      contactCampaignInstance: result.contactCampaignInstance
+        ? {
+            ...result.contactCampaignInstance,
+            contact: result.contact,
+          }
+        : null,
     }));
   }
 
   /**
    * Get pending step instances scheduled to run now or in the past
    */
-  async findDueStepInstances(tenantId: string, now: Date = new Date()): Promise<CampaignStepInstance[]> {
+  async findDueStepInstances(
+    tenantId: string,
+    now: Date = new Date()
+  ): Promise<CampaignStepInstance[]> {
     return await this.db
       .select()
       .from(campaignStepInstances)
@@ -219,7 +245,10 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
         },
       })
       .from(campaignStepInstances)
-      .leftJoin(campaignStepTemplates, eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplates.id))
+      .leftJoin(
+        campaignStepTemplates,
+        eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplates.id)
+      )
       .where(
         and(
           eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstanceId),
@@ -383,24 +412,28 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
     tenantId: string,
     options: Omit<CampaignStepInstanceSearchOptions, 'limit' | 'offset'> = {}
   ): Promise<number> {
-    const { 
-      contactCampaignInstanceId, 
-      campaignStepTemplateId, 
-      status, 
+    const {
+      contactCampaignInstanceId,
+      campaignStepTemplateId,
+      status,
       channel,
       scheduledBefore,
       scheduledAfter,
-      contactId
+      contactId,
     } = options;
 
     let whereConditions = [eq(campaignStepInstances.tenantId, tenantId)];
 
     if (contactCampaignInstanceId) {
-      whereConditions.push(eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstanceId));
+      whereConditions.push(
+        eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstanceId)
+      );
     }
 
     if (campaignStepTemplateId) {
-      whereConditions.push(eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplateId));
+      whereConditions.push(
+        eq(campaignStepInstances.campaignStepTemplateId, campaignStepTemplateId)
+      );
     }
 
     if (status) {
@@ -422,16 +455,19 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
     if (contactId) {
       // Need to join with contact campaign instances and contacts
       const result = await this.db
-        .select({ count: this.db.count() })
+        .select({ count: this.db.$count(campaignStepInstances.id) })
         .from(campaignStepInstances)
-        .leftJoin(contactCampaignInstances, eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id))
+        .leftJoin(
+          contactCampaignInstances,
+          eq(campaignStepInstances.contactCampaignInstanceId, contactCampaignInstances.id)
+        )
         .where(and(...whereConditions, eq(contactCampaignInstances.contactId, contactId)));
-      
+
       return result[0]?.count || 0;
     }
 
     const result = await this.db
-      .select({ count: this.db.count() })
+      .select({ count: this.db.$count(campaignStepInstances.id) })
       .from(campaignStepInstances)
       .where(and(...whereConditions));
 
@@ -457,10 +493,7 @@ export class CampaignStepInstanceRepository extends TenantAwareRepository<
       .select()
       .from(campaignStepInstances)
       .where(
-        and(
-          eq(campaignStepInstances.status, status),
-          eq(campaignStepInstances.tenantId, tenantId)
-        )
+        and(eq(campaignStepInstances.status, status), eq(campaignStepInstances.tenantId, tenantId))
       )
       .orderBy(asc(campaignStepInstances.scheduledAt));
   }

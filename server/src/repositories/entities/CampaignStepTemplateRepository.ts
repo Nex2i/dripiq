@@ -1,9 +1,9 @@
-import { eq, and, asc, desc } from 'drizzle-orm';
-import { 
-  campaignStepTemplates, 
-  CampaignStepTemplate, 
+import { eq, and, asc, max } from 'drizzle-orm';
+import {
+  campaignStepTemplates,
+  CampaignStepTemplate,
   NewCampaignStepTemplate,
-  campaignTemplates 
+  campaignTemplates,
 } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -35,7 +35,10 @@ export class CampaignStepTemplateRepository extends TenantAwareRepository<
   /**
    * Find step template by ID with campaign details
    */
-  async findByIdWithDetails(id: string, tenantId: string): Promise<CampaignStepTemplateWithCampaign> {
+  async findByIdWithDetails(
+    id: string,
+    tenantId: string
+  ): Promise<CampaignStepTemplateWithCampaign> {
     const result = await this.db
       .select({
         stepTemplate: campaignStepTemplates,
@@ -46,7 +49,10 @@ export class CampaignStepTemplateRepository extends TenantAwareRepository<
         },
       })
       .from(campaignStepTemplates)
-      .leftJoin(campaignTemplates, eq(campaignStepTemplates.campaignTemplateId, campaignTemplates.id))
+      .leftJoin(
+        campaignTemplates,
+        eq(campaignStepTemplates.campaignTemplateId, campaignTemplates.id)
+      )
       .where(and(eq(campaignStepTemplates.id, id), eq(campaignStepTemplates.tenantId, tenantId)))
       .limit(1);
 
@@ -108,7 +114,10 @@ export class CampaignStepTemplateRepository extends TenantAwareRepository<
         },
       })
       .from(campaignStepTemplates)
-      .leftJoin(campaignTemplates, eq(campaignStepTemplates.campaignTemplateId, campaignTemplates.id))
+      .leftJoin(
+        campaignTemplates,
+        eq(campaignStepTemplates.campaignTemplateId, campaignTemplates.id)
+      )
       .where(and(...whereConditions))
       .orderBy(asc(campaignStepTemplates.stepOrder))
       .limit(limit)
@@ -140,7 +149,7 @@ export class CampaignStepTemplateRepository extends TenantAwareRepository<
     }
 
     const result = await this.db
-      .select({ count: this.db.count() })
+      .select({ count: this.db.$count(campaignStepTemplates.id) })
       .from(campaignStepTemplates)
       .where(and(...whereConditions));
 
@@ -190,7 +199,7 @@ export class CampaignStepTemplateRepository extends TenantAwareRepository<
    */
   async getNextStepOrder(campaignTemplateId: string, tenantId: string): Promise<number> {
     const result = await this.db
-      .select({ maxOrder: this.db.max(campaignStepTemplates.stepOrder) })
+      .select({ maxOrder: max(campaignStepTemplates.stepOrder) })
       .from(campaignStepTemplates)
       .where(
         and(
@@ -216,7 +225,7 @@ export class CampaignStepTemplateRepository extends TenantAwareRepository<
       for (const { id, stepOrder } of stepOrders) {
         await tx
           .update(campaignStepTemplates)
-          .set({ 
+          .set({
             stepOrder,
             updatedAt: new Date(),
           })

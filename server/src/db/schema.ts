@@ -437,110 +437,128 @@ export const campaignTemplates = appSchema.table('campaign_templates', {
 });
 
 // Campaign Step Templates table (channel-agnostic with config)
-export const campaignStepTemplates = appSchema.table('campaign_step_templates', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  campaignTemplateId: text('campaign_template_id')
-    .notNull()
-    .references(() => campaignTemplates.id, { onDelete: 'cascade' }),
-  stepOrder: integer('step_order').notNull(),
-  stepName: text('step_name').notNull(),
-  channel: text('channel').notNull(), // e.g., 'email', 'sms', 'video', etc.
-  config: jsonb('config'), // channel-specific config: subject/body, sms_text, video_url, etc.
-  sendTimeWindowStart: text('send_time_window_start'), // Using text for TIME type compatibility
-  sendTimeWindowEnd: text('send_time_window_end'), // Using text for TIME type compatibility
-  delayAfterPrevious: text('delay_after_previous').notNull().default('0'), // Using text for INTERVAL type
-  branching: jsonb('branching'), // branch logic: event-driven sequencing
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  index('idx_campaign_step_templates_campaign_template_id').on(table.campaignTemplateId),
-  index('idx_campaign_step_templates_tenant_id').on(table.tenantId),
-  index('idx_campaign_step_templates_channel').on(table.channel),
-]);
+export const campaignStepTemplates = appSchema.table(
+  'campaign_step_templates',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    campaignTemplateId: text('campaign_template_id')
+      .notNull()
+      .references(() => campaignTemplates.id, { onDelete: 'cascade' }),
+    stepOrder: integer('step_order').notNull(),
+    stepName: text('step_name').notNull(),
+    channel: text('channel').notNull(), // e.g., 'email', 'sms', 'video', etc.
+    config: jsonb('config'), // channel-specific config: subject/body, sms_text, video_url, etc.
+    sendTimeWindowStart: text('send_time_window_start'), // Using text for TIME type compatibility
+    sendTimeWindowEnd: text('send_time_window_end'), // Using text for TIME type compatibility
+    delayAfterPrevious: text('delay_after_previous').notNull().default('0'), // Using text for INTERVAL type
+    branching: jsonb('branching'), // branch logic: event-driven sequencing
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_campaign_step_templates_campaign_template_id').on(table.campaignTemplateId),
+    index('idx_campaign_step_templates_tenant_id').on(table.tenantId),
+    index('idx_campaign_step_templates_channel').on(table.channel),
+  ]
+);
 
 // Contact Campaign Instances table
-export const contactCampaignInstances = appSchema.table('contact_campaign_instances', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  contactId: text('contact_id')
-    .notNull()
-    .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
-  campaignTemplateId: text('campaign_template_id')
-    .notNull()
-    .references(() => campaignTemplates.id, { onDelete: 'cascade' }),
-  status: text('status').notNull().default('active'), // 'active', 'paused', 'completed'
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  startedAt: timestamp('started_at').notNull().defaultNow(),
-  completedAt: timestamp('completed_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  index('idx_contact_campaign_instances_contact_id').on(table.contactId),
-  index('idx_contact_campaign_instances_campaign_template_id').on(table.campaignTemplateId),
-  index('idx_contact_campaign_instances_tenant_id').on(table.tenantId),
-  index('idx_contact_campaign_instances_status').on(table.status),
-]);
+export const contactCampaignInstances = appSchema.table(
+  'contact_campaign_instances',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    campaignTemplateId: text('campaign_template_id')
+      .notNull()
+      .references(() => campaignTemplates.id, { onDelete: 'cascade' }),
+    status: text('status').notNull().default('active'), // 'active', 'paused', 'completed'
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    startedAt: timestamp('started_at').notNull().defaultNow(),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_contact_campaign_instances_contact_id').on(table.contactId),
+    index('idx_contact_campaign_instances_campaign_template_id').on(table.campaignTemplateId),
+    index('idx_contact_campaign_instances_tenant_id').on(table.tenantId),
+    index('idx_contact_campaign_instances_status').on(table.status),
+  ]
+);
 
 // Campaign Step Instances table
-export const campaignStepInstances = appSchema.table('campaign_step_instances', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  contactCampaignInstanceId: text('contact_campaign_instance_id')
-    .notNull()
-    .references(() => contactCampaignInstances.id, { onDelete: 'cascade' }),
-  campaignStepTemplateId: text('campaign_step_template_id')
-    .notNull()
-    .references(() => campaignStepTemplates.id, { onDelete: 'cascade' }),
-  scheduledAt: timestamp('scheduled_at').notNull(),
-  sentAt: timestamp('sent_at'),
-  status: text('status').notNull().default('pending'), // 'pending', 'sent', 'completed', 'skipped'
-  branchOutcome: text('branch_outcome'),
-  channel: text('channel').notNull(), // Redundant, but helps with queries and auditing
-  renderedConfig: jsonb('rendered_config'), // the personalized config actually sent
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  index('idx_campaign_step_instances_contact_campaign_instance_id').on(table.contactCampaignInstanceId),
-  index('idx_campaign_step_instances_campaign_step_template_id').on(table.campaignStepTemplateId),
-  index('idx_campaign_step_instances_tenant_id').on(table.tenantId),
-  index('idx_campaign_step_instances_status').on(table.status),
-  index('idx_campaign_step_instances_scheduled_at').on(table.scheduledAt),
-  index('idx_campaign_step_instances_channel').on(table.channel),
-]);
+export const campaignStepInstances = appSchema.table(
+  'campaign_step_instances',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    contactCampaignInstanceId: text('contact_campaign_instance_id')
+      .notNull()
+      .references(() => contactCampaignInstances.id, { onDelete: 'cascade' }),
+    campaignStepTemplateId: text('campaign_step_template_id')
+      .notNull()
+      .references(() => campaignStepTemplates.id, { onDelete: 'cascade' }),
+    scheduledAt: timestamp('scheduled_at').notNull(),
+    sentAt: timestamp('sent_at'),
+    status: text('status').notNull().default('pending'), // 'pending', 'sent', 'completed', 'skipped'
+    branchOutcome: text('branch_outcome'),
+    channel: text('channel').notNull(), // Redundant, but helps with queries and auditing
+    renderedConfig: jsonb('rendered_config'), // the personalized config actually sent
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_campaign_step_instances_contact_campaign_instance_id').on(
+      table.contactCampaignInstanceId
+    ),
+    index('idx_campaign_step_instances_campaign_step_template_id').on(table.campaignStepTemplateId),
+    index('idx_campaign_step_instances_tenant_id').on(table.tenantId),
+    index('idx_campaign_step_instances_status').on(table.status),
+    index('idx_campaign_step_instances_scheduled_at').on(table.scheduledAt),
+    index('idx_campaign_step_instances_channel').on(table.channel),
+  ]
+);
 
 // Step Events table (engagement tracking, channel-agnostic)
-export const stepEvents = appSchema.table('step_events', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  campaignStepInstanceId: text('campaign_step_instance_id')
-    .notNull()
-    .references(() => campaignStepInstances.id, { onDelete: 'cascade' }),
-  eventType: text('event_type').notNull(), // 'open', 'click', 'reply', 'sms_delivered', 'vm_played', etc.
-  eventData: jsonb('event_data'),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  occurredAt: timestamp('occurred_at').notNull().defaultNow(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-}, (table) => [
-  index('idx_step_events_campaign_step_instance_id').on(table.campaignStepInstanceId),
-  index('idx_step_events_tenant_id').on(table.tenantId),
-  index('idx_step_events_event_type').on(table.eventType),
-  index('idx_step_events_occurred_at').on(table.occurredAt),
-]);
+export const stepEvents = appSchema.table(
+  'step_events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    campaignStepInstanceId: text('campaign_step_instance_id')
+      .notNull()
+      .references(() => campaignStepInstances.id, { onDelete: 'cascade' }),
+    eventType: text('event_type').notNull(), // 'open', 'click', 'reply', 'sms_delivered', 'vm_played', etc.
+    eventData: jsonb('event_data'),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    occurredAt: timestamp('occurred_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_step_events_campaign_step_instance_id').on(table.campaignStepInstanceId),
+    index('idx_step_events_tenant_id').on(table.tenantId),
+    index('idx_step_events_event_type').on(table.eventType),
+    index('idx_step_events_occurred_at').on(table.occurredAt),
+  ]
+);
 
 // Campaign Relations
 export const campaignTemplatesRelations = relations(campaignTemplates, ({ one, many }) => ({
@@ -568,21 +586,24 @@ export const campaignStepTemplatesRelations = relations(campaignStepTemplates, (
   instances: many(campaignStepInstances),
 }));
 
-export const contactCampaignInstancesRelations = relations(contactCampaignInstances, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [contactCampaignInstances.tenantId],
-    references: [tenants.id],
-  }),
-  contact: one(leadPointOfContacts, {
-    fields: [contactCampaignInstances.contactId],
-    references: [leadPointOfContacts.id],
-  }),
-  campaignTemplate: one(campaignTemplates, {
-    fields: [contactCampaignInstances.campaignTemplateId],
-    references: [campaignTemplates.id],
-  }),
-  stepInstances: many(campaignStepInstances),
-}));
+export const contactCampaignInstancesRelations = relations(
+  contactCampaignInstances,
+  ({ one, many }) => ({
+    tenant: one(tenants, {
+      fields: [contactCampaignInstances.tenantId],
+      references: [tenants.id],
+    }),
+    contact: one(leadPointOfContacts, {
+      fields: [contactCampaignInstances.contactId],
+      references: [leadPointOfContacts.id],
+    }),
+    campaignTemplate: one(campaignTemplates, {
+      fields: [contactCampaignInstances.campaignTemplateId],
+      references: [campaignTemplates.id],
+    }),
+    stepInstances: many(campaignStepInstances),
+  })
+);
 
 export const campaignStepInstancesRelations = relations(campaignStepInstances, ({ one, many }) => ({
   tenant: one(tenants, {
