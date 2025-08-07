@@ -262,3 +262,257 @@ sequenceDiagram
 - On click: skip to next or step N per rule
 - On reply/unsubscribe/bounce: cancel campaign and skip remaining steps
 - No-open 48h: reschedule bump with +24h unless business hours block
+
+---
+
+### Proposed SQL schema (DDL sketch)
+Note: Illustrative Postgres-leaning DDL; align with Drizzle migrations and your `dripiq_app` schema.
+
+```sql
+-- contact_campaigns
+create table dripiq_app.contact_campaigns (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  lead_id text not null references dripiq_app.leads(id) on delete cascade,
+  contact_id text not null references dripiq_app.lead_point_of_contacts(id) on delete cascade,
+  product_id text references dripiq_app.products(id) on delete cascade,
+  created_by_user_id text references dripiq_app.users(id) on delete set null,
+  status text not null default 'active',
+  started_at timestamp,
+  completed_at timestamp,
+  strategy_json jsonb not null,
+  rules_json jsonb,
+  settings_json jsonb,
+  created_at timestamp not null default now(),
+  updated_at timestamp not null default now()
+);
+create index on dripiq_app.contact_campaigns (tenant_id, status);
+create index on dripiq_app.contact_campaigns (tenant_id, contact_id);
+
+-- ensure only one active or paused per (tenant, contact, product)
+create unique index contact_campaign_active_unique on dripiq_app.contact_campaigns
+  (tenant_id, contact_id, coalesce(product_id, ''))
+  where status in ('active','paused');
+
+-- campaign_steps
+create table dripiq_app.campaign_steps (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  campaign_id text not null references dripiq_app.contact_campaigns(id) on delete cascade,
+  step_index int not null,
+  channel text not null,
+  relative_delay_seconds int not null,
+  subject_template text,
+  body_template text not null,
+  call_to_action text,
+  send_window jsonb,
+  metadata jsonb,
+  status text not null default 'pending',
+  scheduled_at timestamp,
+  sent_at timestamp,
+  created_at timestamp not null default now(),
+  updated_at timestamp not null default now(),
+  unique (campaign_id, step_index)
+);
+create index on dripiq_app.campaign_steps (campaign_id, status);
+create index on dripiq_app.campaign_steps (tenant_id, scheduled_at);
+
+-- messages
+create table dripiq_app.messages (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  campaign_id text references dripiq_app.contact_campaigns(id) on delete set null,
+  campaign_step_id text references dripiq_app.campaign_steps(id) on delete set null,
+  lead_id text not null references dripiq_app.leads(id) on delete cascade,
+  contact_id text not null references dripiq_app.lead_point_of_contacts(id) on delete cascade,
+  channel text not null,
+  direction text not null,
+  provider text not null,
+  provider_message_id text,
+  from_address text,
+  from_name text,
+  to_address text,
+  subject text,
+  body_text text,
+  body_html text,
+  attachments jsonb,
+  status text not null default 'queued',
+  attempt_count int not null default 0,
+  last_error text,
+  scheduled_at timestamp,
+  sent_at timestamp,
+  idempotency_key text,
+  redis_job_id text,
+  queue_name text,
+  metadata jsonb,
+  created_at timestamp not null default now(),
+  updated_at timestamp not null default now()
+);
+create unique index on dripiq_app.messages (provider, provider_message_id) where provider_message_id is not null;
+create index on dripiq_app.messages (tenant_id, status, scheduled_at);
+create index on dripiq_app.messages (tenant_id, contact_id);
+
+-- message_events
+create table dripiq_app.message_events (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  message_id text not null references dripiq_app.messages(id) on delete cascade,
+  campaign_id text references dripiq_app.contact_campaigns(id) on delete set null,
+  campaign_step_id text references dripiq_app.campaign_steps(id) on delete set null,
+  provider text not null,
+  provider_event_id text,
+  event_type text not null,
+  occurred_at timestamp not null,
+  received_at timestamp not null default now(),
+  url_clicked text,
+  user_agent text,
+  ip text,
+  geo jsonb,
+  raw_event jsonb,
+  created_at timestamp not null default now()
+);
+create unique index on dripiq_app.message_events (provider, provider_event_id) where provider_event_id is not null;
+create index on dripiq_app.message_events (message_id, event_type);
+create index on dripiq_app.message_events (tenant_id, occurred_at desc);
+
+-- message_timers
+create table dripiq_app.message_timers (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  message_id text not null references dripiq_app.messages(id) on delete cascade,
+  trigger_type text not null,
+  redis_job_id text,
+  scheduled_for timestamp not null,
+  status text not null default 'active',
+  created_at timestamp not null default now(),
+  updated_at timestamp not null default now(),
+  unique (message_id, trigger_type)
+);
+create index on dripiq_app.message_timers (tenant_id, status, scheduled_for);
+
+-- sender_identities
+create table dripiq_app.sender_identities (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  from_email text not null,
+  from_name text,
+  provider text not null,
+  provider_config_id text not null,
+  verified boolean not null default false,
+  domain text,
+  reply_to text,
+  created_at timestamp not null default now(),
+  updated_at timestamp not null default now(),
+  unique (tenant_id, from_email)
+);
+
+-- suppressions
+create table dripiq_app.suppressions (
+  id text primary key,
+  tenant_id text not null references dripiq_app.tenants(id) on delete cascade,
+  contact_id text references dripiq_app.lead_point_of_contacts(id) on delete set null,
+  email_address text not null,
+  reason text not null,
+  source text not null,
+  occurred_at timestamp not null,
+  created_at timestamp not null default now(),
+  updated_at timestamp not null default now(),
+  unique (tenant_id, email_address, reason)
+);
+create index on dripiq_app.suppressions (tenant_id, email_address);
+```
+
+---
+
+### ER diagram
+```mermaid
+erDiagram
+  TENANTS ||--o{ CONTACT_CAMPAIGNS : owns
+  TENANTS ||--o{ CAMPAIGN_STEPS : owns
+  TENANTS ||--o{ MESSAGES : owns
+  TENANTS ||--o{ MESSAGE_EVENTS : owns
+  TENANTS ||--o{ MESSAGE_TIMERS : owns
+  TENANTS ||--o{ SENDER_IDENTITIES : owns
+  TENANTS ||--o{ SUPPRESSIONS : owns
+  LEADS ||--o{ CONTACT_CAMPAIGNS : has
+  LEADS ||--o{ MESSAGES : has
+  LEAD_POINT_OF_CONTACTS ||--o{ CONTACT_CAMPAIGNS : has
+  LEAD_POINT_OF_CONTACTS ||--o{ MESSAGES : has
+  CONTACT_CAMPAIGNS ||--o{ CAMPAIGN_STEPS : contains
+  CONTACT_CAMPAIGNS ||--o{ MESSAGES : generates
+  CAMPAIGN_STEPS ||--o{ MESSAGES : schedules
+  MESSAGES ||--o{ MESSAGE_EVENTS : has
+  MESSAGES ||--o{ MESSAGE_TIMERS : has
+
+  CONTACT_CAMPAIGNS {
+    text id PK
+    text tenant_id FK
+    text lead_id FK
+    text contact_id FK
+    text product_id FK
+    text status
+    jsonb strategy_json
+    jsonb rules_json
+  }
+  CAMPAIGN_STEPS {
+    text id PK
+    text tenant_id FK
+    text campaign_id FK
+    int step_index
+    text channel
+    int relative_delay_seconds
+  }
+  MESSAGES {
+    text id PK
+    text tenant_id FK
+    text campaign_id FK
+    text campaign_step_id FK
+    text lead_id FK
+    text contact_id FK
+    text provider
+    text provider_message_id
+    text status
+  }
+  MESSAGE_EVENTS {
+    text id PK
+    text tenant_id FK
+    text message_id FK
+    text campaign_id FK
+    text campaign_step_id FK
+    text provider
+    text provider_event_id
+    text event_type
+  }
+  MESSAGE_TIMERS {
+    text id PK
+    text tenant_id FK
+    text message_id FK
+    text trigger_type
+    text redis_job_id
+  }
+  SENDER_IDENTITIES {
+    text id PK
+    text tenant_id FK
+    text from_email
+    text provider
+    boolean verified
+  }
+  SUPPRESSIONS {
+    text id PK
+    text tenant_id FK
+    text email_address
+    text reason
+  }
+```
+
+---
+
+### Table-by-table rationale
+- **contact_campaigns**: Per-contact (optionally per-product) campaign plan and status. Stores the AI’s `strategy_json` and `rules_json` so the engine can reproduce decisions and audits. Needed to separate the durable plan from execution details, enable pause/resume/cancel, and compute analytics per campaign.
+- **campaign_steps**: Ordered steps derived from the plan. Keeps timing, channel, and templates for each step. Needed so the engine can schedule-next or reschedule specific steps, track outcomes per step, and provide a clear UI timeline.
+- **messages**: Concrete send (or inbound reply) instances tied to steps. Stores final rendered content, provider IDs, and send status. Needed for auditing, idempotency, webhooks correlation, and step-level analytics. Even with Redis PITR, SQL is required as the system-of-record for compliance and joins.
+- **message_events**: Normalized provider events (open/click/bounce/etc.). Drives reactive logic and supports analytics. Needed to adapt campaigns in real time and to measure performance accurately. Partition this for scale.
+- **message_timers**: Durable map of synthetic timeouts (e.g., no-open-after-48h) with a pointer to the BullMQ job. Needed to cancel timers when engagement occurs and to recover after worker restarts, keeping visibility into pending vs. fired timers.
+- **sender_identities**: Verified sender configuration per tenant. Needed to enforce compliance, select from-addresses, and avoid provider rejections.
+- **suppressions**: Do-not-contact list (unsubscribe, bounces, complaints, manual blocks). Needed to proactively prevent sends and to cancel active campaigns immediately upon suppression events.
+- **rate_limits**: Optional persistent budget definitions if not fully in Redis. Needed when you want DB-backed limits and reporting; otherwise use Redis token buckets.
