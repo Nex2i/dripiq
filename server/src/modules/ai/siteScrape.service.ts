@@ -32,7 +32,7 @@ export const SiteScrapeService = {
 
     try {
       const chatModel = createChatModel({
-        model: defaultLangChainConfig.model,
+        model: 'gpt-5-nano',
       }).withStructuredOutput(z.toJSONSchema(smartFilterSiteMapSchema));
 
       const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
