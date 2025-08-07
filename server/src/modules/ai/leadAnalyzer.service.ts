@@ -88,7 +88,17 @@ export const LeadAnalyzerService = {
       type: firecrawlTypes.lead_site,
     };
 
-    await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata, 'lead_site');
+    try {
+      await SiteScrapeService.scrapeSite(url.cleanWebsiteUrl(), metadata, 'lead_site');
+    } catch (error) {
+      await updateLeadStatuses(
+        tenantId,
+        leadId,
+        [],
+        [LEAD_STATUS.SYNCING_SITE, LEAD_STATUS.SCRAPING_SITE]
+      );
+      throw error;
+    }
   },
 
   wasLastScrapeTooRecent: async (url: string) => {
