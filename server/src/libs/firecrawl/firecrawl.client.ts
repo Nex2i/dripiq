@@ -153,10 +153,9 @@ const firecrawlClient = {
       }
     }
 
-    // First attempt: bot UA
-    const first = await tryFetch(botUserAgent);
+    // First attempt: browser UA to avoid bot/WAF blocks
+    const first = await tryFetch(browserUserAgent);
 
-    // If request succeeded with 2xx/3xx, consider site existing
     if (first && (first.ok || (first.status >= 300 && first.status < 400))) {
       return true;
     }
@@ -166,24 +165,22 @@ const firecrawlClient = {
       return false;
     }
 
-    // Retry with a common browser UA to bypass basic bot/WAF filters
-    const second = await tryFetch(browserUserAgent);
+    // Retry with bot UA
+    const second = await tryFetch(botUserAgent);
 
     if (second && (second.ok || (second.status >= 300 && second.status < 400))) {
       return true;
     }
 
-    // If still a client error (4xx) that isn't a clear-not-found, treat as existing but protected
+    // Treat protected 4xx (not clear-not-found) as existing
     if (second && second.status >= 400 && second.status < 500 && ![404, 410, 451].includes(second.status)) {
       return true;
     }
 
-    // As a fallback, if first attempt returned a client error (other than clear-not-found), consider it existing
     if (first && first.status >= 400 && first.status < 500 && ![404, 410, 451].includes(first.status)) {
       return true;
     }
 
-    // Otherwise consider inaccessible
     return false;
   },
 };

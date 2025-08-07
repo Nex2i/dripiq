@@ -164,10 +164,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Kick off site indexing in background; do not block lead creation
-        void LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, newLead.id).catch((err) => {
-          fastify.log.error(`Lead site indexing failed for ${newLead.id}: ${err?.message ?? err}`);
-        });
+        // Index the lead's site after creation
+        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, newLead.id);
 
         reply.status(201).send({
           message: 'Lead created successfully',
