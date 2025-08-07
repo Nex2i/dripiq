@@ -134,21 +134,57 @@ const firecrawlClient = {
       return false;
     }
 
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)',
-        },
-        signal: AbortSignal.timeout(10000), // 10 second timeout
-      });
+    const botUserAgent = 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)';
+    const browserUserAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
-      // Consider any 2xx or 3xx status code as existing
-      return response.ok || (response.status >= 300 && response.status < 400);
-    } catch (_) {
-      // If any error occurs (network, timeout, etc.), consider the site as not existing/accessible
+    async function tryFetch(userAgent: string): Promise<Response | null> {
+      try {
+        const response = await fetch(url as string, {
+          method: 'GET',
+          headers: {
+            'User-Agent': userAgent,
+          },
+          signal: AbortSignal.timeout(10000), // 10 second timeout
+        });
+        return response as Response;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    // First attempt: bot UA
+    const first = await tryFetch(botUserAgent);
+
+    // If request succeeded with 2xx/3xx, consider site existing
+    if (first && (first.ok || (first.status >= 300 && first.status < 400))) {
+      return true;
+    }
+
+    // If definitive not found/removed, bail out early
+    if (first && [404, 410, 451].includes(first.status)) {
       return false;
     }
+
+    // Retry with a common browser UA to bypass basic bot/WAF filters
+    const second = await tryFetch(browserUserAgent);
+
+    if (second && (second.ok || (second.status >= 300 && second.status < 400))) {
+      return true;
+    }
+
+    // If still a client error (4xx) that isn't a clear-not-found, treat as existing but protected
+    if (second && second.status >= 400 && second.status < 500 && ![404, 410, 451].includes(second.status)) {
+      return true;
+    }
+
+    // As a fallback, if first attempt returned a client error (other than clear-not-found), consider it existing
+    if (first && first.status >= 400 && first.status < 500 && ![404, 410, 451].includes(first.status)) {
+      return true;
+    }
+
+    // Otherwise consider inaccessible
+    return false;
   },
 };
 
