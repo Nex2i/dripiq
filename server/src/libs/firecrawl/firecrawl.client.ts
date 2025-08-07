@@ -134,54 +134,31 @@ const firecrawlClient = {
       return false;
     }
 
-    const botUserAgent = 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)';
     const browserUserAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
-    async function tryFetch(userAgent: string): Promise<Response | null> {
-      try {
-        const response = await fetch(url as string, {
-          method: 'GET',
-          headers: {
-            'User-Agent': userAgent,
-          },
-          signal: AbortSignal.timeout(10000), // 10 second timeout
-        });
-        return response as Response;
-      } catch (_) {
-        return null;
+    try {
+      const response = await fetch(url as string, {
+        method: 'GET',
+        headers: {
+          'User-Agent': browserUserAgent,
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (response.ok || (response.status >= 300 && response.status < 400)) {
+        return true;
       }
-    }
 
-    // First attempt: browser UA to avoid bot/WAF blocks
-    const first = await tryFetch(browserUserAgent);
+      // Treat protected 4xx (not clear-not-found) as existing
+      if (response.status >= 400 && response.status < 500 && ![404, 410, 451].includes(response.status)) {
+        return true;
+      }
 
-    if (first && (first.ok || (first.status >= 300 && first.status < 400))) {
-      return true;
-    }
-
-    // If definitive not found/removed, bail out early
-    if (first && [404, 410, 451].includes(first.status)) {
+      return false;
+    } catch (_) {
       return false;
     }
-
-    // Retry with bot UA
-    const second = await tryFetch(botUserAgent);
-
-    if (second && (second.ok || (second.status >= 300 && second.status < 400))) {
-      return true;
-    }
-
-    // Treat protected 4xx (not clear-not-found) as existing
-    if (second && second.status >= 400 && second.status < 500 && ![404, 410, 451].includes(second.status)) {
-      return true;
-    }
-
-    if (first && first.status >= 400 && first.status < 500 && ![404, 410, 451].includes(first.status)) {
-      return true;
-    }
-
-    return false;
   },
 };
 
