@@ -151,7 +151,11 @@ const firecrawlClient = {
       }
 
       // Treat protected 4xx (not clear-not-found) as existing
-      if (response.status >= 400 && response.status < 500 && ![404, 410, 451].includes(response.status)) {
+      if (
+        response.status >= 400 &&
+        response.status < 500 &&
+        ![404, 410, 451].includes(response.status)
+      ) {
         return true;
       }
 
