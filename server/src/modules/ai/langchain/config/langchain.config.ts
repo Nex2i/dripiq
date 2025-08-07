@@ -2,7 +2,6 @@ import { ChatOpenAI } from '@langchain/openai';
 
 export interface LangChainConfig {
   model: string;
-  temperature: number;
   maxTokens?: number;
   maxIterations: number;
   timeout: number;
@@ -10,7 +9,6 @@ export interface LangChainConfig {
 
 export const defaultLangChainConfig: LangChainConfig = {
   model: 'gpt-5-mini',
-  temperature: 0.3,
   maxIterations: 20,
   timeout: 60000, // 60 seconds
 };
@@ -20,7 +18,6 @@ export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpen
 
   return new ChatOpenAI({
     model: finalConfig.model,
-    temperature: finalConfig.temperature,
     maxTokens: finalConfig.maxTokens,
     timeout: finalConfig.timeout,
     apiKey: process.env.OPENAI_API_KEY,
@@ -31,7 +28,6 @@ export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpen
 
 export interface ReportConfig {
   maxIterations?: number;
-  temperature?: number;
   enableWebSearch?: boolean;
   model?: string;
 }
@@ -40,5 +36,5 @@ export function createReportConfig(overrides: ReportConfig = {}): LangChainConfi
   return {
     ...defaultLangChainConfig,
     ...overrides,
-  };
+  } as LangChainConfig;
 }

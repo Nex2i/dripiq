@@ -134,19 +134,29 @@ const firecrawlClient = {
       return false;
     }
 
+    const browserUserAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
     try {
-      const response = await fetch(url, {
+      const response = await fetch(url as string, {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)',
+          'User-Agent': browserUserAgent,
         },
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: AbortSignal.timeout(10000),
       });
 
-      // Consider any 2xx or 3xx status code as existing
-      return response.ok || (response.status >= 300 && response.status < 400);
+      if (response.ok || (response.status >= 300 && response.status < 400)) {
+        return true;
+      }
+
+      // Treat protected 4xx (not clear-not-found) as existing
+      if (response.status >= 400 && response.status < 500 && ![404, 410, 451].includes(response.status)) {
+        return true;
+      }
+
+      return false;
     } catch (_) {
-      // If any error occurs (network, timeout, etc.), consider the site as not existing/accessible
       return false;
     }
   },
