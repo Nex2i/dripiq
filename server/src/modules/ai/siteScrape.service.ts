@@ -3,7 +3,7 @@ import z from 'zod';
 import { logger } from '@/libs/logger';
 import { promptHelper } from '@/prompts/prompt.helper';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { createChatModel, defaultLangChainConfig } from './langchain/config/langchain.config';
+import { createChatModel } from './langchain/config/langchain.config';
 import { getContentFromMessage } from './langchain/utils/messageUtils';
 
 const smartFilterSiteMapSchema = z.object({
