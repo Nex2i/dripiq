@@ -42,7 +42,7 @@ export const generateContactStrategy = async (
 
     // Execute agent analysis
     try {
-      const agent = createContactStrategyAgent({ ...defaultLangChainConfig, model: 'gpt-5-mini' });
+      const agent = createContactStrategyAgent({ ...defaultLangChainConfig, model: 'gpt-5' });
       const result = await agent.generateContactStrategy(tenantId, leadId, contactId);
 
       await cacheContactStrategy(result, cacheKey);
