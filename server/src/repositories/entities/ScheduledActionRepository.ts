@@ -1,10 +1,11 @@
-import { and, eq, lte } from 'drizzle-orm';
+import { and, eq, lte, inArray } from 'drizzle-orm';
 import {
   scheduledActions,
   ScheduledAction,
   NewScheduledAction,
   scheduledActionStatusEnum,
 } from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -21,6 +22,173 @@ export class ScheduledActionRepository extends TenantAwareRepository<
     super(scheduledActions);
   }
 
+  // Concrete CRUD
+  async create(data: NewScheduledAction): Promise<ScheduledAction> {
+    const [result] = await this.db.insert(this.table).values(data).returning();
+    return result as ScheduledAction;
+  }
+
+  async createMany(data: NewScheduledAction[]): Promise<ScheduledAction[]> {
+    return (await this.db.insert(this.table).values(data).returning()) as ScheduledAction[];
+  }
+
+  async findById(id: string): Promise<ScheduledAction> {
+    const results = await this.db.select().from(this.table).where(eq(this.table.id, id)).limit(1);
+    if (!results[0]) throw new NotFoundError(`ScheduledAction not found with id: ${id}`);
+    return results[0];
+  }
+
+  async findByIds(ids: string[]): Promise<ScheduledAction[]> {
+    if (ids.length === 0) return [];
+    return (await this.db
+      .select()
+      .from(this.table)
+      .where(inArray(this.table.id, ids))) as ScheduledAction[];
+  }
+
+  async findAll(): Promise<ScheduledAction[]> {
+    return (await this.db.select().from(this.table)) as ScheduledAction[];
+  }
+
+  async updateById(
+    id: string,
+    data: Partial<NewScheduledAction>
+  ): Promise<ScheduledAction | undefined> {
+    const [result] = await this.db
+      .update(this.table)
+      .set(data as any)
+      .where(eq(this.table.id, id))
+      .returning();
+    return result as ScheduledAction | undefined;
+  }
+
+  async deleteById(id: string): Promise<ScheduledAction | undefined> {
+    const [result] = await this.db.delete(this.table).where(eq(this.table.id, id)).returning();
+    return result as ScheduledAction | undefined;
+  }
+
+  async deleteByIds(ids: string[]): Promise<ScheduledAction[]> {
+    if (ids.length === 0) return [];
+    return (await this.db
+      .delete(this.table)
+      .where(inArray(this.table.id, ids))
+      .returning()) as ScheduledAction[];
+  }
+
+  async exists(id: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: this.table.id })
+      .from(this.table)
+      .where(eq(this.table.id, id))
+      .limit(1);
+    return !!result[0];
+  }
+
+  async count(): Promise<number> {
+    const result = await this.db.select({ id: this.table.id }).from(this.table);
+    return result.length;
+  }
+
+  // Tenant-aware CRUD
+  async createForTenant(
+    tenantId: string,
+    data: Omit<NewScheduledAction, 'tenantId'>
+  ): Promise<ScheduledAction> {
+    const [result] = await this.db
+      .insert(this.table)
+      .values({ ...(data as any), tenantId })
+      .returning();
+    return result as ScheduledAction;
+  }
+
+  async createManyForTenant(
+    tenantId: string,
+    data: Omit<NewScheduledAction, 'tenantId'>[]
+  ): Promise<ScheduledAction[]> {
+    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    return (await this.db.insert(this.table).values(values).returning()) as ScheduledAction[];
+  }
+
+  async findByIdForTenant(id: string, tenantId: string): Promise<ScheduledAction | undefined> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .limit(1);
+    return results[0];
+  }
+
+  async findByIdsForTenant(ids: string[], tenantId: string): Promise<ScheduledAction[]> {
+    if (ids.length === 0) return [];
+    return (await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(inArray(this.table.id, ids), eq(this.table.tenantId, tenantId))
+      )) as ScheduledAction[];
+  }
+
+  async findAllForTenant(tenantId: string): Promise<ScheduledAction[]> {
+    return (await this.db
+      .select()
+      .from(this.table)
+      .where(eq(this.table.tenantId, tenantId))) as ScheduledAction[];
+  }
+
+  async updateByIdForTenant(
+    id: string,
+    tenantId: string,
+    data: Partial<Omit<NewScheduledAction, 'tenantId'>>
+  ): Promise<ScheduledAction | undefined> {
+    const [result] = await this.db
+      .update(this.table)
+      .set(data as any)
+      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .returning();
+    return result as ScheduledAction | undefined;
+  }
+
+  async deleteByIdForTenant(id: string, tenantId: string): Promise<ScheduledAction | undefined> {
+    const [result] = await this.db
+      .delete(this.table)
+      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .returning();
+    return result as ScheduledAction | undefined;
+  }
+
+  async deleteByIdsForTenant(ids: string[], tenantId: string): Promise<ScheduledAction[]> {
+    if (ids.length === 0) return [];
+    return (await this.db
+      .delete(this.table)
+      .where(and(inArray(this.table.id, ids), eq(this.table.tenantId, tenantId)))
+      .returning()) as ScheduledAction[];
+  }
+
+  async existsForTenant(id: string, tenantId: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: this.table.id })
+      .from(this.table)
+      .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
+      .limit(1);
+    return !!result[0];
+  }
+
+  async countForTenant(tenantId: string): Promise<number> {
+    const result = await this.db
+      .select({ id: this.table.id })
+      .from(this.table)
+      .where(eq(this.table.tenantId, tenantId));
+    return result.length;
+  }
+
+  async deleteAllForTenant(tenantId: string): Promise<ScheduledAction[]> {
+    return (await this.db
+      .delete(this.table)
+      .where(eq(this.table.tenantId, tenantId))
+      .returning()) as ScheduledAction[];
+  }
+
+  // Domain helper
   async listDuePendingForTenant(tenantId: string, beforeOrAt: Date): Promise<ScheduledAction[]> {
     return await this.db
       .select()
