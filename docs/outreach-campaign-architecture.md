@@ -102,73 +102,222 @@ Example (abbrev):
 Below, all tables include `id text primary key`, `tenant_id text not null`, `created_at timestamptz default now()`, `updated_at` unless stated. All FKs `on delete cascade` unless noted. Add composite indexes for high-cardinality lookups.
 
 1) `email_sender_identities`
-- Links AE user mailbox to SendGrid validation state.
-- Columns: `user_id`, `from_email`, `from_name`, `domain`, `sendgrid_sender_id`, `validation_status` (pending|verified|failed), `last_validated_at`, `dedicated_ip_pool` (optional), `is_default boolean`.
-- Unique: `(tenant_id, from_email)`.
-- Use: selection at send time; enforce that only verified identities send.
+- Description:
+  - Links AE user mailbox to SendGrid validation state.
+- Columns:
+  - `user_id`
+  - `from_email`
+  - `from_name`
+  - `domain`
+  - `sendgrid_sender_id`
+  - `validation_status` (pending|verified|failed)
+  - `last_validated_at`
+  - `dedicated_ip_pool` (optional)
+  - `is_default boolean`
+- Unique:
+  - `(tenant_id, from_email)`
+- Use:
+  - Selection at send time; enforce that only verified identities send.
 
 2) `contact_campaigns`
-- One per contact per channel (email now; SMS later).
-- Columns: `lead_id`, `contact_id`, `channel` (email|sms), `status` (draft|active|paused|completed|stopped|error), `current_node_id`, `plan_json jsonb`, `plan_version`, `plan_hash` (for idempotency), `sender_identity_id` (default for nodes missing explicit sender), `started_at`, `completed_at`.
-- Index: `(tenant_id, contact_id, channel)`, `(tenant_id, status)`, GIN on `plan_json` if needed.
+- Description:
+  - One per contact per channel (email now; SMS later).
+- Columns:
+  - `lead_id`
+  - `contact_id`
+  - `channel` (email|sms)
+  - `status` (draft|active|paused|completed|stopped|error)
+  - `current_node_id`
+  - `plan_json jsonb`
+  - `plan_version`
+  - `plan_hash` (for idempotency)
+  - `sender_identity_id` (default for nodes missing explicit sender)
+  - `started_at`
+  - `completed_at`
+- Indexes:
+  - `(tenant_id, contact_id, channel)`
+  - `(tenant_id, status)`
+  - GIN on `plan_json` if needed
 
 3) `campaign_plan_versions` (optional but recommended)
-- Audit for generated plans per contact.
-- Columns: `contact_campaign_id`, `version`, `plan_json`, `generated_by` (ai|manual), `notes`.
-- Unique: `(contact_campaign_id, version)`.
+- Description:
+  - Audit for generated plans per contact.
+- Columns:
+  - `contact_campaign_id`
+  - `version`
+  - `plan_json`
+  - `generated_by` (ai|manual)
+  - `notes`
+- Unique:
+  - `(contact_campaign_id, version)`
 
 4) `scheduled_actions`
-- SQL source-of-truth for time-based actions; mirrored into BullMQ jobs.
-- Columns: `contact_campaign_id`, `node_id`, `action_type` (send|timeout|wait|cancel), `run_at timestamptz`, `job_id` (BullMQ id), `status` (pending|queued|completed|canceled|error), `dedupe_key` (e.g., tenant:campaign:node:action:run_at), `reason`.
-- Unique: `(tenant_id, dedupe_key)` ensures exactly-once scheduling; index `(status, run_at)`.
+- Description:
+  - SQL source-of-truth for time-based actions; mirrored into BullMQ jobs.
+- Columns:
+  - `contact_campaign_id`
+  - `node_id`
+  - `action_type` (send|timeout|wait|cancel)
+  - `run_at timestamptz`
+  - `job_id` (BullMQ id)
+  - `status` (pending|queued|completed|canceled|error)
+  - `dedupe_key` (e.g., tenant:campaign:node:action:run_at)
+  - `reason`
+- Unique:
+  - `(tenant_id, dedupe_key)` ensures exactly-once scheduling
+- Indexes:
+  - `(status, run_at)`
 
 5) `outbound_messages`
-- One row per attempted provider send across channels.
-- Columns: `contact_campaign_id`, `node_id`, `channel`, `sender_identity_id`, `to_address` (email or phone), `subject`, `body`, `rendered_body`, `provider` (sendgrid), `provider_message_id`, `smtp_id`, `status` (queued|sent|delivered|deferred|failed|bounced|blocked), `error_code`, `scheduled_at`, `sent_at`, `dedupe_key`.
-- Unique: `(tenant_id, dedupe_key)` where dedupeKey = `${contact_id}:${campaign_id}:${node_id}:${channel}`.
-- Index: `(tenant_id, contact_campaign_id)`, `(provider, provider_message_id)`, `(tenant_id, created_at)`.
+- Description:
+  - One row per attempted provider send across channels.
+- Columns:
+  - `contact_campaign_id`
+  - `node_id`
+  - `channel`
+  - `sender_identity_id`
+  - `to_address` (email or phone)
+  - `subject`
+  - `body`
+  - `rendered_body`
+  - `provider` (sendgrid)
+  - `provider_message_id`
+  - `smtp_id`
+  - `status` (queued|sent|delivered|deferred|failed|bounced|blocked)
+  - `error_code`
+  - `scheduled_at`
+  - `sent_at`
+  - `dedupe_key`
+- Unique:
+  - `(tenant_id, dedupe_key)` where dedupeKey = `${contact_id}:${campaign_id}:${node_id}:${channel}`
+- Indexes:
+  - `(tenant_id, contact_campaign_id)`
+  - `(provider, provider_message_id)`
+  - `(tenant_id, created_at)`
 
 6) `message_events`
-- Normalized engagement and delivery events (and full webhook payload for long-term retention).
-- Columns: `outbound_message_id nullable`, `provider` (sendgrid), `event_type` (delivered|open|click|bounce|spamreport|unsubscribe|blocked|deferred|processed), `event_at`, `url`, `ip`, `user_agent`, `provider_event_id`, `payload jsonb`.
-- Indexes: `(tenant_id, outbound_message_id, event_at)`, `(tenant_id, event_type, event_at)`, `(provider, provider_event_id)`.
-- Consider monthly partitioning by `event_at` for scale.
+- Description:
+  - Normalized engagement and delivery events (and full webhook payload for long-term retention).
+- Columns:
+  - `outbound_message_id` (nullable)
+  - `provider` (sendgrid)
+  - `event_type` (delivered|open|click|bounce|spamreport|unsubscribe|blocked|deferred|processed)
+  - `event_at`
+  - `url`
+  - `ip`
+  - `user_agent`
+  - `provider_event_id`
+  - `payload jsonb`
+- Indexes:
+  - `(tenant_id, outbound_message_id, event_at)`
+  - `(tenant_id, event_type, event_at)`
+  - `(provider, provider_event_id)`
+- Partitioning:
+  - Consider monthly partitioning by `event_at` for scale
 
 7) `webhook_deliveries`
-- Raw inbound webhook envelope + signature for idempotency and audit.
-- Columns: `provider`, `received_at`, `signature_valid boolean`, `payload jsonb`, `payload_hash text unique`, `processed boolean default false`, `processed_at`, `error`.
-- Unique: `payload_hash` prevents duplicate processing.
+- Description:
+  - Raw inbound webhook envelope + signature for idempotency and audit.
+- Columns:
+  - `provider`
+  - `received_at`
+  - `signature_valid boolean`
+  - `payload jsonb`
+  - `payload_hash text unique`
+  - `processed boolean default false`
+  - `processed_at`
+  - `error`
+- Unique:
+  - `payload_hash` prevents duplicate processing
 
 8) `inbound_messages`
-- Stores Inbound Parse (replies) content for later analysis (not used for automation yet).
-- Columns: `channel` (email), `to_address`, `from_address`, `subject`, `text`, `html`, `attachments jsonb`, `provider_message_id`, `received_at`.
-- Index: `(tenant_id, from_address, received_at)`.
+- Description:
+  - Stores Inbound Parse (replies) content for later analysis (not used for automation yet).
+- Columns:
+  - `channel` (email)
+  - `to_address`
+  - `from_address`
+  - `subject`
+  - `text`
+  - `html`
+  - `attachments jsonb`
+  - `provider_message_id`
+  - `received_at`
+- Indexes:
+  - `(tenant_id, from_address, received_at)`
 
 9) `communication_suppressions`
-- Per-tenant suppression list and reasons.
-- Columns: `channel` (email|sms), `value` (email or phone), `type` (unsubscribe|bounce|spamreport|blocked|invalid), `source` (webhook|manual|validation), `first_seen_at`, `last_seen_at`.
-- Unique: `(tenant_id, channel, value, type)`; index `(tenant_id, channel, value)`.
-- Enforced during send and plan activation.
+- Description:
+  - Per-tenant suppression list and reasons.
+- Columns:
+  - `channel` (email|sms)
+  - `value` (email or phone)
+  - `type` (unsubscribe|bounce|spamreport|blocked|invalid)
+  - `source` (webhook|manual|validation)
+  - `first_seen_at`
+  - `last_seen_at`
+- Unique:
+  - `(tenant_id, channel, value, type)`
+- Indexes:
+  - `(tenant_id, channel, value)`
+- Enforcement:
+  - Applied during send and plan activation
 
 10) `send_rate_limits`
-- Configurable per-tenant and per-channel send limits.
-- Columns: `channel`, `max_per_minute`, `max_per_hour`, `max_concurrent`, `per_domain_per_minute` (optional), `notes`.
-- Unique: `(tenant_id, channel)`.
+- Description:
+  - Configurable per-tenant and per-channel send limits.
+- Columns:
+  - `channel`
+  - `max_per_minute`
+  - `max_per_hour`
+  - `max_concurrent`
+  - `per_domain_per_minute` (optional)
+  - `notes`
+- Unique:
+  - `(tenant_id, channel)`
 
 11) `email_validation_results`
-- Stores SendGrid Email Address Validation API results per contact email.
-- Columns: `contact_id`, `email`, `result_status` (valid|risky|invalid|unknown), `score numeric`, `did_you_mean`, `raw jsonb`, `validated_at`.
-- Unique: `(tenant_id, email)`; used to block sends if invalid.
+- Description:
+  - Stores SendGrid Email Address Validation API results per contact email.
+- Columns:
+  - `contact_id`
+  - `email`
+  - `result_status` (valid|risky|invalid|unknown)
+  - `score numeric`
+  - `did_you_mean`
+  - `raw jsonb`
+  - `validated_at`
+- Unique:
+  - `(tenant_id, email)`
+- Enforcement:
+  - Used to block sends if invalid
 
 12) (Optional, for multi-address contacts later) `contact_channels`
-- Allows multiple addresses per contact for future extensibility.
-- Columns: `contact_id`, `channel` (email|sms), `value`, `is_primary`, `validation_status`, `validated_at`.
-- Unique: `(tenant_id, contact_id, channel, value)`.
+- Description:
+  - Allows multiple addresses per contact for future extensibility.
+- Columns:
+  - `contact_id`
+  - `channel` (email|sms)
+  - `value`
+  - `is_primary`
+  - `validation_status`
+  - `validated_at`
+- Unique:
+  - `(tenant_id, contact_id, channel, value)`
 
 13) `campaign_transitions`
-- Append-only log of campaign state transitions for audit and UI drill-down.
-- Columns: `contact_campaign_id`, `from_node_id`, `to_node_id`, `trigger` (event type), `reason`, `event_ref` (message_event_id), `at timestamptz`.
-- Index: `(tenant_id, contact_campaign_id, at)`.
+- Description:
+  - Append-only log of campaign state transitions for audit and UI drill-down.
+- Columns:
+  - `contact_campaign_id`
+  - `from_node_id`
+  - `to_node_id`
+  - `trigger` (event type)
+  - `reason`
+  - `event_ref` (message_event_id)
+  - `at timestamptz`
+- Indexes:
+  - `(tenant_id, contact_campaign_id, at)`
 
 Notes:
 - Existing `leads` and `lead_point_of_contacts` are reused. `contact_campaigns.lead_id/contact_id` reference current tables.
