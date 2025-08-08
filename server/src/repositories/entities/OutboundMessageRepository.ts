@@ -1,5 +1,10 @@
 import { and, eq, desc } from 'drizzle-orm';
-import { outboundMessages, OutboundMessage, NewOutboundMessage } from '@/db/schema';
+import {
+  outboundMessages,
+  OutboundMessage,
+  NewOutboundMessage,
+  outboundMessageStateEnum,
+} from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class OutboundMessageRepository extends TenantAwareRepository<
@@ -31,6 +36,17 @@ export class OutboundMessageRepository extends TenantAwareRepository<
       .select()
       .from(this.table)
       .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)))
+      .orderBy(desc(this.table.createdAt));
+  }
+
+  async listByStateForTenant(
+    tenantId: string,
+    state: (typeof outboundMessageStateEnum)['enumValues'][number]
+  ): Promise<OutboundMessage[]> {
+    return await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.state, state)))
       .orderBy(desc(this.table.createdAt));
   }
 }

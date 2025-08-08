@@ -3,7 +3,7 @@ import {
   contactCampaigns,
   ContactCampaign,
   NewContactCampaign,
-  campaignChannelEnum,
+  channelEnum,
   campaignStatusEnum,
 } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -20,7 +20,7 @@ export class ContactCampaignRepository extends TenantAwareRepository<
   async findByContactAndChannelForTenant(
     tenantId: string,
     contactId: string,
-    channel: (typeof campaignChannelEnum)['enumValues'][number]
+    channel: (typeof channelEnum)['enumValues'][number]
   ): Promise<ContactCampaign | undefined> {
     const results = await this.db
       .select()

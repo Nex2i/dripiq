@@ -3,6 +3,7 @@ import {
   communicationSuppressions,
   CommunicationSuppression,
   NewCommunicationSuppression,
+  channelEnum,
 } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
@@ -17,7 +18,7 @@ export class CommunicationSuppressionRepository extends TenantAwareRepository<
 
   async isSuppressed(
     tenantId: string,
-    channel: string,
+    channel: (typeof channelEnum)['enumValues'][number],
     address: string
   ): Promise<boolean> {
     const results = await this.db
@@ -26,7 +27,7 @@ export class CommunicationSuppressionRepository extends TenantAwareRepository<
       .where(
         and(
           eq(this.table.tenantId, tenantId),
-          eq(this.table.channel, channel as any),
+          eq(this.table.channel, channel),
           eq(this.table.address, address)
         )
       )

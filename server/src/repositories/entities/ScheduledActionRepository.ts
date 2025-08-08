@@ -1,5 +1,10 @@
 import { and, eq, lte } from 'drizzle-orm';
-import { scheduledActions, ScheduledAction, NewScheduledAction } from '@/db/schema';
+import {
+  scheduledActions,
+  ScheduledAction,
+  NewScheduledAction,
+  scheduledActionStatusEnum,
+} from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class ScheduledActionRepository extends TenantAwareRepository<
@@ -21,7 +26,7 @@ export class ScheduledActionRepository extends TenantAwareRepository<
       .where(
         and(
           eq(this.table.tenantId, tenantId),
-          eq(this.table.status, 'pending' as any),
+          eq(this.table.status, 'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number]),
           lte(this.table.scheduledAt, beforeOrAt)
         )
       );

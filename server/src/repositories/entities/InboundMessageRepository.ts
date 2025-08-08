@@ -1,5 +1,5 @@
 import { and, eq, desc } from 'drizzle-orm';
-import { inboundMessages, InboundMessage, NewInboundMessage } from '@/db/schema';
+import { inboundMessages, InboundMessage, NewInboundMessage, channelEnum } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class InboundMessageRepository extends TenantAwareRepository<

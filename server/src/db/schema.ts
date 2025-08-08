@@ -419,7 +419,7 @@ export const emailSenderIdentities = appSchema.table(
 );
 
 // Enums for Contact Campaigns
-export const campaignChannelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
+export const channelEnum = appSchema.enum('channel', ['email', 'sms']);
 export const campaignStatusEnum = appSchema.enum('campaign_status', [
   'draft',
   'active',
@@ -427,6 +427,20 @@ export const campaignStatusEnum = appSchema.enum('campaign_status', [
   'completed',
   'stopped',
   'error',
+]);
+export const scheduledActionStatusEnum = appSchema.enum('scheduled_action_status', [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+  'canceled',
+]);
+export const outboundMessageStateEnum = appSchema.enum('outbound_message_state', [
+  'queued',
+  'scheduled',
+  'sent',
+  'failed',
+  'canceled',
 ]);
 
 // Contact Campaigns table - core campaign instances
@@ -445,7 +459,7 @@ export const contactCampaigns = appSchema.table(
       contactId: text('contact_id')
       .notNull()
       .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
-  channel: campaignChannelEnum('channel').notNull(),
+  channel: channelEnum('channel').notNull(),
   status: campaignStatusEnum('status').notNull().default('draft'),
     currentNodeId: text('current_node_id'),
     planJson: jsonb('plan_json').notNull(),
@@ -504,7 +518,7 @@ export const scheduledActions = appSchema.table(
     campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'cascade' }),
     actionType: text('action_type').notNull(),
     scheduledAt: timestamp('scheduled_at').notNull(),
-    status: text('status').notNull().default('pending'), // pending|processing|completed|failed|canceled
+    status: scheduledActionStatusEnum('status').notNull().default('pending'),
     payload: jsonb('payload'),
     attemptCount: integer('attempt_count').notNull().default(0),
     lastError: text('last_error'),
@@ -533,14 +547,14 @@ export const outboundMessages = appSchema.table(
     contactId: text('contact_id')
       .notNull()
       .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
-    channel: text('channel').notNull(), // email|sms
+    channel: channelEnum('channel').notNull(),
     senderIdentityId: text('sender_identity_id').references(() => emailSenderIdentities.id, {
       onDelete: 'set null',
     }),
     providerMessageId: text('provider_message_id'),
     dedupeKey: text('dedupe_key').notNull(),
     content: jsonb('content'),
-    state: text('state').notNull().default('queued'), // queued|scheduled|sent|failed|canceled
+    state: outboundMessageStateEnum('state').notNull().default('queued'),
     scheduledAt: timestamp('scheduled_at'),
     sentAt: timestamp('sent_at'),
     errorAt: timestamp('error_at'),
@@ -621,7 +635,7 @@ export const inboundMessages = appSchema.table(
     contactId: text('contact_id').references(() => leadPointOfContacts.id, {
       onDelete: 'set null',
     }),
-    channel: text('channel').notNull(), // email|sms
+    channel: channelEnum('channel').notNull(),
     providerMessageId: text('provider_message_id'),
     receivedAt: timestamp('received_at').notNull().defaultNow(),
     subject: text('subject'),
@@ -647,7 +661,7 @@ export const communicationSuppressions = appSchema.table(
     tenantId: text('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    channel: text('channel').notNull(), // email|sms
+    channel: channelEnum('channel').notNull(),
     address: text('address').notNull(),
     reason: text('reason'),
     suppressedAt: timestamp('suppressed_at').notNull().defaultNow(),
@@ -671,7 +685,7 @@ export const sendRateLimits = appSchema.table(
     tenantId: text('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    channel: text('channel').notNull(), // email|sms
+    channel: channelEnum('channel').notNull(),
     scope: text('scope').notNull().default('tenant'), // tenant|identity
     identityId: text('identity_id').references(() => emailSenderIdentities.id, {
       onDelete: 'set null',
@@ -731,7 +745,7 @@ export const contactChannels = appSchema.table(
     contactId: text('contact_id')
       .notNull()
       .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
-    type: text('type').notNull(), // email|sms
+    type: channelEnum('type').notNull(),
     value: text('value').notNull(),
     isPrimary: boolean('is_primary').notNull().default(false),
     isVerified: boolean('is_verified').notNull().default(false),
@@ -762,8 +776,8 @@ export const campaignTransitions = appSchema.table(
     campaignId: text('campaign_id')
       .notNull()
       .references(() => contactCampaigns.id, { onDelete: 'cascade' }),
-    fromStatus: text('from_status'),
-    toStatus: text('to_status').notNull(),
+    fromStatus: campaignStatusEnum('from_status'),
+    toStatus: campaignStatusEnum('to_status').notNull(),
     reason: text('reason'),
     createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
     occurredAt: timestamp('occurred_at').notNull().defaultNow(),
