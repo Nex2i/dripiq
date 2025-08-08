@@ -418,6 +418,17 @@ export const emailSenderIdentities = appSchema.table(
   (table) => [unique('tenant_email_unique').on(table.tenantId, table.fromEmail)]
 );
 
+// Enums for Contact Campaigns
+export const campaignChannelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
+export const campaignStatusEnum = appSchema.enum('campaign_status', [
+  'draft',
+  'active',
+  'paused',
+  'completed',
+  'stopped',
+  'error',
+]);
+
 // Contact Campaigns table - core campaign instances
 export const contactCampaigns = appSchema.table(
   'contact_campaigns',
