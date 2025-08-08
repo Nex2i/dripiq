@@ -23,30 +23,30 @@ Core infrastructure and database setup.
 Campaign execution and scheduling system.
 
 - **[05-campaign-plans.md](./05-campaign-plans.md)** - JSON campaign plan storage and versioning
-- **06-scheduled-actions.md** - SQL-based action scheduling system
+- **[06-scheduled-actions.md](./06-scheduled-actions.md)** - SQL-based action scheduling system
 - **[07-send-worker.md](./07-send-worker.md)** - Core email sending with rate limiting and idempotency
-- **08-timeout-worker.md** - Synthetic event generation for timeouts
+ - **[08-timeout-worker.md](./08-timeout-worker.md)** - Synthetic event generation for timeouts
 
 ### Phase 3: Event Processing (Tickets 09-11)
 Webhook ingestion and reactive campaign logic.
 
 - **[09-webhook-ingestion.md](./09-webhook-ingestion.md)** - SendGrid webhook processing with idempotency
-- **10-message-events.md** - Event normalization and storage
+ - **[10-message-events.md](./10-message-events.md)** - Event normalization and storage
 - **[11-campaign-transitions.md](./11-campaign-transitions.md)** - Reactive state machine for campaign progression
 
 ### Phase 4: Analytics & Monitoring (Tickets 12-14)
 Metrics, compliance, and admin controls.
 
-- **12-analytics-aggregation.md** - Materialized views and rollup tables
-- **13-suppression-management.md** - Unsubscribe and bounce handling
-- **14-admin-controls.md** - Tenant controls and campaign management
+- **[12-analytics-aggregation.md](./12-analytics-aggregation.md)** - Materialized views and rollup tables
+- **[13-suppression-management.md](./13-suppression-management.md)** - Unsubscribe and bounce handling
+- **[14-admin-controls.md](./14-admin-controls.md)** - Tenant controls and campaign management
 
 ### Phase 5: Scaling & Extensions (Tickets 15-17)
 Performance optimizations and future extensions.
 
-- **15-partitioning-indexes.md** - Database optimization for scale
-- **16-reply-handling.md** - Inbound message processing
-- **17-sms-foundation.md** - Prepare schema and workers for SMS
+- **[15-partitioning-indexes.md](./15-partitioning-indexes.md)** - Database optimization for scale
+- **[16-reply-handling.md](./16-reply-handling.md)** - Inbound message processing
+- **[17-sms-foundation.md](./17-sms-foundation.md)** - Prepare schema and workers for SMS
 
 ## Critical Path for MVP
 
