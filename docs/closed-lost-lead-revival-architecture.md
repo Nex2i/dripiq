@@ -343,3 +343,287 @@ export default async function LeadBulkUploadRoutes(fastify: FastifyInstance, _op
 - Added where new frontend and backend modules go, schema changes, API contracts, and UX/system behavior per ticket.
 - Confirmed status handling aligns with existing `LEAD_STATUS.UNPROCESSED`. 
 - Provided migration SQL, route/schema skeletons, and types to accelerate implementation.
+
+---
+
+### Detailed Ticket Breakdown
+
+#### Ticket 1: File Upload Interface & Validation
+- **Priority**: High | **Story Points**: 5 | **Type**: Feature
+- **Acceptance Criteria**:
+  - Dedicated upload page via main navigation
+  - Accepts only .csv, .xls, .xlsx; size <= 10MB; rows <= 10k
+  - PapaParse integration for CSV; SheetJS for Excel
+  - Processing in a Web Worker with progress/loading states
+  - Errors for invalid/corrupted files and constraints
+  - First 10 rows prepared for preview
+- **Technical Requirements**:
+  - PapaParse + Web Worker
+  - SheetJS for `.xls/.xlsx`
+  - File type/size/row count guards pre-parse
+- **Deliverables**:
+  - `ClosedLostUploadPage.tsx`, `FileUpload.tsx`, `csvParser.worker.ts`
+
+#### Ticket 2: Preview Table & Column Mapping
+- **Priority**: High | **Story Points**: 8 | **Type**: Feature
+- **Acceptance Criteria**:
+  - Preview shows first 10 rows (respects header checkbox)
+  - Mapping dropdowns for each CSV column
+  - Required fields mapped: name, url, summary, products, services, differentiators, targetMarket, tone, brandColors, closedLostReason
+  - Real-time validation + visual indicators; reset mapping
+  - Trimmed whitespace shown; JSONB parsing preview
+  - Responsive table
+- **Technical Requirements**:
+  - Dynamic table + mapping controls
+  - Live validation feedback
+  - Data transformation preview
+- **Deliverables**:
+  - `PreviewMappingTable.tsx`, `client/src/types/upload.ts`
+
+#### Ticket 3: Closed-Lost Reason Configuration
+- **Priority**: Medium | **Story Points**: 3 | **Type**: Feature
+- **Acceptance Criteria**:
+  - Radio: Apply to ALL vs MISSING/INVALID
+  - Global reason text input (required)
+  - Live validation ensures every lead ends with a reason
+  - Preview updates reflect configuration
+- **Technical Requirements**:
+  - Form validation and clear UX copy
+- **Deliverables**:
+  - `ClosedLostReasonConfig.tsx`
+
+#### Ticket 4: Chunked Upload & Progress
+- **Priority**: High | **Story Points**: 6 | **Type**: Feature
+- **Acceptance Criteria**:
+  - Chunk 500–1000 rows; concurrent max 3
+  - Progress bar with percent and ETA; cancel via AbortController
+  - Retry failed chunks up to 3 with backoff
+  - Final summary (success/failed counts)
+- **Technical Requirements**:
+  - Efficient chunking; throttling; cancellation
+  - Resilient error handling
+- **Deliverables**:
+  - `chunkedUpload.service.ts`, `UploadProgress.tsx`
+
+#### Ticket 5: Database Schema Updates
+- **Priority**: High | **Story Points**: 3 | **Type**: Technical Debt
+- **Acceptance Criteria**:
+  - Add `closed_lost_reason` (text not null) to `leads`
+  - Index on `name`; composite index on `tenant_id, name`
+  - Migration with rollback; TS types updated
+- **Deliverables**:
+  - `00xx_add_closed_lost_reason.sql`, `schema.ts` updates
+
+#### Ticket 6: Bulk Upload API Endpoint
+- **Priority**: High | **Story Points**: 5 | **Type**: Feature
+- **Acceptance Criteria**:
+  - POST `/api/leads/bulk-upload-chunk`
+  - Validates mapping + required fields; sanitizes
+  - Rate limiting 10/min; auth; structured errors
+  - Returns per-chunk results
+- **Deliverables**:
+  - `lead.bulkUpload.routes.ts`, `bulkUpload.schema.ts`
+
+#### Ticket 7: Lead Processing & Deduplication
+- **Priority**: High | **Story Points**: 6 | **Type**: Feature
+- **Acceptance Criteria**:
+  - Case-insensitive dedupe on tenant+name
+  - Trim/transform fields; parse JSONB comma-separated
+  - Apply closed-lost reason per configuration
+  - Batch insert with conflicts handled; transactions
+  - Detailed results and logging
+- **Deliverables**:
+  - `bulkUpload.service.ts`, transformation utilities
+
+#### Ticket 8: Error Handling & User Experience
+- **Priority**: Medium | **Story Points**: 4 | **Type**: Enhancement
+- **Acceptance Criteria**:
+  - Comprehensive error messaging and field-level highlights
+  - Real-time progress + ETA; cancel confirm
+  - Download CSV of failed/skipped with reasons
+  - Accessibility and responsive design
+- **Deliverables**:
+  - Error boundaries, toast system, summary/export components
+
+---
+
+### TypeScript Interfaces (Frontend)
+
+```ts
+// client/src/types/upload.ts
+export type RequiredLeadField =
+  | 'name'
+  | 'url'
+  | 'summary'
+  | 'products'
+  | 'services'
+  | 'differentiators'
+  | 'targetMarket'
+  | 'tone'
+  | 'brandColors'
+  | 'closedLostReason';
+
+export type ClosedLostReasonMode = 'ALL' | 'MISSING_ONLY';
+
+export interface MappingConfig {
+  [csvColumn: string]: RequiredLeadField;
+}
+
+export interface ClosedLostReasonConfig {
+  mode: ClosedLostReasonMode;
+  globalReason: string; // non-empty
+}
+
+export interface PreviewRow {
+  [csvColumn: string]: string | null;
+}
+
+export interface UploadRow {
+  name: string;
+  url: string;
+  summary: string;
+  products: string[];
+  services: string[];
+  differentiators: string[];
+  targetMarket: string;
+  tone: string;
+  brandColors: string[];
+  closedLostReason: string;
+}
+
+export interface ChunkResultError {
+  rowIndex: number;
+  field?: string;
+  message: string;
+}
+
+export interface ChunkResultSkipped {
+  rowIndex: number;
+  reason: string;
+}
+
+export interface BulkUploadChunkResponse {
+  processedCount: number;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors: ChunkResultError[];
+  skipped: ChunkResultSkipped[];
+}
+```
+
+---
+
+### Frontend Navigation & Components
+- Add navigation entry to `ClosedLostUploadPage.tsx` from `Leads` views (e.g., button in `LeadsPage.tsx` header: "Bulk Upload Closed-Lost" leading to `/leads/bulk-upload`).
+- Components:
+  - `FileUpload.tsx`: drag-drop zone, file validation, worker invocation
+  - `PreviewMappingTable.tsx`: mapping dropdowns, validation badges, trimming preview
+  - `ClosedLostReasonConfig.tsx`: radio group + input with live validation
+  - `UploadProgress.tsx`: overall progress, chunk status, ETA, cancel button
+
+Route example: `/leads/bulk-upload` using existing router patterns.
+
+---
+
+### Backend Contracts & Service Signatures
+
+```ts
+// server/src/modules/bulkUpload.service.ts
+export interface ProcessChunkInput {
+  sessionId: string;
+  tenantId: string;
+  mapping: Record<string, string>;
+  reasonConfig: { mode: 'ALL' | 'MISSING_ONLY'; globalReason: string };
+  rows: Array<Record<string, string | null>>;
+}
+
+export interface ProcessChunkResult {
+  processedCount: number;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  errors: Array<{ rowIndex: number; field?: string; message: string }>;
+  skipped: Array<{ rowIndex: number; reason: string }>;
+}
+
+export const bulkUploadService = {
+  async processChunk(tenantId: string, payload: ProcessChunkInput): Promise<ProcessChunkResult> {
+    // validate -> transform -> dedupe -> batch insert (transaction) -> return results
+    return {
+      processedCount: 0,
+      importedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      errors: [],
+      skipped: [],
+    };
+  },
+};
+
+// Utility signatures
+export function transformRow(
+  raw: Record<string, string | null>,
+  mapping: Record<string, string>,
+  reasonConfig: { mode: 'ALL' | 'MISSING_ONLY'; globalReason: string }
+): UploadRow { /* ... */ }
+
+export async function findDuplicatesByTenantName(
+  tenantId: string,
+  names: string[]
+): Promise<Set<string>> { /* returns lowercased names that already exist */ }
+```
+
+---
+
+### Migration Rollback Example
+
+```sql
+-- server/src/db/migrations/00xx_add_closed_lost_reason_down.sql
+ALTER TABLE "dripiq_app"."leads" ALTER COLUMN "closed_lost_reason" DROP NOT NULL;
+ALTER TABLE "dripiq_app"."leads" DROP COLUMN IF EXISTS "closed_lost_reason";
+
+DO $$ BEGIN
+  DROP INDEX IF EXISTS "lead_tenant_name_idx";
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  DROP INDEX IF EXISTS "lead_name_idx";
+EXCEPTION WHEN undefined_object THEN NULL; END $$;
+```
+
+---
+
+### Testing Plan Details
+- **Unit**:
+  - `transformRow` trims and parses arrays correctly
+  - Closed-lost reason modes produce expected values
+  - URL normalization
+- **Integration**:
+  - Endpoint schema validation: missing fields, bad URLs, oversize payload
+  - Rate-limit behavior (429 with wait time)
+  - Transactional batch insert with conflict handling
+- **E2E**:
+  - Happy path from upload → mapping → reason config → chunked upload → summary
+  - Large dataset (10k rows) with mixed duplicates and errors
+- **Performance**:
+  - Verify <3 concurrent requests; backoff timings; ETA within tolerance
+- **Accessibility**:
+  - Keyboard navigation in table and forms; screen reader labels; contrast
+
+---
+
+### Risks & Mitigations
+- **Large files causing memory pressure**: Use streaming parse in worker; chunk early; avoid retaining full dataset in memory.
+- **Duplicate detection accuracy**: Normalize case and whitespace; consider additional keys (url) if needed in future.
+- **User confusion on mapping**: Provide defaults via header matching; strong visual cues and validation messages.
+- **Rate limit collisions**: Client throttling (max 3 concurrent) + server rate limit; queue excess.
+- **Schema NOT NULL backfill**: Two-step migration ensures legacy rows get a safe default value before enforcing NOT NULL.
+
+---
+
+### Delivery Milestones
+- Week 1: Ticket 5 + Ticket 1 foundations (UI skeleton, worker, validation)
+- Week 2: Ticket 2 + Ticket 3 (preview/mapping + reason config)
+- Week 3: Ticket 6 + Ticket 7 (endpoint + processing)
+- Week 4: Ticket 4 + Ticket 8 (chunked upload + UX polish, testing, accessibility)
