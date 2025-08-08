@@ -16,6 +16,8 @@ export { LeadProductRepository } from './entities/LeadProductRepository';
 export { UserTenantRepository } from './entities/UserTenantRepository';
 export { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 export { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+export { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+export { ContactCampaignRepository } from './entities/ContactCampaignRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -69,6 +71,8 @@ import { LeadProductRepository } from './entities/LeadProductRepository';
 import { UserTenantRepository } from './entities/UserTenantRepository';
 import { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+import { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+import { ContactCampaignRepository } from './entities/ContactCampaignRepository';
 import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
 import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
@@ -87,6 +91,8 @@ const leadProductRepository = new LeadProductRepository();
 const userTenantRepository = new UserTenantRepository();
 const siteEmbeddingDomainRepository = new SiteEmbeddingDomainRepository();
 const siteEmbeddingRepository = new SiteEmbeddingRepository();
+const emailSenderIdentityRepository = new EmailSenderIdentityRepository();
+const contactCampaignRepository = new ContactCampaignRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -109,6 +115,8 @@ export const repositories = {
   userTenant: userTenantRepository,
   siteEmbeddingDomain: siteEmbeddingDomainRepository,
   siteEmbedding: siteEmbeddingRepository,
+  emailSenderIdentity: emailSenderIdentityRepository,
+  contactCampaign: contactCampaignRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -131,6 +139,8 @@ export {
   userTenantRepository,
   siteEmbeddingDomainRepository,
   siteEmbeddingRepository,
+  emailSenderIdentityRepository,
+  contactCampaignRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,
