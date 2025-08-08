@@ -2,6 +2,11 @@ import { and, eq } from 'drizzle-orm';
 import { contactChannels, ContactChannel, NewContactChannel, channelEnum } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>ContactChannelRepository manages multiple addresses per contact across channels.</summary>
+ * <summary>Resolves primary/verified addresses for routing messages and replies.</summary>
+ * <summary>Integrates with validation results to ensure quality and deliverability.</summary>
+ */
 export class ContactChannelRepository extends TenantAwareRepository<
   typeof contactChannels,
   ContactChannel,

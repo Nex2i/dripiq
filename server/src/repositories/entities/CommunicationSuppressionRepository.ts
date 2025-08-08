@@ -7,6 +7,11 @@ import {
 } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>CommunicationSuppressionRepository enforces per-tenant suppression lists.</summary>
+ * <summary>Prevents messaging suppressed addresses and tracks reasons/expiry.</summary>
+ * <summary>Consulted before dispatch to ensure compliance and respect preferences.</summary>
+ */
 export class CommunicationSuppressionRepository extends TenantAwareRepository<
   typeof communicationSuppressions,
   CommunicationSuppression,

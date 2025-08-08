@@ -2,6 +2,11 @@ import { and, eq, desc } from 'drizzle-orm';
 import { campaignTransitions, CampaignTransition, NewCampaignTransition } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>CampaignTransitionRepository records state changes for campaigns.</summary>
+ * <summary>Provides a full audit trail of why/when transitions occurred and by whom.</summary>
+ * <summary>Drives diagnostics, analytics, and rollback decisions during execution.</summary>
+ */
 export class CampaignTransitionRepository extends TenantAwareRepository<
   typeof campaignTransitions,
   CampaignTransition,

@@ -7,6 +7,11 @@ import {
 } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>OutboundMessageRepository is the outbox for all scheduled and sent messages.</summary>
+ * <summary>Supports idempotency via dedupe keys and lookup by campaign/state.</summary>
+ * <summary>Feeds provider dispatch and correlates downstream events by message id.</summary>
+ */
 export class OutboundMessageRepository extends TenantAwareRepository<
   typeof outboundMessages,
   OutboundMessage,
@@ -28,10 +33,7 @@ export class OutboundMessageRepository extends TenantAwareRepository<
     return results[0];
   }
 
-  async listByCampaignForTenant(
-    tenantId: string,
-    campaignId: string
-  ): Promise<OutboundMessage[]> {
+  async listByCampaignForTenant(tenantId: string, campaignId: string): Promise<OutboundMessage[]> {
     return await this.db
       .select()
       .from(this.table)

@@ -8,6 +8,11 @@ import {
 } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>ContactCampaignRepository orchestrates per-contact campaign instances and their lifecycle.</summary>
+ * <summary>Supports idempotent lookup by contact+channel and status-based listings for execution control.</summary>
+ * <summary>Acts as the central join point between plans, actions, messages, and state transitions.</summary>
+ */
 export class ContactCampaignRepository extends TenantAwareRepository<
   typeof contactCampaigns,
   ContactCampaign,

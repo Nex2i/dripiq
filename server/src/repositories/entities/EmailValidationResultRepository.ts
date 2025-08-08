@@ -6,6 +6,11 @@ import {
 } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>EmailValidationResultRepository caches SendGrid (or provider) validation results.</summary>
+ * <summary>Reduces repeated verification calls and accelerates list hygiene decisions.</summary>
+ * <summary>Consulted during channel selection and preflight checks before sending.</summary>
+ */
 export class EmailValidationResultRepository extends TenantAwareRepository<
   typeof emailValidationResults,
   EmailValidationResult,

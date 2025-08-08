@@ -2,6 +2,11 @@ import { eq, and } from 'drizzle-orm';
 import { emailSenderIdentities, EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>EmailSenderIdentityRepository manages AE sender identities used to send outbound emails.</summary>
+ * <summary>Provides lookup for default identity and by from_email per tenant, enabling compliant sending.</summary>
+ * <summary>Forms the foundation for channel-specific delivery configuration across campaigns.</summary>
+ */
 export class EmailSenderIdentityRepository extends TenantAwareRepository<
   typeof emailSenderIdentities,
   EmailSenderIdentity,

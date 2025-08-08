@@ -1,11 +1,12 @@
 import { and, eq, desc } from 'drizzle-orm';
-import {
-  campaignPlanVersions,
-  CampaignPlanVersion,
-  NewCampaignPlanVersion,
-} from '@/db/schema';
+import { campaignPlanVersions, CampaignPlanVersion, NewCampaignPlanVersion } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>CampaignPlanVersionRepository tracks immutable versions of campaign plans.</summary>
+ * <summary>Enables auditable change history and reproducible execution across plan iterations.</summary>
+ * <summary>Used to resolve the concrete graph used by a campaign at any point in time.</summary>
+ */
 export class CampaignPlanVersionRepository extends TenantAwareRepository<
   typeof campaignPlanVersions,
   CampaignPlanVersion,

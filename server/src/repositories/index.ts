@@ -126,7 +126,7 @@ const sendRateLimitRepository = new SendRateLimitRepository();
 const emailValidationResultRepository = new EmailValidationResultRepository();
 const contactChannelRepository = new ContactChannelRepository();
 const campaignTransitionRepository = new CampaignTransitionRepository();
- 
+
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
 const userInvitationTransactionRepository = new UserInvitationTransactionRepository();
@@ -149,7 +149,7 @@ export const repositories = {
   siteEmbeddingDomain: siteEmbeddingDomainRepository,
   siteEmbedding: siteEmbeddingRepository,
   emailSenderIdentity: emailSenderIdentityRepository,
-    contactCampaign: contactCampaignRepository,
+  contactCampaign: contactCampaignRepository,
   campaignPlanVersion: campaignPlanVersionRepository,
   scheduledAction: scheduledActionRepository,
   outboundMessage: outboundMessageRepository,
@@ -161,7 +161,7 @@ export const repositories = {
   emailValidationResult: emailValidationResultRepository,
   contactChannel: contactChannelRepository,
   campaignTransition: campaignTransitionRepository,
- 
+
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
   userInvitationTransaction: userInvitationTransactionRepository,

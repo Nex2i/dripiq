@@ -2,6 +2,11 @@ import { and, eq, desc } from 'drizzle-orm';
 import { messageEvents, MessageEvent, NewMessageEvent } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>MessageEventRepository stores normalized engagement events from providers.</summary>
+ * <summary>Enables analytics and state updates (opens, clicks, bounces, etc.).</summary>
+ * <summary>Used to drive campaign transitions and feedback loops.</summary>
+ */
 export class MessageEventRepository extends TenantAwareRepository<
   typeof messageEvents,
   MessageEvent,

@@ -456,11 +456,11 @@ export const contactCampaigns = appSchema.table(
     leadId: text('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
-      contactId: text('contact_id')
+    contactId: text('contact_id')
       .notNull()
       .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
-  channel: channelEnum('channel').notNull(),
-  status: campaignStatusEnum('status').notNull().default('draft'),
+    channel: channelEnum('channel').notNull(),
+    status: campaignStatusEnum('status').notNull().default('draft'),
     currentNodeId: text('current_node_id'),
     planJson: jsonb('plan_json').notNull(),
     planVersion: text('plan_version').notNull().default('1.0'),

@@ -2,6 +2,11 @@ import { and, eq } from 'drizzle-orm';
 import { sendRateLimits, SendRateLimit, NewSendRateLimit, channelEnum } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
+/**
+ * <summary>SendRateLimitRepository stores throttle policies by tenant, channel, and identity.</summary>
+ * <summary>Allows workers to compute available capacity within sliding windows.</summary>
+ * <summary>Guards providers from overload and aligns with provider-specific quotas.</summary>
+ */
 export class SendRateLimitRepository extends TenantAwareRepository<
   typeof sendRateLimits,
   SendRateLimit,
