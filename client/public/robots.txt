@@ -1,3 +1,9 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /leads
+Disallow: /settings
+Disallow: /demo
+
+Sitemap: https://dripiq.ai/sitemap.xml
