@@ -16,13 +16,13 @@ Core infrastructure and database setup.
 
 - **[01-database-schema.md](./01-database-schema.md)** - Create all 13 new tables with relationships
 - **[02-bullmq-setup.md](./02-bullmq-setup.md)** - Redis and BullMQ infrastructure with job queues
-- **03-sendgrid-integration.md** - SendGrid client and email validation API
-- **04-sender-identities.md** - Per-AE sender identity management
+- **[03-sendgrid-integration.md](./03-sendgrid-integration.md)** - SendGrid client and email validation API
+- **[04-sender-identities.md](./04-sender-identities.md)** - Per-AE sender identity management
 
 ### Phase 2: Core Campaign Engine (Tickets 05-08)
 Campaign execution and scheduling system.
 
-- **05-campaign-plans.md** - JSON campaign plan storage and versioning
+- **[05-campaign-plans.md](./05-campaign-plans.md)** - JSON campaign plan storage and versioning
 - **06-scheduled-actions.md** - SQL-based action scheduling system
 - **[07-send-worker.md](./07-send-worker.md)** - Core email sending with rate limiting and idempotency
 - **08-timeout-worker.md** - Synthetic event generation for timeouts
