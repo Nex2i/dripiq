@@ -1,5 +1,11 @@
 import { and, eq, desc } from 'drizzle-orm';
-import { contactCampaigns, ContactCampaign, NewContactCampaign } from '@/db/schema';
+import {
+  contactCampaigns,
+  ContactCampaign,
+  NewContactCampaign,
+  campaignChannelEnum,
+  campaignStatusEnum,
+} from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class ContactCampaignRepository extends TenantAwareRepository<
@@ -14,7 +20,7 @@ export class ContactCampaignRepository extends TenantAwareRepository<
   async findByContactAndChannelForTenant(
     tenantId: string,
     contactId: string,
-    channel: string
+    channel: (typeof campaignChannelEnum)['enumValues'][number]
   ): Promise<ContactCampaign | undefined> {
     const results = await this.db
       .select()
@@ -32,7 +38,7 @@ export class ContactCampaignRepository extends TenantAwareRepository<
 
   async listByStatusForTenant(
     tenantId: string,
-    status: string,
+    status: (typeof campaignStatusEnum)['enumValues'][number],
     limit?: number
   ): Promise<ContactCampaign[]> {
     let query = this.db

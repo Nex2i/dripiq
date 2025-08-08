@@ -442,11 +442,11 @@ export const contactCampaigns = appSchema.table(
     leadId: text('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
-    contactId: text('contact_id')
+      contactId: text('contact_id')
       .notNull()
       .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
-    channel: text('channel').notNull(), // email|sms
-    status: text('status').notNull().default('draft'), // draft|active|paused|completed|stopped|error
+  channel: campaignChannelEnum('channel').notNull(),
+  status: campaignStatusEnum('status').notNull().default('draft'),
     currentNodeId: text('current_node_id'),
     planJson: jsonb('plan_json').notNull(),
     planVersion: text('plan_version').notNull().default('1.0'),
@@ -1002,3 +1002,5 @@ export type EmailValidationResult = typeof emailValidationResults.$inferSelect;
 export type NewEmailValidationResult = typeof emailValidationResults.$inferInsert;
 export type ContactChannel = typeof contactChannels.$inferSelect;
 export type NewContactChannel = typeof contactChannels.$inferInsert;
+export type CampaignTransition = typeof campaignTransitions.$inferSelect;
+export type NewCampaignTransition = typeof campaignTransitions.$inferInsert;

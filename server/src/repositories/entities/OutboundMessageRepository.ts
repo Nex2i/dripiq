@@ -1,0 +1,36 @@
+import { and, eq, desc } from 'drizzle-orm';
+import { outboundMessages, OutboundMessage, NewOutboundMessage } from '@/db/schema';
+import { TenantAwareRepository } from '../base/TenantAwareRepository';
+
+export class OutboundMessageRepository extends TenantAwareRepository<
+  typeof outboundMessages,
+  OutboundMessage,
+  NewOutboundMessage
+> {
+  constructor() {
+    super(outboundMessages);
+  }
+
+  async findByDedupeKeyForTenant(
+    tenantId: string,
+    dedupeKey: string
+  ): Promise<OutboundMessage | undefined> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.dedupeKey, dedupeKey)))
+      .limit(1);
+    return results[0];
+  }
+
+  async listByCampaignForTenant(
+    tenantId: string,
+    campaignId: string
+  ): Promise<OutboundMessage[]> {
+    return await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)))
+      .orderBy(desc(this.table.createdAt));
+  }
+}
