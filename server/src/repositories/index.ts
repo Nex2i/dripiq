@@ -16,6 +16,19 @@ export { LeadProductRepository } from './entities/LeadProductRepository';
 export { UserTenantRepository } from './entities/UserTenantRepository';
 export { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 export { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+export { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+export { ContactCampaignRepository } from './entities/ContactCampaignRepository';
+export { CampaignPlanVersionRepository } from './entities/CampaignPlanVersionRepository';
+export { ScheduledActionRepository } from './entities/ScheduledActionRepository';
+export { OutboundMessageRepository } from './entities/OutboundMessageRepository';
+export { MessageEventRepository } from './entities/MessageEventRepository';
+export { WebhookDeliveryRepository } from './entities/WebhookDeliveryRepository';
+export { InboundMessageRepository } from './entities/InboundMessageRepository';
+export { CommunicationSuppressionRepository } from './entities/CommunicationSuppressionRepository';
+export { SendRateLimitRepository } from './entities/SendRateLimitRepository';
+export { EmailValidationResultRepository } from './entities/EmailValidationResultRepository';
+export { ContactChannelRepository } from './entities/ContactChannelRepository';
+export { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -69,6 +82,19 @@ import { LeadProductRepository } from './entities/LeadProductRepository';
 import { UserTenantRepository } from './entities/UserTenantRepository';
 import { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+import { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+import { ContactCampaignRepository } from './entities/ContactCampaignRepository';
+import { CampaignPlanVersionRepository } from './entities/CampaignPlanVersionRepository';
+import { ScheduledActionRepository } from './entities/ScheduledActionRepository';
+import { OutboundMessageRepository } from './entities/OutboundMessageRepository';
+import { MessageEventRepository } from './entities/MessageEventRepository';
+import { WebhookDeliveryRepository } from './entities/WebhookDeliveryRepository';
+import { InboundMessageRepository } from './entities/InboundMessageRepository';
+import { CommunicationSuppressionRepository } from './entities/CommunicationSuppressionRepository';
+import { SendRateLimitRepository } from './entities/SendRateLimitRepository';
+import { EmailValidationResultRepository } from './entities/EmailValidationResultRepository';
+import { ContactChannelRepository } from './entities/ContactChannelRepository';
+import { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
 import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
 import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
@@ -87,6 +113,19 @@ const leadProductRepository = new LeadProductRepository();
 const userTenantRepository = new UserTenantRepository();
 const siteEmbeddingDomainRepository = new SiteEmbeddingDomainRepository();
 const siteEmbeddingRepository = new SiteEmbeddingRepository();
+const emailSenderIdentityRepository = new EmailSenderIdentityRepository();
+const contactCampaignRepository = new ContactCampaignRepository();
+const campaignPlanVersionRepository = new CampaignPlanVersionRepository();
+const scheduledActionRepository = new ScheduledActionRepository();
+const outboundMessageRepository = new OutboundMessageRepository();
+const messageEventRepository = new MessageEventRepository();
+const webhookDeliveryRepository = new WebhookDeliveryRepository();
+const inboundMessageRepository = new InboundMessageRepository();
+const communicationSuppressionRepository = new CommunicationSuppressionRepository();
+const sendRateLimitRepository = new SendRateLimitRepository();
+const emailValidationResultRepository = new EmailValidationResultRepository();
+const contactChannelRepository = new ContactChannelRepository();
+const campaignTransitionRepository = new CampaignTransitionRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -109,6 +148,19 @@ export const repositories = {
   userTenant: userTenantRepository,
   siteEmbeddingDomain: siteEmbeddingDomainRepository,
   siteEmbedding: siteEmbeddingRepository,
+  emailSenderIdentity: emailSenderIdentityRepository,
+  contactCampaign: contactCampaignRepository,
+  campaignPlanVersion: campaignPlanVersionRepository,
+  scheduledAction: scheduledActionRepository,
+  outboundMessage: outboundMessageRepository,
+  messageEvent: messageEventRepository,
+  webhookDelivery: webhookDeliveryRepository,
+  inboundMessage: inboundMessageRepository,
+  communicationSuppression: communicationSuppressionRepository,
+  sendRateLimit: sendRateLimitRepository,
+  emailValidationResult: emailValidationResultRepository,
+  contactChannel: contactChannelRepository,
+  campaignTransition: campaignTransitionRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -131,6 +183,19 @@ export {
   userTenantRepository,
   siteEmbeddingDomainRepository,
   siteEmbeddingRepository,
+  emailSenderIdentityRepository,
+  contactCampaignRepository,
+  campaignPlanVersionRepository,
+  scheduledActionRepository,
+  outboundMessageRepository,
+  messageEventRepository,
+  webhookDeliveryRepository,
+  inboundMessageRepository,
+  communicationSuppressionRepository,
+  sendRateLimitRepository,
+  emailValidationResultRepository,
+  contactChannelRepository,
+  campaignTransitionRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,
