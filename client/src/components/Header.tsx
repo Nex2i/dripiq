@@ -2,7 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
-import { Settings } from 'lucide-react'
+import { Settings, User } from 'lucide-react'
 import { HOME_URL } from '../constants/navigation'
 
 export default function Header() {
@@ -154,7 +154,7 @@ export default function Header() {
                           }}
                           className="w-full text-left px-4 py-2 text-sm text-[var(--color-surface-950)] hover:bg-[var(--color-surface-100)] hover:text-[var(--color-primary-600)] transition-all duration-200 flex items-center hover:transform hover:translate-x-1 cursor-pointer"
                         >
-                          <Settings className="h-4 w-4 mr-3 text-[var(--color-text-muted)]" />
+                          <User className="h-4 w-4 mr-3 text-[var(--color-text-muted)]" />
                           Profile
                         </button>
                         <button
@@ -216,7 +216,7 @@ export default function Header() {
                 onClick={() => navigateAndClose('/profile')}
                 className="text-[var(--color-surface-950)] hover:text-[var(--color-primary-600)] px-4 py-3 text-base font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-[var(--color-primary-50)] text-left flex items-center hover:shadow-sm transform hover:translate-x-2"
               >
-                <Settings className="h-5 w-5 mr-3 text-[var(--color-text-muted)]" />
+                <User className="h-5 w-5 mr-3 text-[var(--color-text-muted)]" />
                 Profile
               </button>
               <button

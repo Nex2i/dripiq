@@ -80,7 +80,7 @@ export default function UserEditPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className={isAdminMode ? 'max-w-5xl p-6' : 'max-w-3xl mx-auto p-6'}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">
         {isAdminMode ? 'Edit User' : 'Your Profile'}
       </h1>
