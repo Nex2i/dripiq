@@ -27,6 +27,7 @@ import OrganizationPage from './pages/settings/OrganizationPage'
 import ProductsPage from './pages/settings/ProductsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import NotFoundPage from './pages/NotFoundPage'
+import UserEditPage from './pages/users/UserEditPage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -107,6 +108,12 @@ const dashboardRoute = createRoute({
   component: () => <Dashboard />,
 })
 
+const profileRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/profile',
+  component: () => <UserEditPage />,
+})
+
 // Auth routes - public only (redirect to home if already logged in)
 const authLoginRoute = createRoute({
   getParentRoute: () => authRoute,
@@ -161,6 +168,12 @@ const settingsUsersRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: '/users',
   component: () => <UsersPage />,
+})
+
+const settingsUserEditRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/users/$userId',
+  component: () => <UserEditPage />,
 })
 
 const settingsNotificationsRoute = createRoute({
@@ -234,6 +247,7 @@ const notFoundRoute = createRoute({
 const settingsRouteTree = settingsRoute.addChildren([
   settingsIndexRoute,
   settingsUsersRoute,
+  settingsUserEditRoute,
   settingsNotificationsRoute,
   settingsSecurityRoute,
   settingsBillingRoute,
@@ -243,6 +257,7 @@ const settingsRouteTree = settingsRoute.addChildren([
 
 const protectedRouteTree = protectedRoute.addChildren([
   dashboardRoute,
+  profileRoute,
   leadsRoute,
   newLeadRoute,
   leadDetailRoute,
