@@ -419,42 +419,7 @@ BULLMQ_ADMIN_PASSWORD=secure_password_here
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-// server/src/libs/bullmq/queue.manager.test.ts
-describe('QueueManager', () => {
-  test('initializes all queues correctly', async () => {
-    await queueManager.initialize();
-    expect(queueManager.getQueue('outreach:send')).toBeDefined();
-  });
-  
-  test('enforces jobId requirement', async () => {
-    await expect(
-      queueManager.enqueueJob('outreach:send', 'test', {})
-    ).rejects.toThrow('jobId is required');
-  });
-});
-```
-
-### Integration Tests
-
-```typescript
-// Test with actual Redis instance
-describe('BullMQ Integration', () => {
-  test('jobs are processed with idempotency', async () => {
-    const jobId = 'test-job-123';
-    
-    // Enqueue same job twice
-    await queueManager.enqueueJob('outreach:send', 'test', {}, { jobId });
-    await queueManager.enqueueJob('outreach:send', 'test', {}, { jobId });
-    
-    // Should only have one job
-    const stats = await queueManager.getQueueStats('outreach:send');
-    expect(stats.waiting.length).toBe(1);
-  });
-});
-```
+No unit tests at this time.
 
 ## Performance Considerations
 
@@ -497,6 +462,5 @@ npm install @bull-board/api @bull-board/fastify
 - [ ] Job idempotency enforced with unique jobId
 - [ ] Rate limiting infrastructure ready
 - [ ] Queue monitoring and error handling in place
-- [ ] Unit and integration tests passing
 - [ ] Documentation updated
 - [ ] Code review completed

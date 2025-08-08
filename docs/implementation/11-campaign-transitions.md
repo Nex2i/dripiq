@@ -713,41 +713,7 @@ server/src/
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-describe('CampaignStateManager', () => {
-  test('processes open event correctly', async () => {
-    // Test open event triggering transition
-  });
-  
-  test('handles timeout events', async () => {
-    // Test no_open/no_click synthetic events
-  });
-  
-  test('cancels irrelevant timeouts', async () => {
-    // Test cleanup of old timeouts
-  });
-  
-  test('applies quiet hours', async () => {
-    // Test timezone-aware scheduling
-  });
-});
-```
-
-### Integration Tests
-
-```typescript
-describe('Campaign Transitions Integration', () => {
-  test('complete campaign flow', async () => {
-    // Test: send -> open -> click -> complete
-  });
-  
-  test('timeout-driven progression', async () => {
-    // Test: send -> no_open -> follow-up -> complete
-  });
-});
-```
+No unit tests at this time.
 
 ## Performance Considerations
 
@@ -781,5 +747,4 @@ describe('Campaign Transitions Integration', () => {
 - [ ] Integration with webhook and timeout workers
 - [ ] API endpoints for transition monitoring
 - [ ] Comprehensive error handling
-- [ ] Unit and integration tests passing
 - [ ] Performance monitoring in place

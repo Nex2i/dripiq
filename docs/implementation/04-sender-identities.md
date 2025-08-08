@@ -660,50 +660,7 @@ server/src/
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-describe('SenderIdentityService', () => {
-  test('creates sender identity successfully', async () => {
-    const tenantId = 'test-tenant';
-    const request = {
-      userId: 'user-123',
-      fromEmail: 'john@example.com',
-      fromName: 'John Doe',
-    };
-
-    const identity = await senderIdentityService.createSenderIdentity(tenantId, request);
-    
-    expect(identity.fromEmail).toBe(request.fromEmail);
-    expect(identity.status).toBe('pending');
-  });
-
-  test('enforces unique email per tenant', async () => {
-    const tenantId = 'test-tenant';
-    const request = {
-      userId: 'user-123',
-      fromEmail: 'duplicate@example.com',
-      fromName: 'John Doe',
-    };
-
-    await senderIdentityService.createSenderIdentity(tenantId, request);
-    
-    await expect(
-      senderIdentityService.createSenderIdentity(tenantId, request)
-    ).rejects.toThrow('already exists');
-  });
-});
-```
-
-### Integration Tests
-
-```typescript
-describe('Sender Identity Integration', () => {
-  test('end-to-end verification flow', async () => {
-    // Create identity -> Check SendGrid -> Update status
-  });
-});
-```
+No unit tests at this time.
 
 ## Security Considerations
 
@@ -737,5 +694,4 @@ describe('Sender Identity Integration', () => {
 - [ ] Verification status enforcement
 - [ ] Background verification refresh job
 - [ ] API routes for identity management
-- [ ] Unit and integration tests passing
 - [ ] Documentation updated

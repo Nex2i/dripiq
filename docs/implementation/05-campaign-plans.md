@@ -740,55 +740,7 @@ server/src/
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-describe('CampaignPlanService', () => {
-  test('creates valid campaign plan', async () => {
-    const plan = {
-      version: '1.0',
-      timezone: 'UTC',
-      nodes: [
-        {
-          id: 'start',
-          channel: 'email',
-          action: 'send',
-          subject: 'Hello {contact.name}',
-          body: 'Test message',
-          transitions: [
-            { on: 'opened', to: 'stop' }
-          ]
-        }
-      ],
-      startNodeId: 'start'
-    };
-
-    const result = await campaignPlanService.createCampaignPlan(tenantId, {
-      contactId: 'contact-123',
-      channel: 'email',
-      plan,
-    });
-
-    expect(result.plan.nodes).toHaveLength(1);
-    expect(result.status).toBe('draft');
-  });
-
-  test('validates plan structure', async () => {
-    const invalidPlan = {
-      nodes: [], // Empty nodes array should fail
-      startNodeId: 'nonexistent'
-    };
-
-    await expect(
-      campaignPlanService.createCampaignPlan(tenantId, {
-        contactId: 'contact-123',
-        channel: 'email',
-        plan: invalidPlan,
-      })
-    ).rejects.toThrow('Invalid campaign plan');
-  });
-});
-```
+No unit tests at this time.
 
 ## Performance Considerations
 
@@ -809,6 +761,5 @@ describe('CampaignPlanService', () => {
 - [ ] Plan versioning and audit trail functional
 - [ ] Template variable support implemented
 - [ ] API endpoints for plan management
-- [ ] Unit tests for validation and storage
 - [ ] Integration with sender identities
 - [ ] Documentation and examples

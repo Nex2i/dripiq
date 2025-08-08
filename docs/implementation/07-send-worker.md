@@ -477,39 +477,7 @@ server/src/
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-describe('SendWorker', () => {
-  test('processes send job successfully', async () => {
-    // Mock all dependencies
-    // Test successful send flow
-  });
-  
-  test('enforces idempotency', async () => {
-    // Test duplicate message prevention
-  });
-  
-  test('respects rate limits', async () => {
-    // Test rate limiting enforcement
-  });
-  
-  test('handles suppressed emails', async () => {
-    // Test suppression checking
-  });
-});
-```
-
-### Integration Tests
-
-```typescript
-describe('Send Worker Integration', () => {
-  test('end-to-end send flow', async () => {
-    // Create campaign, schedule action, process job
-    // Verify message sent and follow-ups scheduled
-  });
-});
-```
+No unit tests at this time.
 
 ## Performance Considerations
 
@@ -560,6 +528,5 @@ describe('Send Worker Integration', () => {
 - [ ] Suppression checking preventing unwanted sends
 - [ ] Follow-up actions scheduled correctly
 - [ ] Comprehensive error handling and logging
-- [ ] Unit and integration tests passing
 - [ ] Performance monitoring in place
 - [ ] Code review completed

@@ -588,47 +588,7 @@ server/src/
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-describe('SendGrid Webhook Handler', () => {
-  test('validates webhook signatures correctly', async () => {
-    // Test signature validation
-  });
-  
-  test('handles duplicate webhooks idempotently', async () => {
-    // Test payload hash deduplication
-  });
-  
-  test('extracts tenant ID from events', async () => {
-    // Test tenant ID extraction logic
-  });
-});
-
-describe('Webhook Worker', () => {
-  test('normalizes events correctly', async () => {
-    // Test event normalization
-  });
-  
-  test('updates message statuses', async () => {
-    // Test status updates from delivery events
-  });
-  
-  test('creates suppression records', async () => {
-    // Test suppression handling
-  });
-});
-```
-
-### Integration Tests
-
-```typescript
-describe('Webhook Integration', () => {
-  test('end-to-end webhook processing', async () => {
-    // Send webhook -> verify processing -> check database state
-  });
-});
-```
+No unit tests at this time.
 
 ## Security Considerations
 
@@ -686,5 +646,4 @@ describe('Webhook Integration', () => {
 - [ ] Suppression records created for bounces/unsubscribes
 - [ ] Rate limiting preventing abuse
 - [ ] Comprehensive error handling and logging
-- [ ] Unit and integration tests passing
 - [ ] Monitoring and alerting in place

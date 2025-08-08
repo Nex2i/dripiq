@@ -45,15 +45,7 @@ Create all new database tables, relationships, and indexes required for the outr
 
 ## Implementation Steps
 
-### Step 1: Create Migration File
-
-```bash
-cd server
-npm run db:generate
-# This creates a new migration file like 0025_add_campaign_tables.sql
-```
-
-### Step 2: Update Drizzle Schema
+### Step 1: Update Drizzle Schema (server/src/db/schema.ts)
 
 Update `server/src/db/schema.ts`:
 
@@ -106,6 +98,15 @@ export const contactCampaigns = appSchema.table('contact_campaigns', {
 // Continue with remaining tables...
 ```
 
+### Step 2: Generate Migration from Schema
+
+Run Drizzle to generate a new migration from the schema changes (Drizzle will also create indexes defined in schema):
+
+```bash
+cd server
+npm run db:migrate:new add_campaign_tables
+```
+
 ### Step 3: Add Relations
 
 ```typescript
@@ -155,24 +156,7 @@ export type NewContactCampaign = typeof contactCampaigns.$inferInsert;
 // Add types for all new tables...
 ```
 
-### Step 5: Create Index Strategies
-
-```sql
--- High-performance indexes for scale
-CREATE INDEX CONCURRENTLY idx_message_events_tenant_event_time 
-ON dripiq_app.message_events (tenant_id, event_at DESC);
-
-CREATE INDEX CONCURRENTLY idx_outbound_messages_provider_lookup 
-ON dripiq_app.outbound_messages (provider, provider_message_id);
-
-CREATE INDEX CONCURRENTLY idx_scheduled_actions_ready 
-ON dripiq_app.scheduled_actions (status, run_at) 
-WHERE status = 'pending';
-
--- Add GIN indexes for JSONB columns if needed
-CREATE INDEX CONCURRENTLY idx_contact_campaigns_plan_gin 
-ON dripiq_app.contact_campaigns USING GIN (plan_json);
-```
+Note: Do not add indexes via raw SQL. Define indexes in Drizzle schema, and let Drizzle manage them in the generated migration.
 
 ## File Structure
 
@@ -192,39 +176,7 @@ server/src/repositories/
 
 ## Testing Requirements
 
-### Unit Tests
-
-```typescript
-// server/src/db/schema.test.ts
-describe('Campaign Schema', () => {
-  test('contact_campaigns unique constraint works', async () => {
-    // Test tenant_id + contact_id + channel uniqueness
-  });
-  
-  test('foreign key relationships are correct', async () => {
-    // Test cascading deletes work properly
-  });
-  
-  test('default values are set correctly', async () => {
-    // Test status defaults, timestamps, etc.
-  });
-});
-```
-
-### Migration Tests
-
-```typescript
-// Test migration up and down
-describe('Migration 0025', () => {
-  test('migration creates all tables', async () => {
-    // Verify all 13 tables exist after migration
-  });
-  
-  test('migration is reversible', async () => {
-    // Test rollback works without data loss
-  });
-});
-```
+No unit tests at this time.
 
 ## Performance Considerations
 
@@ -268,8 +220,7 @@ If issues are discovered:
 - [ ] All 13 tables created with correct structure
 - [ ] Drizzle schema updated and TypeScript compiles
 - [ ] Migration tested in development environment
-- [ ] Required indexes added and tested
+- [ ] Required indexes defined in schema
 - [ ] Relations and types exported
-- [ ] Unit tests written and passing
 - [ ] Documentation updated
 - [ ] Code review completed

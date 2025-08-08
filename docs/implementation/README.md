@@ -7,7 +7,7 @@ This directory contains detailed implementation tickets for building a productio
 1. **Review Architecture**: Start with `../outreach-campaign-architecture.md`
 2. **Check Overview**: Read `00-overview.md` for phases and dependencies
 3. **Follow Order**: Implement tickets in numbered order within each phase
-4. **Test Incrementally**: Each ticket includes comprehensive testing requirements
+4. **Test Incrementally**: Testing can be added later; unit tests are not required yet
 
 ## Implementation Tickets
 
@@ -143,25 +143,8 @@ npm run dev
 
 ## Testing Strategy
 
-### Unit Tests
-Each ticket includes unit tests for:
-- Business logic validation
-- Database operations
-- Worker job processing
-- API endpoint behavior
-
-### Integration Tests
-Critical flows tested end-to-end:
-- Lead ingestion → Campaign creation → Email sending
-- Webhook processing → Event normalization → Campaign transitions
-- Rate limiting enforcement across multiple workers
-
-### Load Testing
-Performance validation for:
-- 1M+ leads with 5-20 contacts each
-- 50M+ touchpoints over time
-- Hundreds of millions of events
-- Target: <500ms p95 for critical operations
+- Unit tests are not required at this stage. Focus on end-to-end verification in staging and manual checks for critical flows.
+- Load testing and monitoring will be introduced post-MVP.
 
 ## Monitoring & Observability
 

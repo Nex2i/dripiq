@@ -69,10 +69,9 @@ The critical path for MVP (minimum viable product) includes tickets 01-11. Ticke
 - SendGrid integration in `server/src/libs/sendgrid/`
 
 ### Testing Strategy
-- Unit tests for all business logic
-- Integration tests for BullMQ workers
-- End-to-end tests for full campaign flows
-- Load testing for rate limiting and scaling
+- Unit tests are not required at this time
+- End-to-end verification and manual checks during rollout
+- Load testing to be added post-MVP
 
 ### Rollout Strategy
 - Feature flags for gradual tenant rollout
