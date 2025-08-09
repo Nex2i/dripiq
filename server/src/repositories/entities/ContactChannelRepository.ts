@@ -1,6 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { contactChannels, ContactChannel, NewContactChannel, channelEnum } from '@/db/schema';
-import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -15,73 +14,6 @@ export class ContactChannelRepository extends TenantAwareRepository<
 > {
   constructor() {
     super(contactChannels);
-  }
-
-  // Concrete CRUD
-  async create(data: NewContactChannel): Promise<ContactChannel> {
-    const [result] = await this.db.insert(this.table).values(data).returning();
-    return result as ContactChannel;
-  }
-
-  async createMany(data: NewContactChannel[]): Promise<ContactChannel[]> {
-    return (await this.db.insert(this.table).values(data).returning()) as ContactChannel[];
-  }
-
-  async findById(id: string): Promise<ContactChannel> {
-    const results = await this.db.select().from(this.table).where(eq(this.table.id, id)).limit(1);
-    if (!results[0]) throw new NotFoundError(`ContactChannel not found with id: ${id}`);
-    return results[0];
-  }
-
-  async findByIds(ids: string[]): Promise<ContactChannel[]> {
-    if (ids.length === 0) return [];
-    return (await this.db
-      .select()
-      .from(this.table)
-      .where(inArray(this.table.id, ids))) as ContactChannel[];
-  }
-
-  async findAll(): Promise<ContactChannel[]> {
-    return (await this.db.select().from(this.table)) as ContactChannel[];
-  }
-
-  async updateById(
-    id: string,
-    data: Partial<NewContactChannel>
-  ): Promise<ContactChannel | undefined> {
-    const [result] = await this.db
-      .update(this.table)
-      .set(data as any)
-      .where(eq(this.table.id, id))
-      .returning();
-    return result as ContactChannel | undefined;
-  }
-
-  async deleteById(id: string): Promise<ContactChannel | undefined> {
-    const [result] = await this.db.delete(this.table).where(eq(this.table.id, id)).returning();
-    return result as ContactChannel | undefined;
-  }
-
-  async deleteByIds(ids: string[]): Promise<ContactChannel[]> {
-    if (ids.length === 0) return [];
-    return (await this.db
-      .delete(this.table)
-      .where(inArray(this.table.id, ids))
-      .returning()) as ContactChannel[];
-  }
-
-  async exists(id: string): Promise<boolean> {
-    const result = await this.db
-      .select({ id: this.table.id })
-      .from(this.table)
-      .where(eq(this.table.id, id))
-      .limit(1);
-    return !!result[0];
-  }
-
-  async count(): Promise<number> {
-    const result = await this.db.select({ id: this.table.id }).from(this.table);
-    return result.length;
   }
 
   // Tenant-aware CRUD

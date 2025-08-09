@@ -1,6 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { sendRateLimits, SendRateLimit, NewSendRateLimit, channelEnum } from '@/db/schema';
-import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -15,73 +14,6 @@ export class SendRateLimitRepository extends TenantAwareRepository<
 > {
   constructor() {
     super(sendRateLimits);
-  }
-
-  // Concrete CRUD
-  async create(data: NewSendRateLimit): Promise<SendRateLimit> {
-    const [result] = await this.db.insert(this.table).values(data).returning();
-    return result as SendRateLimit;
-  }
-
-  async createMany(data: NewSendRateLimit[]): Promise<SendRateLimit[]> {
-    return (await this.db.insert(this.table).values(data).returning()) as SendRateLimit[];
-  }
-
-  async findById(id: string): Promise<SendRateLimit> {
-    const results = await this.db.select().from(this.table).where(eq(this.table.id, id)).limit(1);
-    if (!results[0]) throw new NotFoundError(`SendRateLimit not found with id: ${id}`);
-    return results[0];
-  }
-
-  async findByIds(ids: string[]): Promise<SendRateLimit[]> {
-    if (ids.length === 0) return [];
-    return (await this.db
-      .select()
-      .from(this.table)
-      .where(inArray(this.table.id, ids))) as SendRateLimit[];
-  }
-
-  async findAll(): Promise<SendRateLimit[]> {
-    return (await this.db.select().from(this.table)) as SendRateLimit[];
-  }
-
-  async updateById(
-    id: string,
-    data: Partial<NewSendRateLimit>
-  ): Promise<SendRateLimit | undefined> {
-    const [result] = await this.db
-      .update(this.table)
-      .set(data as any)
-      .where(eq(this.table.id, id))
-      .returning();
-    return result as SendRateLimit | undefined;
-  }
-
-  async deleteById(id: string): Promise<SendRateLimit | undefined> {
-    const [result] = await this.db.delete(this.table).where(eq(this.table.id, id)).returning();
-    return result as SendRateLimit | undefined;
-  }
-
-  async deleteByIds(ids: string[]): Promise<SendRateLimit[]> {
-    if (ids.length === 0) return [];
-    return (await this.db
-      .delete(this.table)
-      .where(inArray(this.table.id, ids))
-      .returning()) as SendRateLimit[];
-  }
-
-  async exists(id: string): Promise<boolean> {
-    const result = await this.db
-      .select({ id: this.table.id })
-      .from(this.table)
-      .where(eq(this.table.id, id))
-      .limit(1);
-    return !!result[0];
-  }
-
-  async count(): Promise<number> {
-    const result = await this.db.select({ id: this.table.id }).from(this.table);
-    return result.length;
   }
 
   // Tenant-aware CRUD
