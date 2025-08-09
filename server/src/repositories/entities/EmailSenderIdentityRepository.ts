@@ -23,7 +23,7 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
   ): Promise<EmailSenderIdentity> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewEmailSenderIdentity, 'tenantId'>), tenantId } as NewEmailSenderIdentity)
       .returning();
     return result as EmailSenderIdentity;
   }
@@ -32,7 +32,7 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewEmailSenderIdentity, 'tenantId'>[]
   ): Promise<EmailSenderIdentity[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewEmailSenderIdentity[] = data.map((d) => ({ ...(d as Omit<NewEmailSenderIdentity, 'tenantId'>), tenantId } as NewEmailSenderIdentity));
     return (await this.db.insert(this.table).values(values).returning()) as EmailSenderIdentity[];
   }
 
@@ -69,7 +69,7 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
   ): Promise<EmailSenderIdentity | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<NewEmailSenderIdentity>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as EmailSenderIdentity | undefined;

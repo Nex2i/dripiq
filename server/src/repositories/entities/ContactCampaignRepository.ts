@@ -29,7 +29,7 @@ export class ContactCampaignRepository extends TenantAwareRepository<
   ): Promise<ContactCampaign> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewContactCampaign, 'tenantId'>), tenantId } as NewContactCampaign)
       .returning();
     return result as ContactCampaign;
   }
@@ -38,7 +38,7 @@ export class ContactCampaignRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewContactCampaign, 'tenantId'>[]
   ): Promise<ContactCampaign[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewContactCampaign[] = data.map((d) => ({ ...(d as Omit<NewContactCampaign, 'tenantId'>), tenantId } as NewContactCampaign));
     return (await this.db.insert(this.table).values(values).returning()) as ContactCampaign[];
   }
 
@@ -75,7 +75,7 @@ export class ContactCampaignRepository extends TenantAwareRepository<
   ): Promise<ContactCampaign | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<Omit<NewContactCampaign, 'tenantId'>> as Partial<NewContactCampaign>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as ContactCampaign | undefined;
