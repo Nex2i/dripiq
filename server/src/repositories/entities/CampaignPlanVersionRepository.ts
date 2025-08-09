@@ -23,7 +23,10 @@ export class CampaignPlanVersionRepository extends TenantAwareRepository<
   ): Promise<CampaignPlanVersion> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({
+        ...(data as Omit<NewCampaignPlanVersion, 'tenantId'>),
+        tenantId,
+      } as NewCampaignPlanVersion)
       .returning();
     return result as CampaignPlanVersion;
   }
@@ -32,7 +35,10 @@ export class CampaignPlanVersionRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewCampaignPlanVersion, 'tenantId'>[]
   ): Promise<CampaignPlanVersion[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewCampaignPlanVersion[] = data.map(
+      (d) =>
+        ({ ...(d as Omit<NewCampaignPlanVersion, 'tenantId'>), tenantId }) as NewCampaignPlanVersion
+    );
     return (await this.db.insert(this.table).values(values).returning()) as CampaignPlanVersion[];
   }
 
@@ -69,7 +75,9 @@ export class CampaignPlanVersionRepository extends TenantAwareRepository<
   ): Promise<CampaignPlanVersion | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(
+        data as Partial<Omit<NewCampaignPlanVersion, 'tenantId'>> as Partial<NewCampaignPlanVersion>
+      )
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as CampaignPlanVersion | undefined;

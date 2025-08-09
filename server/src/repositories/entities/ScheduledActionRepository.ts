@@ -28,7 +28,7 @@ export class ScheduledActionRepository extends TenantAwareRepository<
   ): Promise<ScheduledAction> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewScheduledAction, 'tenantId'>), tenantId } as NewScheduledAction)
       .returning();
     return result as ScheduledAction;
   }
@@ -37,7 +37,9 @@ export class ScheduledActionRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewScheduledAction, 'tenantId'>[]
   ): Promise<ScheduledAction[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewScheduledAction[] = data.map(
+      (d) => ({ ...(d as Omit<NewScheduledAction, 'tenantId'>), tenantId }) as NewScheduledAction
+    );
     return (await this.db.insert(this.table).values(values).returning()) as ScheduledAction[];
   }
 
@@ -74,7 +76,7 @@ export class ScheduledActionRepository extends TenantAwareRepository<
   ): Promise<ScheduledAction | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<Omit<NewScheduledAction, 'tenantId'>> as Partial<NewScheduledAction>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as ScheduledAction | undefined;

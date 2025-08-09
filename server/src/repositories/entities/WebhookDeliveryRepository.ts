@@ -23,7 +23,7 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
   ): Promise<WebhookDelivery> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewWebhookDelivery, 'tenantId'>), tenantId } as NewWebhookDelivery)
       .returning();
     return result as WebhookDelivery;
   }
@@ -32,7 +32,9 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewWebhookDelivery, 'tenantId'>[]
   ): Promise<WebhookDelivery[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewWebhookDelivery[] = data.map(
+      (d) => ({ ...(d as Omit<NewWebhookDelivery, 'tenantId'>), tenantId }) as NewWebhookDelivery
+    );
     return (await this.db.insert(this.table).values(values).returning()) as WebhookDelivery[];
   }
 
@@ -69,7 +71,7 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
   ): Promise<WebhookDelivery | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<Omit<NewWebhookDelivery, 'tenantId'>> as Partial<NewWebhookDelivery>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as WebhookDelivery | undefined;

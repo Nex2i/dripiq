@@ -28,7 +28,7 @@ export class OutboundMessageRepository extends TenantAwareRepository<
   ): Promise<OutboundMessage> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewOutboundMessage, 'tenantId'>), tenantId } as NewOutboundMessage)
       .returning();
     return result as OutboundMessage;
   }
@@ -37,7 +37,9 @@ export class OutboundMessageRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewOutboundMessage, 'tenantId'>[]
   ): Promise<OutboundMessage[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewOutboundMessage[] = data.map(
+      (d) => ({ ...(d as Omit<NewOutboundMessage, 'tenantId'>), tenantId }) as NewOutboundMessage
+    );
     return (await this.db.insert(this.table).values(values).returning()) as OutboundMessage[];
   }
 
@@ -74,7 +76,7 @@ export class OutboundMessageRepository extends TenantAwareRepository<
   ): Promise<OutboundMessage | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<Omit<NewOutboundMessage, 'tenantId'>> as Partial<NewOutboundMessage>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as OutboundMessage | undefined;

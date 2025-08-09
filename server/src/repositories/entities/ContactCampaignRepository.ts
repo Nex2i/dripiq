@@ -38,7 +38,9 @@ export class ContactCampaignRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewContactCampaign, 'tenantId'>[]
   ): Promise<ContactCampaign[]> {
-    const values: NewContactCampaign[] = data.map((d) => ({ ...(d as Omit<NewContactCampaign, 'tenantId'>), tenantId } as NewContactCampaign));
+    const values: NewContactCampaign[] = data.map(
+      (d) => ({ ...(d as Omit<NewContactCampaign, 'tenantId'>), tenantId }) as NewContactCampaign
+    );
     return (await this.db.insert(this.table).values(values).returning()) as ContactCampaign[];
   }
 

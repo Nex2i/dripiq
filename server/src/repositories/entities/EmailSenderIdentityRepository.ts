@@ -23,7 +23,10 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
   ): Promise<EmailSenderIdentity> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as Omit<NewEmailSenderIdentity, 'tenantId'>), tenantId } as NewEmailSenderIdentity)
+      .values({
+        ...(data as Omit<NewEmailSenderIdentity, 'tenantId'>),
+        tenantId,
+      } as NewEmailSenderIdentity)
       .returning();
     return result as EmailSenderIdentity;
   }
@@ -32,7 +35,10 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewEmailSenderIdentity, 'tenantId'>[]
   ): Promise<EmailSenderIdentity[]> {
-    const values: NewEmailSenderIdentity[] = data.map((d) => ({ ...(d as Omit<NewEmailSenderIdentity, 'tenantId'>), tenantId } as NewEmailSenderIdentity));
+    const values: NewEmailSenderIdentity[] = data.map(
+      (d) =>
+        ({ ...(d as Omit<NewEmailSenderIdentity, 'tenantId'>), tenantId }) as NewEmailSenderIdentity
+    );
     return (await this.db.insert(this.table).values(values).returning()) as EmailSenderIdentity[];
   }
 

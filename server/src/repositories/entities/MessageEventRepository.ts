@@ -23,7 +23,7 @@ export class MessageEventRepository extends TenantAwareRepository<
   ): Promise<MessageEvent> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewMessageEvent, 'tenantId'>), tenantId } as NewMessageEvent)
       .returning();
     return result as MessageEvent;
   }
@@ -32,7 +32,9 @@ export class MessageEventRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewMessageEvent, 'tenantId'>[]
   ): Promise<MessageEvent[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewMessageEvent[] = data.map(
+      (d) => ({ ...(d as Omit<NewMessageEvent, 'tenantId'>), tenantId }) as NewMessageEvent
+    );
     return (await this.db.insert(this.table).values(values).returning()) as MessageEvent[];
   }
 
@@ -69,7 +71,7 @@ export class MessageEventRepository extends TenantAwareRepository<
   ): Promise<MessageEvent | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<Omit<NewMessageEvent, 'tenantId'>> as Partial<NewMessageEvent>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as MessageEvent | undefined;

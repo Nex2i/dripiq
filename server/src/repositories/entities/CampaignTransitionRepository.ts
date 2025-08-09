@@ -23,7 +23,10 @@ export class CampaignTransitionRepository extends TenantAwareRepository<
   ): Promise<CampaignTransition> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({
+        ...(data as Omit<NewCampaignTransition, 'tenantId'>),
+        tenantId,
+      } as NewCampaignTransition)
       .returning();
     return result as CampaignTransition;
   }
@@ -32,7 +35,10 @@ export class CampaignTransitionRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewCampaignTransition, 'tenantId'>[]
   ): Promise<CampaignTransition[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewCampaignTransition[] = data.map(
+      (d) =>
+        ({ ...(d as Omit<NewCampaignTransition, 'tenantId'>), tenantId }) as NewCampaignTransition
+    );
     return (await this.db.insert(this.table).values(values).returning()) as CampaignTransition[];
   }
 
@@ -69,7 +75,9 @@ export class CampaignTransitionRepository extends TenantAwareRepository<
   ): Promise<CampaignTransition | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(
+        data as Partial<Omit<NewCampaignTransition, 'tenantId'>> as Partial<NewCampaignTransition>
+      )
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as CampaignTransition | undefined;

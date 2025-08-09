@@ -23,7 +23,7 @@ export class SendRateLimitRepository extends TenantAwareRepository<
   ): Promise<SendRateLimit> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as any), tenantId })
+      .values({ ...(data as Omit<NewSendRateLimit, 'tenantId'>), tenantId } as NewSendRateLimit)
       .returning();
     return result as SendRateLimit;
   }
@@ -32,7 +32,9 @@ export class SendRateLimitRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewSendRateLimit, 'tenantId'>[]
   ): Promise<SendRateLimit[]> {
-    const values = data.map((d) => ({ ...(d as any), tenantId }));
+    const values: NewSendRateLimit[] = data.map(
+      (d) => ({ ...(d as Omit<NewSendRateLimit, 'tenantId'>), tenantId }) as NewSendRateLimit
+    );
     return (await this.db.insert(this.table).values(values).returning()) as SendRateLimit[];
   }
 
@@ -69,7 +71,7 @@ export class SendRateLimitRepository extends TenantAwareRepository<
   ): Promise<SendRateLimit | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as any)
+      .set(data as Partial<Omit<NewSendRateLimit, 'tenantId'>> as Partial<NewSendRateLimit>)
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as SendRateLimit | undefined;
