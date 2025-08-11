@@ -96,41 +96,12 @@ const contactStrategyInputSchema = z.object({
   ),
 });
 
-// Output Schemas (existing)
-
-const outreachTouchpointSchema = z
-  .object({
-    type: z.enum(['email', 'call']).describe('Communication channel for this touchpoint'),
-    timing: z.string().describe('When to send this touchpoint (e.g., "Day 1", "Day 3")'),
-    subject: z.string().optional().describe('Email subject line or call purpose'),
-    content: z.string().describe('Message content tailored specifically to the contact'),
-    callToAction: z.string().describe('Clear next step requested from the contact'),
-  })
-  .describe('Represents the communication channel for this touchpoint');
-
-const outreachStrategyOutputSchema = z
-  .object({
-    outreachCampaign: z.array(outreachTouchpointSchema).describe('Ordered outreach campaign steps'),
-    cadence: z.object({
-      interval: z.string().describe('Recommended interval between touchpoints'),
-      totalDuration: z.string().describe('Total campaign duration'),
-    }),
-    summary: z.string().describe('Brief summary of outreach campaign goals'),
-  })
-  .describe('Represents the ordered outreach campaign steps');
-
 // Type exports for input schemas
 export type LeadDetails = z.infer<typeof leadDetailsSchema>;
 export type ContactDetails = z.infer<typeof contactDetailsSchema>;
 export type PartnerDetails = z.infer<typeof partnerDetailsSchema>;
 export type Salesman = z.infer<typeof salesmanSchema>;
 export type PartnerProduct = z.infer<typeof partnerProductSchema>;
-export type ContactStrategyInput = z.infer<typeof contactStrategyInputSchema>;
-
-// Type exports for output schemas (existing)
-export type OutreachTouchpoint = z.infer<typeof outreachTouchpointSchema>;
-export type OutreachStrategyOutput = z.infer<typeof outreachStrategyOutputSchema>;
-
 // Schema exports
 export {
   leadDetailsSchema,
@@ -139,6 +110,4 @@ export {
   salesmanSchema,
   partnerProductSchema,
   contactStrategyInputSchema,
-  outreachTouchpointSchema,
-  outreachStrategyOutputSchema,
 };

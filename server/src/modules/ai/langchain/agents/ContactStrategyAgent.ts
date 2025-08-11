@@ -16,7 +16,6 @@ import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import {
-  OutreachStrategyOutput,
   LeadDetails,
   leadDetailsSchema,
   contactDetailsSchema,
@@ -27,13 +26,16 @@ import {
   partnerProductSchema,
   salesmanSchema,
   Salesman,
-  outreachStrategyOutputSchema,
-} from '../../schemas/contactStrategySchemas';
+} from '../../schemas/contactCampaignStrategyInputSchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
+import {
+  CampaignPlanOutput,
+  campaignPlanOutputSchema,
+} from '../../schemas/contactCampaignStrategySchema';
 
 export type ContactStrategyResult = {
   finalResponse: string;
-  finalResponseParsed: OutreachStrategyOutput;
+  finalResponseParsed: CampaignPlanOutput;
   totalIterations: number;
   functionCalls: any[];
 };
@@ -92,7 +94,7 @@ export class ContactStrategyAgent {
     let systemPrompt: string;
     try {
       const basePrompt = promptHelper.getPromptAndInject('contact_strategy', {
-        output_schema: JSON.stringify(z.toJSONSchema(outreachStrategyOutputSchema), null, 2),
+        output_schema: JSON.stringify(z.toJSONSchema(campaignPlanOutputSchema), null, 2),
       });
 
       // Add explicit JSON mode instruction
@@ -267,7 +269,7 @@ export class ContactStrategyAgent {
 }
 
 // -- Helpers --
-function parseWithSchema(content: string): OutreachStrategyOutput {
+function parseWithSchema(content: string): CampaignPlanOutput {
   try {
     // First, try to find JSON in the content with multiple strategies
     let jsonText = content;
@@ -292,7 +294,7 @@ function parseWithSchema(content: string): OutreachStrategyOutput {
     });
 
     const parsed = JSON.parse(jsonText);
-    return outreachStrategyOutputSchema.parse(parsed);
+    return campaignPlanOutputSchema.parse(parsed);
   } catch (parseError) {
     logger.warn('Contact strategy JSON parsing failed', {
       error: parseError instanceof Error ? parseError.message : 'Unknown error',
