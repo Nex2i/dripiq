@@ -391,6 +391,581 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   leadProducts: many(leadProducts),
 }));
 
+// Email Sender Identities table - AE sender verification
+export const emailSenderIdentities = appSchema.table(
+  'email_sender_identities',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    fromEmail: text('from_email').notNull(),
+    fromName: text('from_name').notNull(),
+    domain: text('domain').notNull(),
+    sendgridSenderId: text('sendgrid_sender_id'),
+    validationStatus: text('validation_status').notNull().default('pending'), // pending|verified|failed
+    lastValidatedAt: timestamp('last_validated_at'),
+    dedicatedIpPool: text('dedicated_ip_pool'),
+    isDefault: boolean('is_default').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique('tenant_email_unique').on(table.tenantId, table.fromEmail)]
+);
+
+// Enums for Contact Campaigns
+// Note: Use 'campaign_channel' to align with DB enum created in migrations
+export const channelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
+export const campaignStatusEnum = appSchema.enum('campaign_status', [
+  'draft',
+  'active',
+  'paused',
+  'completed',
+  'stopped',
+  'error',
+]);
+export const scheduledActionStatusEnum = appSchema.enum('scheduled_action_status', [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+  'canceled',
+]);
+export const outboundMessageStateEnum = appSchema.enum('outbound_message_state', [
+  'queued',
+  'scheduled',
+  'sent',
+  'failed',
+  'canceled',
+]);
+
+// Contact Campaigns table - core campaign instances
+export const contactCampaigns = appSchema.table(
+  'contact_campaigns',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    channel: channelEnum('channel').notNull(),
+    status: campaignStatusEnum('status').notNull().default('draft'),
+    currentNodeId: text('current_node_id'),
+    planJson: jsonb('plan_json').notNull(),
+    planVersion: text('plan_version').notNull().default('1.0'),
+    planHash: text('plan_hash').notNull(), // for idempotency
+    senderIdentityId: text('sender_identity_id').references(() => emailSenderIdentities.id, {
+      onDelete: 'set null',
+    }),
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('contact_channel_unique').on(table.tenantId, table.contactId, table.channel),
+    index('contact_campaigns_status_idx').on(table.tenantId, table.status),
+  ]
+);
+
+// Campaign Plan Versions - plan audit trail
+export const campaignPlanVersions = appSchema.table(
+  'campaign_plan_versions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id')
+      .notNull()
+      .references(() => contactCampaigns.id, { onDelete: 'cascade' }),
+    version: text('version').notNull(),
+    planJson: jsonb('plan_json').notNull(),
+    planHash: text('plan_hash').notNull(),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('campaign_version_unique').on(table.campaignId, table.version),
+    index('campaign_plan_versions_hash_idx').on(table.planHash),
+  ]
+);
+
+// Scheduled Actions - SQL-based job scheduling
+export const scheduledActions = appSchema.table(
+  'scheduled_actions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'cascade' }),
+    actionType: text('action_type').notNull(),
+    scheduledAt: timestamp('scheduled_at').notNull(),
+    status: scheduledActionStatusEnum('status').notNull().default('pending'),
+    payload: jsonb('payload'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('scheduled_actions_tenant_status_idx').on(table.tenantId, table.status),
+    index('scheduled_actions_scheduled_at_idx').on(table.scheduledAt),
+  ]
+);
+
+// Outbound Messages - outbox and deduplication
+export const outboundMessages = appSchema.table(
+  'outbound_messages',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id')
+      .notNull()
+      .references(() => contactCampaigns.id, { onDelete: 'cascade' }),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    channel: channelEnum('channel').notNull(),
+    senderIdentityId: text('sender_identity_id').references(() => emailSenderIdentities.id, {
+      onDelete: 'set null',
+    }),
+    providerMessageId: text('provider_message_id'),
+    dedupeKey: text('dedupe_key').notNull(),
+    content: jsonb('content'),
+    state: outboundMessageStateEnum('state').notNull().default('queued'),
+    scheduledAt: timestamp('scheduled_at'),
+    sentAt: timestamp('sent_at'),
+    errorAt: timestamp('error_at'),
+    lastError: text('last_error'),
+    retryCount: integer('retry_count').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('outbound_messages_dedupe_unique').on(table.tenantId, table.dedupeKey),
+    index('outbound_messages_state_idx').on(table.tenantId, table.state),
+    index('outbound_messages_provider_id_idx').on(table.providerMessageId),
+  ]
+);
+
+// Message Events - normalized engagement events
+export const messageEvents = appSchema.table(
+  'message_events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    messageId: text('message_id')
+      .notNull()
+      .references(() => outboundMessages.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(), // delivered|open|click|bounce|spam|unsubscribe|reply
+    eventAt: timestamp('event_at').notNull(),
+    data: jsonb('data'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('message_events_tenant_type_idx').on(table.tenantId, table.type),
+    index('message_events_event_at_idx').on(table.eventAt),
+  ]
+);
+
+// Webhook Deliveries - raw webhook archive
+export const webhookDeliveries = appSchema.table(
+  'webhook_deliveries',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(), // sendgrid|twilio|...
+    eventType: text('event_type').notNull(),
+    messageId: text('message_id').references(() => outboundMessages.id, { onDelete: 'set null' }),
+    receivedAt: timestamp('received_at').notNull().defaultNow(),
+    payload: jsonb('payload').notNull(),
+    signature: text('signature'),
+    status: text('status').notNull().default('received'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('webhook_deliveries_provider_idx').on(table.tenantId, table.provider),
+    index('webhook_deliveries_received_at_idx').on(table.receivedAt),
+  ]
+);
+
+// Inbound Messages - reply storage for analysis
+export const inboundMessages = appSchema.table(
+  'inbound_messages',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'set null' }),
+    contactId: text('contact_id').references(() => leadPointOfContacts.id, {
+      onDelete: 'set null',
+    }),
+    channel: channelEnum('channel').notNull(),
+    providerMessageId: text('provider_message_id'),
+    receivedAt: timestamp('received_at').notNull().defaultNow(),
+    subject: text('subject'),
+    bodyText: text('body_text'),
+    bodyHtml: text('body_html'),
+    raw: jsonb('raw'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('inbound_messages_received_at_idx').on(table.receivedAt),
+    index('inbound_messages_provider_id_idx').on(table.providerMessageId),
+  ]
+);
+
+// Communication Suppressions - per-tenant suppression lists
+export const communicationSuppressions = appSchema.table(
+  'communication_suppressions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    channel: channelEnum('channel').notNull(),
+    address: text('address').notNull(),
+    reason: text('reason'),
+    suppressedAt: timestamp('suppressed_at').notNull().defaultNow(),
+    expiresAt: timestamp('expires_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('communication_suppressions_unique').on(table.tenantId, table.channel, table.address),
+    index('communication_suppressions_suppressed_at_idx').on(table.suppressedAt),
+  ]
+);
+
+// Send Rate Limits - configurable sending limits
+export const sendRateLimits = appSchema.table(
+  'send_rate_limits',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    channel: channelEnum('channel').notNull(),
+    scope: text('scope').notNull().default('tenant'), // tenant|identity
+    identityId: text('identity_id').references(() => emailSenderIdentities.id, {
+      onDelete: 'set null',
+    }),
+    windowSeconds: integer('window_seconds').notNull(),
+    maxSends: integer('max_sends').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('send_rate_limits_unique').on(
+      table.tenantId,
+      table.channel,
+      table.scope,
+      table.identityId
+    ),
+    index('send_rate_limits_channel_idx').on(table.channel),
+  ]
+);
+
+// Email Validation Results - SendGrid validation cache
+export const emailValidationResults = appSchema.table(
+  'email_validation_results',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    isValid: boolean('is_valid').notNull().default(false),
+    score: integer('score'),
+    validationStatus: text('validation_status'),
+    source: text('source'),
+    checkedAt: timestamp('checked_at'),
+    raw: jsonb('raw'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('email_validation_results_unique').on(table.tenantId, table.email),
+    index('email_validation_results_checked_at_idx').on(table.checkedAt),
+  ]
+);
+
+// Contact Channels - multi-address support (optional)
+export const contactChannels = appSchema.table(
+  'contact_channels',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    type: channelEnum('type').notNull(),
+    value: text('value').notNull(),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    isVerified: boolean('is_verified').notNull().default(false),
+    verificationStatus: text('verification_status'),
+    verifiedAt: timestamp('verified_at'),
+    validationResultId: text('validation_result_id').references(() => emailValidationResults.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('contact_channels_unique').on(table.tenantId, table.contactId, table.type, table.value),
+    index('contact_channels_primary_idx').on(table.isPrimary),
+  ]
+);
+
+// Campaign Transitions - state change audit log
+export const campaignTransitions = appSchema.table(
+  'campaign_transitions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id')
+      .notNull()
+      .references(() => contactCampaigns.id, { onDelete: 'cascade' }),
+    fromStatus: campaignStatusEnum('from_status'),
+    toStatus: campaignStatusEnum('to_status').notNull(),
+    reason: text('reason'),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    occurredAt: timestamp('occurred_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('campaign_transitions_campaign_idx').on(table.campaignId, table.occurredAt)]
+);
+
+// Relations for new tables
+export const emailSenderIdentitiesRelations = relations(emailSenderIdentities, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [emailSenderIdentities.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [emailSenderIdentities.userId],
+    references: [users.id],
+  }),
+  outboundMessages: many(outboundMessages),
+}));
+
+export const contactCampaignsRelations = relations(contactCampaigns, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [contactCampaigns.tenantId],
+    references: [tenants.id],
+  }),
+  lead: one(leads, {
+    fields: [contactCampaigns.leadId],
+    references: [leads.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [contactCampaigns.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  senderIdentity: one(emailSenderIdentities, {
+    fields: [contactCampaigns.senderIdentityId],
+    references: [emailSenderIdentities.id],
+  }),
+  scheduledActions: many(scheduledActions),
+  outboundMessages: many(outboundMessages),
+  transitions: many(campaignTransitions),
+  inboundMessages: many(inboundMessages),
+  planVersions: many(campaignPlanVersions),
+}));
+
+export const campaignPlanVersionsRelations = relations(campaignPlanVersions, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [campaignPlanVersions.tenantId],
+    references: [tenants.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [campaignPlanVersions.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  createdBy: one(users, {
+    fields: [campaignPlanVersions.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const scheduledActionsRelations = relations(scheduledActions, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [scheduledActions.tenantId],
+    references: [tenants.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [scheduledActions.campaignId],
+    references: [contactCampaigns.id],
+  }),
+}));
+
+export const outboundMessagesRelations = relations(outboundMessages, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [outboundMessages.tenantId],
+    references: [tenants.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [outboundMessages.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [outboundMessages.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  senderIdentity: one(emailSenderIdentities, {
+    fields: [outboundMessages.senderIdentityId],
+    references: [emailSenderIdentities.id],
+  }),
+  events: many(messageEvents),
+}));
+
+export const messageEventsRelations = relations(messageEvents, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [messageEvents.tenantId],
+    references: [tenants.id],
+  }),
+  message: one(outboundMessages, {
+    fields: [messageEvents.messageId],
+    references: [outboundMessages.id],
+  }),
+}));
+
+export const webhookDeliveriesRelations = relations(webhookDeliveries, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [webhookDeliveries.tenantId],
+    references: [tenants.id],
+  }),
+  message: one(outboundMessages, {
+    fields: [webhookDeliveries.messageId],
+    references: [outboundMessages.id],
+  }),
+}));
+
+export const inboundMessagesRelations = relations(inboundMessages, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [inboundMessages.tenantId],
+    references: [tenants.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [inboundMessages.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [inboundMessages.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+}));
+
+export const communicationSuppressionsRelations = relations(
+  communicationSuppressions,
+  ({ one }) => ({
+    tenant: one(tenants, {
+      fields: [communicationSuppressions.tenantId],
+      references: [tenants.id],
+    }),
+  })
+);
+
+export const sendRateLimitsRelations = relations(sendRateLimits, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [sendRateLimits.tenantId],
+    references: [tenants.id],
+  }),
+  identity: one(emailSenderIdentities, {
+    fields: [sendRateLimits.identityId],
+    references: [emailSenderIdentities.id],
+  }),
+}));
+
+export const emailValidationResultsRelations = relations(emailValidationResults, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [emailValidationResults.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const contactChannelsRelations = relations(contactChannels, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [contactChannels.tenantId],
+    references: [tenants.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [contactChannels.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  validationResult: one(emailValidationResults, {
+    fields: [contactChannels.validationResultId],
+    references: [emailValidationResults.id],
+  }),
+}));
+
+export const campaignTransitionsRelations = relations(campaignTransitions, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [campaignTransitions.tenantId],
+    references: [tenants.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [campaignTransitions.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  createdBy: one(users, {
+    fields: [campaignTransitions.createdBy],
+    references: [users.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -418,3 +993,29 @@ export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;
 export type NewSiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferInsert;
 export type LeadProduct = typeof leadProducts.$inferSelect;
 export type NewLeadProduct = typeof leadProducts.$inferInsert;
+export type EmailSenderIdentity = typeof emailSenderIdentities.$inferSelect;
+export type NewEmailSenderIdentity = typeof emailSenderIdentities.$inferInsert;
+export type ContactCampaign = typeof contactCampaigns.$inferSelect;
+export type NewContactCampaign = typeof contactCampaigns.$inferInsert;
+export type CampaignPlanVersion = typeof campaignPlanVersions.$inferSelect;
+export type NewCampaignPlanVersion = typeof campaignPlanVersions.$inferInsert;
+export type ScheduledAction = typeof scheduledActions.$inferSelect;
+export type NewScheduledAction = typeof scheduledActions.$inferInsert;
+export type OutboundMessage = typeof outboundMessages.$inferSelect;
+export type NewOutboundMessage = typeof outboundMessages.$inferInsert;
+export type MessageEvent = typeof messageEvents.$inferSelect;
+export type NewMessageEvent = typeof messageEvents.$inferInsert;
+export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+export type NewWebhookDelivery = typeof webhookDeliveries.$inferInsert;
+export type InboundMessage = typeof inboundMessages.$inferSelect;
+export type NewInboundMessage = typeof inboundMessages.$inferInsert;
+export type CommunicationSuppression = typeof communicationSuppressions.$inferSelect;
+export type NewCommunicationSuppression = typeof communicationSuppressions.$inferInsert;
+export type SendRateLimit = typeof sendRateLimits.$inferSelect;
+export type NewSendRateLimit = typeof sendRateLimits.$inferInsert;
+export type EmailValidationResult = typeof emailValidationResults.$inferSelect;
+export type NewEmailValidationResult = typeof emailValidationResults.$inferInsert;
+export type ContactChannel = typeof contactChannels.$inferSelect;
+export type NewContactChannel = typeof contactChannels.$inferInsert;
+export type CampaignTransition = typeof campaignTransitions.$inferSelect;
+export type NewCampaignTransition = typeof campaignTransitions.$inferInsert;
