@@ -419,7 +419,8 @@ export const emailSenderIdentities = appSchema.table(
 );
 
 // Enums for Contact Campaigns
-export const channelEnum = appSchema.enum('channel', ['email', 'sms']);
+// Note: Use 'campaign_channel' to align with DB enum created in migrations
+export const channelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
 export const campaignStatusEnum = appSchema.enum('campaign_status', [
   'draft',
   'active',
