@@ -3,7 +3,6 @@ import {
   contactCampaignRepository,
   campaignPlanVersionRepository,
   leadRepository,
-  userRepository,
   emailSenderIdentityRepository,
 } from '@/repositories';
 import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
