@@ -26,6 +26,7 @@ export const ContactExtractionService = {
         };
       }
 
+      // Soft-cap to 5 for processing order, but keep original for dedup/priority alignment
       const contacts = extractionResult.finalResponseParsed.contacts;
       const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
 
@@ -37,16 +38,30 @@ export const ContactExtractionService = {
         `Found ${contacts.length} contacts, deduplicated to ${deduplicatedContacts.length} for domain: ${domain}`
       );
 
+      // Sort contacts by importance with simple heuristics, keeping priority first if provided
+      const sorted = ContactExtractionService.sortBySalesRelevance(
+        deduplicatedContacts,
+        updatedPriorityIndex
+      );
+
+      // Enforce soft cap of 5 for processing order
+      const toProcess = sorted.slice(0, 5);
+
       // Get existing contacts for the lead
       const existingContacts = await ContactExtractionService.getExistingContacts(leadId);
+
+      // Enforce hard cap of 6 total contacts for a lead by trimming creations
+      const remainingSlots = Math.max(0, 6 - existingContacts.length);
+      const cappedToProcess = remainingSlots > 0 ? toProcess.slice(0, remainingSlots) : [];
 
       // Process and save contacts with merging
       const processedContacts = await ContactExtractionService.processAndMergeContacts(
         tenantId,
         leadId,
-        deduplicatedContacts,
+        cappedToProcess,
         existingContacts,
-        updatedPriorityIndex
+        // If we re-ordered, new priority is index 0 when there is at least one contact
+        cappedToProcess.length > 0 ? 0 : null
       );
 
       logger.info(
@@ -210,6 +225,9 @@ export const ContactExtractionService = {
       primaryContactId: null as string | null,
     };
 
+    // Respect hard cap of 6 by skipping creates when full, still allow updates/merges
+    let totalExisting = existingContacts.length;
+
     for (let i = 0; i < extractedContacts.length; i++) {
       const extractedContact = extractedContacts[i];
       if (!extractedContact) continue;
@@ -223,7 +241,7 @@ export const ContactExtractionService = {
           existingContacts
         );
 
-        let contactId: string;
+        let contactId: string | undefined;
 
         if (similarContact) {
           // Merge and update existing contact
@@ -243,11 +261,19 @@ export const ContactExtractionService = {
             continue;
           }
         } else {
-          // Create new contact
+          // If we reached hard cap, skip creating new contact
+          if (totalExisting >= 6) {
+            logger.info(
+              `Skipping creation of new contact due to hard cap (6) reached for leadId: ${leadId}`
+            );
+            continue;
+          }
+
           const createdContact = await createContact(tenantId, leadId, leadContact);
           results.created++;
           results.contacts.push(createdContact);
           contactId = createdContact.id;
+          totalExisting++;
           logger.debug(`Created contact: ${extractedContact.name} for leadId: ${leadId}`);
         }
 
@@ -255,7 +281,8 @@ export const ContactExtractionService = {
         if (
           priorityContactIndex !== null &&
           priorityContactIndex !== undefined &&
-          i === priorityContactIndex
+          i === priorityContactIndex &&
+          contactId
         ) {
           results.primaryContactId = contactId;
           logger.info(
@@ -660,5 +687,63 @@ export const ContactExtractionService = {
     }
 
     return false;
+  },
+
+  /**
+   * Sort extracted contacts by importance for sales outreach
+   */
+  sortBySalesRelevance: (
+    contacts: ExtractedContact[],
+    priorityContactIndex: number | null
+  ): ExtractedContact[] => {
+    const scoreFor = (c: ExtractedContact): number => {
+      let score = 0;
+      // Priority contact gets a large boost
+      if (c.isPriorityContact) score += 100;
+
+      // Role/title-based heuristics
+      const title = (c.title || '').toLowerCase();
+      const name = (c.name || '').toLowerCase();
+      const type = c.contactType;
+
+      const executiveKeywords = ['chief', 'ceo', 'cto', 'cmo', 'coo', 'cfo', 'founder'];
+      const salesLeadership = ['vp', 'vice president', 'head of', 'director'];
+      const salesKeywords = ['sales', 'business development', 'partnership', 'revenue'];
+
+      if (executiveKeywords.some((k) => title.includes(k))) score += 40;
+      if (salesLeadership.some((k) => title.includes(k))) score += 30;
+      if (salesKeywords.some((k) => title.includes(k))) score += 20;
+
+      // Individuals preferred over departments/offices
+      if (type === 'individual') score += 10;
+
+      // Direct contact methods increase utility
+      if (c.email) score += 6;
+      if (c.phone) score += 4;
+      if (c.linkedinUrl) score += 2;
+
+      // Generic department penalty unless needed
+      if (type !== 'individual' || /info@|contact@|support@/.test((c.email || '').toLowerCase())) {
+        score -= 5;
+      }
+
+      return score;
+    };
+
+    const ranked = contacts
+      .map((c, idx) => ({ c, idx, score: scoreFor(c) }))
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.c);
+
+    // If model indicated a specific priority index, ensure it’s first
+    if (priorityContactIndex !== null && priorityContactIndex >= 0 && priorityContactIndex < contacts.length) {
+      const priorityContact = contacts[priorityContactIndex];
+      if (priorityContact) {
+        const remaining = ranked.filter((c) => c !== priorityContact);
+        return [priorityContact, ...remaining];
+      }
+    }
+
+    return ranked;
   },
 };
