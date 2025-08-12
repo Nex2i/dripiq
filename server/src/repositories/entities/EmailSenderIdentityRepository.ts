@@ -1,5 +1,6 @@
 import { eq, and, inArray } from 'drizzle-orm';
 import { emailSenderIdentities, EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
+import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -144,5 +145,21 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
       .where(and(eq(this.table.tenantId, tenantId), eq(this.table.fromEmail, fromEmail)))
       .limit(1);
     return results[0];
+  }
+
+  async findIdByUserIdForTenant(userId: string, tenantId: string): Promise<string> {
+    const results = await this.db
+      .select({ id: this.table.id })
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.userId, userId)))
+      .limit(1);
+
+    if (!results[0]) {
+      throw new NotFoundError(
+        `Email sender identity not found for user ${userId} in tenant ${tenantId}`
+      );
+    }
+
+    return results[0].id;
   }
 }

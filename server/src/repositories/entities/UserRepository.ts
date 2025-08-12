@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { users, User, NewUser, tenants, userTenants } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
@@ -112,6 +112,23 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
     }
   }
 
+  /**
+   * Find user by Id and Tenant Id
+   */
+  async findByIdForTenant(id: string, tenantId: string): Promise<User> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .innerJoin(userTenants, eq(userTenants.userId, this.table.id))
+      .where(and(eq(this.table.id, id), eq(userTenants.tenantId, tenantId)))
+      .limit(1);
+
+    if (!results[0]) {
+      throw new NotFoundError(`User not found with id: ${id} for tenant: ${tenantId}`);
+    }
+
+    return (results[0] as any).users;
+  }
   /**
    * Delete user by Supabase ID
    */

@@ -81,7 +81,6 @@ const SendNode = BaseNode.extend({
   action: z.literal('send'),
   subject: z.string().optional().describe('Email subject (ignored for SMS).'),
   body: z.string().optional().describe('Message body.'),
-  senderIdentityId: z.string().optional().describe('Optional sender identity override.'),
   // Ensure schedule always resolves to a usable value:
   schedule: SendSchedule.catch({ delay: 'PT0S' }),
 });
@@ -121,7 +120,6 @@ export const campaignPlanOutputSchema = z.object({
         .default({ no_open_after: 'PT72H', no_click_after: 'PT24H' }),
     })
     .default({ timers: { no_open_after: 'PT72H', no_click_after: 'PT24H' } }),
-  senderIdentityId: z.string().optional().describe('Default sender identity for send nodes.'),
   startNodeId: z.string().min(1).describe('Entry node id.'),
   nodes: z.array(Node).min(1).describe('All nodes in the campaign graph.'),
 });
@@ -141,7 +139,6 @@ Example CampaignPlan output:
       "no_click_after": "PT24H"
     }
   },
-  "senderIdentityId": "sender_123",
   "startNodeId": "email_intro",
   "nodes": [
     {
@@ -150,7 +147,6 @@ Example CampaignPlan output:
       "action": "send",
       "subject": "{subject}",
       "body": "{personalized_body}",
-      "senderIdentityId": "sender_123",
       "schedule": { "delay": "PT0S" },
       "transitions": [
         { "on": "opened", "to": "wait_click", "within": "PT72H" },
