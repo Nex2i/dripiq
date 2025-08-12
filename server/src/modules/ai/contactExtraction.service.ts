@@ -169,7 +169,7 @@ export const ContactExtractionService = {
       }
     }
 
-    // If priority contact was removed due to duplication, try to find a priority contact by flag
+    // If priority contact was filtered due to duplication, try to find a priority contact by flag
     if (priorityContactIndex !== null && updatedPriorityIndex === null) {
       const priorityContactByFlag = deduplicatedContacts.findIndex(
         (contact) => contact.isPriorityContact
