@@ -127,7 +127,7 @@ export function AuthDebugMenu({ className = '' }: AuthDebugMenuProps) {
                       <div className="text-gray-400">
                         {user.tenants.map((tenant) => (
                           <div key={tenant.id} className="ml-2">
-                            • {tenant.name}{' '}
+                            • {tenant.name} — ID: {tenant.id}{' '}
                             {tenant.role
                               ? `(${tenant.role.name})`
                               : '(No Role)'}{' '}

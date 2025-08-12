@@ -62,12 +62,10 @@ export const supabaseStorage = {
     try {
       const { data, error } = await supabase.storage.from(bucket).exists(key);
       if (error) {
-        logger.error(`Error checking if file exists ${key}`, error);
         return false;
       }
       return !!data;
-    } catch (error) {
-      logger.error(`Error checking if file exists ${key}`, error);
+    } catch (_error) {
       return false;
     }
   },

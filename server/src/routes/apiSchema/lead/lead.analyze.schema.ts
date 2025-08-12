@@ -24,15 +24,8 @@ export const ResyncLeadResponseSchema = Type.Object({
 });
 
 // Response schema for contact strategy
-export const ContactStrategyResponseSchema = Type.Object({
-  success: Type.Boolean(),
-  message: Type.String(),
-  data: Type.Any({ description: 'Contact strategy data' }),
-  metadata: Type.Object({
-    totalIterations: Type.Number(),
-    processingTime: Type.Number(),
-  }),
-});
+// Updated to return the campaign plan JSON directly (Zod-defined in contactCampaignStrategySchema.ts)
+export const ContactStrategyResponseSchema = Type.Any();
 
 // Complete schemas for analysis routes
 export const LeadVendorFitSchema = {

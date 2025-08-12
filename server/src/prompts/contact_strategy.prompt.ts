@@ -60,6 +60,67 @@ Deliver your outreach strategy strictly as JSON using the schema below:
 
 {{output_schema}}
 
+
+Example Output:
+{
+  "version": "1.0",
+  "timezone": "America/Los_Angeles",
+  "quietHours": { "start": "21:00", "end": "07:30" },
+  "defaults": {
+    "timers": {
+      "no_open_after": "PT72H",
+      "no_click_after": "PT24H"
+    }
+  },
+  "senderIdentityId": "sender_123",
+  "startNodeId": "email_intro",
+  "nodes": [
+    {
+      "id": "email_intro",
+      "channel": "email",
+      "action": "send",
+      "subject": "{subject}",
+      "body": "{personalized_body}",
+      "senderIdentityId": "sender_123",
+      "schedule": { "delay": "PT0S" },
+      "transitions": [
+        { "on": "opened", "to": "wait_click", "within": "PT72H" },
+        { "on": "no_open", "to": "email_bump_1", "after": "PT72H" },
+        { "on": "bounced", "to": "stop", "after": "PT0S" },
+        { "on": "unsubscribed", "to": "stop", "after": "PT0S" }
+      ]
+    },
+    {
+      "id": "wait_click",
+      "channel": "email",
+      "action": "wait",
+      "transitions": [
+        { "on": "clicked", "to": "stop", "within": "PT24H" },
+        { "on": "no_click", "to": "email_bump_1", "after": "PT24H" }
+      ]
+    },
+    {
+      "id": "email_bump_1",
+      "channel": "email",
+      "action": "send",
+      "subject": "{bump_subject}",
+      "body": "{bump_body}",
+      "schedule": { "delay": "PT0S" },
+      "transitions": [
+        { "on": "opened", "to": "stop", "within": "PT72H" },
+        { "on": "no_open", "to": "stop", "after": "PT72H" },
+        { "on": "bounced", "to": "stop", "after": "PT0S" },
+        { "on": "unsubscribed", "to": "stop", "after": "PT0S" }
+      ]
+    },
+    {
+      "id": "stop",
+      "channel": "email",
+      "action": "stop"
+    }
+  ]
+}
+
 Instructions:
 - Start with { and end with }.
 - Output ONLY valid JSON—no markdown, no comments.

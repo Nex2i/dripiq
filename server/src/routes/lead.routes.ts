@@ -732,7 +732,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Leads'],
       ...LeadContactStrategySchema,
       response: {
-        ...defaultRouteResponse(),
         ...LeadContactStrategySchema.response,
       },
     },
@@ -742,7 +741,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       const userId = user?.id;
 
       try {
-        const startTime = Date.now();
+        const _startTime = Date.now();
 
         const result = await generateContactStrategy({
           leadId,
@@ -751,17 +750,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           userId,
         });
 
-        const processingTime = Date.now() - startTime;
-
-        reply.status(200).send({
-          success: true,
-          message: 'Contact strategy generation completed successfully',
-          data: result.finalResponseParsed,
-          metadata: {
-            totalIterations: result.totalIterations,
-            processingTime,
-          },
-        });
+        // Return the campaign plan JSON directly per new schema
+        reply.status(200).send(result.finalResponseParsed);
       } catch (error: any) {
         fastify.log.error(`Error qualifying lead contact: ${error.message}`);
 

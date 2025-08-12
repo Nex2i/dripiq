@@ -29,14 +29,15 @@ export const generateContactStrategy = async (
       cacheKey,
     });
 
-    const cachedResult = await supabaseStorage.downloadFile(cacheKey);
-    if (cachedResult) {
+    const isResultCached = await supabaseStorage.fileExists(cacheKey);
+    if (isResultCached) {
       logger.info('Found cached contact strategy result, returning cached data', {
         leadId,
         contactId,
         tenantId,
         cacheKey,
       });
+      const cachedResult = await supabaseStorage.downloadFile(cacheKey);
       return cachedResult;
     }
 

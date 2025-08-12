@@ -19,7 +19,10 @@ import ContactStrategyModal from '../ContactStrategyModal'
 import AnimatedCheckbox from '../AnimatedCheckbox'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
-import { useUpdateContact, useToggleContactManuallyReviewed } from '../../hooks/useLeadsQuery'
+import {
+  useUpdateContact,
+  useToggleContactManuallyReviewed,
+} from '../../hooks/useLeadsQuery'
 
 interface ContactsTabProps {
   contacts: LeadPointOfContact[]
@@ -38,15 +41,22 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [qualifyingContactId, setQualifyingContactId] = useState<string | null>(
     null,
   )
-  const [contactStrategyModalOpen, setContactStrategyModalOpen] = useState(false)
+  const [contactStrategyModalOpen, setContactStrategyModalOpen] =
+    useState(false)
   const [contactStrategyData, setContactStrategyData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
-  const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>({})
-  const [originalFormData, setOriginalFormData] = useState<Partial<LeadPointOfContact>>({})
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
+  const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>(
+    {},
+  )
+  const [originalFormData, setOriginalFormData] = useState<
+    Partial<LeadPointOfContact>
+  >({})
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string
+  }>({})
   const leadsService = getLeadsService()
-  
+
   const updateContactMutation = useUpdateContact(
     // onSuccess callback
     () => {
@@ -56,7 +66,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     (error) => {
       console.error('Failed to update contact:', error)
       // You might want to show a toast notification here
-    }
+    },
   )
 
   const toggleManuallyReviewedMutation = useToggleContactManuallyReviewed()
@@ -72,7 +82,8 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       }
     },
     onSuccess: (result) => {
-      setContactStrategyData(result.data)
+      // API now returns the plan directly (no { data })
+      setContactStrategyData(result)
       setContactStrategyModalOpen(true)
     },
     onSettled: () => {
@@ -86,15 +97,18 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const handleToggleManuallyReviewed = (contact: LeadPointOfContact) => {
     setLoadingContactId(contact.id)
-    toggleManuallyReviewedMutation.mutate({
-      leadId,
-      contactId: contact.id,
-      manuallyReviewed: !contact.manuallyReviewed,
-    }, {
-      onSettled: () => {
-        setLoadingContactId(null)
-      }
-    })
+    toggleManuallyReviewedMutation.mutate(
+      {
+        leadId,
+        contactId: contact.id,
+        manuallyReviewed: !contact.manuallyReviewed,
+      },
+      {
+        onSettled: () => {
+          setLoadingContactId(null)
+        },
+      },
+    )
   }
 
   const handleGenerateContactStrategy = (contactId: string) => {
@@ -112,11 +126,13 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     setEditFormData(editableData)
     setOriginalFormData(editableData)
     setValidationErrors({})
-    
+
     // Auto-focus the name input after the component re-renders
     setTimeout(() => {
-      const nameInput = document.querySelector(`input[data-field="name-${contact.id}"]`) as HTMLInputElement;
-      if (nameInput) nameInput.focus();
+      const nameInput = document.querySelector(
+        `input[data-field="name-${contact.id}"]`,
+      ) as HTMLInputElement
+      if (nameInput) nameInput.focus()
     }, 0)
   }
 
@@ -129,59 +145,60 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const validateEmail = (email: string): string | null => {
     if (!email.trim()) return 'Email is required'
-    
+
     // Basic format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) return 'Please enter a valid email address'
-    
+
     // Check for common issues
     if (email.includes('..')) return 'Email cannot contain consecutive dots'
-    if (email.startsWith('.') || email.endsWith('.')) return 'Email cannot start or end with a dot'
+    if (email.startsWith('.') || email.endsWith('.'))
+      return 'Email cannot start or end with a dot'
     if (email.includes(' ')) return 'Email cannot contain spaces'
-    
+
     // Check domain part
     const domain = email.split('@')[1]
     if (domain && domain.length < 2) return 'Email domain is too short'
-    
+
     return null
   }
 
   const validatePhoneNumber = (phone: string): string | null => {
     if (!phone.trim()) return null // Phone is optional
-    
+
     // Remove all non-digit characters for validation
     const digitsOnly = phone.replace(/\D/g, '')
-    
+
     // US phone number should have exactly 10 digits (without country code) or 11 digits (with country code 1)
     if (digitsOnly.length === 10) {
       // Valid 10-digit US number - check that area code and exchange code are valid
       const areaCode = digitsOnly.slice(0, 3)
       const exchangeCode = digitsOnly.slice(3, 6)
-      
+
       // Area code cannot start with 0 or 1
       if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
         return 'Invalid area code - cannot start with 0 or 1'
       }
-      
+
       // Exchange code cannot start with 0 or 1
       if (exchangeCode.startsWith('0') || exchangeCode.startsWith('1')) {
         return 'Invalid phone number format'
       }
-      
+
       return null
     } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
       // Valid 11-digit US number with country code - validate the same way
       const areaCode = digitsOnly.slice(1, 4)
       const exchangeCode = digitsOnly.slice(4, 7)
-      
+
       if (areaCode.startsWith('0') || areaCode.startsWith('1')) {
         return 'Invalid area code - cannot start with 0 or 1'
       }
-      
+
       if (exchangeCode.startsWith('0') || exchangeCode.startsWith('1')) {
         return 'Invalid phone number format'
       }
-      
+
       return null
     } else if (digitsOnly.length < 10) {
       return 'Phone number is too short - must be 10 digits'
@@ -206,10 +223,10 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digit characters
     const digitsOnly = value.replace(/\D/g, '')
-    
+
     // Don't format if empty
     if (!digitsOnly) return ''
-    
+
     // Format based on length
     if (digitsOnly.length <= 3) {
       return digitsOnly
@@ -228,20 +245,20 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const handleFormChange = (field: keyof LeadPointOfContact, value: string) => {
     let processedValue = value
-    
+
     // Format phone number as user types
     if (field === 'phone') {
       processedValue = formatPhoneNumber(value)
     }
 
-    setEditFormData(prev => ({
+    setEditFormData((prev) => ({
       ...prev,
       [field]: processedValue,
     }))
 
     // Clear validation error for this field when user starts typing
     if (validationErrors[field]) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev }
         delete newErrors[field]
         return newErrors
@@ -252,9 +269,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const handleBlur = (field: string, value: string) => {
     const error = validateField(field, value)
     if (error) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [field]: error
+        [field]: error,
       }))
     }
   }
@@ -263,8 +280,8 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     if (!editingContactId) return
 
     // Validate all fields
-    const errors: {[key: string]: string} = {}
-    
+    const errors: { [key: string]: string } = {}
+
     const nameError = validateField('name', editFormData.name || '')
     if (nameError) errors.name = nameError
 
@@ -282,7 +299,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
     // Prepare data for update (only changed fields)
     const updateData: any = {}
-    
+
     if (editFormData.name !== originalFormData.name) {
       updateData.name = editFormData.name
     }
@@ -334,11 +351,13 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center">
                     {editingContactId === contact.id ? (
-                      <div 
+                      <div
                         className="flex items-center space-x-2 cursor-text"
                         onClick={() => {
-                          const nameInput = document.querySelector(`input[data-field="name-${contact.id}"]`) as HTMLInputElement;
-                          if (nameInput) nameInput.focus();
+                          const nameInput = document.querySelector(
+                            `input[data-field="name-${contact.id}"]`,
+                          ) as HTMLInputElement
+                          if (nameInput) nameInput.focus()
                         }}
                       >
                         <div className="flex-1">
@@ -346,16 +365,22 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                             type="text"
                             data-field={`name-${contact.id}`}
                             value={editFormData.name || ''}
-                            onChange={(e) => handleFormChange('name', e.target.value)}
+                            onChange={(e) =>
+                              handleFormChange('name', e.target.value)
+                            }
                             onBlur={(e) => handleBlur('name', e.target.value)}
                             className={`text-lg font-medium bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 min-w-0 w-full ${
-                              validationErrors.name ? 'text-red-600' : 'text-gray-900'
+                              validationErrors.name
+                                ? 'text-red-600'
+                                : 'text-gray-900'
                             }`}
                             placeholder="Contact name"
                             required
                           />
                           {validationErrors.name && (
-                            <p className="text-red-500 text-sm mt-1">{validationErrors.name}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                              {validationErrors.name}
+                            </p>
                           )}
                         </div>
                         {primaryContactId === contact.id && (
@@ -389,9 +414,16 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                       <>
                         <button
                           onClick={handleSaveContact}
-                          disabled={updateContactMutation.isPending || Object.keys(validationErrors).length > 0}
+                          disabled={
+                            updateContactMutation.isPending ||
+                            Object.keys(validationErrors).length > 0
+                          }
                           className="flex items-center space-x-2 px-3 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={Object.keys(validationErrors).length > 0 ? "Please fix validation errors before saving" : "Save changes"}
+                          title={
+                            Object.keys(validationErrors).length > 0
+                              ? 'Please fix validation errors before saving'
+                              : 'Save changes'
+                          }
                         >
                           {updateContactMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -399,7 +431,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                             <Save className="h-4 w-4" />
                           )}
                           <span className="text-sm font-medium">
-                            {updateContactMutation.isPending ? 'Saving...' : 'Save'}
+                            {updateContactMutation.isPending
+                              ? 'Saving...'
+                              : 'Save'}
                           </span>
                         </button>
                         <button
@@ -416,7 +450,11 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                       <>
                         <button
                           onClick={() => handleEditContact(contact)}
-                          disabled={editingContactId !== null || qualifyingContactId === contact.id || loadingContactId === contact.id}
+                          disabled={
+                            editingContactId !== null ||
+                            qualifyingContactId === contact.id ||
+                            loadingContactId === contact.id
+                          }
                           className="flex items-center space-x-2 px-3 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Edit contact"
                         >
@@ -424,8 +462,13 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           <span className="text-sm font-medium">Edit</span>
                         </button>
                         <button
-                          onClick={() => handleGenerateContactStrategy(contact.id)}
-                          disabled={qualifyingContactId === contact.id || editingContactId !== null}
+                          onClick={() =>
+                            handleGenerateContactStrategy(contact.id)
+                          }
+                          disabled={
+                            qualifyingContactId === contact.id ||
+                            editingContactId !== null
+                          }
                           className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Generate contact strategy for this contact"
                         >
@@ -443,8 +486,15 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                         <AnimatedCheckbox
                           checked={contact.manuallyReviewed}
                           onChange={() => handleToggleManuallyReviewed(contact)}
-                          disabled={loadingContactId === contact.id || editingContactId !== null || toggleManuallyReviewedMutation.isPending}
-                          loading={loadingContactId === contact.id || toggleManuallyReviewedMutation.isPending}
+                          disabled={
+                            loadingContactId === contact.id ||
+                            editingContactId !== null ||
+                            toggleManuallyReviewedMutation.isPending
+                          }
+                          loading={
+                            loadingContactId === contact.id ||
+                            toggleManuallyReviewedMutation.isPending
+                          }
                           label="Manually Reviewed"
                           title={
                             contact.manuallyReviewed
@@ -458,35 +508,45 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                     <div 
-                     className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
-                     onClick={() => {
-                       if (editingContactId === contact.id) {
-                         const emailInput = document.querySelector(`input[data-field="email-${contact.id}"]`) as HTMLInputElement;
-                         if (emailInput) emailInput.focus();
-                       }
-                     }}
+                  <div
+                    className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
+                    onClick={() => {
+                      if (editingContactId === contact.id) {
+                        const emailInput = document.querySelector(
+                          `input[data-field="email-${contact.id}"]`,
+                        ) as HTMLInputElement
+                        if (emailInput) emailInput.focus()
+                      }
+                    }}
                   >
                     {editingContactId === contact.id ? (
                       <div className="w-full">
                         <div className="flex items-center space-x-3 mb-2">
                           <Mail className="h-5 w-5 text-gray-400" />
-                          <p className="text-sm font-medium text-gray-900">Email</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            Email
+                          </p>
                         </div>
                         <input
                           type="email"
                           data-field={`email-${contact.id}`}
                           value={editFormData.email || ''}
-                          onChange={(e) => handleFormChange('email', e.target.value)}
+                          onChange={(e) =>
+                            handleFormChange('email', e.target.value)
+                          }
                           onBlur={(e) => handleBlur('email', e.target.value)}
                           className={`w-full text-base bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 ${
-                            validationErrors.email ? 'text-red-600' : 'text-[var(--color-primary-600)]'
+                            validationErrors.email
+                              ? 'text-red-600'
+                              : 'text-[var(--color-primary-600)]'
                           }`}
                           placeholder="Contact email"
                           required
                         />
                         {validationErrors.email && (
-                          <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {validationErrors.email}
+                          </p>
                         )}
                       </div>
                     ) : (
@@ -511,34 +571,44 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                   </div>
 
                   {(contact.phone || editingContactId === contact.id) && (
-                                         <div 
-                       className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
-                       onClick={() => {
-                         if (editingContactId === contact.id) {
-                           const phoneInput = document.querySelector(`input[data-field="phone-${contact.id}"]`) as HTMLInputElement;
-                           if (phoneInput) phoneInput.focus();
-                         }
-                       }}
+                    <div
+                      className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center justify-between'}`}
+                      onClick={() => {
+                        if (editingContactId === contact.id) {
+                          const phoneInput = document.querySelector(
+                            `input[data-field="phone-${contact.id}"]`,
+                          ) as HTMLInputElement
+                          if (phoneInput) phoneInput.focus()
+                        }
+                      }}
                     >
                       {editingContactId === contact.id ? (
                         <div className="w-full">
                           <div className="flex items-center space-x-3 mb-2">
                             <Phone className="h-5 w-5 text-gray-400" />
-                            <p className="text-sm font-medium text-gray-900">Phone</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              Phone
+                            </p>
                           </div>
                           <input
                             type="tel"
                             data-field={`phone-${contact.id}`}
                             value={editFormData.phone || ''}
-                            onChange={(e) => handleFormChange('phone', e.target.value)}
+                            onChange={(e) =>
+                              handleFormChange('phone', e.target.value)
+                            }
                             onBlur={(e) => handleBlur('phone', e.target.value)}
                             className={`w-full text-base bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400 ${
-                              validationErrors.phone ? 'text-red-600' : 'text-[var(--color-primary-600)]'
+                              validationErrors.phone
+                                ? 'text-red-600'
+                                : 'text-[var(--color-primary-600)]'
                             }`}
                             placeholder="Contact phone (US format)"
                           />
                           {validationErrors.phone && (
-                            <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                            <p className="text-red-500 text-sm mt-1">
+                              {validationErrors.phone}
+                            </p>
                           )}
                         </div>
                       ) : (
@@ -557,7 +627,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                                   {contact.phone}
                                 </a>
                               ) : (
-                                <span className="text-base text-gray-500">No phone</span>
+                                <span className="text-base text-gray-500">
+                                  No phone
+                                </span>
                               )}
                             </div>
                           </div>
@@ -570,26 +642,32 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                   )}
 
                   {(contact.title || editingContactId === contact.id) && (
-                                         <div 
-                       className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center space-x-3'}`}
-                       onClick={() => {
-                         if (editingContactId === contact.id) {
-                           const titleInput = document.querySelector(`input[data-field="title-${contact.id}"]`) as HTMLInputElement;
-                           if (titleInput) titleInput.focus();
-                         }
-                       }}
+                    <div
+                      className={`p-3 bg-gray-50 rounded-lg ${editingContactId === contact.id ? 'cursor-text hover:bg-gray-100 transition-colors' : 'flex items-center space-x-3'}`}
+                      onClick={() => {
+                        if (editingContactId === contact.id) {
+                          const titleInput = document.querySelector(
+                            `input[data-field="title-${contact.id}"]`,
+                          ) as HTMLInputElement
+                          if (titleInput) titleInput.focus()
+                        }
+                      }}
                     >
                       {editingContactId === contact.id ? (
                         <div className="w-full">
                           <div className="flex items-center space-x-3 mb-2">
                             <User className="h-5 w-5 text-gray-400" />
-                            <p className="text-sm font-medium text-gray-900">Title</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              Title
+                            </p>
                           </div>
                           <input
                             type="text"
                             data-field={`title-${contact.id}`}
                             value={editFormData.title || ''}
-                            onChange={(e) => handleFormChange('title', e.target.value)}
+                            onChange={(e) =>
+                              handleFormChange('title', e.target.value)
+                            }
                             className="w-full text-base text-gray-700 bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-gray-400"
                             placeholder="Contact title"
                           />
@@ -606,7 +684,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                                 {contact.title}
                               </p>
                             ) : (
-                              <span className="text-base text-gray-500">No title</span>
+                              <span className="text-base text-gray-500">
+                                No title
+                              </span>
                             )}
                           </div>
                         </>
