@@ -690,6 +690,6 @@ export const ContactExtractionService = {
     return false;
   },
 
-  // Removed programmatic relevance sorting: we now trust model-provided ordering
+
 
 };
