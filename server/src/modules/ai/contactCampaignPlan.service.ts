@@ -1,5 +1,11 @@
 import { createHash } from 'crypto';
-import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
+import {
+  contactCampaignRepository,
+  campaignPlanVersionRepository,
+  leadRepository,
+  userRepository,
+  emailSenderIdentityRepository,
+} from '@/repositories';
 import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
 
 export type PersistPlanArgs = {
@@ -26,7 +32,7 @@ export type PersistPlanResult = {
  */
 export class ContactCampaignPlanService {
   async persistPlan(args: PersistPlanArgs): Promise<PersistPlanResult> {
-    const { tenantId, leadId, contactId, userId, plan, channel = 'email' } = args;
+    const { tenantId, leadId, contactId, plan, channel = 'email' } = args;
 
     const baseVersion = plan.version || '1.0';
     const planHash = this.computePlanHash(plan);
@@ -41,6 +47,8 @@ export class ContactCampaignPlanService {
     let isNewCampaign = false;
     let campaign = existingCampaign;
 
+    const senderIdentityId = await this.findSenderIdentityForLead(leadId, tenantId);
+
     if (!campaign) {
       isNewCampaign = true;
       campaign = await contactCampaignRepository.createForTenant(tenantId, {
@@ -52,7 +60,7 @@ export class ContactCampaignPlanService {
         planJson: plan,
         planVersion: baseVersion,
         planHash,
-        senderIdentityId: plan.senderIdentityId ?? null,
+        senderIdentityId,
       });
     } else if (campaign.planHash !== planHash) {
       // Update to the new plan
@@ -61,7 +69,7 @@ export class ContactCampaignPlanService {
         planJson: plan,
         planVersion: baseVersion,
         planHash,
-        senderIdentityId: plan.senderIdentityId ?? null,
+        senderIdentityId,
       });
     }
 
@@ -73,7 +81,7 @@ export class ContactCampaignPlanService {
     const { isNewVersion, version } = await this.ensurePlanVersion({
       tenantId,
       campaignId: campaign.id,
-      userId,
+      userId: args.userId,
       plan,
       baseVersion,
       planHash,
@@ -96,6 +104,24 @@ export class ContactCampaignPlanService {
       isNewCampaign,
       isNewVersion,
     };
+  }
+
+  private async findSenderIdentityForLead(
+    leadId: string,
+    tenantId: string
+  ): Promise<string | null> {
+    const lead = await leadRepository.findByIdForTenant(leadId, tenantId);
+    if (!lead.ownerId) {
+      throw new Error(`Cannot find sender identity for lead without owner`, {
+        cause: { leadId, tenantId },
+      });
+    }
+    const ownerSenderIdentityId = await emailSenderIdentityRepository.findIdByUserIdForTenant(
+      lead.ownerId,
+      tenantId
+    );
+
+    return ownerSenderIdentityId;
   }
 
   private async ensurePlanVersion(args: {
