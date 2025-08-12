@@ -2,6 +2,7 @@ import { logger } from '@/libs/logger';
 import { supabaseStorage } from '@/libs/supabase.storage';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
+import { contactCampaignPlanService } from './contactCampaignPlan.service';
 
 export interface GenerateContactStrategyParams {
   leadId: string;
@@ -16,7 +17,7 @@ export interface GenerateContactStrategyParams {
 export const generateContactStrategy = async (
   params: GenerateContactStrategyParams
 ): Promise<ContactStrategyResult> => {
-  const { leadId, contactId, tenantId } = params;
+  const { leadId, contactId, tenantId, userId } = params;
 
   try {
     // Check if cached result exists in storage
@@ -45,6 +46,26 @@ export const generateContactStrategy = async (
     try {
       const agent = createContactStrategyAgent({ ...defaultLangChainConfig });
       const result = await agent.generateContactStrategy(tenantId, leadId, contactId);
+
+      // Persist the parsed plan into campaign tables (idempotent)
+      try {
+        await contactCampaignPlanService.persistPlan({
+          tenantId,
+          leadId,
+          contactId,
+          userId,
+          plan: result.finalResponseParsed,
+          channel: 'email',
+        });
+      } catch (dbError) {
+        logger.error('Failed to persist campaign plan to database', {
+          tenantId,
+          leadId,
+          contactId,
+          error: dbError instanceof Error ? dbError.message : 'Unknown DB error',
+        });
+        throw dbError;
+      }
 
       await cacheContactStrategy(result, cacheKey);
 
