@@ -477,6 +477,8 @@ export const contactCampaigns = appSchema.table(
   (table) => [
     unique('contact_channel_unique').on(table.tenantId, table.contactId, table.channel),
     index('contact_campaigns_status_idx').on(table.tenantId, table.status),
+    index('contact_campaigns_plan_hash_idx').on(table.planHash),
+    index('contact_campaigns_plan_json_gin_idx').using('gin', table.planJson),
   ]
 );
 
@@ -503,6 +505,7 @@ export const campaignPlanVersions = appSchema.table(
   (table) => [
     unique('campaign_version_unique').on(table.campaignId, table.version),
     index('campaign_plan_versions_hash_idx').on(table.planHash),
+    index('campaign_plan_versions_plan_json_gin_idx').using('gin', table.planJson),
   ]
 );
 
