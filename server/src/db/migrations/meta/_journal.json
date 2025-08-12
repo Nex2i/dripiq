@@ -190,6 +190,13 @@
       "when": 1754687170051,
       "tag": "0026_add_campaign_enums",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1754969746222,
+      "tag": "0027_indexes",
+      "breakpoints": true
     }
   ]
 }
