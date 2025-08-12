@@ -38,14 +38,8 @@ export const ContactExtractionService = {
         `Found ${contacts.length} contacts, deduplicated to ${deduplicatedContacts.length} for domain: ${domain}`
       );
 
-      // Sort contacts by importance with simple heuristics, keeping priority first if provided
-      const sorted = ContactExtractionService.sortBySalesRelevance(
-        deduplicatedContacts,
-        updatedPriorityIndex
-      );
-
-      // Enforce soft cap of 5 for processing order
-      const toProcess = sorted.slice(0, 5);
+      // Enforce soft cap of 5 for processing order, preserving model-provided order
+      const toProcess = deduplicatedContacts.slice(0, 5);
 
       // Get existing contacts for the lead
       const existingContacts = await ContactExtractionService.getExistingContacts(leadId);
@@ -54,14 +48,21 @@ export const ContactExtractionService = {
       const remainingSlots = Math.max(0, 6 - existingContacts.length);
       const cappedToProcess = remainingSlots > 0 ? toProcess.slice(0, remainingSlots) : [];
 
+      // Compute priority index within the truncated list
+      const newPriorityIndex =
+        updatedPriorityIndex !== null &&
+        updatedPriorityIndex !== undefined &&
+        updatedPriorityIndex < toProcess.length
+          ? updatedPriorityIndex
+          : null;
+
       // Process and save contacts with merging
       const processedContacts = await ContactExtractionService.processAndMergeContacts(
         tenantId,
         leadId,
         cappedToProcess,
         existingContacts,
-        // If we re-ordered, new priority is index 0 when there is at least one contact
-        cappedToProcess.length > 0 ? 0 : null
+        newPriorityIndex
       );
 
       logger.info(
@@ -689,61 +690,6 @@ export const ContactExtractionService = {
     return false;
   },
 
-  /**
-   * Sort extracted contacts by importance for sales outreach
-   */
-  sortBySalesRelevance: (
-    contacts: ExtractedContact[],
-    priorityContactIndex: number | null
-  ): ExtractedContact[] => {
-    const scoreFor = (c: ExtractedContact): number => {
-      let score = 0;
-      // Priority contact gets a large boost
-      if (c.isPriorityContact) score += 100;
+  // Removed programmatic relevance sorting: we now trust model-provided ordering
 
-      // Role/title-based heuristics
-      const title = (c.title || '').toLowerCase();
-      const name = (c.name || '').toLowerCase();
-      const type = c.contactType;
-
-      const executiveKeywords = ['chief', 'ceo', 'cto', 'cmo', 'coo', 'cfo', 'founder'];
-      const salesLeadership = ['vp', 'vice president', 'head of', 'director'];
-      const salesKeywords = ['sales', 'business development', 'partnership', 'revenue'];
-
-      if (executiveKeywords.some((k) => title.includes(k))) score += 40;
-      if (salesLeadership.some((k) => title.includes(k))) score += 30;
-      if (salesKeywords.some((k) => title.includes(k))) score += 20;
-
-      // Individuals preferred over departments/offices
-      if (type === 'individual') score += 10;
-
-      // Direct contact methods increase utility
-      if (c.email) score += 6;
-      if (c.phone) score += 4;
-      if (c.linkedinUrl) score += 2;
-
-      // Generic department penalty unless needed
-      if (type !== 'individual' || /info@|contact@|support@/.test((c.email || '').toLowerCase())) {
-        score -= 5;
-      }
-
-      return score;
-    };
-
-    const ranked = contacts
-      .map((c, idx) => ({ c, idx, score: scoreFor(c) }))
-      .sort((a, b) => b.score - a.score)
-      .map((x) => x.c);
-
-    // If model indicated a specific priority index, ensure it’s first
-    if (priorityContactIndex !== null && priorityContactIndex >= 0 && priorityContactIndex < contacts.length) {
-      const priorityContact = contacts[priorityContactIndex];
-      if (priorityContact) {
-        const remaining = ranked.filter((c) => c !== priorityContact);
-        return [priorityContact, ...remaining];
-      }
-    }
-
-    return ranked;
-  },
 };
