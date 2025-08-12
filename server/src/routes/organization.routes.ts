@@ -58,7 +58,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           organizationWebsite: tenant.website || '',
           summary: tenant.summary || '',
           products: [], // TODO: Get products from products table
-          services: [], // Services removed from schema
+          services: [],
           differentiators: tenant.differentiators || [],
           targetMarket: tenant.targetMarket || '',
           tone: tenant.tone || '',
@@ -118,7 +118,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           organizationWebsite: updatedTenant.website || '',
           summary: updatedTenant.summary || '',
           products: [], // TODO: Get products from products table
-          services: [], // Services removed from schema
+          services: [],
           differentiators: updatedTenant.differentiators || [],
           targetMarket: updatedTenant.targetMarket || '',
           tone: updatedTenant.tone || '',

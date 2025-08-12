@@ -26,6 +26,7 @@ export const ContactExtractionService = {
         };
       }
 
+      // Soft-cap to 5 for processing order, but keep original for dedup/priority alignment
       const contacts = extractionResult.finalResponseParsed.contacts;
       const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
 
@@ -37,16 +38,31 @@ export const ContactExtractionService = {
         `Found ${contacts.length} contacts, deduplicated to ${deduplicatedContacts.length} for domain: ${domain}`
       );
 
+      // Enforce soft cap of 5 for processing order, preserving model-provided order
+      const toProcess = deduplicatedContacts.slice(0, 5);
+
       // Get existing contacts for the lead
       const existingContacts = await ContactExtractionService.getExistingContacts(leadId);
+
+      // Enforce hard cap of 6 total contacts for a lead by trimming creations
+      const remainingSlots = Math.max(0, 6 - existingContacts.length);
+      const cappedToProcess = remainingSlots > 0 ? toProcess.slice(0, remainingSlots) : [];
+
+      // Compute priority index within the truncated list
+      const newPriorityIndex =
+        updatedPriorityIndex !== null &&
+        updatedPriorityIndex !== undefined &&
+        updatedPriorityIndex < toProcess.length
+          ? updatedPriorityIndex
+          : null;
 
       // Process and save contacts with merging
       const processedContacts = await ContactExtractionService.processAndMergeContacts(
         tenantId,
         leadId,
-        deduplicatedContacts,
+        cappedToProcess,
         existingContacts,
-        updatedPriorityIndex
+        newPriorityIndex
       );
 
       logger.info(
@@ -153,7 +169,7 @@ export const ContactExtractionService = {
       }
     }
 
-    // If priority contact was removed due to duplication, try to find a priority contact by flag
+    // If priority contact was filtered due to duplication, try to find a priority contact by flag
     if (priorityContactIndex !== null && updatedPriorityIndex === null) {
       const priorityContactByFlag = deduplicatedContacts.findIndex(
         (contact) => contact.isPriorityContact
@@ -210,6 +226,9 @@ export const ContactExtractionService = {
       primaryContactId: null as string | null,
     };
 
+    // Respect hard cap of 6 by skipping creates when full, still allow updates/merges
+    let totalExisting = existingContacts.length;
+
     for (let i = 0; i < extractedContacts.length; i++) {
       const extractedContact = extractedContacts[i];
       if (!extractedContact) continue;
@@ -223,7 +242,7 @@ export const ContactExtractionService = {
           existingContacts
         );
 
-        let contactId: string;
+        let contactId: string | undefined;
 
         if (similarContact) {
           // Merge and update existing contact
@@ -243,11 +262,19 @@ export const ContactExtractionService = {
             continue;
           }
         } else {
-          // Create new contact
+          // If we reached hard cap, skip creating new contact
+          if (totalExisting >= 6) {
+            logger.info(
+              `Skipping creation of new contact due to hard cap (6) reached for leadId: ${leadId}`
+            );
+            continue;
+          }
+
           const createdContact = await createContact(tenantId, leadId, leadContact);
           results.created++;
           results.contacts.push(createdContact);
           contactId = createdContact.id;
+          totalExisting++;
           logger.debug(`Created contact: ${extractedContact.name} for leadId: ${leadId}`);
         }
 
@@ -255,7 +282,8 @@ export const ContactExtractionService = {
         if (
           priorityContactIndex !== null &&
           priorityContactIndex !== undefined &&
-          i === priorityContactIndex
+          i === priorityContactIndex &&
+          contactId
         ) {
           results.primaryContactId = contactId;
           logger.info(

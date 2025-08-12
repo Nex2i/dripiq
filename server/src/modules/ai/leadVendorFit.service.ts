@@ -53,7 +53,7 @@ Tone: ${opportunity.tone}
     return {
       summary: tenant.summary ?? '',
       products: [], // TODO: Get products from products table
-      services: [], // Services removed from schema
+      services: [],
       differentiators: tenant.differentiators as string[],
       targetMarket: tenant.targetMarket ?? '',
       tone: tenant.tone ?? '',
