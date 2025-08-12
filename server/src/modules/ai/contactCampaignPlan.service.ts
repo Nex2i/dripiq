@@ -1,9 +1,5 @@
 import { createHash } from 'crypto';
-import { logger } from '@/libs/logger';
-import {
-  contactCampaignRepository,
-  campaignPlanVersionRepository,
-} from '@/repositories';
+import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
 import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
 
 export type PersistPlanArgs = {
@@ -30,14 +26,7 @@ export type PersistPlanResult = {
  */
 export class ContactCampaignPlanService {
   async persistPlan(args: PersistPlanArgs): Promise<PersistPlanResult> {
-    const {
-      tenantId,
-      leadId,
-      contactId,
-      userId,
-      plan,
-      channel = 'email',
-    } = args;
+    const { tenantId, leadId, contactId, userId, plan, channel = 'email' } = args;
 
     const baseVersion = plan.version || '1.0';
     const planHash = this.computePlanHash(plan);
