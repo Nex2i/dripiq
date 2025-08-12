@@ -689,7 +689,4 @@ export const ContactExtractionService = {
 
     return false;
   },
-
-
-
 };
