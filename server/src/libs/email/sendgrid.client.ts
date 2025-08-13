@@ -102,9 +102,8 @@ class SendgridClient {
     token: string
   ): Promise<{ statusCode: number; body: any; headers: any }> {
     const postReq: ClientRequest = {
-      url: `/v3/verified_senders/verify`,
-      method: 'POST',
-      body: { token },
+      url: `/v3/verified_senders/verify/${token}`,
+      method: 'GET',
     } as any;
     const [resp, body] = await sgClient.request(postReq);
     return { statusCode: resp.statusCode, body, headers: resp.headers };
