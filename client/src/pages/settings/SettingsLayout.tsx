@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from '@tanstack/react-router'
-import { Users, Shield, CreditCard, Building, Package } from 'lucide-react'
+import { Users, Shield, CreditCard, Building, Package, Mail } from 'lucide-react'
 
 const navigation = [
   {
@@ -13,6 +13,12 @@ const navigation = [
     path: '/settings/products',
     icon: Package,
     description: 'Manage products and sales messaging',
+  },
+  {
+    name: 'Sender Identities',
+    path: '/settings/senders',
+    icon: Mail,
+    description: 'Verify from addresses for outbound email',
   },
   {
     name: 'Users',

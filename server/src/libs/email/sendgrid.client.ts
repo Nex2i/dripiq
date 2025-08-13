@@ -79,6 +79,16 @@ class SendgridClient {
     return response;
   }
 
+  async getVerifiedSender(id: string): Promise<{ statusCode: number; body: any; headers: any }> {
+    const request: ClientRequest = {
+      url: `/v3/verified_senders/${id}`,
+      method: 'GET',
+    };
+
+    const [resp, body] = await sgClient.request(request);
+    return { statusCode: resp.statusCode, body, headers: resp.headers };
+  }
+
   private extractProviderIds(resp: ClientResponse): ProviderIds {
     // SendGrid returns 202 + X-Message-Id when accepted
     const headers = resp.headers as Record<string, string | string[] | undefined>;
