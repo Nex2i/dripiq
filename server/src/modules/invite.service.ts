@@ -1,5 +1,10 @@
 import { NewUser, UserTenant, NewUserTenant } from '@/db';
-import { roleRepository, userRepository, userTenantRepository, emailSenderIdentityRepository } from '@/repositories';
+import {
+  roleRepository,
+  userRepository,
+  userTenantRepository,
+  emailSenderIdentityRepository,
+} from '@/repositories';
 import { NotFoundError } from '@/exceptions/error';
 
 export interface CreateInviteData {

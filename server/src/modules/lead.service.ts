@@ -379,7 +379,11 @@ export const ensureDefaultStatus = async (tenantId: string, leadId: string): Pro
   try {
     const statuses = await getLeadStatuses(tenantId, leadId);
     if (!statuses || statuses.length === 0) {
-      await leadStatusRepository.createForLeadAndTenant(leadId, tenantId, LEAD_STATUS.UNPROCESSED);
+      await leadStatusRepository.createIfNotExistsForTenant(
+        leadId,
+        LEAD_STATUS.UNPROCESSED,
+        tenantId
+      );
     }
   } catch (error) {
     logger.error('Error ensuring default lead status:', error);

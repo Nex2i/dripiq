@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
-import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
+// import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy } from '@/modules/ai';
 import {
   getLeads,
@@ -14,7 +14,7 @@ import {
   assignLeadOwner,
 } from '../modules/lead.service';
 import {
-  getLeadProducts,
+  // getLeadProducts,
   attachProductsToLead,
   detachProductFromLead,
 } from '../modules/leadProduct.service';
@@ -30,12 +30,12 @@ import {
   LeadDeleteSchema,
   LeadBulkDeleteSchema,
   LeadAssignOwnerSchema,
-  LeadVendorFitSchema,
+  // LeadVendorFitSchema,
   LeadResyncSchema,
   LeadContactStrategySchema,
   LeadAttachProductsSchema,
   LeadDetachProductSchema,
-  LeadGetProductsSchema,
+  // LeadGetProductsSchema,
 } from './apiSchema/lead';
 
 const basePath = '/leads';
@@ -149,7 +149,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // If ownerId is provided, require it, otherwise default to current user
-        const assignedOwnerId = ownerId && ownerId.trim().length > 0 ? ownerId : authenticatedRequest.user.id;
+        const assignedOwnerId =
+          ownerId && ownerId.trim().length > 0 ? ownerId : authenticatedRequest.user.id;
 
         // Create the lead with tenant context and point of contacts
         const newLead = await createLead(
@@ -231,10 +232,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ...LeadGetByIdSchema.response,
       },
     },
-    handler: async (
-      request: FastifyRequest,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params as { id: string };
@@ -307,10 +305,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ...LeadDeleteSchema.response,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
@@ -341,10 +336,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ...LeadBulkDeleteSchema.response,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Body: { ids: string[] } }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Body: { ids: string[] } }>, reply: FastifyReply) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { ids } = request.body;
@@ -368,17 +360,14 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Resync Lead',
-      description: 'Re-index and analyze a lead\'s site (tenant-scoped)',
+      description: "Re-index and analyze a lead's site (tenant-scoped)",
       ...LeadResyncSchema,
       response: {
         ...defaultRouteResponse(),
         ...LeadResyncSchema.response,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
@@ -616,7 +605,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         const result = await detachProductFromLead(id, productId, authenticatedRequest.tenantId);
 
-        reply.send({ message: 'Product detached successfully', ...result });
+        reply.send({ message: 'Product detached successfully', success: result });
       } catch (error: any) {
         fastify.log.error(`Error detaching product from lead: ${error.message}`);
         reply.status(500).send({
