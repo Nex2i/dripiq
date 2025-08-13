@@ -74,8 +74,12 @@ class SendgridClient {
       body: data,
     };
 
-    const response = await sgClient.request(request);
-    return response;
+    try {
+      const response = await sgClient.request(request);
+      return response;
+    } catch (err: any) {
+      throw this.normalizeSendgridError(err, 'Failed to create verified sender in SendGrid');
+    }
   }
 
   async resendSenderVerification(id: string) {
@@ -84,8 +88,12 @@ class SendgridClient {
       method: 'POST',
     };
 
-    const response = await sgClient.request(request);
-    return response;
+    try {
+      const response = await sgClient.request(request);
+      return response;
+    } catch (err: any) {
+      throw this.normalizeSendgridError(err, 'Failed to resend verification email in SendGrid');
+    }
   }
 
   async getVerifiedSender(id: string): Promise<{ statusCode: number; body: any; headers: any }> {
@@ -137,6 +145,30 @@ class SendgridClient {
       ...(input.outboundMessageId ? { outbound_message_id: input.outboundMessageId } : {}),
       ...(input.dedupeKey ? { dedupe_key: input.dedupeKey } : {}),
     } as Record<string, string>;
+  }
+
+  private normalizeSendgridError(err: any, fallbackMessage: string) {
+    const sgErrors: Array<{ field?: string; message?: string }> =
+      err?.response?.body?.errors || err?.response?.data?.errors || [];
+
+    const details = sgErrors
+      .filter((e) => e && (e.field || e.message))
+      .map((e) => ({ field: String(e.field || 'sendgrid'), message: String(e.message || 'error') }));
+
+    const messageParts = details.length
+      ? details.map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
+      : [];
+
+    const combinedMessage = messageParts.length
+      ? `${fallbackMessage} - ${messageParts.join(', ')}`
+      : fallbackMessage;
+
+    const normalized: any = new Error(combinedMessage);
+    normalized.statusCode = 422;
+    normalized.details = details;
+    normalized.provider = 'sendgrid';
+    normalized.original = err;
+    return normalized;
   }
 }
 
