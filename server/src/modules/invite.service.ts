@@ -114,10 +114,8 @@ export class InviteService {
     const tenantUsersQuery = await userTenantRepository.findUsersWithDetailsForTenant(tenantId);
 
     // Fetch all sender identities for this tenant once and build a lookup for verified users
-    const identities = await emailSenderIdentityRepository.findAllForTenant(tenantId);
-    const verifiedUserIds = new Set(
-      identities.filter((i) => i.validationStatus === 'verified').map((i) => i.userId)
-    );
+    const verifiedIdentities = await emailSenderIdentityRepository.findVerifiedForTenant(tenantId);
+    const verifiedUserIds = new Set(verifiedIdentities.map((i) => i.userId));
 
     // Transform to UserWithInviteInfo format
     const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
