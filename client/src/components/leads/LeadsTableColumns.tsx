@@ -64,6 +64,9 @@ export function useLeadsColumns({
         : ownerUser.email
       : 'Unassigned'
 
+    const placeholderValue = '__placeholder__'
+    const selectValue = lead.ownerId || placeholderValue
+
     return (
       <div className="relative group">
         <div className="flex items-center justify-between">
@@ -82,9 +85,10 @@ export function useLeadsColumns({
 
         <select
           className="absolute inset-0 opacity-0 cursor-pointer"
-          value={lead.ownerId || ''}
+          value={selectValue}
           onChange={(e) => {
             const userId = e.target.value
+            if (userId === placeholderValue) return
             if (userId !== lead.ownerId) {
               onAssignOwner(lead.id, userId)
             }
@@ -92,21 +96,26 @@ export function useLeadsColumns({
           disabled={assigningOwner === lead.id || usersLoading}
           onClick={(e) => e.stopPropagation()}
         >
-          <option value="">Unassigned</option>
+          {/* Placeholder only shown when unassigned; cannot be selected for assignment */}
+          {!lead.ownerId && (
+            <option value={placeholderValue} disabled>
+              Select verified owner
+            </option>
+          )}
           {usersLoading ? (
-            <option value="" disabled>
+            <option value={placeholderValue} disabled>
               Loading users...
             </option>
           ) : usersError ? (
-            <option value="" disabled>
+            <option value={placeholderValue} disabled>
               Error loading users
             </option>
           ) : verifiedUsers.length === 0 ? (
-            <option value="" disabled>
+            <option value={placeholderValue} disabled>
               No verified users available
             </option>
           ) : (
-            verifiedUsers.map((user: any) => (
+            verifiedUsers.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`
