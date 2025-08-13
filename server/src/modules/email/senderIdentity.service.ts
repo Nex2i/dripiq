@@ -156,15 +156,15 @@ export class SenderIdentityService {
     return this.checkStatus(tenantId, identity.id);
   }
 
-  static async verifyForUser(tenantId: string, userId: string, tokenOrUrl: string) {
+  static async verifyForUser(tenantId: string, userId: string, sendgridValidationUrl: string) {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) throw new Error('No sender identity found');
 
-    const token = extractTokenFromUrlOrToken(tokenOrUrl);
+    const token = extractTokenFromUrlOrToken(sendgridValidationUrl);
     if (!token) {
       const error: any = new Error('Validation error');
       error.statusCode = 422;
-      error.details = [{ field: 'token', message: 'invalid' }];
+      error.details = [{ field: 'sendgridValidationUrl', message: 'invalid' }];
       throw error;
     }
 

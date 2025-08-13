@@ -202,8 +202,8 @@ export default async function SenderIdentitiesRoutes(
     url: `${basePath}/me/verify`,
     schema: {
       tags: ['Sender Identities'],
-      summary: 'Verify my sender identity using a pasted URL or token',
-      body: Type.Object({ value: Type.String() }),
+      summary: 'Verify my sender identity using a pasted URL',
+      body: Type.Object({ sendgridValidationUrl: Type.String() }),
       response: {
         ...defaultRouteResponse(),
         200: SenderIdentitySchema,
@@ -211,12 +211,16 @@ export default async function SenderIdentitiesRoutes(
       },
     },
     handler: async (
-      request: FastifyRequest<{ Body: { value: string } }>,
+      request: FastifyRequest<{ Body: { sendgridValidationUrl: string } }>,
       reply: FastifyReply
     ) => {
       const { tenantId, user } = request as AuthenticatedRequest;
       try {
-        const updated = await SenderIdentityService.verifyForUser(tenantId, user.id, request.body.value);
+        const updated = await SenderIdentityService.verifyForUser(
+          tenantId,
+          user.id,
+          request.body.sendgridValidationUrl
+        );
         return reply.status(200).send(updated);
       } catch (e: any) {
         if (e?.statusCode === 422) {

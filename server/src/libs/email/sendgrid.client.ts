@@ -99,25 +99,13 @@ class SendgridClient {
   }
 
   async verifySenderWithToken(token: string): Promise<{ statusCode: number; body: any; headers: any }> {
-    // Try GET with query param first (per API docs variations)
-    try {
-      const getReq: ClientRequest = {
-        url: `/v3/verified_senders/verify`,
-        method: 'GET',
-        qs: { token },
-      } as any;
-      const [resp, body] = await sgClient.request(getReq);
-      return { statusCode: resp.statusCode, body, headers: resp.headers };
-    } catch (err: any) {
-      // Fallback to POST with body
-      const postReq: ClientRequest = {
-        url: `/v3/verified_senders/verify`,
-        method: 'POST',
-        body: { token },
-      } as any;
-      const [resp, body] = await sgClient.request(postReq);
-      return { statusCode: resp.statusCode, body, headers: resp.headers };
-    }
+    const postReq: ClientRequest = {
+      url: `/v3/verified_senders/verify`,
+      method: 'POST',
+      body: { token },
+    } as any;
+    const [resp, body] = await sgClient.request(postReq);
+    return { statusCode: resp.statusCode, body, headers: resp.headers };
   }
 
   private extractProviderIds(resp: ClientResponse): ProviderIds {
