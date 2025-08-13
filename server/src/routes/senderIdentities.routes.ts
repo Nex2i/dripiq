@@ -2,6 +2,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { Type } from '@sinclair/typebox';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { SenderIdentityService } from '@/modules/email/senderIdentity.service';
+import { defaultRouteResponse } from '@/types/response';
+import { HttpMethods } from '@/utils/HttpMethods';
 
 const basePath = '/sender-identities';
 
@@ -46,7 +48,7 @@ export default async function SenderIdentitiesRoutes(
 ) {
   // Create
   fastify.route({
-    method: 'POST',
+    method: HttpMethods.POST,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}`,
     schema: {
@@ -54,12 +56,8 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Create sender identity and trigger verification email',
       body: SenderIdentityBodySchema,
       response: {
+        ...defaultRouteResponse(),
         201: SenderIdentitySchema,
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
       },
     },
     handler: async (
@@ -82,31 +80,27 @@ export default async function SenderIdentitiesRoutes(
 
   // List
   fastify.route({
-    method: 'GET',
+    method: HttpMethods.GET,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}`,
     schema: {
       tags: ['Sender Identities'],
       summary: 'List sender identities for tenant',
       response: {
+        ...defaultRouteResponse(),
         200: Type.Array(SenderIdentitySchema),
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const { tenantId } = request as AuthenticatedRequest;
       const list = await SenderIdentityService.listSenderIdentities(tenantId);
-      return reply.send(list);
+      return reply.status(200).send(list);
     },
   });
 
   // Get One
   fastify.route({
-    method: 'GET',
+    method: HttpMethods.GET,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
     schema: {
@@ -114,12 +108,8 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Get sender identity by id',
       params: SenderIdentityIdParams,
       response: {
+        ...defaultRouteResponse(),
         200: SenderIdentitySchema,
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
       },
     },
     handler: async (
@@ -130,13 +120,13 @@ export default async function SenderIdentitiesRoutes(
       const { id } = request.params;
       const item = await SenderIdentityService.getSenderIdentity(tenantId, id);
       if (!item) return reply.status(404).send({ message: 'Not found' });
-      return reply.send(item);
+      return reply.status(200).send(item);
     },
   });
 
   // Resend verification
   fastify.route({
-    method: 'POST',
+    method: HttpMethods.POST,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id/resend`,
     schema: {
@@ -144,12 +134,8 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Resend verification email',
       params: SenderIdentityIdParams,
       response: {
+        ...defaultRouteResponse(),
         200: MessageSchema,
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
       },
     },
     handler: async (
@@ -159,13 +145,13 @@ export default async function SenderIdentitiesRoutes(
       const { tenantId } = request as AuthenticatedRequest;
       const { id } = request.params;
       const result = await SenderIdentityService.resendVerification(tenantId, id);
-      return reply.send(result);
+      return reply.status(200).send(result);
     },
   });
 
   // Check status
   fastify.route({
-    method: 'POST',
+    method: HttpMethods.POST,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id/check`,
     schema: {
@@ -173,12 +159,8 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Check verification status and update',
       params: SenderIdentityIdParams,
       response: {
+        ...defaultRouteResponse(),
         200: SenderIdentitySchema,
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
       },
     },
     handler: async (
@@ -188,13 +170,13 @@ export default async function SenderIdentitiesRoutes(
       const { tenantId } = request as AuthenticatedRequest;
       const { id } = request.params;
       const updated = await SenderIdentityService.checkStatus(tenantId, id);
-      return reply.send(updated);
+      return reply.status(200).send(updated);
     },
   });
 
   // Set default
   fastify.route({
-    method: 'PATCH',
+    method: HttpMethods.PATCH,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id/default`,
     schema: {
@@ -202,12 +184,8 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Set this identity as default for tenant',
       params: SenderIdentityIdParams,
       response: {
+        ...defaultRouteResponse(),
         200: SenderIdentitySchema,
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
       },
     },
     handler: async (
@@ -217,13 +195,13 @@ export default async function SenderIdentitiesRoutes(
       const { tenantId } = request as AuthenticatedRequest;
       const { id } = request.params;
       const updated = await SenderIdentityService.setDefault(tenantId, id);
-      return reply.send(updated);
+      return reply.status(200).send(updated);
     },
   });
 
   // Delete
   fastify.route({
-    method: 'DELETE',
+    method: HttpMethods.DELETE,
     preHandler: [fastify.authPrehandler],
     url: `${basePath}/:id`,
     schema: {
@@ -231,12 +209,8 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Delete sender identity',
       params: SenderIdentityIdParams,
       response: {
-        200: MessageSchema,
-        400: MessageSchema,
-        401: MessageSchema,
-        403: MessageSchema,
-        404: MessageSchema,
-        500: MessageSchema,
+        ...defaultRouteResponse(),
+        204: Type.Null(),
       },
     },
     handler: async (
@@ -245,8 +219,8 @@ export default async function SenderIdentitiesRoutes(
     ) => {
       const { tenantId } = request as AuthenticatedRequest;
       const { id } = request.params;
-      const result = await SenderIdentityService.remove(tenantId, id);
-      return reply.send(result);
+      await SenderIdentityService.remove(tenantId, id);
+      return reply.status(204).send();
     },
   });
 }
