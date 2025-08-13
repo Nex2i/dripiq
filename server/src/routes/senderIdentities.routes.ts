@@ -21,6 +21,7 @@ const SenderIdentityIdParams = Type.Object({
 const SenderValidationStatus = Type.Union([
   Type.Literal('pending'),
   Type.Literal('verified'),
+  Type.Literal('validated'),
   Type.Literal('failed'),
 ]);
 
