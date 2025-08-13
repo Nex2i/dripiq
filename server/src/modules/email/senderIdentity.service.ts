@@ -52,17 +52,7 @@ export class SenderIdentityService {
       throw error;
     }
 
-    const created = await emailSenderIdentityRepository.createForTenant(tenantId, {
-      userId,
-      fromEmail,
-      fromName,
-      domain,
-      validationStatus: 'pending',
-      isDefault: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as unknown as Omit<NewEmailSenderIdentity, 'tenantId'>);
-
+    // Validate with SendGrid FIRST to avoid creating partial records on provider failure
     const country = (params.country || 'USA').toUpperCase();
     const [_resp, body] = await sendgridClient.validateSender({
       email: fromEmail,
@@ -73,12 +63,20 @@ export class SenderIdentityService {
     });
     const sendgridId = extractSendgridIdFromBody(body);
 
-    const updated = await emailSenderIdentityRepository.updateByIdForTenant(created.id, tenantId, {
+    // Create the identity including the provider sender id if available
+    const created = await emailSenderIdentityRepository.createForTenant(tenantId, {
+      userId,
+      fromEmail,
+      fromName,
+      domain,
       sendgridSenderId: sendgridId,
+      validationStatus: 'pending',
+      isDefault: false,
+      createdAt: new Date(),
       updatedAt: new Date(),
-    } as Partial<NewEmailSenderIdentity>);
+    } as unknown as Omit<NewEmailSenderIdentity, 'tenantId'>);
 
-    return updated || created;
+    return created;
   }
 
   // Self-scoped helpers
@@ -92,7 +90,30 @@ export class SenderIdentityService {
     country?: string
   ) {
     const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
-    if (existing) return existing;
+    if (existing) {
+      // If an identity exists but is missing provider id, and caller supplies address/city, attempt validation now
+      if (!existing.sendgridSenderId && address && city) {
+        const [_resp, body] = await sendgridClient.validateSender({
+          email: existing.fromEmail,
+          name: existing.fromName,
+          address,
+          city,
+          country: (country || 'USA').toUpperCase(),
+        });
+        const sendgridId = extractSendgridIdFromBody(body);
+        const updated = await emailSenderIdentityRepository.updateByIdForTenant(
+          existing.id,
+          tenantId,
+          {
+            sendgridSenderId: sendgridId,
+            validationStatus: 'pending',
+            updatedAt: new Date(),
+          } as Partial<NewEmailSenderIdentity>
+        );
+        return updated || existing;
+      }
+      return existing;
+    }
     return await this.createSenderIdentity({
       tenantId,
       userId,
