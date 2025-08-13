@@ -1,6 +1,6 @@
 import { authService } from './auth.service'
 
-export type SenderValidationStatus = 'pending' | 'verified' | 'failed'
+export type SenderValidationStatus = 'pending' | 'verified' | 'failed' | 'validated'
 
 export interface SenderIdentity {
   id: string
@@ -21,25 +21,24 @@ export interface SenderIdentity {
 export interface CreateSenderIdentityData {
   fromEmail: string
   fromName: string
-  domain?: string
-  isDefault?: boolean
 }
 
 class SenderIdentitiesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
-  async list(): Promise<SenderIdentity[]> {
+  async getMine(): Promise<SenderIdentity | null> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities`, {
+    const response = await fetch(`${this.baseUrl}/sender-identities/me`, {
       headers: { 'Content-Type': 'application/json', ...authHeaders },
     })
-    if (!response.ok) throw new Error('Failed to fetch sender identities')
+    if (response.status === 204) return null
+    if (!response.ok) throw new Error('Failed to fetch my sender identity')
     return response.json()
   }
 
-  async create(data: CreateSenderIdentityData): Promise<SenderIdentity> {
+  async createMine(data: CreateSenderIdentityData): Promise<SenderIdentity> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities`, {
+    const response = await fetch(`${this.baseUrl}/sender-identities/me`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify(data),
@@ -48,9 +47,9 @@ class SenderIdentitiesService {
     return response.json()
   }
 
-  async resend(id: string): Promise<{ message: string }> {
+  async resendMine(): Promise<{ message: string }> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/${id}/resend`, {
+    const response = await fetch(`${this.baseUrl}/sender-identities/me/resend`, {
       method: 'POST',
       headers: { ...authHeaders },
     })
@@ -58,9 +57,9 @@ class SenderIdentitiesService {
     return response.json()
   }
 
-  async check(id: string): Promise<SenderIdentity> {
+  async checkMine(): Promise<SenderIdentity> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/${id}/check`, {
+    const response = await fetch(`${this.baseUrl}/sender-identities/me/check`, {
       method: 'POST',
       headers: { ...authHeaders },
     })
@@ -68,23 +67,14 @@ class SenderIdentitiesService {
     return response.json()
   }
 
-  async setDefault(id: string): Promise<SenderIdentity> {
+  async retryMine(data?: Partial<CreateSenderIdentityData>): Promise<SenderIdentity> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/${id}/default`, {
-      method: 'PATCH',
-      headers: { ...authHeaders },
+    const response = await fetch(`${this.baseUrl}/sender-identities/me/retry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
+      body: JSON.stringify(data ?? {}),
     })
-    if (!response.ok) throw new Error('Failed to set default')
-    return response.json()
-  }
-
-  async remove(id: string): Promise<{ message: string }> {
-    const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/${id}`, {
-      method: 'DELETE',
-      headers: { ...authHeaders },
-    })
-    if (!response.ok) throw new Error('Failed to delete sender identity')
+    if (!response.ok) throw new Error('Failed to retry sender identity')
     return response.json()
   }
 }

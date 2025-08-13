@@ -2,63 +2,52 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { senderIdentitiesService, type CreateSenderIdentityData } from '../services/senderIdentities.service'
 
 export const senderIdentityQueryKeys = {
-  all: ['sender-identities'] as const,
-  list: () => [...senderIdentityQueryKeys.all, 'list'] as const,
+  mine: ['sender-identities', 'me'] as const,
 }
 
-export function useSenderIdentities() {
+export function useMySenderIdentity() {
   return useQuery({
-    queryKey: senderIdentityQueryKeys.list(),
-    queryFn: () => senderIdentitiesService.list(),
+    queryKey: senderIdentityQueryKeys.mine,
+    queryFn: () => senderIdentitiesService.getMine(),
   })
 }
 
-export function useCreateSenderIdentity() {
+export function useCreateMySenderIdentity() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: CreateSenderIdentityData) => senderIdentitiesService.create(data),
+    mutationFn: (data: CreateSenderIdentityData) => senderIdentitiesService.createMine(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.list() })
+      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
     },
   })
 }
 
-export function useResendSenderVerification() {
+export function useResendMySenderVerification() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => senderIdentitiesService.resend(id),
+    mutationFn: () => senderIdentitiesService.resendMine(),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.list() })
+      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
     },
   })
 }
 
-export function useCheckSenderStatus() {
+export function useCheckMySenderStatus() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => senderIdentitiesService.check(id),
+    mutationFn: () => senderIdentitiesService.checkMine(),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.list() })
+      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
     },
   })
 }
 
-export function useSetDefaultSender() {
+export function useRetryMySenderIdentity() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => senderIdentitiesService.setDefault(id),
+    mutationFn: (data?: Partial<CreateSenderIdentityData>) => senderIdentitiesService.retryMine(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.list() })
-    },
-  })
-}
-
-export function useRemoveSenderIdentity() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => senderIdentitiesService.remove(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.list() })
+      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
     },
   })
 }

@@ -2,7 +2,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
-import { useSenderIdentities, useCreateSenderIdentity, useResendSenderVerification, useCheckSenderStatus } from '../../hooks/useSenderIdentities'
+import { useMySenderIdentity, useCreateMySenderIdentity, useResendMySenderVerification, useCheckMySenderStatus } from '../../hooks/useSenderIdentities'
 
 export default function UserEditPage() {
   const navigate = useNavigate()
@@ -20,11 +20,10 @@ export default function UserEditPage() {
   const [saving, setSaving] = useState<boolean>(false)
 
   // sender identity UI state
-  const { data: identities = [] } = useSenderIdentities()
-  const myIdentity = identities.find((s) => s.userId === targetUserId)
-  const createSender = useCreateSenderIdentity()
-  const resendSender = useResendSenderVerification()
-  const checkSender = useCheckSenderStatus()
+  const { data: myIdentity } = useMySenderIdentity()
+  const createSender = useCreateMySenderIdentity()
+  const resendSender = useResendMySenderVerification()
+  const checkSender = useCheckMySenderStatus()
   const [fromName, setFromName] = useState('')
   const [fromEmail, setFromEmail] = useState('')
 
@@ -159,14 +158,14 @@ export default function UserEditPage() {
               <div className="flex items-center gap-2">
                 <button
                   className="px-3 py-1 text-sm rounded bg-indigo-600 text-white disabled:opacity-50"
-                  onClick={() => checkSender.mutate(myIdentity.id)}
+                  onClick={() => checkSender.mutate()}
                   disabled={!myIdentity.sendgridSenderId || checkSender.isPending}
                 >
                   {checkSender.isPending ? 'Checking...' : 'Check Status'}
                 </button>
                 <button
                   className="px-3 py-1 text-sm rounded bg-blue-600 text-white disabled:opacity-50"
-                  onClick={() => resendSender.mutate(myIdentity.id)}
+                  onClick={() => resendSender.mutate()}
                   disabled={resendSender.isPending}
                 >
                   {resendSender.isPending ? 'Resending...' : 'Resend Email'}
