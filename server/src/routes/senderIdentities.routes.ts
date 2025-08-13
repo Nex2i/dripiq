@@ -123,12 +123,20 @@ export default async function SenderIdentitiesRoutes(
       response: {
         ...defaultRouteResponse(),
         200: MessageSchema,
+        422: ValidationErrorSchema,
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const { tenantId, user } = request as AuthenticatedRequest;
-      const result = await SenderIdentityService.resendForUser(tenantId, user.id);
-      return reply.status(200).send(result);
+      try {
+        const result = await SenderIdentityService.resendForUser(tenantId, user.id);
+        return reply.status(200).send(result);
+      } catch (e: any) {
+        if (e?.statusCode === 422) {
+          return reply.status(422).send({ message: 'Validation error', errors: e.details || [] });
+        }
+        throw e;
+      }
     },
   });
 

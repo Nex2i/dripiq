@@ -146,7 +146,8 @@ describe('firecrawlClient', () => {
       expect(mockFetch).toHaveBeenCalledWith('https://example.com', {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
         },
         signal: expect.any(AbortSignal),
       });
@@ -397,7 +398,8 @@ describe('firecrawlClient', () => {
       expect(mockFetch).toHaveBeenCalledWith('https://example.com', {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
         },
         signal: expect.any(AbortSignal),
       });
@@ -463,7 +465,8 @@ describe('firecrawlClient', () => {
       expect(mockFetch).toHaveBeenCalledWith('https://example.com', {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; DripIQ-Bot/1.0)',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
         },
         signal: expect.any(AbortSignal),
       });
