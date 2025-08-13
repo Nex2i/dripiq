@@ -162,4 +162,16 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
 
     return results[0].id;
   }
+
+  async findByUserIdForTenant(
+    userId: string,
+    tenantId: string
+  ): Promise<EmailSenderIdentity | undefined> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.userId, userId)))
+      .limit(1);
+    return results[0];
+  }
 }

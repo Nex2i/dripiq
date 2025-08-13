@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { SenderIdentityService } from '@/modules/email/senderIdentity.service';
 import { defaultRouteResponse } from '@/types/response';
 import { HttpMethods } from '@/utils/HttpMethods';
+import { emailSenderIdentityRepository } from '@/repositories';
 
 const basePath = '/sender-identities';
 
@@ -222,6 +223,115 @@ export default async function SenderIdentitiesRoutes(
       const { id } = request.params;
       await SenderIdentityService.remove(tenantId, id);
       return reply.status(204).send();
+    },
+  });
+
+  // Self-scoped: Get my sender identity
+  fastify.route({
+    method: HttpMethods.GET,
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/me`,
+    schema: {
+      tags: ['Sender Identities'],
+      summary: 'Get my sender identity',
+      response: {
+        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+        204: Type.Null(),
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      const mine = await SenderIdentityService.getSenderIdentity(
+        tenantId,
+        await (async () => {
+          const existing = await emailSenderIdentityRepository.findByUserIdForTenant(
+            user.id,
+            tenantId
+          );
+          return existing?.id || '';
+        })()
+      );
+      if (!mine) return reply.status(204).send();
+      return reply.status(200).send(mine);
+    },
+  });
+
+  // Self-scoped: Create or get mine
+  fastify.route({
+    method: HttpMethods.POST,
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/me`,
+    schema: {
+      tags: ['Sender Identities'],
+      summary: 'Create my sender identity',
+      body: SenderIdentityBodySchema,
+      response: {
+        ...defaultRouteResponse(),
+        201: SenderIdentitySchema,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: typeof SenderIdentityBodySchema.static }>,
+      reply: FastifyReply
+    ) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      const { fromEmail, fromName } = request.body;
+      const created = await SenderIdentityService.getOrCreateForUser(
+        tenantId,
+        user.id,
+        fromName,
+        fromEmail
+      );
+      return reply.status(201).send(created);
+    },
+  });
+
+  // Self-scoped: Resend
+  fastify.route({
+    method: HttpMethods.POST,
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/me/resend`,
+    schema: {
+      tags: ['Sender Identities'],
+      summary: 'Resend verification email for my sender identity',
+      response: {
+        ...defaultRouteResponse(),
+        200: MessageSchema,
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      const result = await SenderIdentityService.resendForUser(tenantId, user.id);
+      return reply.status(200).send(result);
+    },
+  });
+
+  // Self-scoped: Retry (create or resend)
+  fastify.route({
+    method: HttpMethods.POST,
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/me/retry`,
+    schema: {
+      tags: ['Sender Identities'],
+      summary: 'Retry creating or resending my sender identity verification',
+      body: Type.Partial(SenderIdentityBodySchema),
+      response: {
+        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+        201: SenderIdentitySchema,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: Partial<typeof SenderIdentityBodySchema.static> }>,
+      reply: FastifyReply
+    ) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      const fromName = request.body.fromName ?? user?.name ?? '';
+      const fromEmail = request.body.fromEmail ?? (user as any)?.email;
+      const result = await SenderIdentityService.retryForUser(tenantId, user.id, fromName, fromEmail);
+      // If a new record was created, return 201; otherwise 200
+      return reply.status(200).send(result);
     },
   });
 }

@@ -8,9 +8,7 @@ function normalizeDomainFromEmail(email: string): string {
   return parts[1]!.toLowerCase();
 }
 
-function mapSendgridStatusToValidationStatus(body: any): 'pending' | 'verified' | 'failed' {
-  // SendGrid verified sender object includes fields like verified, from_email, nickname, id
-  // We treat verified === true as 'verified'; if false and there was an error state we could map to 'failed', else 'pending'.
+function mapSendgridStatusToValidationStatus(body: any): 'pending' | 'verified' | 'failed' | 'validated' {
   if (!body) return 'pending';
   if (body.verified === true) return 'verified';
   return 'pending';
@@ -39,7 +37,6 @@ export class SenderIdentityService {
       updatedAt: new Date(),
     } as unknown as Omit<NewEmailSenderIdentity, 'tenantId'>);
 
-    // Create SendGrid Verified Single Sender and trigger verification email
     const [resp, body] = await sendgridClient.validateSender(fromEmail, fromName);
     const sendgridId = (body as any)?.id as string | undefined;
 
@@ -72,7 +69,7 @@ export class SenderIdentityService {
   static async checkStatus(tenantId: string, id: string): Promise<EmailSenderIdentity> {
     const identity = await emailSenderIdentityRepository.findByIdForTenant(id, tenantId);
     if (!identity) throw new Error('Sender identity not found');
-    if (!identity.sendgridSenderId) return identity; // still pending create
+    if (!identity.sendgridSenderId) return identity;
 
     const { body } = await sendgridClient.getVerifiedSender(identity.sendgridSenderId);
     const mapped = mapSendgridStatusToValidationStatus(body);
@@ -89,7 +86,6 @@ export class SenderIdentityService {
   static async setDefault(tenantId: string, id: string): Promise<EmailSenderIdentity> {
     const all = await emailSenderIdentityRepository.findAllForTenant(tenantId);
 
-    // Unset defaults
     await Promise.all(
       all
         .filter((s) => s.isDefault && s.id !== id)
@@ -117,5 +113,47 @@ export class SenderIdentityService {
 
     await emailSenderIdentityRepository.deleteByIdForTenant(id, tenantId);
     return { message: 'Sender identity deleted' };
+  }
+
+  // Self-scoped helpers
+  static async getOrCreateForUser(tenantId: string, userId: string, fromName: string, fromEmail: string) {
+    const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
+    if (existing) return existing;
+    return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName, domain: undefined });
+  }
+
+  static async resendForUser(tenantId: string, userId: string) {
+    const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
+    if (!identity) throw new Error('No sender identity found');
+    if (!identity.sendgridSenderId) {
+      const [resp, body] = await sendgridClient.validateSender(identity.fromEmail, identity.fromName);
+      const sendgridId = (body as any)?.id as string | undefined;
+      await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
+        sendgridSenderId: sendgridId,
+        updatedAt: new Date(),
+      } as Partial<NewEmailSenderIdentity>);
+    } else {
+      await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
+    }
+    return { message: 'Verification email resent' };
+  }
+
+  static async retryForUser(tenantId: string, userId: string, fromName: string, fromEmail: string) {
+    const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
+    if (!identity) {
+      return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName });
+    }
+    if (!identity.sendgridSenderId) {
+      const [resp, body] = await sendgridClient.validateSender(identity.fromEmail, identity.fromName);
+      const sendgridId = (body as any)?.id as string | undefined;
+      const updated = await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
+        sendgridSenderId: sendgridId,
+        validationStatus: 'pending',
+        updatedAt: new Date(),
+      } as Partial<NewEmailSenderIdentity>);
+      return updated || identity;
+    }
+    await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
+    return identity;
   }
 }
