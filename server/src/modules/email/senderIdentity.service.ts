@@ -1,6 +1,7 @@
 import { emailSenderIdentityRepository } from '@/repositories';
 import { EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
+import { SendgridTokenHelper } from '@/libs/email/sendgridToken.helper';
 
 function normalizeDomainFromEmail(email: string): string {
   const parts = email.split('@');
@@ -8,75 +9,7 @@ function normalizeDomainFromEmail(email: string): string {
   return parts[1]!.toLowerCase();
 }
 
-function extractTokenFromUrlOrToken(input: string): string | null {
-  try {
-    const trimmed = input?.trim();
-    if (!trimmed) return null;
-
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      const url = new URL(trimmed);
-
-      // 1) Direct token on the URL
-      const directToken = url.searchParams.get('token');
-      if (directToken) return directToken;
-
-      // 2) Nested URL inside common wrapper params (Safe Links, redirectors, etc.)
-      const nestedParamKeys = ['url', 'u', 'target', 'destination', 'redirect', 'redir', 'r', 'd'];
-      for (const key of nestedParamKeys) {
-        const nested = url.searchParams.get(key);
-        if (!nested) continue;
-
-        let candidate = nested;
-        // Try decoding a couple times to unwrap percent-encoding
-        for (let i = 0; i < 2; i++) {
-          try {
-            candidate = decodeURIComponent(candidate);
-          } catch {
-            break;
-          }
-        }
-
-        // Handle Proofpoint-like encodings (e.g., https-3A__...) to reconstruct a URL
-        if (!/^https?:\/\//i.test(candidate) && /https?-3A/i.test(candidate)) {
-          candidate = candidate
-            .replace(/https?-3A__/i, (m) =>
-              m.toLowerCase().startsWith('https') ? 'https://' : 'http://'
-            )
-            .replace(/-2F/g, '/')
-            .replace(/_+/g, '/');
-        }
-
-        // If text contains a token query, extract via regex
-        const tokenFromTextMatch =
-          candidate.match(/[?&]token=([^&]+)/) || candidate.match(/token=([^&]+)/);
-        if (tokenFromTextMatch) return tokenFromTextMatch[1]!;
-
-        // Else, if it looks like a URL, parse and read its search params
-        if (/^https?:\/\//i.test(candidate)) {
-          try {
-            const inner = new URL(candidate);
-            const innerToken = inner.searchParams.get('token');
-            if (innerToken) return innerToken;
-          } catch {
-            // ignore and continue
-          }
-        }
-      }
-
-      // 3) Last resort: regex over the entire original input
-      const tokenMatch = trimmed.match(/[?&]token=([^&]+)/) || trimmed.match(/token=([^&]+)/);
-      if (tokenMatch) return tokenMatch[1]!;
-
-      return null;
-    }
-
-    // If not a URL, assume the input is the token itself
-    return trimmed;
-  } catch {
-    const tokenMatch = input.match(/token=([^&]+)/);
-    return tokenMatch ? tokenMatch[1]! : null;
-  }
-}
+// Extractor moved to SendgridTokenHelper
 
 function extractSendgridIdFromBody(body: unknown): string | undefined {
   if (body && typeof body === 'object' && 'id' in body) {
@@ -233,7 +166,7 @@ export class SenderIdentityService {
     if (!identity)
       throw new Error('No email sender identity found for the specified user and tenant');
 
-    const token = extractTokenFromUrlOrToken(sendgridValidationUrl);
+    const token = SendgridTokenHelper.extractTokenFromUrlOrToken(sendgridValidationUrl);
     if (!token) {
       const error: any = new Error('Invalid SendGrid validation URL provided');
       error.statusCode = 422;
