@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { getNetworkAddress } from '@/utils/network';
 import App from './app';
 import { logger } from './libs/logger';
-import { startSenderIdentityPoller } from '@/modules/email/senderIdentityPoller';
+
 
 dotenv.config();
 const PORT: number = Number(process.env.PORT || 3001);
@@ -11,8 +11,6 @@ const PORT: number = Number(process.env.PORT || 3001);
   try {
     const app = await App();
 
-    // Start background poller(s)
-    startSenderIdentityPoller();
 
     console.log('PORT from env:', process.env.PORT);
     console.log('PORT:', PORT);

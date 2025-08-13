@@ -174,12 +174,4 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
       .limit(1);
     return results[0];
   }
-
-  /** Fetch all pending sender identities across tenants (for background poller) */
-  async findAllPending(): Promise<EmailSenderIdentity[]> {
-    return (await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.table.validationStatus as any, 'pending'))) as EmailSenderIdentity[];
-  }
 }
