@@ -14,6 +14,21 @@ function mapSendgridStatusToValidationStatus(body: any): 'pending' | 'verified' 
   return 'pending';
 }
 
+function extractTokenFromUrlOrToken(input: string): string | null {
+  try {
+    // If it's a URL, parse query param 'token'
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+      const url = new URL(input);
+      const token = url.searchParams.get('token');
+      return token;
+    }
+    // Else assume it's the raw token
+    return input;
+  } catch {
+    return null;
+  }
+}
+
 export class SenderIdentityService {
   static async createSenderIdentity(params: {
     tenantId: string;
@@ -139,5 +154,32 @@ export class SenderIdentityService {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) throw new Error('No sender identity found');
     return this.checkStatus(tenantId, identity.id);
+  }
+
+  static async verifyForUser(tenantId: string, userId: string, tokenOrUrl: string) {
+    const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
+    if (!identity) throw new Error('No sender identity found');
+
+    const token = extractTokenFromUrlOrToken(tokenOrUrl);
+    if (!token) {
+      const error: any = new Error('Validation error');
+      error.statusCode = 422;
+      error.details = [{ field: 'token', message: 'invalid' }];
+      throw error;
+    }
+
+    const { statusCode } = await sendgridClient.verifySenderWithToken(token);
+    if (statusCode >= 200 && statusCode < 300) {
+      const updated = await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
+        validationStatus: 'verified',
+        lastValidatedAt: new Date(),
+        updatedAt: new Date(),
+      } as Partial<NewEmailSenderIdentity>);
+      return updated ?? identity;
+    }
+
+    const error: any = new Error('Verification failed');
+    error.statusCode = 400;
+    throw error;
   }
 }

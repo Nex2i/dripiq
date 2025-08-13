@@ -98,6 +98,16 @@ class SendgridClient {
     return { statusCode: resp.statusCode, body, headers: resp.headers };
   }
 
+  async verifySenderWithToken(token: string): Promise<{ statusCode: number; body: any; headers: any }> {
+    const request: ClientRequest = {
+      url: `/v3/verified_senders/verify`,
+      method: 'POST',
+      qs: { token },
+    } as any;
+    const [resp, body] = await sgClient.request(request);
+    return { statusCode: resp.statusCode, body, headers: resp.headers };
+  }
+
   private extractProviderIds(resp: ClientResponse): ProviderIds {
     // SendGrid returns 202 + X-Message-Id when accepted
     const headers = resp.headers as Record<string, string | string[] | undefined>;

@@ -194,4 +194,36 @@ export default async function SenderIdentitiesRoutes(
       return reply.status(200).send(updated);
     },
   });
+
+  // Self-scoped: Verify with pasted URL/token
+  fastify.route({
+    method: HttpMethods.POST,
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/me/verify`,
+    schema: {
+      tags: ['Sender Identities'],
+      summary: 'Verify my sender identity using a pasted URL or token',
+      body: Type.Object({ value: Type.String() }),
+      response: {
+        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+        422: ValidationErrorSchema,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: { value: string } }>,
+      reply: FastifyReply
+    ) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      try {
+        const updated = await SenderIdentityService.verifyForUser(tenantId, user.id, request.body.value);
+        return reply.status(200).send(updated);
+      } catch (e: any) {
+        if (e?.statusCode === 422) {
+          return reply.status(422).send({ message: 'Validation error', errors: e.details || [] });
+        }
+        throw e;
+      }
+    },
+  });
 }
