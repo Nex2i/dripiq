@@ -113,40 +113,33 @@ export class InviteService {
     // Get all users for this tenant with role information
     const tenantUsersQuery = await userTenantRepository.findUsersWithDetailsForTenant(tenantId);
 
-    // Transform to UserWithInviteInfo format
-    const allUsers: UserWithInviteInfo[] = await Promise.all(
-      tenantUsersQuery.map(async (ut) => {
-        const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
-        // Lookup sender identity per user for this tenant
-        let hasVerifiedSenderIdentity = false;
-        try {
-          const identity = await emailSenderIdentityRepository.findByUserIdForTenant(
-            ut.userId,
-            tenantId
-          );
-          hasVerifiedSenderIdentity = !!identity && identity.validationStatus === 'verified';
-        } catch {
-          hasVerifiedSenderIdentity = false;
-        }
-        return {
-          id: ut.userId,
-          firstName: firstName || undefined,
-          lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
-          email: ut.user?.email || '',
-          role: ut.role?.name || 'Unknown', // Now returns actual role name
-          status: ut.status as 'pending' | 'active',
-          invitedAt: ut.invitedAt || undefined,
-          lastLogin: ut.acceptedAt || undefined,
-          source: 'user_tenant' as const,
-          hasVerifiedSenderIdentity,
-        };
-      })
+    // Fetch all sender identities for this tenant once and build a lookup for verified users
+    const identities = await emailSenderIdentityRepository.findAllForTenant(tenantId);
+    const verifiedUserIds = new Set(
+      identities.filter((i) => i.validationStatus === 'verified').map((i) => i.userId)
     );
+
+    // Transform to UserWithInviteInfo format
+    const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
+      const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
+      return {
+        id: ut.userId,
+        firstName: firstName || undefined,
+        lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
+        email: ut.user?.email || '',
+        role: ut.role?.name || 'Unknown', // Now returns actual role name
+        status: ut.status as 'pending' | 'active',
+        invitedAt: ut.invitedAt || undefined,
+        lastLogin: ut.acceptedAt || undefined,
+        source: 'user_tenant' as const,
+        hasVerifiedSenderIdentity: verifiedUserIds.has(ut.userId),
+      };
+    });
 
     // Sort by status (pending first), then by role, then by email
     allUsers.sort((a, b) => {
       if (a.status !== b.status) {
-        const statusOrder = { pending: 0, active: 1 };
+        const statusOrder = { pending: 0, active: 1 } as const;
         return statusOrder[a.status] - statusOrder[b.status];
       }
       if (a.role !== b.role) {
