@@ -2,7 +2,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
-import { useMySenderIdentity, useCreateMySenderIdentity, useResendMySenderVerification, useCheckMySenderStatus } from '../../hooks/useSenderIdentities'
+import { useMySenderIdentity, useCreateMySenderIdentity, useResendMySenderVerification, useCheckMySenderStatus, useVerifyMySenderIdentity } from '../../hooks/useSenderIdentities'
 
 export default function UserEditPage() {
   const navigate = useNavigate()
@@ -24,12 +24,14 @@ export default function UserEditPage() {
   const createSender = useCreateMySenderIdentity()
   const resendSender = useResendMySenderVerification()
   const checkSender = useCheckMySenderStatus()
+  const verifySender = useVerifyMySenderIdentity()
   const [fromName, setFromName] = useState('')
   const [fromEmail, setFromEmail] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('USA')
   const [senderError, setSenderError] = useState<string | null>(null)
+  const [pasteValue, setPasteValue] = useState('')
 
   useEffect(() => {
     if (!isAdminMode && selfUser) {
@@ -102,9 +104,22 @@ export default function UserEditPage() {
     try {
       await createSender.mutateAsync({ fromEmail, fromName, address, city, country })
     } catch (e: any) {
-      // Try to surface server validation errors
       const msg = e?.message || 'Failed to create sender identity'
       setSenderError(msg)
+    }
+  }
+
+  const handleVerifyPaste = async () => {
+    setSenderError(null)
+    if (!pasteValue.trim()) {
+      setSenderError('Paste the full verification URL or token from the email.')
+      return
+    }
+    try {
+      await verifySender.mutateAsync(pasteValue.trim())
+      setPasteValue('')
+    } catch (e: any) {
+      setSenderError(e?.message || 'Failed to verify')
     }
   }
 
@@ -169,23 +184,48 @@ export default function UserEditPage() {
                   {myIdentity.validationStatus}
                 </span>
               </div>
+              <ol className="list-decimal ml-5 text-sm text-gray-700 space-y-1">
+                <li>Click "Send Verification Email"</li>
+                <li>Open the email from SendGrid</li>
+                <li>Copy the verification link</li>
+                <li>Paste below and submit to verify</li>
+              </ol>
               <div className="flex items-center gap-2">
-                <button
-                  className="px-3 py-1 text-sm rounded bg-indigo-600 text-white disabled:opacity-50"
-                  onClick={() => checkSender.mutate()}
-                  disabled={!myIdentity.sendgridSenderId || checkSender.isPending}
-                >
-                  {checkSender.isPending ? 'Checking...' : 'Check Status'}
-                </button>
                 <button
                   className="px-3 py-1 text-sm rounded bg-blue-600 text-white disabled:opacity-50"
                   onClick={() => resendSender.mutate()}
                   disabled={resendSender.isPending}
                 >
-                  {resendSender.isPending ? 'Resending...' : 'Resend Email'}
+                  {resendSender.isPending ? 'Sending…' : 'Send Verification Email'}
+                </button>
+                <button
+                  className="px-3 py-1 text-sm rounded bg-indigo-600 text-white disabled:opacity-50"
+                  onClick={() => checkSender.mutate()}
+                  disabled={checkSender.isPending}
+                >
+                  {checkSender.isPending ? 'Checking…' : 'Check Status'}
                 </button>
               </div>
-              <p className="text-xs text-gray-500">Click the link in the verification email, then Check Status.</p>
+              <div className="grid grid-cols-1 gap-2">
+                <input
+                  className="border rounded px-3 py-2"
+                  placeholder="Paste verification URL or token here"
+                  value={pasteValue}
+                  onChange={(e) => setPasteValue(e.target.value)}
+                />
+                <button
+                  className="px-3 py-1 text-sm rounded bg-green-600 text-white disabled:opacity-50 w-fit"
+                  onClick={handleVerifyPaste}
+                  disabled={verifySender.isPending || !pasteValue.trim()}
+                >
+                  {verifySender.isPending ? 'Verifying…' : 'Verify'}
+                </button>
+              </div>
+              {senderError && (
+                <div className="p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+                  {senderError}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-3">

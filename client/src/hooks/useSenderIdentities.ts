@@ -51,3 +51,13 @@ export function useRetryMySenderIdentity() {
     },
   })
 }
+
+export function useVerifyMySenderIdentity() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (value: string) => senderIdentitiesService.verifyMine(value),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
+    },
+  })
+}

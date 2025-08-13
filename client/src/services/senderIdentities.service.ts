@@ -80,6 +80,17 @@ class SenderIdentitiesService {
     if (!response.ok) throw new Error('Failed to retry sender identity')
     return response.json()
   }
+
+  async verifyMine(value: string): Promise<SenderIdentity> {
+    const authHeaders = await authService.getAuthHeaders()
+    const response = await fetch(`${this.baseUrl}/sender-identities/me/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
+      body: JSON.stringify({ value }),
+    })
+    if (!response.ok) throw new Error('Failed to verify sender identity')
+    return response.json()
+  }
 }
 
 export const senderIdentitiesService = new SenderIdentitiesService()
