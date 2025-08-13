@@ -25,7 +25,7 @@ export default function UserEditPage() {
   const [saving, setSaving] = useState<boolean>(false)
 
   // sender identity UI state
-  const { data: myIdentity } = useMySenderIdentity()
+  const { data: myIdentity, isLoading: identityLoading } = useMySenderIdentity()
   const createSender = useCreateMySenderIdentity()
   const resendSender = useResendMySenderVerification()
   const verifySender = useVerifyMySenderIdentity()
@@ -224,17 +224,20 @@ export default function UserEditPage() {
             Verify the email address used to send messages.
           </p>
 
-          {myIdentity ? (
+          {identityLoading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+              <span>Loading sender identity…</span>
+            </div>
+          ) : myIdentity ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="text-sm text-gray-700">
-                  From:{' '}
-                  <span className="font-medium">{myIdentity.fromName}</span>{' '}
-                  &lt;{myIdentity.fromEmail}&gt;
+                  From: <span className="font-medium">{myIdentity.fromName}</span> &lt;{myIdentity.fromEmail}&gt;
                 </div>
                 <span
                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    isVerified
+                    (myIdentity && myIdentity.validationStatus === 'verified')
                       ? 'bg-green-100 text-green-800 ring-1 ring-green-200'
                       : myIdentity.validationStatus === 'failed'
                         ? 'bg-red-100 text-red-800 ring-1 ring-red-200'
@@ -248,7 +251,7 @@ export default function UserEditPage() {
                 Domain: {myIdentity.domain}
               </div>
 
-              {isVerified ? (
+              {(myIdentity && myIdentity.validationStatus === 'verified') ? (
                 <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-800 text-sm">
                   <span className="inline-block">✓</span>
                   <span>Sender identity verified. You’re all set!</span>
