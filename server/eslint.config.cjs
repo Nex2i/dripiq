@@ -35,6 +35,8 @@ module.exports = [
         Response: true,
         Headers: true,
         Request: true,
+        URL: true,
+        URLSearchParams: true,
       },
     },
     plugins: {

@@ -206,6 +206,7 @@ const settingsProductsRoute = createRoute({
   component: () => <ProductsPage />,
 })
 
+
 // Create all protected demo routes directly
 const formSimpleRoute = createRoute({
   getParentRoute: () => protectedRoute,

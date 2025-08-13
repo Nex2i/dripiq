@@ -50,13 +50,22 @@ class SendgridClient {
     return 'Valid';
   }
 
-  async validateSender(email: string, name: string) {
+  async validateSender(input: {
+    email: string;
+    name: string;
+    address: string;
+    city: string;
+    country: string;
+  }) {
     const data = {
-      nickname: name,
-      from_email: email,
-      from_name: name,
-      reply_to: email,
-      reply_to_name: name,
+      nickname: input.name,
+      from_email: input.email,
+      from_name: input.name,
+      reply_to: input.email,
+      reply_to_name: input.name,
+      address: input.address,
+      city: input.city,
+      country: input.country,
     };
 
     const request: ClientRequest = {
@@ -77,6 +86,28 @@ class SendgridClient {
 
     const response = await sgClient.request(request);
     return response;
+  }
+
+  async getVerifiedSender(id: string): Promise<{ statusCode: number; body: any; headers: any }> {
+    const request: ClientRequest = {
+      url: `/v3/verified_senders/${id}`,
+      method: 'GET',
+    };
+
+    const [resp, body] = await sgClient.request(request);
+    return { statusCode: resp.statusCode, body, headers: resp.headers };
+  }
+
+  async verifySenderWithToken(
+    token: string
+  ): Promise<{ statusCode: number; body: any; headers: any }> {
+    const postReq: ClientRequest = {
+      url: `/v3/verified_senders/verify`,
+      method: 'POST',
+      body: { token },
+    } as any;
+    const [resp, body] = await sgClient.request(postReq);
+    return { statusCode: resp.statusCode, body, headers: resp.headers };
   }
 
   private extractProviderIds(resp: ClientResponse): ProviderIds {
