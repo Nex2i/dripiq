@@ -30,24 +30,31 @@ class SenderIdentitiesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
   private async throwDetailedError(response: Response, fallback: string): Promise<never> {
+    let data: any = null
     try {
-      const data = await response.json().catch(() => null as any)
-      const errors = Array.isArray(data?.errors)
-        ? data.errors
-            .map((e: any) => {
-              const field = typeof e?.field === 'string' && e.field ? `${e.field}: ` : ''
-              const message = typeof e?.message === 'string' ? e.message : String(e)
-              return `${field}${message}`
-            })
-            .filter(Boolean)
-        : []
-      const message = errors.length
-        ? errors.join(', ')
-        : (typeof data?.message === 'string' && data.message) || fallback
-      throw new Error(message)
-    } catch {
-      throw new Error(fallback)
-    }
+      data = await response.json()
+    } catch {}
+
+    const errors: string[] = Array.isArray(data?.errors)
+      ? data.errors
+          .map((e: any) => {
+            const field = typeof e?.field === 'string' && e.field ? `${e.field}: ` : ''
+            const message = typeof e?.message === 'string' ? e.message : String(e)
+            return `${field}${message}`
+          })
+          .filter(Boolean)
+      : []
+
+    const technical = errors.join(', ')
+    const friendly = typeof data?.message === 'string' && data.message ? data.message : ''
+
+    const combined = technical
+      ? friendly
+        ? `${friendly}: ${technical}`
+        : technical
+      : friendly || fallback
+
+    throw new Error(combined)
   }
 
   async getMine(): Promise<SenderIdentity | null> {
