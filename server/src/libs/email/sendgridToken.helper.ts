@@ -12,7 +12,16 @@ export class SendgridTokenHelper {
         if (directToken) return directToken;
 
         // 2) Nested URL inside common wrapper params (Safe Links, redirectors, etc.)
-        const nestedParamKeys = ['url', 'u', 'target', 'destination', 'redirect', 'redir', 'r', 'd'];
+        const nestedParamKeys = [
+          'url',
+          'u',
+          'target',
+          'destination',
+          'redirect',
+          'redir',
+          'r',
+          'd',
+        ];
         for (const key of nestedParamKeys) {
           const nested = url.searchParams.get(key);
           if (!nested) continue;
@@ -43,7 +52,9 @@ export class SendgridTokenHelper {
           }
 
           if (/https?-3A__/i.test(candidate)) {
-            const scheme = candidate.toLowerCase().startsWith('https-3a__') ? 'https://' : 'http://';
+            const scheme = candidate.toLowerCase().startsWith('https-3a__')
+              ? 'https://'
+              : 'http://';
             const afterScheme = candidate.replace(/^https?-3A__?/i, '');
             const decodedRest = afterScheme.replace(/-([0-9A-F]{2})/gi, (_m, h) =>
               String.fromCharCode(parseInt(h, 16))

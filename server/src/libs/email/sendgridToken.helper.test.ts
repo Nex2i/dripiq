@@ -1,7 +1,8 @@
 import { SendgridTokenHelper } from './sendgridToken.helper';
 
 describe('SendgridTokenHelper.extractTokenFromUrlOrToken', () => {
-  const sampleToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTUyOTI0NjIsImlkIjoiNzc1Njk1NyIsInRva2VuX2lkIjoiMjczZWRjNjUtZWQ5OS00ODhlLThmZjQtYzkxYTZkOThmM2Y2IiwidXNlcl9pZCI6IjU0OTkyMTU1In0.XvP6I7tJUsyWcPnl6xM1IXhgHEx6VTB-YFB8sF2YCoM';
+  const sampleToken =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTUyOTI0NjIsImlkIjoiNzc1Njk1NyIsInRva2VuX2lkIjoiMjczZWRjNjUtZWQ5OS00ODhlLThmZjQtYzkxYTZkOThmM2Y2IiwidXNlcl9pZCI6IjU0OTkyMTU1In0.XvP6I7tJUsyWcPnl6xM1IXhgHEx6VTB-YFB8sF2YCoM';
 
   it('returns token from a direct SendGrid verify URL', () => {
     const url = `https://app.sendgrid.com/settings/sender_auth/senders/verify?token=${sampleToken}`;
