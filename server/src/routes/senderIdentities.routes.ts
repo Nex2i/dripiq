@@ -175,27 +175,7 @@ export default async function SenderIdentitiesRoutes(
     },
   });
 
-  // Self-scoped: Check
-  fastify.route({
-    method: HttpMethods.POST,
-    preHandler: [fastify.authPrehandler],
-    url: `${basePath}/me/check`,
-    schema: {
-      tags: ['Sender Identities'],
-      summary: 'Check my sender identity verification status',
-      response: {
-        ...defaultRouteResponse(),
-        200: SenderIdentitySchema,
-      },
-    },
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
-      const { tenantId, user } = request as AuthenticatedRequest;
-      const updated = await SenderIdentityService.checkForUser(tenantId, user.id);
-      return reply.status(200).send(updated);
-    },
-  });
-
-  // Self-scoped: Verify with pasted URL/token
+  // Self-scoped: Verify with pasted URL
   fastify.route({
     method: HttpMethods.POST,
     preHandler: [fastify.authPrehandler],

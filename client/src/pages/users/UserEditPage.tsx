@@ -2,7 +2,7 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
-import { useMySenderIdentity, useCreateMySenderIdentity, useResendMySenderVerification, useCheckMySenderStatus, useVerifyMySenderIdentity } from '../../hooks/useSenderIdentities'
+import { useMySenderIdentity, useCreateMySenderIdentity, useResendMySenderVerification, useVerifyMySenderIdentity } from '../../hooks/useSenderIdentities'
 
 export default function UserEditPage() {
   const navigate = useNavigate()
@@ -23,7 +23,6 @@ export default function UserEditPage() {
   const { data: myIdentity } = useMySenderIdentity()
   const createSender = useCreateMySenderIdentity()
   const resendSender = useResendMySenderVerification()
-  const checkSender = useCheckMySenderStatus()
   const verifySender = useVerifyMySenderIdentity()
   const [fromName, setFromName] = useState('')
   const [fromEmail, setFromEmail] = useState('')
@@ -233,13 +232,6 @@ export default function UserEditPage() {
                       disabled={resendSender.isPending}
                     >
                       {resendSender.isPending ? 'Sending…' : 'Send Verification Email'}
-                    </button>
-                    <button
-                      className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 shadow-sm"
-                      onClick={() => checkSender.mutate()}
-                      disabled={checkSender.isPending}
-                    >
-                      {checkSender.isPending ? 'Checking…' : 'Check Status'}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 gap-2">

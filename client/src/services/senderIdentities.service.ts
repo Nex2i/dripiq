@@ -60,16 +60,6 @@ class SenderIdentitiesService {
     return response.json()
   }
 
-  async checkMine(): Promise<SenderIdentity> {
-    const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/me/check`, {
-      method: 'POST',
-      headers: { ...authHeaders },
-    })
-    if (!response.ok) throw new Error('Failed to check status')
-    return response.json()
-  }
-
   async retryMine(data?: Partial<CreateSenderIdentityData>): Promise<SenderIdentity> {
     const authHeaders = await authService.getAuthHeaders()
     const response = await fetch(`${this.baseUrl}/sender-identities/me/retry`, {

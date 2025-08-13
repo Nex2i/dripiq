@@ -16,13 +16,11 @@ function mapSendgridStatusToValidationStatus(body: any): 'pending' | 'verified' 
 
 function extractTokenFromUrlOrToken(input: string): string | null {
   try {
-    // If it's a URL, parse query param 'token'
     if (input.startsWith('http://') || input.startsWith('https://')) {
       const url = new URL(input);
       const token = url.searchParams.get('token');
       return token;
     }
-    // Else assume it's the raw token
     return input;
   } catch {
     return null;
@@ -81,23 +79,6 @@ export class SenderIdentityService {
     return updated || created;
   }
 
-  static async checkStatus(tenantId: string, id: string): Promise<EmailSenderIdentity> {
-    const identity = await emailSenderIdentityRepository.findByIdForTenant(id, tenantId);
-    if (!identity) throw new Error('Sender identity not found');
-    if (!identity.sendgridSenderId) return identity;
-
-    const { body } = await sendgridClient.getVerifiedSender(identity.sendgridSenderId);
-    const mapped = mapSendgridStatusToValidationStatus(body);
-
-    const updated = await emailSenderIdentityRepository.updateByIdForTenant(id, tenantId, {
-      validationStatus: mapped,
-      lastValidatedAt: new Date(),
-      updatedAt: new Date(),
-    } as Partial<NewEmailSenderIdentity>);
-
-    return updated || (identity as EmailSenderIdentity);
-  }
-
   // Self-scoped helpers
   static async getOrCreateForUser(tenantId: string, userId: string, fromName: string, fromEmail: string, address?: string, city?: string, country?: string) {
     const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
@@ -148,12 +129,6 @@ export class SenderIdentityService {
     }
     await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
     return identity;
-  }
-
-  static async checkForUser(tenantId: string, userId: string) {
-    const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
-    if (!identity) throw new Error('No sender identity found');
-    return this.checkStatus(tenantId, identity.id);
   }
 
   static async verifyForUser(tenantId: string, userId: string, sendgridValidationUrl: string) {

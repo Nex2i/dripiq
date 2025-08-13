@@ -32,16 +32,6 @@ export function useResendMySenderVerification() {
   })
 }
 
-export function useCheckMySenderStatus() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () => senderIdentitiesService.checkMine(),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
-    },
-  })
-}
-
 export function useRetryMySenderIdentity() {
   const qc = useQueryClient()
   return useMutation({
