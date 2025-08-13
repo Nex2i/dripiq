@@ -2,7 +2,6 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { Type } from '@sinclair/typebox';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { SenderIdentityService } from '@/modules/email/senderIdentity.service';
-import { defaultRouteResponse } from '@/types/response';
 
 const basePath = '/sender-identities';
 
@@ -16,6 +15,30 @@ const SenderIdentityBodySchema = Type.Object({
 const SenderIdentityIdParams = Type.Object({
   id: Type.String(),
 });
+
+const SenderValidationStatus = Type.Union([
+  Type.Literal('pending'),
+  Type.Literal('verified'),
+  Type.Literal('failed'),
+]);
+
+const SenderIdentitySchema = Type.Object({
+  id: Type.String(),
+  tenantId: Type.String(),
+  userId: Type.String(),
+  fromEmail: Type.String(),
+  fromName: Type.String(),
+  domain: Type.String(),
+  sendgridSenderId: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  validationStatus: SenderValidationStatus,
+  lastValidatedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
+  dedicatedIpPool: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  isDefault: Type.Boolean(),
+  createdAt: Type.String({ format: 'date-time' }),
+  updatedAt: Type.String({ format: 'date-time' }),
+});
+
+const MessageSchema = Type.Object({ message: Type.String() });
 
 export default async function SenderIdentitiesRoutes(
   fastify: FastifyInstance,
@@ -31,7 +54,12 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Create sender identity and trigger verification email',
       body: SenderIdentityBodySchema,
       response: {
-        ...defaultRouteResponse(),
+        201: SenderIdentitySchema,
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (
@@ -61,7 +89,12 @@ export default async function SenderIdentitiesRoutes(
       tags: ['Sender Identities'],
       summary: 'List sender identities for tenant',
       response: {
-        ...defaultRouteResponse(),
+        200: Type.Array(SenderIdentitySchema),
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
@@ -81,7 +114,12 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Get sender identity by id',
       params: SenderIdentityIdParams,
       response: {
-        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (
@@ -106,7 +144,12 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Resend verification email',
       params: SenderIdentityIdParams,
       response: {
-        ...defaultRouteResponse(),
+        200: MessageSchema,
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (
@@ -130,7 +173,12 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Check verification status and update',
       params: SenderIdentityIdParams,
       response: {
-        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (
@@ -154,7 +202,12 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Set this identity as default for tenant',
       params: SenderIdentityIdParams,
       response: {
-        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (
@@ -178,7 +231,12 @@ export default async function SenderIdentitiesRoutes(
       summary: 'Delete sender identity',
       params: SenderIdentityIdParams,
       response: {
-        ...defaultRouteResponse(),
+        200: MessageSchema,
+        400: MessageSchema,
+        401: MessageSchema,
+        403: MessageSchema,
+        404: MessageSchema,
+        500: MessageSchema,
       },
     },
     handler: async (
