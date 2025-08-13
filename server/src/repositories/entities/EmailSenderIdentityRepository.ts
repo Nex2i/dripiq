@@ -76,7 +76,9 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
     return (await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.validationStatus, 'verified')))) as EmailSenderIdentity[];
+      .where(
+        and(eq(this.table.tenantId, tenantId), eq(this.table.validationStatus, 'verified'))
+      )) as EmailSenderIdentity[];
   }
 
   async updateByIdForTenant(
