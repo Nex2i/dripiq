@@ -11,6 +11,9 @@ const basePath = '/sender-identities';
 const SenderIdentityBodySchema = Type.Object({
   fromEmail: Type.String({ format: 'email' }),
   fromName: Type.String(),
+  address: Type.String(),
+  city: Type.String(),
+  country: Type.Optional(Type.String()),
 });
 
 const SenderValidationStatus = Type.Union([
@@ -37,6 +40,10 @@ const SenderIdentitySchema = Type.Object({
 });
 
 const MessageSchema = Type.Object({ message: Type.String() });
+const ValidationErrorSchema = Type.Object({
+  message: Type.String(),
+  errors: Type.Array(Type.Object({ field: Type.String(), message: Type.String() })),
+});
 
 export default async function SenderIdentitiesRoutes(
   fastify: FastifyInstance,
@@ -76,6 +83,7 @@ export default async function SenderIdentitiesRoutes(
       response: {
         ...defaultRouteResponse(),
         201: SenderIdentitySchema,
+        422: ValidationErrorSchema,
       },
     },
     handler: async (
@@ -83,14 +91,24 @@ export default async function SenderIdentitiesRoutes(
       reply: FastifyReply
     ) => {
       const { tenantId, user } = request as AuthenticatedRequest;
-      const { fromEmail, fromName } = request.body;
-      const created = await SenderIdentityService.getOrCreateForUser(
-        tenantId,
-        user.id,
-        fromName,
-        fromEmail
-      );
-      return reply.status(201).send(created);
+      const { fromEmail, fromName, address, city, country } = request.body;
+      try {
+        const created = await SenderIdentityService.getOrCreateForUser(
+          tenantId,
+          user.id,
+          fromName,
+          fromEmail,
+          address,
+          city,
+          country || 'USA'
+        );
+        return reply.status(201).send(created);
+      } catch (e: any) {
+        if (e?.statusCode === 422) {
+          return reply.status(422).send({ message: 'Validation error', errors: e.details || [] });
+        }
+        throw e;
+      }
     },
   });
 
@@ -127,6 +145,7 @@ export default async function SenderIdentitiesRoutes(
         ...defaultRouteResponse(),
         200: SenderIdentitySchema,
         201: SenderIdentitySchema,
+        422: ValidationErrorSchema,
       },
     },
     handler: async (
@@ -136,8 +155,23 @@ export default async function SenderIdentitiesRoutes(
       const { tenantId, user } = request as AuthenticatedRequest;
       const fromName = request.body.fromName ?? user?.name ?? '';
       const fromEmail = request.body.fromEmail ?? (user as any)?.email;
-      const result = await SenderIdentityService.retryForUser(tenantId, user.id, fromName, fromEmail);
-      return reply.status(200).send(result);
+      try {
+        const result = await SenderIdentityService.retryForUser(
+          tenantId,
+          user.id,
+          fromName,
+          fromEmail,
+          request.body.address,
+          request.body.city,
+          request.body.country || 'USA'
+        );
+        return reply.status(200).send(result);
+      } catch (e: any) {
+        if (e?.statusCode === 422) {
+          return reply.status(422).send({ message: 'Validation error', errors: e.details || [] });
+        }
+        throw e;
+      }
     },
   });
 

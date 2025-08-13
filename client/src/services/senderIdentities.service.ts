@@ -21,6 +21,9 @@ export interface SenderIdentity {
 export interface CreateSenderIdentityData {
   fromEmail: string
   fromName: string
+  address: string
+  city: string
+  country?: string
 }
 
 class SenderIdentitiesService {

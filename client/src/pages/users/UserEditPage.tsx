@@ -26,6 +26,10 @@ export default function UserEditPage() {
   const checkSender = useCheckMySenderStatus()
   const [fromName, setFromName] = useState('')
   const [fromEmail, setFromEmail] = useState('')
+  const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [country, setCountry] = useState('USA')
+  const [senderError, setSenderError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isAdminMode && selfUser) {
@@ -90,8 +94,18 @@ export default function UserEditPage() {
   }
 
   const handleCreateSender = async () => {
-    if (!fromEmail || !fromName) return
-    await createSender.mutateAsync({ fromEmail, fromName })
+    setSenderError(null)
+    if (!fromEmail || !fromName || !address || !city) {
+      setSenderError('Please fill in from name, from email, address, and city.')
+      return
+    }
+    try {
+      await createSender.mutateAsync({ fromEmail, fromName, address, city, country })
+    } catch (e: any) {
+      // Try to surface server validation errors
+      const msg = e?.message || 'Failed to create sender identity'
+      setSenderError(msg)
+    }
   }
 
   if (loading) {
@@ -175,6 +189,11 @@ export default function UserEditPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {senderError && (
+                <div className="p-3 rounded border border-red-200 bg-red-50 text-red-700 text-sm">
+                  {senderError}
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
                   className="border rounded px-3 py-2"
@@ -188,11 +207,29 @@ export default function UserEditPage() {
                   value={fromEmail}
                   onChange={(e) => setFromEmail(e.target.value)}
                 />
+                <input
+                  className="border rounded px-3 py-2 sm:col-span-2"
+                  placeholder="Street address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+                <input
+                  className="border rounded px-3 py-2"
+                  placeholder="City"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
+                <input
+                  className="border rounded px-3 py-2"
+                  placeholder="Country (default USA)"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                />
               </div>
               <button
                 className="px-4 py-2 text-sm rounded bg-[var(--color-primary-600)] text-white disabled:opacity-50"
                 onClick={handleCreateSender}
-                disabled={createSender.isPending || !fromName || !fromEmail}
+                disabled={createSender.isPending || !fromName || !fromEmail || !address || !city}
               >
                 {createSender.isPending ? 'Creating...' : 'Create & Send Verification'}
               </button>

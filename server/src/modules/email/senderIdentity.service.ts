@@ -20,11 +20,22 @@ export class SenderIdentityService {
     userId: string;
     fromEmail: string;
     fromName: string;
-    domain?: string;
-    isDefault?: boolean;
+    address?: string;
+    city?: string;
+    country?: string;
   }): Promise<EmailSenderIdentity> {
     const { tenantId, userId, fromEmail, fromName } = params;
-    const domain = (params.domain || normalizeDomainFromEmail(fromEmail)).toLowerCase();
+    const domain = normalizeDomainFromEmail(fromEmail).toLowerCase();
+
+    if (!params.address || !params.city) {
+      const error: any = new Error('Validation error');
+      error.statusCode = 422;
+      error.details = [
+        ...(!params.address ? [{ field: 'address', message: 'required' }] : []),
+        ...(!params.city ? [{ field: 'city', message: 'required' }] : []),
+      ];
+      throw error;
+    }
 
     const created = await emailSenderIdentityRepository.createForTenant(tenantId, {
       userId,
@@ -32,12 +43,19 @@ export class SenderIdentityService {
       fromName,
       domain,
       validationStatus: 'pending',
-      isDefault: params.isDefault ?? false,
+      isDefault: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     } as unknown as Omit<NewEmailSenderIdentity, 'tenantId'>);
 
-    const [resp, body] = await sendgridClient.validateSender(fromEmail, fromName);
+    const country = (params.country || 'USA').toUpperCase();
+    const [resp, body] = await sendgridClient.validateSender({
+      email: fromEmail,
+      name: fromName,
+      address: params.address!,
+      city: params.city!,
+      country,
+    });
     const sendgridId = (body as any)?.id as string | undefined;
 
     const updated = await emailSenderIdentityRepository.updateByIdForTenant(created.id, tenantId, {
@@ -66,35 +84,45 @@ export class SenderIdentityService {
   }
 
   // Self-scoped helpers
-  static async getOrCreateForUser(tenantId: string, userId: string, fromName: string, fromEmail: string) {
+  static async getOrCreateForUser(tenantId: string, userId: string, fromName: string, fromEmail: string, address?: string, city?: string, country?: string) {
     const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (existing) return existing;
-    return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName, domain: undefined });
+    return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName, address, city, country });
   }
 
   static async resendForUser(tenantId: string, userId: string) {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) throw new Error('No sender identity found');
     if (!identity.sendgridSenderId) {
-      const [resp, body] = await sendgridClient.validateSender(identity.fromEmail, identity.fromName);
-      const sendgridId = (body as any)?.id as string | undefined;
-      await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
-        sendgridSenderId: sendgridId,
-        updatedAt: new Date(),
-      } as Partial<NewEmailSenderIdentity>);
+      throw new Error('Missing provider sender id. Please retry creation.');
     } else {
       await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
     }
     return { message: 'Verification email resent' };
   }
 
-  static async retryForUser(tenantId: string, userId: string, fromName: string, fromEmail: string) {
+  static async retryForUser(tenantId: string, userId: string, fromName: string, fromEmail: string, address?: string, city?: string, country?: string) {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) {
-      return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName });
+      return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName, address, city, country });
     }
     if (!identity.sendgridSenderId) {
-      const [resp, body] = await sendgridClient.validateSender(identity.fromEmail, identity.fromName);
+      if (!address || !city) {
+        const error: any = new Error('Validation error');
+        error.statusCode = 422;
+        error.details = [
+          ...(!address ? [{ field: 'address', message: 'required' }] : []),
+          ...(!city ? [{ field: 'city', message: 'required' }] : []),
+        ];
+        throw error;
+      }
+      const [resp, body] = await sendgridClient.validateSender({
+        email: identity.fromEmail,
+        name: identity.fromName,
+        address,
+        city,
+        country: (country || 'USA').toUpperCase(),
+      });
       const sendgridId = (body as any)?.id as string | undefined;
       const updated = await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
         sendgridSenderId: sendgridId,

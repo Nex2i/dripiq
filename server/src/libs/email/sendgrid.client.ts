@@ -50,13 +50,22 @@ class SendgridClient {
     return 'Valid';
   }
 
-  async validateSender(email: string, name: string) {
+  async validateSender(input: {
+    email: string;
+    name: string;
+    address: string;
+    city: string;
+    country: string;
+  }) {
     const data = {
-      nickname: name,
-      from_email: email,
-      from_name: name,
-      reply_to: email,
-      reply_to_name: name,
+      nickname: input.name,
+      from_email: input.email,
+      from_name: input.name,
+      reply_to: input.email,
+      reply_to_name: input.name,
+      address: input.address,
+      city: input.city,
+      country: input.country,
     };
 
     const request: ClientRequest = {
