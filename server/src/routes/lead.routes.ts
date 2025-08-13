@@ -148,15 +148,20 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // If ownerId is provided, require it, otherwise default to current user
-        const assignedOwnerId =
-          ownerId && ownerId.trim().length > 0 ? ownerId : authenticatedRequest.user.id;
+        // Owner is required; validate presence
+        if (!ownerId || !ownerId.trim()) {
+          reply.status(400).send({
+            message: 'Assigned owner is required',
+            error: 'ownerId must be provided',
+          });
+          return;
+        }
 
         // Create the lead with tenant context and point of contacts
         const newLead = await createLead(
           authenticatedRequest.tenantId,
           leadData as Omit<NewLead, 'tenantId'>,
-          assignedOwnerId,
+          ownerId,
           pointOfContacts
         );
 

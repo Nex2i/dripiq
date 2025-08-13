@@ -12,9 +12,7 @@ export const CreateLeadRequestSchema = Type.Object({
       description: 'Lead status',
     })
   ),
-  ownerId: Type.Optional(
-    Type.String({ description: 'User ID to assign as owner at creation (must be verified)' })
-  ),
+  ownerId: Type.String({ description: 'User ID to assign as owner at creation (must be verified)' }),
   pointOfContacts: Type.Optional(
     Type.Array(PointOfContactSchema, {
       description: 'Array of point of contacts for the lead',
