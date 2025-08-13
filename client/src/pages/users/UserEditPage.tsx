@@ -131,7 +131,7 @@ export default function UserEditPage() {
     )
   }
 
-  const isVerified = !!myIdentity && (myIdentity.validationStatus === 'verified' || (myIdentity as any).validationStatus === 'validated')
+  const isVerified = !!myIdentity && (myIdentity.validationStatus === 'verified' || myIdentity.validationStatus === 'validated')
 
   return (
     <div className={isAdminMode ? 'max-w-5xl mx-auto p-6' : 'max-w-3xl mx-auto p-6'}>
