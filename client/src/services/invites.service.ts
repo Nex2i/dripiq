@@ -20,6 +20,7 @@ export interface User {
   invitedAt?: string
   lastLogin?: string
   source: 'user_tenant'
+  hasVerifiedSenderIdentity?: boolean
 }
 
 export interface CreateInviteData {
