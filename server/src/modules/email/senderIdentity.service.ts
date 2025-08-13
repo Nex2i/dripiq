@@ -48,24 +48,6 @@ export class SenderIdentityService {
     return updated || created;
   }
 
-  static async listSenderIdentities(tenantId: string): Promise<EmailSenderIdentity[]> {
-    return await emailSenderIdentityRepository.findAllForTenant(tenantId);
-  }
-
-  static async getSenderIdentity(tenantId: string, id: string): Promise<EmailSenderIdentity | undefined> {
-    return await emailSenderIdentityRepository.findByIdForTenant(id, tenantId);
-  }
-
-  static async resendVerification(tenantId: string, id: string) {
-    const identity = await emailSenderIdentityRepository.findByIdForTenant(id, tenantId);
-    if (!identity) throw new Error('Sender identity not found');
-    if (!identity.sendgridSenderId) throw new Error('No provider sender id available');
-
-    await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
-
-    return { message: 'Verification email resent' };
-  }
-
   static async checkStatus(tenantId: string, id: string): Promise<EmailSenderIdentity> {
     const identity = await emailSenderIdentityRepository.findByIdForTenant(id, tenantId);
     if (!identity) throw new Error('Sender identity not found');
@@ -81,38 +63,6 @@ export class SenderIdentityService {
     } as Partial<NewEmailSenderIdentity>);
 
     return updated || (identity as EmailSenderIdentity);
-  }
-
-  static async setDefault(tenantId: string, id: string): Promise<EmailSenderIdentity> {
-    const all = await emailSenderIdentityRepository.findAllForTenant(tenantId);
-
-    await Promise.all(
-      all
-        .filter((s) => s.isDefault && s.id !== id)
-        .map((s) =>
-          emailSenderIdentityRepository.updateByIdForTenant(s.id, tenantId, {
-            isDefault: false,
-            updatedAt: new Date(),
-          } as Partial<NewEmailSenderIdentity>)
-        )
-    );
-
-    const updated = await emailSenderIdentityRepository.updateByIdForTenant(id, tenantId, {
-      isDefault: true,
-      updatedAt: new Date(),
-    } as Partial<NewEmailSenderIdentity>);
-
-    if (!updated) throw new Error('Unable to set default sender identity');
-    return updated;
-  }
-
-  static async remove(tenantId: string, id: string): Promise<{ message: string }> {
-    const identity = await emailSenderIdentityRepository.findByIdForTenant(id, tenantId);
-    if (!identity) throw new Error('Sender identity not found');
-    if (identity.isDefault) throw new Error('Cannot delete default sender identity');
-
-    await emailSenderIdentityRepository.deleteByIdForTenant(id, tenantId);
-    return { message: 'Sender identity deleted' };
   }
 
   // Self-scoped helpers
@@ -155,5 +105,11 @@ export class SenderIdentityService {
     }
     await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
     return identity;
+  }
+
+  static async checkForUser(tenantId: string, userId: string) {
+    const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
+    if (!identity) throw new Error('No sender identity found');
+    return this.checkStatus(tenantId, identity.id);
   }
 }
