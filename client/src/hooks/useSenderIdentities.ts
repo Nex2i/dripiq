@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { senderIdentitiesService, type CreateSenderIdentityData } from '../services/senderIdentities.service'
+import { senderIdentitiesService } from '../services/senderIdentities.service'
+import type { CreateSenderIdentityData } from '../services/senderIdentities.service'
 
 export const senderIdentityQueryKeys = {
   mine: ['sender-identities', 'me'] as const,
@@ -15,7 +16,8 @@ export function useMySenderIdentity() {
 export function useCreateMySenderIdentity() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: CreateSenderIdentityData) => senderIdentitiesService.createMine(data),
+    mutationFn: (data: CreateSenderIdentityData) =>
+      senderIdentitiesService.createMine(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
     },
@@ -35,7 +37,8 @@ export function useResendMySenderVerification() {
 export function useRetryMySenderIdentity() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data?: Partial<CreateSenderIdentityData>) => senderIdentitiesService.retryMine(data),
+    mutationFn: (data?: Partial<CreateSenderIdentityData>) =>
+      senderIdentitiesService.retryMine(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
     },

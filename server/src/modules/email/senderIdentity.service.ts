@@ -8,12 +8,6 @@ function normalizeDomainFromEmail(email: string): string {
   return parts[1]!.toLowerCase();
 }
 
-function mapSendgridStatusToValidationStatus(body: any): 'pending' | 'verified' | 'failed' | 'validated' {
-  if (!body) return 'pending';
-  if (body.verified === true) return 'verified';
-  return 'pending';
-}
-
 function extractTokenFromUrlOrToken(input: string): string | null {
   try {
     if (input.startsWith('http://') || input.startsWith('https://')) {
@@ -62,7 +56,7 @@ export class SenderIdentityService {
     } as unknown as Omit<NewEmailSenderIdentity, 'tenantId'>);
 
     const country = (params.country || 'USA').toUpperCase();
-    const [resp, body] = await sendgridClient.validateSender({
+    const [_resp, body] = await sendgridClient.validateSender({
       email: fromEmail,
       name: fromName,
       address: params.address!,
@@ -80,10 +74,26 @@ export class SenderIdentityService {
   }
 
   // Self-scoped helpers
-  static async getOrCreateForUser(tenantId: string, userId: string, fromName: string, fromEmail: string, address?: string, city?: string, country?: string) {
+  static async getOrCreateForUser(
+    tenantId: string,
+    userId: string,
+    fromName: string,
+    fromEmail: string,
+    address?: string,
+    city?: string,
+    country?: string
+  ) {
     const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (existing) return existing;
-    return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName, address, city, country });
+    return await this.createSenderIdentity({
+      tenantId,
+      userId,
+      fromEmail,
+      fromName,
+      address,
+      city,
+      country,
+    });
   }
 
   static async resendForUser(tenantId: string, userId: string) {
@@ -97,10 +107,26 @@ export class SenderIdentityService {
     return { message: 'Verification email resent' };
   }
 
-  static async retryForUser(tenantId: string, userId: string, fromName: string, fromEmail: string, address?: string, city?: string, country?: string) {
+  static async retryForUser(
+    tenantId: string,
+    userId: string,
+    fromName: string,
+    fromEmail: string,
+    address?: string,
+    city?: string,
+    country?: string
+  ) {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) {
-      return await this.createSenderIdentity({ tenantId, userId, fromEmail, fromName, address, city, country });
+      return await this.createSenderIdentity({
+        tenantId,
+        userId,
+        fromEmail,
+        fromName,
+        address,
+        city,
+        country,
+      });
     }
     if (!identity.sendgridSenderId) {
       if (!address || !city) {
@@ -112,7 +138,7 @@ export class SenderIdentityService {
         ];
         throw error;
       }
-      const [resp, body] = await sendgridClient.validateSender({
+      const [_resp, body] = await sendgridClient.validateSender({
         email: identity.fromEmail,
         name: identity.fromName,
         address,
@@ -120,11 +146,15 @@ export class SenderIdentityService {
         country: (country || 'USA').toUpperCase(),
       });
       const sendgridId = (body as any)?.id as string | undefined;
-      const updated = await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
-        sendgridSenderId: sendgridId,
-        validationStatus: 'pending',
-        updatedAt: new Date(),
-      } as Partial<NewEmailSenderIdentity>);
+      const updated = await emailSenderIdentityRepository.updateByIdForTenant(
+        identity.id,
+        tenantId,
+        {
+          sendgridSenderId: sendgridId,
+          validationStatus: 'pending',
+          updatedAt: new Date(),
+        } as Partial<NewEmailSenderIdentity>
+      );
       return updated || identity;
     }
     await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
@@ -145,11 +175,15 @@ export class SenderIdentityService {
 
     const { statusCode } = await sendgridClient.verifySenderWithToken(token);
     if (statusCode >= 200 && statusCode < 300) {
-      const updated = await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
-        validationStatus: 'verified',
-        lastValidatedAt: new Date(),
-        updatedAt: new Date(),
-      } as Partial<NewEmailSenderIdentity>);
+      const updated = await emailSenderIdentityRepository.updateByIdForTenant(
+        identity.id,
+        tenantId,
+        {
+          validationStatus: 'verified',
+          lastValidatedAt: new Date(),
+          updatedAt: new Date(),
+        } as Partial<NewEmailSenderIdentity>
+      );
       return updated ?? identity;
     }
 

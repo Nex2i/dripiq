@@ -98,7 +98,9 @@ class SendgridClient {
     return { statusCode: resp.statusCode, body, headers: resp.headers };
   }
 
-  async verifySenderWithToken(token: string): Promise<{ statusCode: number; body: any; headers: any }> {
+  async verifySenderWithToken(
+    token: string
+  ): Promise<{ statusCode: number; body: any; headers: any }> {
     const postReq: ClientRequest = {
       url: `/v3/verified_senders/verify`,
       method: 'POST',

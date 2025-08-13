@@ -3,14 +3,12 @@ import { getNetworkAddress } from '@/utils/network';
 import App from './app';
 import { logger } from './libs/logger';
 
-
 dotenv.config();
 const PORT: number = Number(process.env.PORT || 3001);
 
 (async () => {
   try {
     const app = await App();
-
 
     console.log('PORT from env:', process.env.PORT);
     console.log('PORT:', PORT);
