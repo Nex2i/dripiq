@@ -115,6 +115,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           name: string;
           url: string;
           status?: string;
+          ownerId?: string;
           pointOfContacts?: Array<{
             name: string;
             email: string;
@@ -128,7 +129,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { pointOfContacts, ...leadData } = request.body;
+        const { pointOfContacts, ownerId, ...leadData } = request.body;
 
         // Validate required fields (additional validation beyond schema)
         if (!leadData.name?.trim()) {
@@ -147,11 +148,14 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        // If ownerId is provided, require it, otherwise default to current user
+        const assignedOwnerId = ownerId && ownerId.trim().length > 0 ? ownerId : authenticatedRequest.user.id;
+
         // Create the lead with tenant context and point of contacts
         const newLead = await createLead(
           authenticatedRequest.tenantId,
           leadData as Omit<NewLead, 'tenantId'>,
-          authenticatedRequest.user.id,
+          assignedOwnerId,
           pointOfContacts
         );
 
@@ -181,6 +185,15 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ) {
           reply.status(403).send({
             message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        // Validation: owner must be verified
+        if (error.message?.includes('verified sender identity')) {
+          reply.status(400).send({
+            message: 'Assigned owner must be verified',
             error: error.message,
           });
           return;
@@ -219,50 +232,16 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       },
     },
     handler: async (
-      request: FastifyRequest<{
-        Params: {
-          id: string;
-        };
-      }>,
+      request: FastifyRequest,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { id } = request.params;
-
-        if (!id || !id.trim()) {
-          reply.status(400).send({
-            message: 'Lead ID is required',
-            error: 'Invalid ID',
-          });
-          return;
-        }
-
+        const { id } = request.params as { id: string };
         const lead = await getLeadById(authenticatedRequest.tenantId, id);
-
-        if (!lead) {
-          reply.status(404).send({
-            message: 'Lead not found',
-            error: `No lead found with ID: ${id} in tenant: ${authenticatedRequest.tenantId}`,
-          });
-          return;
-        }
-
         reply.send(lead);
       } catch (error: any) {
         fastify.log.error(`Error fetching lead: ${error.message}`);
-
-        if (
-          error.message?.includes('access to tenant') ||
-          error.message?.includes('ForbiddenError')
-        ) {
-          reply.status(403).send({
-            message: 'Access denied to tenant resources',
-            error: error.message,
-          });
-          return;
-        }
-
         reply.status(500).send({
           message: 'Failed to fetch lead',
           error: error.message,
@@ -279,7 +258,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Update Lead',
-      description: 'Update a lead by ID (tenant-scoped)',
+      description: 'Update a lead in the database (tenant-scoped)',
       ...LeadUpdateSchema,
       response: {
         ...defaultRouteResponse(),
@@ -288,73 +267,23 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
     handler: async (
       request: FastifyRequest<{
-        Params: {
-          id: string;
-        };
-        Body: Partial<{
-          name: string;
-          url: string;
-          status?: string;
-          pointOfContacts?: Array<{
-            name: string;
-            email: string;
-            phone?: string;
-            title?: string;
-            company?: string;
-          }>;
-        }>;
+        Params: { id: string };
+        Body: Partial<NewLead>;
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
-        const { ...updateData } = request.body;
-
-        if (!id || !id.trim()) {
-          reply.status(400).send({
-            message: 'Lead ID is required',
-            error: 'Invalid ID',
-          });
-          return;
-        }
-
-        // For now, just update the lead data (not handling point of contacts updates in this route)
-        const updatedLead = await updateLead(authenticatedRequest.tenantId, id, updateData);
-
-        if (!updatedLead) {
-          reply.status(404).send({
-            message: 'Lead not found',
-            error: `No lead found with ID: ${id} in tenant: ${authenticatedRequest.tenantId}`,
-          });
-          return;
-        }
-
-        // Get the updated lead with point of contacts
-        const leadWithContacts = await getLeadById(authenticatedRequest.tenantId, id);
-
-        fastify.log.info(
-          `Lead updated successfully with ID: ${id} for tenant: ${authenticatedRequest.tenantId}`
+        const updatedLead = await updateLead(
+          authenticatedRequest.tenantId,
+          id,
+          request.body as Partial<Omit<NewLead, 'tenantId'>>
         );
 
-        reply.send({
-          message: 'Lead updated successfully',
-          lead: leadWithContacts,
-        });
+        reply.send(updatedLead);
       } catch (error: any) {
         fastify.log.error(`Error updating lead: ${error.message}`);
-
-        if (
-          error.message?.includes('access to tenant') ||
-          error.message?.includes('ForbiddenError')
-        ) {
-          reply.status(403).send({
-            message: 'Access denied to tenant resources',
-            error: error.message,
-          });
-          return;
-        }
-
         reply.status(500).send({
           message: 'Failed to update lead',
           error: error.message,
@@ -363,7 +292,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Delete single lead route
+  // Delete lead route
   fastify.route({
     method: HttpMethods.DELETE,
     url: `${basePath}/:id`,
@@ -371,7 +300,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Delete Lead',
-      description: 'Delete a single lead by ID (tenant-scoped)',
+      description: 'Delete a lead from the database (tenant-scoped)',
       ...LeadDeleteSchema,
       response: {
         ...defaultRouteResponse(),
@@ -379,57 +308,16 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       },
     },
     handler: async (
-      request: FastifyRequest<{
-        Params: {
-          id: string;
-        };
-      }>,
+      request: FastifyRequest<{ Params: { id: string } }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
-
-        if (!id || !id.trim()) {
-          reply.status(400).send({
-            message: 'Lead ID is required',
-            error: 'Invalid ID',
-          });
-          return;
-        }
-
-        const deletedLead = await deleteLead(authenticatedRequest.tenantId, id);
-
-        if (!deletedLead) {
-          reply.status(404).send({
-            message: 'Lead not found',
-            error: `No lead found with ID: ${id} in tenant: ${authenticatedRequest.tenantId}`,
-          });
-          return;
-        }
-
-        fastify.log.info(
-          `Lead deleted successfully with ID: ${id} for tenant: ${authenticatedRequest.tenantId}`
-        );
-
-        reply.status(200).send({
-          message: 'Lead deleted successfully',
-          deletedLead,
-        });
+        const deleted = await deleteLead(authenticatedRequest.tenantId, id);
+        reply.send({ message: 'Lead deleted successfully', lead: deleted });
       } catch (error: any) {
         fastify.log.error(`Error deleting lead: ${error.message}`);
-
-        if (
-          error.message?.includes('access to tenant') ||
-          error.message?.includes('ForbiddenError')
-        ) {
-          reply.status(403).send({
-            message: 'Access denied to tenant resources',
-            error: error.message,
-          });
-          return;
-        }
-
         reply.status(500).send({
           message: 'Failed to delete lead',
           error: error.message,
@@ -438,7 +326,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Bulk delete leads route
+  // Bulk delete route
   fastify.route({
     method: HttpMethods.DELETE,
     url: `${basePath}/bulk`,
@@ -446,7 +334,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Bulk Delete Leads',
-      description: 'Delete multiple leads by their IDs (tenant-scoped)',
+      description: 'Delete multiple leads from the database (tenant-scoped)',
       ...LeadBulkDeleteSchema,
       response: {
         ...defaultRouteResponse(),
@@ -454,108 +342,18 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       },
     },
     handler: async (
-      request: FastifyRequest<{
-        Body: {
-          ids: string[];
-        };
-      }>,
+      request: FastifyRequest<{ Body: { ids: string[] } }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { ids } = request.body;
-
-        // Validate that IDs array is not empty
-        if (!ids || ids.length === 0) {
-          reply.status(400).send({
-            message: 'At least one lead ID is required',
-            error: 'IDs array cannot be empty',
-          });
-          return;
-        }
-
-        // Validate that all IDs are strings
-        if (!ids.every((id) => typeof id === 'string' && id.trim())) {
-          reply.status(400).send({
-            message: 'All lead IDs must be valid strings',
-            error: 'Invalid ID format',
-          });
-          return;
-        }
-
-        // Delete the leads with tenant context
-        const deletedLeads = await bulkDeleteLeads(authenticatedRequest.tenantId, ids);
-
-        fastify.log.info(
-          `Bulk deleted ${deletedLeads.length} leads for tenant: ${authenticatedRequest.tenantId}`
-        );
-
-        reply.status(200).send({
-          message: `Successfully deleted ${deletedLeads.length} lead(s)`,
-          deletedCount: deletedLeads.length,
-          deletedLeads,
-        });
+        const results = await bulkDeleteLeads(authenticatedRequest.tenantId, ids);
+        reply.send({ deletedCount: results.length, deletedLeads: results });
       } catch (error: any) {
         fastify.log.error(`Error bulk deleting leads: ${error.message}`);
-
-        if (
-          error.message?.includes('access to tenant') ||
-          error.message?.includes('ForbiddenError')
-        ) {
-          reply.status(403).send({
-            message: 'Access denied to tenant resources',
-            error: error.message,
-          });
-          return;
-        }
-
         reply.status(500).send({
-          message: 'Failed to delete leads',
-          error: error.message,
-        });
-      }
-    },
-  });
-
-  // Generate vendor fit report route
-  fastify.route({
-    method: HttpMethods.POST,
-    url: `${basePath}/:id/vendor-fit`,
-    preHandler: [fastify.authPrehandler],
-    schema: {
-      tags: ['Leads'],
-      summary: 'Generate Vendor Fit Report',
-      ...LeadVendorFitSchema,
-      response: {
-        ...defaultRouteResponse(),
-        ...LeadVendorFitSchema.response,
-      },
-    },
-    handler: async (
-      request: FastifyRequest<{
-        Params: {
-          id: string;
-        };
-      }>,
-      reply: FastifyReply
-    ) => {
-      try {
-        const authenticatedRequest = request as AuthenticatedRequest;
-        const { id } = request.params;
-
-        const vendorFitReport = await LeadVendorFitService.generateVendorFitReport(
-          authenticatedRequest.tenantId,
-          id
-        );
-
-        reply.status(200).send({
-          message: 'Vendor fit report generated successfully',
-          vendorFitReport,
-        });
-      } catch (error: any) {
-        fastify.log.error(`Error generating vendor fit report: ${error.message}`);
-        reply.status(500).send({
-          message: 'Failed to generate vendor fit report',
+          message: 'Failed to bulk delete leads',
           error: error.message,
         });
       }
@@ -570,7 +368,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Resync Lead',
-      description: 'Resync a lead by ID (tenant-scoped)',
+      description: 'Re-index and analyze a lead\'s site (tenant-scoped)',
       ...LeadResyncSchema,
       response: {
         ...defaultRouteResponse(),
@@ -578,45 +376,18 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       },
     },
     handler: async (
-      request: FastifyRequest<{
-        Params: {
-          id: string;
-        };
-      }>,
+      request: FastifyRequest<{ Params: { id: string } }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
 
-        if (!id || !id.trim()) {
-          reply.status(400).send({
-            message: 'Lead ID is required',
-            error: 'Invalid ID',
-          });
-          return;
-        }
-
-        // analyze lead
         await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, id);
 
-        reply.status(200).send({
-          message: 'Lead resync initiated successfully',
-          leadId: id,
-        });
+        reply.send({ message: 'Lead resync initiated', leadId: id });
       } catch (error: any) {
         fastify.log.error(`Error resyncing lead: ${error.message}`);
-
-        if (
-          error.message?.includes('access to tenant') ||
-          error.message?.includes('ForbiddenError')
-        ) {
-          reply.status(403).send({
-            message: 'Access denied to tenant resources',
-            error: error.message,
-          });
-          return;
-        }
 
         reply.status(500).send({
           message: 'Failed to resync lead',
@@ -714,6 +485,14 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        if (error.message?.includes('verified sender identity')) {
+          reply.status(400).send({
+            message: 'Assigned owner must be verified',
+            error: error.message,
+          });
+          return;
+        }
+
         reply.status(500).send({
           message: 'Failed to assign lead owner',
           error: error.message,
@@ -759,91 +538,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           reply.status(403).send({
             success: false,
             message: 'Access denied to tenant resources',
-            error: error.message,
           });
           return;
         }
 
-        if (error.message?.includes('not found') || error.message?.includes('Contact not found')) {
-          reply.status(404).send({
-            success: false,
-            message: 'Lead or contact not found',
-            error: error.message,
-          });
-          return;
-        }
-
-        if (error.message?.includes('No contacts found')) {
-          reply.status(400).send({
-            success: false,
-            message: 'No contacts available for this lead',
-            error: error.message,
-          });
-          return;
-        }
-
-        reply.status(500).send({
-          success: false,
-          message: 'Failed to generate contact strategy',
-          error: error.message,
-        });
-      }
-    },
-  });
-
-  // Get lead products route
-  fastify.route({
-    method: HttpMethods.GET,
-    url: `${basePath}/:leadId/products`,
-    schema: {
-      tags: ['Lead Products'],
-      summary: 'Get Lead Products',
-      description: 'Get all products attached to a specific lead (tenant-scoped)',
-      ...LeadGetProductsSchema,
-      response: {
-        ...defaultRouteResponse(),
-        ...LeadGetProductsSchema.response,
-      },
-    },
-    preHandler: [fastify.authPrehandler],
-    handler: async (
-      request: FastifyRequest<{
-        Params: {
-          leadId: string;
-        };
-      }>,
-      reply: FastifyReply
-    ) => {
-      try {
-        const authenticatedRequest = request as AuthenticatedRequest;
-        const { leadId } = request.params;
-
-        fastify.log.info(
-          `Getting products for lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
-        );
-
-        const leadProducts = await getLeadProducts(leadId, authenticatedRequest.tenantId);
-
-        fastify.log.info(`Retrieved ${leadProducts.length} products for lead: ${leadId}`);
-
-        reply.send(leadProducts);
-      } catch (error: any) {
-        fastify.log.error(`Error getting lead products: ${error.message}`);
-
-        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
-          reply.status(404).send({
-            success: false,
-            message: 'Lead not found or access denied',
-            error: error.message,
-          });
-          return;
-        }
-
-        reply.status(500).send({
-          success: false,
-          message: 'Failed to get lead products',
-          error: error.message,
-        });
+        reply.status(500).send({ success: false, message: 'Failed to generate contact strategy' });
       }
     },
   });
@@ -851,10 +550,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
   // Attach products to lead route
   fastify.route({
     method: HttpMethods.POST,
-    url: `${basePath}/:leadId/products`,
+    url: `${basePath}/:id/products/attach`,
+    preHandler: [fastify.authPrehandler],
     schema: {
-      tags: ['Lead Products'],
-      summary: 'Attach Products to Lead',
+      tags: ['Leads'],
+      summary: 'Attach products to a lead',
       description: 'Attach one or more products to a lead (tenant-scoped)',
       ...LeadAttachProductsSchema,
       response: {
@@ -862,67 +562,24 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ...LeadAttachProductsSchema.response,
       },
     },
-    preHandler: [fastify.authPrehandler],
     handler: async (
       request: FastifyRequest<{
-        Params: {
-          leadId: string;
-        };
-        Body: {
-          productIds: string[];
-        };
+        Params: { id: string };
+        Body: { productIds: string[] };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { leadId } = request.params;
+        const { id } = request.params;
         const { productIds } = request.body;
 
-        fastify.log.info(
-          `Attaching ${productIds.length} products to lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
-        );
+        const result = await attachProductsToLead(id, productIds, authenticatedRequest.tenantId);
 
-        const attachments = await attachProductsToLead(
-          leadId,
-          productIds,
-          authenticatedRequest.tenantId
-        );
-
-        fastify.log.info(`Successfully attached ${attachments.length} products to lead: ${leadId}`);
-
-        reply.status(201).send({
-          success: true,
-          message: `Successfully attached ${attachments.length} product(s) to lead`,
-          attachedCount: attachments.length,
-          attachments,
-        });
+        reply.send({ message: 'Products attached successfully', ...result });
       } catch (error: any) {
         fastify.log.error(`Error attaching products to lead: ${error.message}`);
-
-        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
-          reply.status(404).send({
-            success: false,
-            message: 'Lead not found or access denied',
-            error: error.message,
-          });
-          return;
-        }
-
-        if (
-          error.message?.includes('Invalid product IDs') ||
-          error.message?.includes('already attached')
-        ) {
-          reply.status(400).send({
-            success: false,
-            message: error.message,
-            error: error.message,
-          });
-          return;
-        }
-
         reply.status(500).send({
-          success: false,
           message: 'Failed to attach products to lead',
           error: error.message,
         });
@@ -933,70 +590,36 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
   // Detach product from lead route
   fastify.route({
     method: HttpMethods.DELETE,
-    url: `${basePath}/:leadId/products/:productId`,
+    url: `${basePath}/:id/products/detach`,
+    preHandler: [fastify.authPrehandler],
     schema: {
-      tags: ['Lead Products'],
-      summary: 'Detach Product from Lead',
-      description: 'Detach a specific product from a lead (tenant-scoped)',
+      tags: ['Leads'],
+      summary: 'Detach product from a lead',
+      description: 'Detach a single product from a lead (tenant-scoped)',
       ...LeadDetachProductSchema,
       response: {
         ...defaultRouteResponse(),
         ...LeadDetachProductSchema.response,
       },
     },
-    preHandler: [fastify.authPrehandler],
     handler: async (
       request: FastifyRequest<{
-        Params: {
-          leadId: string;
-          productId: string;
-        };
+        Params: { id: string };
+        Body: { productId: string };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { leadId, productId } = request.params;
+        const { id } = request.params;
+        const { productId } = request.body;
 
-        fastify.log.info(
-          `Detaching product ${productId} from lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
-        );
+        const result = await detachProductFromLead(id, productId, authenticatedRequest.tenantId);
 
-        const detached = await detachProductFromLead(
-          leadId,
-          productId,
-          authenticatedRequest.tenantId
-        );
-
-        if (!detached) {
-          reply.status(404).send({
-            success: false,
-            message: 'Product attachment not found',
-            error: 'The specified product is not attached to this lead',
-          });
-          return;
-        }
-
-        fastify.log.info(`Successfully detached product ${productId} from lead: ${leadId}`);
-
-        reply.send({
-          success: true,
-          message: 'Product successfully detached from lead',
-        });
+        reply.send({ message: 'Product detached successfully', ...result });
       } catch (error: any) {
         fastify.log.error(`Error detaching product from lead: ${error.message}`);
-
-        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
-          reply.status(404).send({
-            success: false,
-            message: 'Lead not found or access denied',
-            error: error.message,
-          });
-          return;
-        }
-
         reply.status(500).send({
-          success: false,
           message: 'Failed to detach product from lead',
           error: error.message,
         });

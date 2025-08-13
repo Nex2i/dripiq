@@ -49,8 +49,15 @@ export function useLeadsColumns({
   formatDate,
 }: UseLeadsColumnsProps) {
   const getOwnerDisplay = (lead: Lead) => {
-    // Find the owner user from the users list
-    const ownerUser = users.find((user) => user.id === lead.ownerId)
+    // Only show verified users in options
+    const verifiedUsers = Array.isArray(users)
+      ? users.filter((u) => u.hasVerifiedSenderIdentity)
+      : []
+
+    // Find the owner user from the verified users list first, fallback to all users for name display
+    const ownerUser = (verifiedUsers.length > 0 ? verifiedUsers : users).find(
+      (user: any) => user.id === lead.ownerId,
+    )
     const currentOwnerName = ownerUser
       ? ownerUser.firstName && ownerUser.lastName
         ? `${ownerUser.firstName} ${ownerUser.lastName}`
@@ -67,7 +74,7 @@ export function useLeadsColumns({
               e.stopPropagation()
               // This will be handled by the dropdown
             }}
-            title="Change owner"
+            title="Change owner (verified users only)"
           >
             <Edit className="h-4 w-4" />
           </button>
@@ -94,12 +101,12 @@ export function useLeadsColumns({
             <option value="" disabled>
               Error loading users
             </option>
-          ) : users.length === 0 ? (
+          ) : verifiedUsers.length === 0 ? (
             <option value="" disabled>
-              No users available
+              No verified users available
             </option>
           ) : (
-            users.map((user) => (
+            verifiedUsers.map((user: any) => (
               <option key={user.id} value={user.id}>
                 {user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`

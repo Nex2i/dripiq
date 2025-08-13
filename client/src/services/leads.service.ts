@@ -9,6 +9,7 @@ export interface CreateLeadData {
   name: string
   url: string
   status?: string
+  ownerId?: string
   pointOfContacts?: Array<{
     name: string
     email: string

@@ -1,5 +1,5 @@
 import { NewUser, UserTenant, NewUserTenant } from '@/db';
-import { roleRepository, userRepository, userTenantRepository } from '@/repositories';
+import { roleRepository, userRepository, userTenantRepository, emailSenderIdentityRepository } from '@/repositories';
 import { NotFoundError } from '@/exceptions/error';
 
 export interface CreateInviteData {
@@ -27,6 +27,7 @@ export interface UserWithInviteInfo {
   invitedAt?: Date;
   lastLogin?: Date;
   source: 'user_tenant';
+  hasVerifiedSenderIdentity?: boolean;
 }
 
 export class InviteService {
@@ -108,20 +109,34 @@ export class InviteService {
     const tenantUsersQuery = await userTenantRepository.findUsersWithDetailsForTenant(tenantId);
 
     // Transform to UserWithInviteInfo format
-    const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
-      const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
-      return {
-        id: ut.userId,
-        firstName: firstName || undefined,
-        lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
-        email: ut.user?.email || '',
-        role: ut.role?.name || 'Unknown', // Now returns actual role name
-        status: ut.status as 'pending' | 'active',
-        invitedAt: ut.invitedAt || undefined,
-        lastLogin: ut.acceptedAt || undefined,
-        source: 'user_tenant' as const,
-      };
-    });
+    const allUsers: UserWithInviteInfo[] = await Promise.all(
+      tenantUsersQuery.map(async (ut) => {
+        const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
+        // Lookup sender identity per user for this tenant
+        let hasVerifiedSenderIdentity = false;
+        try {
+          const identity = await emailSenderIdentityRepository.findByUserIdForTenant(
+            ut.userId,
+            tenantId
+          );
+          hasVerifiedSenderIdentity = !!identity && identity.validationStatus === 'verified';
+        } catch {
+          hasVerifiedSenderIdentity = false;
+        }
+        return {
+          id: ut.userId,
+          firstName: firstName || undefined,
+          lastName: lastNameParts.length > 0 ? lastNameParts.join(' ') : undefined,
+          email: ut.user?.email || '',
+          role: ut.role?.name || 'Unknown', // Now returns actual role name
+          status: ut.status as 'pending' | 'active',
+          invitedAt: ut.invitedAt || undefined,
+          lastLogin: ut.acceptedAt || undefined,
+          source: 'user_tenant' as const,
+          hasVerifiedSenderIdentity,
+        };
+      })
+    );
 
     // Sort by status (pending first), then by role, then by email
     allUsers.sort((a, b) => {
