@@ -100,7 +100,9 @@ export class SenderIdentityService {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) throw new Error('No sender identity found');
     if (!identity.sendgridSenderId) {
-      throw new Error('Missing provider sender id. Please retry creation.');
+      throw new Error('Missing provider sender id. Please complete the initial setup first.', {
+        cause: { tenantId, userId },
+      });
     } else {
       await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
     }
@@ -163,13 +165,16 @@ export class SenderIdentityService {
 
   static async verifyForUser(tenantId: string, userId: string, sendgridValidationUrl: string) {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
-    if (!identity) throw new Error('No sender identity found');
+    if (!identity)
+      throw new Error('No email sender identity found for the specified user and tenant');
 
     const token = extractTokenFromUrlOrToken(sendgridValidationUrl);
     if (!token) {
-      const error: any = new Error('Validation error');
+      const error: any = new Error('Invalid SendGrid validation URL provided');
       error.statusCode = 422;
-      error.details = [{ field: 'sendgridValidationUrl', message: 'invalid' }];
+      error.details = [
+        { field: 'sendgridValidationUrl', message: 'URL must contain a valid verification token' },
+      ];
       throw error;
     }
 
@@ -187,8 +192,10 @@ export class SenderIdentityService {
       return updated ?? identity;
     }
 
-    const error: any = new Error('Verification failed');
-    error.statusCode = 400;
+    const error: any = new Error(
+      'Failed to verify sender identity with SendGrid - verification token may be invalid or expired'
+    );
+    error.statusCode = statusCode ?? 400;
     throw error;
   }
 }

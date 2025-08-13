@@ -153,8 +153,15 @@ export default async function SenderIdentitiesRoutes(
       reply: FastifyReply
     ) => {
       const { tenantId, user } = request as AuthenticatedRequest;
-      const fromName = request.body.fromName ?? user?.name ?? '';
-      const fromEmail = request.body.fromEmail ?? (user as any)?.email;
+      const fromName = request.body.fromName ?? user.name;
+      const fromEmail = request.body.fromEmail ?? user.email;
+
+      if (!fromName || !fromEmail) {
+        throw new Error('Missing from name or email', {
+          cause: { tenantId, userId: user.id },
+        });
+      }
+
       try {
         const result = await SenderIdentityService.retryForUser(
           tenantId,
