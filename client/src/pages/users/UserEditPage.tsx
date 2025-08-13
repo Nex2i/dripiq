@@ -144,8 +144,6 @@ export default function UserEditPage() {
     )
   }
 
-  const isVerified = !!myIdentity && myIdentity.validationStatus === 'verified'
-
   return (
     <div
       className={
@@ -233,11 +231,13 @@ export default function UserEditPage() {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="text-sm text-gray-700">
-                  From: <span className="font-medium">{myIdentity.fromName}</span> &lt;{myIdentity.fromEmail}&gt;
+                  From:{' '}
+                  <span className="font-medium">{myIdentity.fromName}</span>{' '}
+                  &lt;{myIdentity.fromEmail}&gt;
                 </div>
                 <span
                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                    (myIdentity && myIdentity.validationStatus === 'verified')
+                    myIdentity && myIdentity.validationStatus === 'verified'
                       ? 'bg-green-100 text-green-800 ring-1 ring-green-200'
                       : myIdentity.validationStatus === 'failed'
                         ? 'bg-red-100 text-red-800 ring-1 ring-red-200'
@@ -251,7 +251,7 @@ export default function UserEditPage() {
                 Domain: {myIdentity.domain}
               </div>
 
-              {(myIdentity && myIdentity.validationStatus === 'verified') ? (
+              {myIdentity && myIdentity.validationStatus === 'verified' ? (
                 <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-800 text-sm">
                   <span className="inline-block">✓</span>
                   <span>Sender identity verified. You’re all set!</span>
