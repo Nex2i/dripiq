@@ -21,6 +21,14 @@ function extractTokenFromUrlOrToken(input: string): string | null {
   }
 }
 
+function extractSendgridIdFromBody(body: unknown): string | undefined {
+  if (body && typeof body === 'object' && 'id' in body) {
+    const id = (body as { id?: unknown }).id;
+    return typeof id === 'string' ? id : undefined;
+  }
+  return undefined;
+}
+
 export class SenderIdentityService {
   static async createSenderIdentity(params: {
     tenantId: string;
@@ -63,7 +71,7 @@ export class SenderIdentityService {
       city: params.city!,
       country,
     });
-    const sendgridId = (body as any)?.id as string | undefined;
+    const sendgridId = extractSendgridIdFromBody(body);
 
     const updated = await emailSenderIdentityRepository.updateByIdForTenant(created.id, tenantId, {
       sendgridSenderId: sendgridId,
@@ -147,7 +155,7 @@ export class SenderIdentityService {
         city,
         country: (country || 'USA').toUpperCase(),
       });
-      const sendgridId = (body as any)?.id as string | undefined;
+      const sendgridId = extractSendgridIdFromBody(body);
       const updated = await emailSenderIdentityRepository.updateByIdForTenant(
         identity.id,
         tenantId,

@@ -2,7 +2,12 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
-import { useMySenderIdentity, useCreateMySenderIdentity, useResendMySenderVerification, useVerifyMySenderIdentity } from '../../hooks/useSenderIdentities'
+import {
+  useMySenderIdentity,
+  useCreateMySenderIdentity,
+  useResendMySenderVerification,
+  useVerifyMySenderIdentity,
+} from '../../hooks/useSenderIdentities'
 
 export default function UserEditPage() {
   const navigate = useNavigate()
@@ -70,7 +75,10 @@ export default function UserEditPage() {
     }
   }, [isAdminMode, targetUserId, selfUser?.id])
 
-  const canSave = useMemo(() => name.trim().length > 0 && !saving, [name, saving])
+  const canSave = useMemo(
+    () => name.trim().length > 0 && !saving,
+    [name, saving],
+  )
 
   const handleSave = async () => {
     try {
@@ -101,7 +109,13 @@ export default function UserEditPage() {
       return
     }
     try {
-      await createSender.mutateAsync({ fromEmail, fromName, address, city, country })
+      await createSender.mutateAsync({
+        fromEmail,
+        fromName,
+        address,
+        city,
+        country,
+      })
     } catch (e: any) {
       const msg = e?.message || 'Failed to create sender identity'
       setSenderError(msg)
@@ -130,13 +144,21 @@ export default function UserEditPage() {
     )
   }
 
-  const isVerified = !!myIdentity && (myIdentity.validationStatus === 'verified' || myIdentity.validationStatus === 'validated')
+  const isVerified = !!myIdentity && myIdentity.validationStatus === 'verified'
 
   return (
-    <div className={isAdminMode ? 'max-w-5xl mx-auto p-6' : 'max-w-3xl mx-auto p-6'}>
+    <div
+      className={
+        isAdminMode ? 'max-w-5xl mx-auto p-6' : 'max-w-3xl mx-auto p-6'
+      }
+    >
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900">{isAdminMode ? 'Edit User' : 'Your Profile'}</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage your personal details and email sender identity.</p>
+        <h1 className="text-3xl font-semibold text-gray-900">
+          {isAdminMode ? 'Edit User' : 'Your Profile'}
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Manage your personal details and email sender identity.
+        </p>
       </div>
 
       {error && (
@@ -150,7 +172,9 @@ export default function UserEditPage() {
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200/60 p-6">
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
               <input
                 type="text"
                 value={name}
@@ -160,14 +184,18 @@ export default function UserEditPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
               <input
                 type="email"
                 value={email}
                 readOnly
                 className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 text-gray-700 px-3 py-2 shadow-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed.</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Email cannot be changed.
+              </p>
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">
@@ -189,28 +217,36 @@ export default function UserEditPage() {
 
         {/* Sender Identity Card */}
         <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200/60 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">Sender Identity</h2>
-          <p className="text-sm text-gray-500 mb-4">Verify the email address used to send messages.</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            Sender Identity
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Verify the email address used to send messages.
+          </p>
 
           {myIdentity ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="text-sm text-gray-700">
-                  From: <span className="font-medium">{myIdentity.fromName}</span> &lt;{myIdentity.fromEmail}&gt;
+                  From:{' '}
+                  <span className="font-medium">{myIdentity.fromName}</span>{' '}
+                  &lt;{myIdentity.fromEmail}&gt;
                 </div>
                 <span
                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                     isVerified
                       ? 'bg-green-100 text-green-800 ring-1 ring-green-200'
                       : myIdentity.validationStatus === 'failed'
-                      ? 'bg-red-100 text-red-800 ring-1 ring-red-200'
-                      : 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200'
+                        ? 'bg-red-100 text-red-800 ring-1 ring-red-200'
+                        : 'bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200'
                   }`}
                 >
                   {myIdentity.validationStatus}
                 </span>
               </div>
-              <div className="text-sm text-gray-600">Domain: {myIdentity.domain}</div>
+              <div className="text-sm text-gray-600">
+                Domain: {myIdentity.domain}
+              </div>
 
               {isVerified ? (
                 <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-800 text-sm">
@@ -231,7 +267,9 @@ export default function UserEditPage() {
                       onClick={() => resendSender.mutate()}
                       disabled={resendSender.isPending}
                     >
-                      {resendSender.isPending ? 'Sending…' : 'Send Verification Email'}
+                      {resendSender.isPending
+                        ? 'Sending…'
+                        : 'Send Verification Email'}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 gap-2">
@@ -266,7 +304,9 @@ export default function UserEditPage() {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">From name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    From name
+                  </label>
                   <input
                     className="border rounded-lg px-3 py-2 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-200)] border-gray-300"
                     placeholder="e.g. Jane Doe"
@@ -275,7 +315,9 @@ export default function UserEditPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">From email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    From email
+                  </label>
                   <input
                     className="border rounded-lg px-3 py-2 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-200)] border-gray-300"
                     placeholder="from@example.com"
@@ -284,7 +326,9 @@ export default function UserEditPage() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Street address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Street address
+                  </label>
                   <input
                     className="border rounded-lg px-3 py-2 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-200)] border-gray-300"
                     placeholder="123 Main St"
@@ -293,7 +337,9 @@ export default function UserEditPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City
+                  </label>
                   <input
                     className="border rounded-lg px-3 py-2 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-200)] border-gray-300"
                     placeholder="City"
@@ -302,7 +348,9 @@ export default function UserEditPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Country
+                  </label>
                   <input
                     className="border rounded-lg px-3 py-2 shadow-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-200)] border-gray-300"
                     placeholder="USA"
@@ -314,9 +362,17 @@ export default function UserEditPage() {
               <button
                 className="px-5 py-2.5 text-sm rounded-lg bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] disabled:opacity-50 shadow-sm"
                 onClick={handleCreateSender}
-                disabled={createSender.isPending || !fromName || !fromEmail || !address || !city}
+                disabled={
+                  createSender.isPending ||
+                  !fromName ||
+                  !fromEmail ||
+                  !address ||
+                  !city
+                }
               >
-                {createSender.isPending ? 'Creating...' : 'Create & Send Verification'}
+                {createSender.isPending
+                  ? 'Creating...'
+                  : 'Create & Send Verification'}
               </button>
             </div>
           )}

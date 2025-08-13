@@ -1,6 +1,6 @@
 import { authService } from './auth.service'
 
-export type SenderValidationStatus = 'pending' | 'verified' | 'failed' | 'validated'
+export type SenderValidationStatus = 'pending' | 'verified' | 'failed'
 
 export interface SenderIdentity {
   id: string
@@ -52,15 +52,20 @@ class SenderIdentitiesService {
 
   async resendMine(): Promise<{ message: string }> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/me/resend`, {
-      method: 'POST',
-      headers: { ...authHeaders },
-    })
+    const response = await fetch(
+      `${this.baseUrl}/sender-identities/me/resend`,
+      {
+        method: 'POST',
+        headers: { ...authHeaders },
+      },
+    )
     if (!response.ok) throw new Error('Failed to resend verification')
     return response.json()
   }
 
-  async retryMine(data?: Partial<CreateSenderIdentityData>): Promise<SenderIdentity> {
+  async retryMine(
+    data?: Partial<CreateSenderIdentityData>,
+  ): Promise<SenderIdentity> {
     const authHeaders = await authService.getAuthHeaders()
     const response = await fetch(`${this.baseUrl}/sender-identities/me/retry`, {
       method: 'POST',
@@ -73,11 +78,14 @@ class SenderIdentitiesService {
 
   async verifyMine(sendgridValidationUrl: string): Promise<SenderIdentity> {
     const authHeaders = await authService.getAuthHeaders()
-    const response = await fetch(`${this.baseUrl}/sender-identities/me/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders },
-      body: JSON.stringify({ sendgridValidationUrl }),
-    })
+    const response = await fetch(
+      `${this.baseUrl}/sender-identities/me/verify`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body: JSON.stringify({ sendgridValidationUrl }),
+      },
+    )
     if (!response.ok) throw new Error('Failed to verify sender identity')
     return response.json()
   }
