@@ -153,7 +153,10 @@ class SendgridClient {
 
     const details = sgErrors
       .filter((e) => e && (e.field || e.message))
-      .map((e) => ({ field: String(e.field || 'sendgrid'), message: String(e.message || 'error') }));
+      .map((e) => ({
+        field: String(e.field || 'sendgrid'),
+        message: String(e.message || 'error'),
+      }));
 
     const messageParts = details.length
       ? details.map((e) => (e.field ? `${e.field}: ${e.message}` : e.message))
