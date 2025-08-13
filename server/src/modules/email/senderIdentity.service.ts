@@ -1,6 +1,7 @@
 import { emailSenderIdentityRepository } from '@/repositories';
 import { EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
+import { SendgridTokenHelper } from '@/libs/email/sendgridToken.helper';
 
 function normalizeDomainFromEmail(email: string): string {
   const parts = email.split('@');
@@ -8,18 +9,7 @@ function normalizeDomainFromEmail(email: string): string {
   return parts[1]!.toLowerCase();
 }
 
-function extractTokenFromUrlOrToken(input: string): string | null {
-  try {
-    if (input.startsWith('http://') || input.startsWith('https://')) {
-      const url = new URL(input);
-      const token = url.searchParams.get('token');
-      return token;
-    }
-    return input;
-  } catch {
-    return null;
-  }
-}
+// Extractor moved to SendgridTokenHelper
 
 function extractSendgridIdFromBody(body: unknown): string | undefined {
   if (body && typeof body === 'object' && 'id' in body) {
@@ -176,7 +166,7 @@ export class SenderIdentityService {
     if (!identity)
       throw new Error('No email sender identity found for the specified user and tenant');
 
-    const token = extractTokenFromUrlOrToken(sendgridValidationUrl);
+    const token = SendgridTokenHelper.extractTokenFromUrlOrToken(sendgridValidationUrl);
     if (!token) {
       const error: any = new Error('Invalid SendGrid validation URL provided');
       error.statusCode = 422;
