@@ -90,10 +90,6 @@ export const createLead = async (
 ) => {
   // If ownerId is provided, enforce verified sender identity for that owner
   if (ownerId) {
-    const userTenant = await repositories.userTenant.findByUserIdForTenant(ownerId, tenantId);
-    if (!userTenant) {
-      throw new Error(`User not found with ID: ${ownerId} in tenant: ${tenantId}`);
-    }
     const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
       ownerId,
       tenantId
