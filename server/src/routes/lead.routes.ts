@@ -371,10 +371,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ...LeadVendorFitSchema.response,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
