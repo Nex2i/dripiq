@@ -639,7 +639,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Attach products to lead route (legacy path)
+  // Attach products to lead route
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/:leadId/products`,
