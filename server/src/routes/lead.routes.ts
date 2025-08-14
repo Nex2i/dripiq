@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
-// import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
+import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy } from '@/modules/ai';
 import {
   getLeads,
@@ -14,7 +14,7 @@ import {
   assignLeadOwner,
 } from '../modules/lead.service';
 import {
-  // getLeadProducts,
+  getLeadProducts,
   attachProductsToLead,
   detachProductFromLead,
 } from '../modules/leadProduct.service';
@@ -30,12 +30,12 @@ import {
   LeadDeleteSchema,
   LeadBulkDeleteSchema,
   LeadAssignOwnerSchema,
-  // LeadVendorFitSchema,
+  LeadVendorFitSchema,
   LeadResyncSchema,
   LeadContactStrategySchema,
   LeadAttachProductsSchema,
   LeadDetachProductSchema,
-  // LeadGetProductsSchema,
+  LeadGetProductsSchema,
 } from './apiSchema/lead';
 
 const basePath = '/leads';
@@ -357,6 +357,47 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
+  // Vendor fit route
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:id/vendor-fit`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Leads'],
+      summary: 'Generate Vendor Fit Report',
+      ...LeadVendorFitSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...LeadVendorFitSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { id } = request.params;
+
+        const vendorFitReport = await LeadVendorFitService.generateVendorFitReport(
+          authenticatedRequest.tenantId,
+          id
+        );
+
+        reply.status(200).send({
+          message: 'Vendor fit report generated successfully',
+          vendorFitReport,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error generating vendor fit report: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to generate vendor fit report',
+          error: error.message,
+        });
+      }
+    },
+  });
+
   // Resync lead route
   fastify.route({
     method: HttpMethods.POST,
@@ -541,14 +582,70 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Attach products to lead route
+  // Get lead products route
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/:leadId/products`,
+    schema: {
+      tags: ['Lead Products'],
+      summary: 'Get Lead Products',
+      description: 'Get all products attached to a specific lead (tenant-scoped)',
+      ...LeadGetProductsSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...LeadGetProductsSchema.response,
+      },
+    },
+    preHandler: [fastify.authPrehandler],
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          leadId: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { leadId } = request.params;
+
+        fastify.log.info(
+          `Getting products for lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
+        );
+
+        const leadProducts = await getLeadProducts(leadId, authenticatedRequest.tenantId);
+
+        fastify.log.info(`Retrieved ${leadProducts.length} products for lead: ${leadId}`);
+
+        reply.send(leadProducts);
+      } catch (error: any) {
+        fastify.log.error(`Error getting lead products: ${error.message}`);
+
+        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
+          reply.status(404).send({
+            success: false,
+            message: 'Lead not found or access denied',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to get lead products',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Attach products to lead route (legacy path)
   fastify.route({
     method: HttpMethods.POST,
-    url: `${basePath}/:id/products/attach`,
-    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/:leadId/products`,
     schema: {
-      tags: ['Leads'],
-      summary: 'Attach products to a lead',
+      tags: ['Lead Products'],
+      summary: 'Attach Products to Lead',
       description: 'Attach one or more products to a lead (tenant-scoped)',
       ...LeadAttachProductsSchema,
       response: {
@@ -556,21 +653,35 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         ...LeadAttachProductsSchema.response,
       },
     },
+    preHandler: [fastify.authPrehandler],
     handler: async (
       request: FastifyRequest<{
-        Params: { id: string };
-        Body: { productIds: string[] };
+        Params: {
+          leadId: string;
+        };
+        Body: {
+          productIds: string[];
+        };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { id } = request.params;
+        const { leadId } = request.params;
         const { productIds } = request.body;
 
-        const result = await attachProductsToLead(id, productIds, authenticatedRequest.tenantId);
+        const attachments = await attachProductsToLead(
+          leadId,
+          productIds,
+          authenticatedRequest.tenantId
+        );
 
-        reply.send({ message: 'Products attached successfully', ...result });
+        reply.status(201).send({
+          success: true,
+          message: `Successfully attached ${attachments.length} product(s) to lead`,
+          attachedCount: attachments.length,
+          attachments,
+        });
       } catch (error: any) {
         fastify.log.error(`Error attaching products to lead: ${error.message}`);
         reply.status(500).send({
@@ -581,36 +692,50 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
-  // Detach product from lead route
+  // Detach product from lead route (legacy path)
   fastify.route({
     method: HttpMethods.DELETE,
-    url: `${basePath}/:id/products/detach`,
-    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/:leadId/products/:productId`,
     schema: {
-      tags: ['Leads'],
-      summary: 'Detach product from a lead',
-      description: 'Detach a single product from a lead (tenant-scoped)',
+      tags: ['Lead Products'],
+      summary: 'Detach Product from Lead',
+      description: 'Detach a specific product from a lead (tenant-scoped)',
       ...LeadDetachProductSchema,
       response: {
         ...defaultRouteResponse(),
         ...LeadDetachProductSchema.response,
       },
     },
+    preHandler: [fastify.authPrehandler],
     handler: async (
       request: FastifyRequest<{
-        Params: { id: string };
-        Body: { productId: string };
+        Params: {
+          leadId: string;
+          productId: string;
+        };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { id } = request.params;
-        const { productId } = request.body;
+        const { leadId, productId } = request.params;
 
-        const result = await detachProductFromLead(id, productId, authenticatedRequest.tenantId);
+        const detached = await detachProductFromLead(
+          leadId,
+          productId,
+          authenticatedRequest.tenantId
+        );
 
-        reply.send({ message: 'Product detached successfully', success: result });
+        if (!detached) {
+          reply.status(404).send({
+            success: false,
+            message: 'Product attachment not found',
+            error: 'The specified product is not attached to this lead',
+          });
+          return;
+        }
+
+        reply.send({ success: true, message: 'Product successfully detached from lead' });
       } catch (error: any) {
         fastify.log.error(`Error detaching product from lead: ${error.message}`);
         reply.status(500).send({
