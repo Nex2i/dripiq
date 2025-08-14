@@ -69,6 +69,18 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
       .where(eq(this.table.tenantId, tenantId))) as EmailSenderIdentity[];
   }
 
+  /**
+   * Returns only verified sender identities for a tenant.
+   */
+  async findVerifiedForTenant(tenantId: string): Promise<EmailSenderIdentity[]> {
+    return (await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(eq(this.table.tenantId, tenantId), eq(this.table.validationStatus, 'verified'))
+      )) as EmailSenderIdentity[];
+  }
+
   async updateByIdForTenant(
     id: string,
     tenantId: string,

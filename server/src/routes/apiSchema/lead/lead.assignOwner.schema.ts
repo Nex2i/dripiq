@@ -8,7 +8,7 @@ export const AssignOwnerParamsSchema = Type.Object({
 
 // Request schema for assigning owner
 export const AssignOwnerRequestSchema = Type.Object({
-  userId: Type.String({ description: 'User ID to assign as owner' }),
+  userId: Type.String({ description: 'User ID to assign as owner (must be verified)' }),
 });
 
 // Response schema for assign owner

@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useCreateLead } from '../hooks/useLeadsQuery'
+import { useCreateLead, useUsers } from '../hooks/useLeadsQuery'
 import type { CreateLeadData } from '../services/leads.service'
 import { Plus, X, User, Crown, Loader2 } from 'lucide-react'
 import { HOME_URL } from '../constants/navigation'
+import { useAuth } from '../contexts/AuthContext'
 
 interface ContactFormData {
   name: string
@@ -16,6 +17,12 @@ interface ContactFormData {
 const NewLeadPage: React.FC = () => {
   const navigate = useNavigate()
   const createLeadMutation = useCreateLead()
+  const {
+    data: usersResponse,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useUsers()
+  const { user: authUser } = useAuth()
   const [formData, setFormData] = useState<
     Omit<CreateLeadData, 'pointOfContacts'>
   >({
@@ -24,6 +31,23 @@ const NewLeadPage: React.FC = () => {
   })
   const [contacts, setContacts] = useState<ContactFormData[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  const users = usersResponse?.data || []
+  const verifiedUsers = React.useMemo(
+    () => users.filter((u: any) => u.hasVerifiedSenderIdentity),
+    [users],
+  )
+
+  // Default ownerId to current user if they are verified
+  useEffect(() => {
+    const currentUserId = authUser?.user?.id
+    if (!formData.ownerId && currentUserId) {
+      const isVerified = verifiedUsers.some((u: any) => u.id === currentUserId)
+      if (isVerified) {
+        setFormData((prev) => ({ ...prev, ownerId: currentUserId }))
+      }
+    }
+  }, [authUser, verifiedUsers])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -144,6 +168,49 @@ const NewLeadPage: React.FC = () => {
                     required
                     disabled={createLeadMutation.isPending}
                   />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="ownerId"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Assigned Owner * (Verified Only)
+                  </label>
+                  <select
+                    id="ownerId"
+                    name="ownerId"
+                    value={formData.ownerId || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        ownerId: e.target.value || undefined,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] transition-colors bg-white text-gray-900"
+                    disabled={createLeadMutation.isPending || usersLoading}
+                    required
+                  >
+                    <option value="">Select an owner</option>
+                    {usersLoading ? (
+                      <option disabled>Loading users...</option>
+                    ) : usersError ? (
+                      <option disabled>Error loading users</option>
+                    ) : verifiedUsers.length === 0 ? (
+                      <option disabled>No verified users available</option>
+                    ) : (
+                      verifiedUsers.map((user: any) => (
+                        <option key={user.id} value={user.id}>
+                          {user.firstName && user.lastName
+                            ? `${user.firstName} ${user.lastName}`
+                            : user.email}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Only users with a verified sender identity can be selected.
+                  </p>
                 </div>
               </div>
             </div>

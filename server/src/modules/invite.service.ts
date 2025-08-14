@@ -1,5 +1,10 @@
 import { NewUser, UserTenant, NewUserTenant } from '@/db';
-import { roleRepository, userRepository, userTenantRepository } from '@/repositories';
+import {
+  roleRepository,
+  userRepository,
+  userTenantRepository,
+  emailSenderIdentityRepository,
+} from '@/repositories';
 import { NotFoundError } from '@/exceptions/error';
 
 export interface CreateInviteData {
@@ -27,6 +32,7 @@ export interface UserWithInviteInfo {
   invitedAt?: Date;
   lastLogin?: Date;
   source: 'user_tenant';
+  hasVerifiedSenderIdentity?: boolean;
 }
 
 export class InviteService {
@@ -107,6 +113,10 @@ export class InviteService {
     // Get all users for this tenant with role information
     const tenantUsersQuery = await userTenantRepository.findUsersWithDetailsForTenant(tenantId);
 
+    // Fetch all sender identities for this tenant once and build a lookup for verified users
+    const verifiedIdentities = await emailSenderIdentityRepository.findVerifiedForTenant(tenantId);
+    const verifiedUserIds = new Set(verifiedIdentities.map((i) => i.userId));
+
     // Transform to UserWithInviteInfo format
     const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
       const [firstName, ...lastNameParts] = (ut.user?.name || '').split(' ');
@@ -120,13 +130,14 @@ export class InviteService {
         invitedAt: ut.invitedAt || undefined,
         lastLogin: ut.acceptedAt || undefined,
         source: 'user_tenant' as const,
+        hasVerifiedSenderIdentity: verifiedUserIds.has(ut.userId),
       };
     });
 
     // Sort by status (pending first), then by role, then by email
     allUsers.sort((a, b) => {
       if (a.status !== b.status) {
-        const statusOrder = { pending: 0, active: 1 };
+        const statusOrder = { pending: 0, active: 1 } as const;
         return statusOrder[a.status] - statusOrder[b.status];
       }
       if (a.role !== b.role) {

@@ -49,13 +49,23 @@ export function useLeadsColumns({
   formatDate,
 }: UseLeadsColumnsProps) {
   const getOwnerDisplay = (lead: Lead) => {
-    // Find the owner user from the users list
-    const ownerUser = users.find((user) => user.id === lead.ownerId)
+    // Only show verified users in options
+    const verifiedUsers = Array.isArray(users)
+      ? users.filter((u) => u.hasVerifiedSenderIdentity)
+      : []
+
+    // Find the owner user from the verified users list first, fallback to all users for name display
+    const ownerUser = (verifiedUsers.length > 0 ? verifiedUsers : users).find(
+      (user: any) => user.id === lead.ownerId,
+    )
     const currentOwnerName = ownerUser
       ? ownerUser.firstName && ownerUser.lastName
         ? `${ownerUser.firstName} ${ownerUser.lastName}`
         : ownerUser.email
       : 'Unassigned'
+
+    const placeholderValue = '__placeholder__'
+    const selectValue = lead.ownerId || placeholderValue
 
     return (
       <div className="relative group">
@@ -67,7 +77,7 @@ export function useLeadsColumns({
               e.stopPropagation()
               // This will be handled by the dropdown
             }}
-            title="Change owner"
+            title="Change owner (verified users only)"
           >
             <Edit className="h-4 w-4" />
           </button>
@@ -75,9 +85,10 @@ export function useLeadsColumns({
 
         <select
           className="absolute inset-0 opacity-0 cursor-pointer"
-          value={lead.ownerId || ''}
+          value={selectValue}
           onChange={(e) => {
             const userId = e.target.value
+            if (userId === placeholderValue) return
             if (userId !== lead.ownerId) {
               onAssignOwner(lead.id, userId)
             }
@@ -85,21 +96,26 @@ export function useLeadsColumns({
           disabled={assigningOwner === lead.id || usersLoading}
           onClick={(e) => e.stopPropagation()}
         >
-          <option value="">Unassigned</option>
+          {/* Placeholder only shown when unassigned; cannot be selected for assignment */}
+          {!lead.ownerId && (
+            <option value={placeholderValue} disabled>
+              Select verified owner
+            </option>
+          )}
           {usersLoading ? (
-            <option value="" disabled>
+            <option value={placeholderValue} disabled>
               Loading users...
             </option>
           ) : usersError ? (
-            <option value="" disabled>
+            <option value={placeholderValue} disabled>
               Error loading users
             </option>
-          ) : users.length === 0 ? (
-            <option value="" disabled>
-              No users available
+          ) : verifiedUsers.length === 0 ? (
+            <option value={placeholderValue} disabled>
+              No verified users available
             </option>
           ) : (
-            users.map((user) => (
+            verifiedUsers.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`

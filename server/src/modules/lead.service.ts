@@ -88,6 +88,17 @@ export const createLead = async (
   ownerId: string,
   pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
 ) => {
+  // If ownerId is provided, enforce verified sender identity for that owner
+  if (ownerId) {
+    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
+      ownerId,
+      tenantId
+    );
+    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
+      throw new Error('Assigned owner must have a verified sender identity');
+    }
+  }
+
   // Add ownerId to the lead data
   const leadWithOwner = {
     ...lead,
@@ -240,6 +251,15 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
       throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
     }
 
+    // Enforce that the user has a verified sender identity
+    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
+      userId,
+      tenantId
+    );
+    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
+      throw new Error('Assigned owner must have a verified sender identity');
+    }
+
     // Update the lead with the new owner
     const result = await leadRepository.assignToOwnerForTenant(leadId, tenantId, userId);
     if (!result) {
@@ -349,26 +369,21 @@ export const hasStatus = async (
  * Ensure a lead has the default "Unprocessed" status if no statuses exist
  * @param tenantId - The ID of the tenant
  * @param leadId - The ID of the lead
- * @returns A promise that resolves when the default status is ensured
+ * @returns A promise that resolves when the default status has been ensured
  */
 export const ensureDefaultStatus = async (tenantId: string, leadId: string): Promise<void> => {
   try {
-    const existingStatuses = await leadStatusRepository.findByLeadIdForTenant(leadId, tenantId);
-
-    if (existingStatuses.length === 0) {
-      await leadStatusRepository.createForTenant(tenantId, {
+    const statuses = await getLeadStatuses(tenantId, leadId);
+    if (!statuses || statuses.length === 0) {
+      await leadStatusRepository.createIfNotExistsForTenant(
         leadId,
-        status: LEAD_STATUS.UNPROCESSED,
-      });
-
-      logger.info(`Added default "Unprocessed" status to lead ${leadId}`);
+        LEAD_STATUS.UNPROCESSED,
+        tenantId
+      );
     }
   } catch (error) {
-    logger.error('Error ensuring default status:', error);
-    // Don't throw error to avoid breaking lead operations if status table doesn't exist yet
-    logger.warn(
-      `Could not ensure default status for lead ${leadId}, this may be expected if migration hasn't run yet`
-    );
+    logger.error('Error ensuring default lead status:', error);
+    throw error;
   }
 };
 
