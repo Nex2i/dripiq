@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."users" ADD COLUMN "calendar_link" text;

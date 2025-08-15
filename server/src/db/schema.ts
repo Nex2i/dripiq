@@ -25,6 +25,7 @@ export const users = appSchema.table('users', {
   email: text('email').notNull().unique(),
   name: text('name'),
   avatar: text('avatar'),
+  calendarLink: text('calendar_link'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

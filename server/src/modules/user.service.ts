@@ -6,6 +6,7 @@ export interface CreateUserData {
   email: string;
   name?: string;
   avatar?: string;
+  calendarLink?: string;
 }
 
 export class UserService {
