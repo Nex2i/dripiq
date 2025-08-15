@@ -10,7 +10,7 @@ import { CREDENTIALS } from '@/config';
 import { schema } from '@/utils/validateEnv';
 import '@/extensions';
 import initIac from '@/utils/iac';
-import { baseLogger, logger, loggerOptions } from '@/libs/logger';
+import { logger, loggerOptions } from '@/libs/logger';
 import { globalErrorHandler } from '@/utils/globalErrorHandler';
 
 async function startServer() {
