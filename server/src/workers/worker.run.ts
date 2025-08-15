@@ -13,10 +13,10 @@
 
 import { logger } from '@/libs/logger';
 import { createRedisConnection } from '@/libs/bullmq';
-import { messagesWorker, leadAnalysisWorker, campaignCreationWorker } from './index';
+import { leadAnalysisWorker, campaignCreationWorker } from './index';
 
 // Track active workers for graceful shutdown
-const activeWorkers = [messagesWorker, leadAnalysisWorker, campaignCreationWorker];
+const activeWorkers = [leadAnalysisWorker, campaignCreationWorker];
 
 async function startWorkers() {
   try {
@@ -34,7 +34,6 @@ async function startWorkers() {
     // Workers are automatically started when imported
     // Just log their status
     logger.info('✅ All workers started successfully', {
-      messagesWorker: messagesWorker.isRunning(),
       leadAnalysisWorker: leadAnalysisWorker.isRunning(),
       campaignCreationWorker: campaignCreationWorker.isRunning(),
     });
