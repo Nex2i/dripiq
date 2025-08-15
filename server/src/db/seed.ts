@@ -8,29 +8,29 @@ import { db } from './index';
 
 async function seed() {
   try {
-    logger.info('🌱 Starting database seed...');
+    logger.debug('🌱 Starting database seed...');
 
     // Only clear existing data if CLEAR_DB environment variable is set
     if (process.env.CLEAR_DB === 'true') {
-      logger.info('🧹 Clearing existing data...');
+      logger.debug('🧹 Clearing existing data...');
       await db.delete(userTenants);
       await db.delete(users);
       await db.delete(tenants);
     } else {
-      logger.info('⚠️  Skipping data clearing (set CLEAR_DB=true to clear existing data)');
+      logger.debug('⚠️  Skipping data clearing (set CLEAR_DB=true to clear existing data)');
     }
 
     // Seed roles and permissions first
-    logger.info('🔐 Seeding roles and permissions...');
+    logger.debug('🔐 Seeding roles and permissions...');
     await seedRoles();
-    logger.info('✅ Roles and permissions seeded');
+    logger.debug('✅ Roles and permissions seeded');
 
     // Check if tenants already exist to avoid duplicates
     const existingTenants = await db.select().from(tenants).limit(1);
 
     if (existingTenants.length === 0) {
       // Create sample tenants
-      logger.info('🏢 Creating sample tenants...');
+      logger.debug('🏢 Creating sample tenants...');
       const sampleTenantData = [
         { name: 'Acme Corporation' },
         { name: 'Tech Innovations LLC' },
@@ -43,20 +43,20 @@ async function seed() {
         // Use TenantService to create tenant
         const tenant = await TenantService.createTenant(tenantData);
         sampleTenants.push(tenant);
-        logger.info(`✅ Created tenant: ${tenant.name}`);
+        logger.debug(`✅ Created tenant: ${tenant.name}`);
       }
 
-      logger.info(`✅ Created ${sampleTenants.length} tenants`);
+      logger.debug(`✅ Created ${sampleTenants.length} tenants`);
     } else {
-      logger.info('ℹ️  Sample data already exists, skipping creation');
+      logger.debug('ℹ️  Sample data already exists, skipping creation');
     }
 
     // Create seed user
-    logger.info('👤 Creating seed user...');
+    logger.debug('👤 Creating seed user...');
     await createSeedUser();
-    logger.info('✅ Seed user created');
+    logger.debug('✅ Seed user created');
 
-    logger.info('✅ Database seed completed successfully!');
+    logger.debug('✅ Database seed completed successfully!');
   } catch (error) {
     logger.error('❌ Error seeding database', error);
     throw error;
@@ -76,7 +76,7 @@ async function createSeedUser() {
     .limit(1);
 
   if (existingSeedUser.length > 0) {
-    logger.info('ℹ️  Seed user already exists, skipping creation');
+    logger.debug('ℹ️  Seed user already exists, skipping creation');
     return;
   }
 
@@ -106,13 +106,13 @@ async function createSeedUser() {
     return;
   }
 
-  logger.info('✅ Seed user created', { email: seedUser.email });
+  logger.debug('✅ Seed user created', { email: seedUser.email });
 
   // Get the first tenant to assign the user to
   const firstTenant = await db.select().from(tenants).limit(1);
 
   if (firstTenant.length === 0) {
-    logger.info('⚠️  No tenants found, skipping user-tenant assignment');
+    logger.debug('⚠️  No tenants found, skipping user-tenant assignment');
     return;
   }
 
@@ -120,7 +120,7 @@ async function createSeedUser() {
   const tenant = firstTenant[0];
 
   if (!tenant) {
-    logger.info('⚠️  Missing tenant data, skipping assignment');
+    logger.debug('⚠️  Missing tenant data, skipping assignment');
     return;
   }
 
@@ -128,7 +128,7 @@ async function createSeedUser() {
   const adminRole = await RoleService.getRoleByName('Admin');
 
   if (!adminRole) {
-    logger.info('⚠️  Admin role not found, skipping user-tenant assignment');
+    logger.debug('⚠️  Admin role not found, skipping user-tenant assignment');
     return;
   }
 
@@ -139,7 +139,7 @@ async function createSeedUser() {
     isSuperUser: true,
   });
 
-  logger.info(
+  logger.debug(
     `✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`
   );
 }
@@ -151,7 +151,7 @@ export { seed };
 if (require.main === module) {
   seed()
     .then(() => {
-      logger.info('🎉 Seed completed');
+      logger.debug('🎉 Seed completed');
       process.exit(0);
     })
     .catch((error) => {

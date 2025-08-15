@@ -42,6 +42,10 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     const startTime = requestStartTimes.get(request.id);
     const responseTime = startTime ? Date.now() - startTime : undefined;
 
+    if (ignoredPaths.includes(request.url)) {
+      return;
+    }
+
     // Clean up the stored start time
     requestStartTimes.delete(request.id);
 

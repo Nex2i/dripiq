@@ -9,7 +9,7 @@ const highlightConfig = {
 };
 
 export const loggerOptions: LoggerOptions = {
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  level: process.env.LOG_LEVEL,
   formatters: {
     level: (label) => {
       return { level: pino.levels.values[label] };
