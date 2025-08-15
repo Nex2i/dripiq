@@ -251,6 +251,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
             email: dbUser.email,
             name: dbUser.name,
             avatar: dbUser.avatar,
+            calendarLink: dbUser.calendarLink,
             createdAt: dbUser.createdAt,
             updatedAt: dbUser.updatedAt,
           },
