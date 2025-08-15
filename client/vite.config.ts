@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import viteReact from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
@@ -12,5 +13,9 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, './src'),
     },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
   },
 })
