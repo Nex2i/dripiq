@@ -4,17 +4,20 @@ import fp from 'fastify-plugin';
 // Store request start times for response time calculation
 const requestStartTimes = new Map<string, number>();
 
+const ignoredMethods = ['OPTIONS', 'HEAD'];
+const ignoredPaths = ['/health', '/metrics'];
+
 const loggingPlugin = async (fastify: FastifyInstance) => {
   // Log incoming requests with structured data
   fastify.addHook('onRequest', async (request: FastifyRequest, _reply: FastifyReply) => {
     // Store request start time for response time calculation
     requestStartTimes.set(request.id, Date.now());
 
-    if (request.url.includes('/health')) {
+    if (ignoredPaths.includes(request.url)) {
       return;
     }
 
-    if (request.method === 'OPTIONS') {
+    if (ignoredMethods.includes(request.method)) {
       return;
     }
 
