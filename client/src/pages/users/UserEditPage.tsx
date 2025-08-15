@@ -59,26 +59,27 @@ export default function UserEditPage() {
     let active = true
     async function load() {
       try {
+        let userData = null
+        
         if (isAdminMode) {
           setLoading(true)
           const svc = getUsersService()
-          const u = await svc.getUser(targetUserId!)
+          userData = await svc.getUser(targetUserId!)
           if (!active) return
-          setName(u.name || '')
-          setEmail(u.email)
-          const calLink = u.calendarLink || ''
-          setCalendarLink(calLink)
-          setInitialCalendarLink(calLink)
-          setCalendarLinkError(validateCalendarLink(calLink))
-          setFromName(u.name || '')
-          setFromEmail(u.email)
         } else if (selfUser) {
-          setName(selfUser.name || '')
-          setEmail(selfUser.email)
-          const calLink = selfUser.calendarLink || ''
+          userData = selfUser
+        }
+
+        // Common logic for setting user data (no duplication)
+        if (userData) {
+          setName(userData.name || '')
+          setEmail(userData.email)
+          const calLink = userData.calendarLink || ''
           setCalendarLink(calLink)
           setInitialCalendarLink(calLink)
           setCalendarLinkError(validateCalendarLink(calLink))
+          setFromName(userData.name || '')
+          setFromEmail(userData.email)
         }
       } catch (e: any) {
         if (!active) return
