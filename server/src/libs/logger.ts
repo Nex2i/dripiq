@@ -8,6 +8,23 @@ const loggerOptions: LoggerOptions = {
     },
   },
   timestamp: pino.stdTimeFunctions.isoTime,
+  // Configure request serializer to flatten properties
+  serializers: {
+    req: (request: any) => ({
+      method: request.method,
+      url: request.url,
+      host: request.headers?.host,
+      userAgent: request.headers?.['user-agent'],
+      remoteAddress: request.ip || request.socket?.remoteAddress,
+      remotePort: request.socket?.remotePort,
+      reqId: request.id,
+    }),
+    res: (response: any) => ({
+      statusCode: response.statusCode,
+      contentLength: response.headers?.['content-length'],
+    }),
+    err: pino.stdSerializers.err,
+  },
 };
 
 export const baseLogger = pino(loggerOptions);

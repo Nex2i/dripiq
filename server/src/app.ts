@@ -10,7 +10,7 @@ import { CREDENTIALS } from '@/config';
 import { schema } from '@/utils/validateEnv';
 import '@/extensions';
 import initIac from '@/utils/iac';
-import { logger } from '@/libs/logger';
+import { baseLogger, logger } from '@/libs/logger';
 import { globalErrorHandler } from '@/utils/globalErrorHandler';
 
 async function startServer() {
@@ -23,8 +23,12 @@ async function startServer() {
       },
       plugins: [],
     },
-    logger: true,
+    logger: baseLogger, // Use our custom logger instead of true
     trustProxy: true,
+    genReqId: (_req) => {
+      // Generate a simple request ID
+      return `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    },
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   // Initialize Error Handling
