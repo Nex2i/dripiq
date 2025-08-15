@@ -5,7 +5,7 @@ export interface UrlValidationResult {
 
 export class UrlValidator {
   /**
-   * Validates if a string is a valid URL
+   * Validates if a string is a valid HTTPS URL
    */
   static isValidUrl(url: string): boolean {
     if (!url || typeof url !== 'string') {
@@ -14,8 +14,8 @@ export class UrlValidator {
 
     try {
       const urlObj = new URL(url.trim());
-      // Ensure it has a valid protocol (http or https)
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      // Only allow HTTPS protocol
+      return urlObj.protocol === 'https:';
     } catch {
       return false;
     }
@@ -52,7 +52,7 @@ export class UrlValidator {
     if (!this.isValidUrl(trimmedCurrent)) {
       return {
         isValid: false,
-        error: 'Please enter a valid URL (e.g., https://calendly.com/your-link)'
+        error: 'Please enter a valid HTTPS URL (e.g., https://calendly.com/your-link)'
       };
     }
 

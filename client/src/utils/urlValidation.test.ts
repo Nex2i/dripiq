@@ -2,11 +2,11 @@ import { UrlValidator, UrlValidationResult } from './urlValidation';
 
 describe('UrlValidator', () => {
   describe('isValidUrl', () => {
-    it('should return true for valid HTTP URLs', () => {
-      expect(UrlValidator.isValidUrl('http://example.com')).toBe(true);
-      expect(UrlValidator.isValidUrl('http://www.example.com')).toBe(true);
-      expect(UrlValidator.isValidUrl('http://example.com/path')).toBe(true);
-      expect(UrlValidator.isValidUrl('http://example.com:8080')).toBe(true);
+    it('should return false for HTTP URLs (HTTPS only)', () => {
+      expect(UrlValidator.isValidUrl('http://example.com')).toBe(false);
+      expect(UrlValidator.isValidUrl('http://www.example.com')).toBe(false);
+      expect(UrlValidator.isValidUrl('http://example.com/path')).toBe(false);
+      expect(UrlValidator.isValidUrl('http://example.com:8080')).toBe(false);
     });
 
     it('should return true for valid HTTPS URLs', () => {
@@ -39,7 +39,7 @@ describe('UrlValidator', () => {
       expect(UrlValidator.isValidUrl('https://')).toBe(false);
       expect(UrlValidator.isValidUrl('https://.')).toBe(true); // This is actually valid per URL spec
       expect(UrlValidator.isValidUrl('https://example')).toBe(true); // This is actually valid
-      expect(UrlValidator.isValidUrl('http://.com')).toBe(true); // This is also valid per URL spec
+      expect(UrlValidator.isValidUrl('http://.com')).toBe(false); // HTTP not allowed
     });
   });
 
@@ -72,7 +72,13 @@ describe('UrlValidator', () => {
       it('should reject invalid URLs', () => {
         const result = UrlValidator.validateCalendarLink('not-a-url');
         expect(result.isValid).toBe(false);
-        expect(result.error).toBe('Please enter a valid URL (e.g., https://calendly.com/your-link)');
+        expect(result.error).toBe('Please enter a valid HTTPS URL (e.g., https://calendly.com/your-link)');
+      });
+
+      it('should reject HTTP URLs (HTTPS only)', () => {
+        const result = UrlValidator.validateCalendarLink('http://calendly.com/john');
+        expect(result.isValid).toBe(false);
+        expect(result.error).toBe('Please enter a valid HTTPS URL (e.g., https://calendly.com/your-link)');
       });
     });
 

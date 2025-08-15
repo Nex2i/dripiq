@@ -242,7 +242,7 @@ export default function UserEditPage() {
                     ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-200'
                     : 'border-gray-300 bg-white focus:border-[var(--color-primary-500)] focus:ring-[var(--color-primary-200)]'
                 }`}
-                placeholder="https://calendly.com/your-link or other calendar URL"
+                placeholder="https://calendly.com/your-link or other HTTPS calendar URL"
               />
               {calendarLinkError ? (
                 <p className="text-xs text-red-600 mt-1">
