@@ -2,6 +2,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import z from 'zod';
 import { openAiEmbeddingClient } from '@/libs/openai.embeddings.client';
 import { siteEmbeddingDomainRepository, siteEmbeddingRepository } from '@/repositories';
+import { logger } from '@/libs/logger';
 
 export const GetInformationAboutDomainTool = new DynamicStructuredTool({
   name: 'GetInformationAboutDomainTool',
@@ -24,7 +25,7 @@ export const GetInformationAboutDomainTool = new DynamicStructuredTool({
       }
 
       const cleanDomain = domain.getDomain();
-      console.log(`Searching for "${queryText}" in domain: ${cleanDomain}`);
+      logger.info(`Searching for "${queryText}" in domain: ${cleanDomain}`);
 
       const domainRecord = await siteEmbeddingDomainRepository.findByDomain(cleanDomain);
 
@@ -66,7 +67,7 @@ export const GetInformationAboutDomainTool = new DynamicStructuredTool({
         searchResults,
       });
     } catch (error) {
-      console.error(`Error getting information for domain:`, error);
+      logger.error(`Error getting information for domain`, error);
       return JSON.stringify({
         domain: 'unknown',
         error: `Failed to retrieve information for domain. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,

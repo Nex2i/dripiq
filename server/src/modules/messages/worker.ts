@@ -12,7 +12,7 @@ export type ProcessMessageJob = {
 
 // TODO - Remove, testing logic only
 function logTestMessage(job: Job<ProcessMessageJob>) {
-  console.log(`[Worker] Test message received:`, {
+  logger.info(`[Worker] Test message received`, {
     id: job.id,
     name: job.name,
     data: job.data,

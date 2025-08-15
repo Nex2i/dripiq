@@ -1,5 +1,6 @@
 import { eq, and, inArray } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
+import { logger } from '@/libs/logger';
 import { BaseRepository } from './BaseRepository';
 
 export abstract class TenantAwareRepository<
@@ -128,70 +129,70 @@ export abstract class TenantAwareRepository<
   // Override base methods with implementations that work but include security warnings
   // Note: These methods bypass tenant validation - use tenant-aware methods when possible
   async create(data: TInsert): Promise<TSelect> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using create() without tenant validation. Consider using createForTenant() instead.'
     );
     return await super.create(data);
   }
 
   async createMany(data: TInsert[]): Promise<TSelect[]> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using createMany() without tenant validation. Consider using createManyForTenant() instead.'
     );
     return await super.createMany(data);
   }
 
   async findById(id: string): Promise<TSelect> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using findById() without tenant validation. Consider using findByIdForTenant() instead.'
     );
     return await super.findById(id);
   }
 
   async findByIds(ids: string[]): Promise<TSelect[]> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using findByIds() without tenant validation. Consider using findByIdsForTenant() instead.'
     );
     return await super.findByIds(ids);
   }
 
   async findAll(): Promise<TSelect[]> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using findAll() without tenant validation. Consider using findAllForTenant() instead.'
     );
     return await super.findAll();
   }
 
   async updateById(id: string, data: Partial<TInsert>): Promise<TSelect | undefined> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using updateById() without tenant validation. Consider using updateByIdForTenant() instead.'
     );
     return await super.updateById(id, data);
   }
 
   async deleteById(id: string): Promise<TSelect | undefined> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using deleteById() without tenant validation. Consider using deleteByIdForTenant() instead.'
     );
     return await super.deleteById(id);
   }
 
   async deleteByIds(ids: string[]): Promise<TSelect[]> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using deleteByIds() without tenant validation. Consider using deleteByIdsForTenant() instead.'
     );
     return await super.deleteByIds(ids);
   }
 
   async exists(id: string): Promise<boolean> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using exists() without tenant validation. Consider using existsForTenant() instead.'
     );
     return await super.exists(id);
   }
 
   async count(): Promise<number> {
-    console.warn(
+    logger.warn(
       '⚠️  SECURITY WARNING: Using count() without tenant validation. Consider using countForTenant() instead.'
     );
     return await super.count();

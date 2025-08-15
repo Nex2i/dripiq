@@ -1,4 +1,5 @@
 import { supabase } from '@/libs/supabase.client';
+import { logger } from '@/libs/logger';
 
 const supaBaseBucket = process.env.SITE_STORAGE_BUCKET;
 
@@ -18,11 +19,11 @@ export const initSupabaseStorage = async () => {
         // fileSizeLimit: 5 * 1024 * 1024 * 1024, // 5gb
         // allowedMimeTypes: allowedStorageMimeTypes,
       });
-      console.log(`${supaBaseBucket} bucket created`);
+      logger.info(`${supaBaseBucket} bucket created`);
     } else {
-      console.log(`${supaBaseBucket} bucket exists`);
+      logger.info(`${supaBaseBucket} bucket exists`);
     }
   } catch (error) {
-    console.error(error);
+    logger.error('Failed to initialize Supabase storage', error);
   }
 };

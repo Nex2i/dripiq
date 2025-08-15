@@ -1,4 +1,5 @@
 import { supabase } from '@/libs/supabase.client';
+import { logger } from '@/libs/logger';
 
 export interface CreateUserData {
   email: string;
@@ -37,7 +38,7 @@ export class SupabaseAdminService {
 
       return result.data.user;
     } catch (error: any) {
-      console.error('Error creating Supabase user:', error);
+      logger.error('Error creating Supabase user', error);
       throw error;
     }
   }
@@ -77,7 +78,7 @@ export class SupabaseAdminService {
 
       return result.data.properties?.action_link || '';
     } catch (error: any) {
-      console.error('Error generating Supabase link:', error);
+      logger.error('Error generating Supabase link', error);
       throw error;
     }
   }
@@ -95,7 +96,7 @@ export class SupabaseAdminService {
 
       return result.data.user;
     } catch (error: any) {
-      console.error('Error updating Supabase user:', error);
+      logger.error('Error updating Supabase user', error);
       throw error;
     }
   }
@@ -118,7 +119,7 @@ export class SupabaseAdminService {
       const user = result.data.users.find((user) => user.email === email);
       return user || null;
     } catch (error: any) {
-      console.error('Error getting Supabase user by email:', error);
+      logger.error('Error getting Supabase user by email', error);
       throw error;
     }
   }
@@ -134,7 +135,7 @@ export class SupabaseAdminService {
         throw new Error(`Supabase admin deleteUser error: ${result.error.message}`);
       }
     } catch (error: any) {
-      console.error('Error deleting Supabase user:', error);
+      logger.error('Error deleting Supabase user', error);
       throw error;
     }
   }
@@ -156,7 +157,7 @@ export class SupabaseAdminService {
 
       return result.data.user;
     } catch (error: any) {
-      console.error('Error inviting user via Supabase:', error);
+      logger.error('Error inviting user via Supabase', error);
       throw error;
     }
   }
@@ -178,7 +179,7 @@ export class SupabaseAdminService {
 
       return result.data.user;
     } catch (error: any) {
-      console.error('Error resending invite via Supabase:', error);
+      logger.error('Error resending invite via Supabase', error);
       throw error;
     }
   }
