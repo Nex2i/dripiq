@@ -22,6 +22,8 @@ function logTestMessage(job: Job<ProcessMessageJob>) {
 const worker = getWorker<ProcessMessageJob, { ok: boolean }>(
   QUEUE_NAMES.messages,
   async (job: Job<ProcessMessageJob>) => {
+    logger.info('Processing message', { jobId: job.id, jobName: job.name });
+
     if (job.name !== JOB_NAMES.messages.process) {
       logger.warn('Skipping unexpected job name', { jobId: job.id, jobName: job.name });
       return { ok: true };

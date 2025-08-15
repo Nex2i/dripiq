@@ -1,11 +1,14 @@
 import fp from 'fastify-plugin';
 import { IS_PRODUCTION } from '@/config';
 import { MessagePublisherService } from '@/modules/messages/publisher.service';
+import { logger } from '@/libs/logger';
 
 // TODO - Remove, testing logic only
 function startTestQueuePublisher() {
   const interval = setInterval(async () => {
     try {
+      logger.info('Publishing test message');
+
       await MessagePublisherService.publish({
         tenantId: 'test-tenant',
         userId: 'test-user',
