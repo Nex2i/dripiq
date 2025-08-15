@@ -1,5 +1,5 @@
 import { logger } from '@/libs/logger';
-import { supabaseStorage } from '@/libs/supabase.storage';
+import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
 import { contactCampaignPlanService } from './contactCampaignPlan.service';
@@ -20,26 +20,15 @@ export const generateContactStrategy = async (
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
-    // Check if cached result exists in storage
-    const cacheKey = `${tenantId}/${leadId}/${contactId}/contact-strategy.json`;
-
-    logger.info('Checking for cached contact strategy result', {
-      leadId,
-      contactId,
-      tenantId,
-      cacheKey,
-    });
-
-    const isResultCached = await supabaseStorage.fileExists(cacheKey);
-    if (isResultCached) {
-      logger.info('Found cached contact strategy result, returning cached data', {
+    // Check if contact strategy exists in database
+    const existingStrategy = await retrieveContactStrategyFromDatabase(params);
+    if (existingStrategy) {
+      logger.info('Found existing contact strategy in database, returning live data', {
         leadId,
         contactId,
         tenantId,
-        cacheKey,
       });
-      const cachedResult = await supabaseStorage.downloadFile(cacheKey);
-      return cachedResult;
+      return existingStrategy;
     }
 
     // Execute agent analysis
@@ -67,8 +56,6 @@ export const generateContactStrategy = async (
         throw dbError;
       }
 
-      await cacheContactStrategy(result, cacheKey);
-
       return result;
     } catch (agentError) {
       logger.error('Agent execution failed', {
@@ -93,15 +80,79 @@ export const generateContactStrategy = async (
   }
 };
 
-async function cacheContactStrategy(result: ContactStrategyResult, cacheKey: string) {
-  // Save result to cache
+/**
+ * Retrieves contact strategy from database instead of JSON cache
+ */
+export const retrieveContactStrategyFromDatabase = async (
+  params: GenerateContactStrategyParams
+): Promise<ContactStrategyResult | null> => {
+  const { leadId, contactId, tenantId } = params;
+
   try {
-    await supabaseStorage.uploadJsonFile(cacheKey, result);
-  } catch (cacheError) {
-    logger.error('Failed to cache contact strategy result', {
-      cacheKey,
-      error: cacheError instanceof Error ? cacheError.message : 'Unknown cache error',
+    logger.info('Retrieving contact strategy from database', {
+      leadId,
+      contactId,
+      tenantId,
     });
-    // Don't throw error for cache failures - return the result anyway
+
+    // Find existing campaign for this contact and channel (email)
+    const existingCampaign = await contactCampaignRepository.findByContactAndChannelForTenant(
+      tenantId,
+      contactId,
+      'email'
+    );
+
+    if (!existingCampaign) {
+      logger.info('No existing campaign found in database', {
+        leadId,
+        contactId,
+        tenantId,
+      });
+      return null;
+    }
+
+    // Get the latest plan version for this campaign
+    const latestPlanVersion = await campaignPlanVersionRepository.findByCampaignAndVersionForTenant(
+      tenantId,
+      existingCampaign.id,
+      existingCampaign.planVersion
+    );
+
+    if (!latestPlanVersion) {
+      logger.warn('Campaign exists but no plan version found', {
+        leadId,
+        contactId,
+        tenantId,
+        campaignId: existingCampaign.id,
+        planVersion: existingCampaign.planVersion,
+      });
+      return null;
+    }
+
+    // Reconstruct ContactStrategyResult from database data
+    const result: ContactStrategyResult = {
+      finalResponse: 'Retrieved from database',
+      finalResponseParsed: latestPlanVersion.planJson as any, // This contains the CampaignPlanOutput
+      totalIterations: 1,
+      functionCalls: [],
+    };
+
+    logger.info('Successfully retrieved contact strategy from database', {
+      leadId,
+      contactId,
+      tenantId,
+      campaignId: existingCampaign.id,
+      planVersion: latestPlanVersion.version,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to retrieve contact strategy from database', {
+      leadId,
+      contactId,
+      tenantId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return null;
   }
-}
+};
