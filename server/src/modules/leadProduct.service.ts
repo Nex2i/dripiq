@@ -1,5 +1,6 @@
 import { leadProductRepository } from '../repositories';
 import type { LeadProduct } from '../db/schema';
+import { logger } from '@/libs/logger';
 
 /**
  * Get all products attached to a specific lead
@@ -22,7 +23,7 @@ export async function getLeadProducts(leadId: string, tenantId: string) {
       product: item.product,
     }));
   } catch (error) {
-    console.error('Error getting lead products:', error);
+    logger.error('Error getting lead products', error);
     throw new Error('Failed to get lead products');
   }
 }
@@ -43,7 +44,7 @@ export async function attachProductsToLead(
     );
     return result;
   } catch (error) {
-    console.error('Error attaching products to lead:', error);
+    logger.error('Error attaching products to lead', error);
     throw error;
   }
 }
@@ -64,7 +65,7 @@ export async function detachProductFromLead(
     );
     return !!result;
   } catch (error) {
-    console.error('Error detaching product from lead:', error);
+    logger.error('Error detaching product from lead', error);
     throw error;
   }
 }

@@ -4,32 +4,33 @@ import { RoleService } from '@/modules/role.service';
 import { tenants, users, userTenants } from './schema';
 import { seedRoles } from './seed-roles';
 import { db } from './index';
+import { logger } from '@/libs/logger';
 
 async function seed() {
   try {
-    console.log('🌱 Starting database seed...');
+    logger.info('🌱 Starting database seed...');
 
     // Only clear existing data if CLEAR_DB environment variable is set
     if (process.env.CLEAR_DB === 'true') {
-      console.log('🧹 Clearing existing data...');
+      logger.info('🧹 Clearing existing data...');
       await db.delete(userTenants);
       await db.delete(users);
       await db.delete(tenants);
     } else {
-      console.log('⚠️  Skipping data clearing (set CLEAR_DB=true to clear existing data)');
+      logger.info('⚠️  Skipping data clearing (set CLEAR_DB=true to clear existing data)');
     }
 
     // Seed roles and permissions first
-    console.log('🔐 Seeding roles and permissions...');
+    logger.info('🔐 Seeding roles and permissions...');
     await seedRoles();
-    console.log('✅ Roles and permissions seeded');
+    logger.info('✅ Roles and permissions seeded');
 
     // Check if tenants already exist to avoid duplicates
     const existingTenants = await db.select().from(tenants).limit(1);
 
     if (existingTenants.length === 0) {
       // Create sample tenants
-      console.log('🏢 Creating sample tenants...');
+      logger.info('🏢 Creating sample tenants...');
       const sampleTenantData = [
         { name: 'Acme Corporation' },
         { name: 'Tech Innovations LLC' },
@@ -42,22 +43,22 @@ async function seed() {
         // Use TenantService to create tenant
         const tenant = await TenantService.createTenant(tenantData);
         sampleTenants.push(tenant);
-        console.log(`✅ Created tenant: ${tenant.name}`);
+        logger.info(`✅ Created tenant: ${tenant.name}`);
       }
 
-      console.log(`✅ Created ${sampleTenants.length} tenants`);
+      logger.info(`✅ Created ${sampleTenants.length} tenants`);
     } else {
-      console.log('ℹ️  Sample data already exists, skipping creation');
+      logger.info('ℹ️  Sample data already exists, skipping creation');
     }
 
     // Create seed user
-    console.log('👤 Creating seed user...');
+    logger.info('👤 Creating seed user...');
     await createSeedUser();
-    console.log('✅ Seed user created');
+    logger.info('✅ Seed user created');
 
-    console.log('✅ Database seed completed successfully!');
+    logger.info('✅ Database seed completed successfully!');
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    logger.error('❌ Error seeding database', error);
     throw error;
   }
 }
@@ -75,7 +76,7 @@ async function createSeedUser() {
     .limit(1);
 
   if (existingSeedUser.length > 0) {
-    console.log('ℹ️  Seed user already exists, skipping creation');
+    logger.info('ℹ️  Seed user already exists, skipping creation');
     return;
   }
 
@@ -101,17 +102,17 @@ async function createSeedUser() {
     .returning();
 
   if (!seedUser) {
-    console.error('❌ Failed to create seed user');
+    logger.error('❌ Failed to create seed user');
     return;
   }
 
-  console.log('✅ Seed user created:', seedUser.email);
+  logger.info('✅ Seed user created', { email: seedUser.email });
 
   // Get the first tenant to assign the user to
   const firstTenant = await db.select().from(tenants).limit(1);
 
   if (firstTenant.length === 0) {
-    console.log('⚠️  No tenants found, skipping user-tenant assignment');
+    logger.info('⚠️  No tenants found, skipping user-tenant assignment');
     return;
   }
 
@@ -119,7 +120,7 @@ async function createSeedUser() {
   const tenant = firstTenant[0];
 
   if (!tenant) {
-    console.log('⚠️  Missing tenant data, skipping assignment');
+    logger.info('⚠️  Missing tenant data, skipping assignment');
     return;
   }
 
@@ -127,7 +128,7 @@ async function createSeedUser() {
   const adminRole = await RoleService.getRoleByName('Admin');
 
   if (!adminRole) {
-    console.log('⚠️  Admin role not found, skipping user-tenant assignment');
+    logger.info('⚠️  Admin role not found, skipping user-tenant assignment');
     return;
   }
 
@@ -138,7 +139,7 @@ async function createSeedUser() {
     isSuperUser: true,
   });
 
-  console.log(
+  logger.info(
     `✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`
   );
 }
@@ -150,11 +151,11 @@ export { seed };
 if (require.main === module) {
   seed()
     .then(() => {
-      console.log('🎉 Seed completed');
+      logger.info('🎉 Seed completed');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('💥 Seed failed:', error);
+      logger.error('💥 Seed failed', error);
       process.exit(1);
     });
 }

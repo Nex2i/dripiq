@@ -1,18 +1,19 @@
 import { RoleService } from '../modules/role.service';
 import { roles } from './schema';
 import { db } from './index';
+import { logger } from '@/libs/logger';
 
 /**
  * Seed the database with predefined roles and permissions
  */
 export async function seedRoles() {
-  console.log('🌱 Seeding roles and permissions...');
+  logger.info('🌱 Seeding roles and permissions...');
 
   try {
     // Check if roles already exist
     const existingRoles = await db.select().from(roles);
     if (existingRoles.length > 0) {
-      console.log('✅ Roles already exist, skipping seed');
+      logger.info('✅ Roles already exist, skipping seed');
       return;
     }
 
@@ -121,16 +122,16 @@ export async function seedRoles() {
     ];
 
     // Create permissions
-    console.log('📋 Creating permissions...');
+    logger.info('📋 Creating permissions...');
     const createdPermissions = [];
     for (const permData of permissionsData) {
       const permission = await RoleService.createPermission(permData);
       createdPermissions.push(permission);
-      console.log(`  ✅ Created permission: ${permission.name}`);
+      logger.info(`  ✅ Created permission: ${permission.name}`);
     }
 
     // Create Admin role
-    console.log('👑 Creating Admin role...');
+    logger.info('👑 Creating Admin role...');
     const adminRole = await RoleService.createRole({
       name: 'Admin',
       description:
@@ -138,21 +139,21 @@ export async function seedRoles() {
     });
 
     // Create Sales role
-    console.log('💼 Creating Sales role...');
+    logger.info('💼 Creating Sales role...');
     const salesRole = await RoleService.createRole({
       name: 'Sales',
       description: 'Access to campaign creation and lead management',
     });
 
     // Assign ALL permissions to Admin role
-    console.log('🔐 Assigning permissions to Admin role...');
+    logger.info('🔐 Assigning permissions to Admin role...');
     for (const permission of createdPermissions) {
       await RoleService.assignPermissionToRole(adminRole.id, permission.id);
-      console.log(`  ✅ Assigned ${permission.name} to Admin`);
+      logger.info(`  ✅ Assigned ${permission.name} to Admin`);
     }
 
     // Assign specific permissions to Sales role
-    console.log('🎯 Assigning permissions to Sales role...');
+    logger.info('🎯 Assigning permissions to Sales role...');
     const salesPermissions = [
       'campaigns:create',
       'campaigns:read',
@@ -168,30 +169,30 @@ export async function seedRoles() {
       const permission = createdPermissions.find((p) => p.name === permissionName);
       if (permission) {
         await RoleService.assignPermissionToRole(salesRole.id, permission.id);
-        console.log(`  ✅ Assigned ${permission.name} to Sales`);
+        logger.info(`  ✅ Assigned ${permission.name} to Sales`);
       }
     }
 
-    console.log('🎉 Role seeding completed successfully!');
+    logger.info('🎉 Role seeding completed successfully!');
 
     // Display summary
-    console.log('\n📊 Role Summary:');
-    console.log(`Admin Role: Full access (${createdPermissions.length} permissions)`);
-    console.log(`Sales Role: Limited access (${salesPermissions.length} permissions)`);
+    logger.info('\n📊 Role Summary:');
+    logger.info(`Admin Role: Full access (${createdPermissions.length} permissions)`);
+    logger.info(`Sales Role: Limited access (${salesPermissions.length} permissions)`);
 
-    console.log('\n🔍 Admin permissions:');
-    console.log('- View all campaigns and manage users');
-    console.log('- Full CRUD operations on campaigns, leads, users');
-    console.log('- Access to analytics and system settings');
-    console.log('- Role and permission management');
+    logger.info('\n🔍 Admin permissions:');
+    logger.info('- View all campaigns and manage users');
+    logger.info('- Full CRUD operations on campaigns, leads, users');
+    logger.info('- Access to analytics and system settings');
+    logger.info('- Role and permission management');
 
-    console.log('\n🎯 Sales permissions:');
-    console.log('- Setup new campaigns');
-    console.log('- Add and manage leads');
-    console.log('- View analytics and basic settings');
-    console.log('- Update their own campaigns');
+    logger.info('\n🎯 Sales permissions:');
+    logger.info('- Setup new campaigns');
+    logger.info('- Add and manage leads');
+    logger.info('- View analytics and basic settings');
+    logger.info('- Update their own campaigns');
   } catch (error) {
-    console.error('❌ Error seeding roles:', error);
+    logger.error('❌ Error seeding roles', error);
     throw error;
   }
 }
@@ -200,11 +201,11 @@ export async function seedRoles() {
 if (require.main === module) {
   seedRoles()
     .then(() => {
-      console.log('✅ Seed completed');
+      logger.info('✅ Seed completed');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Seed failed:', error);
+      logger.error('❌ Seed failed', error);
       process.exit(1);
     });
 }
