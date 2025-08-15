@@ -1,3 +1,4 @@
+import { logger } from '@/libs/logger';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
@@ -34,7 +35,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
       },
     };
 
-    fastify.log.info(logData, `incoming request ${request.method} ${request.url}`);
+    logger.info(`incoming request ${request.method} ${request.url}`, logData);
   });
 
   // Log outgoing responses with structured data
@@ -63,7 +64,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     };
 
     const level = reply.statusCode >= 400 ? 'warn' : 'info';
-    fastify.log[level](logData, 'request completed');
+    logger[level](`request completed ${request.method} ${request.url}`, logData);
   });
 
   // Log errors with structured data
@@ -86,7 +87,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
         },
       };
 
-      fastify.log.error(logData, 'request error');
+      logger.error(`request error ${request.method} ${request.url}`, logData);
     }
   );
 };
