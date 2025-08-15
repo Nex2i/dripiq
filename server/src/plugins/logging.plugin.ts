@@ -1,6 +1,6 @@
-import { logger } from '@/libs/logger';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
+import { logger } from '@/libs/logger';
 
 // Store request start times for response time calculation
 const requestStartTimes = new Map<string, number>();

@@ -77,6 +77,7 @@ async function startServer() {
     dir: join(__dirname, '/routes'),
     dirNameRoutePrefix: false,
     options: { prefix: `/api` },
+    ignorePattern: /apiSchema/,
   });
 
   await initIac();
