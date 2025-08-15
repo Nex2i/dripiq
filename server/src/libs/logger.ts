@@ -67,20 +67,20 @@ if (typeof process.env.NEXT_RUNTIME === 'undefined' || process.env.NEXT_RUNTIME 
 // Create a logger interface that maintains compatibility with your existing code
 const createLoggerWithOverride = (logger: Logger) => {
   return {
-    warn: (message: string, arg?: any, ...args: any[]) => {
-      const logObj = arg && typeof arg === 'object' ? { ...arg, ...args } : { ...args };
+    warn: (message: string, payload?: any) => {
+      const logObj = payload ? { payload: payload } : {};
       logger.warn(logObj, message);
     },
-    info: (message: string, arg?: any) => {
-      const logObj = arg && typeof arg === 'object' ? { ...arg } : {};
+    info: (message: string, payload?: any) => {
+      const logObj = payload ? { payload: payload } : {};
       logger.info(logObj, message);
     },
-    error: (message: string, arg?: any, ...args: any[]) => {
-      const logObj = arg && typeof arg === 'object' ? { ...arg, ...args } : { ...args };
+    error: (message: string, payload?: any) => {
+      const logObj = payload ? { payload: payload } : {};
       logger.error(logObj, message);
     },
-    debug: (message: string, arg?: any) => {
-      const logObj = arg && typeof arg === 'object' ? { ...arg } : {};
+    debug: (message: string, payload?: any) => {
+      const logObj = payload ? { payload: payload } : {};
       logger.debug(logObj, message);
     },
   };
