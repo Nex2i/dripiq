@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { getUsersService } from '../../services/users.service'
 import {
   useMySenderIdentity,
@@ -23,6 +23,8 @@ export default function UserEditPage() {
   const [name, setName] = useState<string>('')
   const [email, setEmail] = useState<string>('')
   const [calendarLink, setCalendarLink] = useState<string>('')
+  const [initialCalendarLink, setInitialCalendarLink] = useState<string>('')
+  const [calendarLinkError, setCalendarLinkError] = useState<string>('')
   const [saving, setSaving] = useState<boolean>(false)
 
   // sender identity UI state
@@ -37,6 +39,24 @@ export default function UserEditPage() {
   const [country, setCountry] = useState('USA')
   const [senderError, setSenderError] = useState<string | null>(null)
   const [pasteValue, setPasteValue] = useState('')
+
+  // Validate calendar link URL
+  const validateCalendarLink = useCallback((url: string, initialValue: string = initialCalendarLink): string => {
+    if (!url.trim()) {
+      // If there was initially a calendar link, don't allow empty
+      if (initialValue.trim()) {
+        return 'Calendar link cannot be removed once set. Please provide a valid URL.'
+      }
+      return '' // Empty is ok if there was no initial value
+    }
+    
+    try {
+      new URL(url.trim())
+      return '' // Valid URL
+    } catch {
+      return 'Please enter a valid URL (e.g., https://calendly.com/your-link)'
+    }
+  }, [initialCalendarLink])
 
   useEffect(() => {
     if (!isAdminMode && selfUser) {
@@ -57,13 +77,19 @@ export default function UserEditPage() {
           if (!active) return
           setName(u.name || '')
           setEmail(u.email)
-          setCalendarLink(u.calendarLink || '')
+          const calLink = u.calendarLink || ''
+          setCalendarLink(calLink)
+          setInitialCalendarLink(calLink)
+          setCalendarLinkError(validateCalendarLink(calLink, calLink))
           setFromName(u.name || '')
           setFromEmail(u.email)
         } else if (selfUser) {
           setName(selfUser.name || '')
           setEmail(selfUser.email)
-          setCalendarLink(selfUser.calendarLink || '')
+          const calLink = selfUser.calendarLink || ''
+          setCalendarLink(calLink)
+          setInitialCalendarLink(calLink)
+          setCalendarLinkError(validateCalendarLink(calLink, calLink))
         }
       } catch (e: any) {
         if (!active) return
@@ -78,14 +104,30 @@ export default function UserEditPage() {
     }
   }, [isAdminMode, targetUserId, selfUser?.id])
 
+  // Handle calendar link changes with validation
+  const handleCalendarLinkChange = (value: string) => {
+    setCalendarLink(value)
+    const error = validateCalendarLink(value)
+    setCalendarLinkError(error)
+  }
+
   const canSave = useMemo(
-    () => name.trim().length > 0 && !saving,
-    [name, saving],
+    () => name.trim().length > 0 && !saving && !calendarLinkError,
+    [name, saving, calendarLinkError],
   )
 
   const handleSave = async () => {
     try {
       setSaving(true)
+      
+      // Final validation before save
+      const finalCalendarError = validateCalendarLink(calendarLink)
+      if (finalCalendarError) {
+        setCalendarLinkError(finalCalendarError)
+        setError('Please fix the calendar link validation error before saving.')
+        return
+      }
+      
       const svc = getUsersService()
       if (isAdminMode) {
         await svc.updateUserProfile(targetUserId!, name.trim(), calendarLink.trim() || undefined)
@@ -205,13 +247,24 @@ export default function UserEditPage() {
               <input
                 type="url"
                 value={calendarLink}
-                onChange={(e) => setCalendarLink(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+                onChange={(e) => handleCalendarLinkChange(e.target.value)}
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-2 ${
+                  calendarLinkError
+                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-200'
+                    : 'border-gray-300 bg-white focus:border-[var(--color-primary-500)] focus:ring-[var(--color-primary-200)]'
+                }`}
                 placeholder="https://calendly.com/your-link or other calendar URL"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Optional calendar booking link for scheduling meetings.
-              </p>
+              {calendarLinkError ? (
+                <p className="text-xs text-red-600 mt-1">
+                  {calendarLinkError}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional calendar booking link for scheduling meetings.
+                  {initialCalendarLink && ' Once set, this field cannot be left empty.'}
+                </p>
+              )}
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">
