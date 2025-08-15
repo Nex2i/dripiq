@@ -1,5 +1,13 @@
 import pino, { Logger, LoggerOptions } from 'pino';
 
+// highlight.io configuration
+const highlightConfig = {
+  projectID: process.env.HIGHLIGHT_PROJECT_ID || '', // You'll need to set this in your environment
+  serviceName: process.env.SERVICE_NAME || 'dripiq-backend',
+  serviceVersion: process.env.SERVICE_VERSION || 'latest',
+  environment: process.env.NODE_ENV || 'development',
+};
+
 export const loggerOptions: LoggerOptions = {
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   formatters: {
@@ -8,7 +16,22 @@ export const loggerOptions: LoggerOptions = {
     },
   },
   timestamp: pino.stdTimeFunctions.isoTime,
-  // Configure request serializer to flatten properties
+  // Use highlight.io transport in production, pretty printing in development
+  transport:
+    process.env.NODE_ENV === 'production'
+      ? {
+          target: '@highlight-run/pino',
+          options: highlightConfig,
+        }
+      : {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
+        },
+  // Configure request/response serializers for structured logging
   serializers: {
     req: (request: any) => ({
       method: request.method,
@@ -29,33 +52,35 @@ export const loggerOptions: LoggerOptions = {
 
 export const baseLogger = pino(loggerOptions);
 
-const formatArg = (arg: any): any => {
-  if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
-    const formattedObject: any = {};
-    for (const [key, value] of Object.entries(arg)) {
-      formattedObject[key] = formatArg(value);
+// Initialize highlight.io SDK if in Node.js environment
+if (typeof process.env.NEXT_RUNTIME === 'undefined' || process.env.NEXT_RUNTIME === 'nodejs') {
+  if (process.env.NODE_ENV === 'production' && highlightConfig.projectID) {
+    try {
+      const { H } = require('@highlight-run/node');
+      H.init(highlightConfig);
+    } catch (error) {
+      console.warn('Failed to initialize highlight.io:', error);
     }
-    return formattedObject;
   }
-  return arg;
-};
+}
 
+// Create a logger interface that maintains compatibility with your existing code
 const createLoggerWithOverride = (logger: Logger) => {
   return {
     warn: (message: string, arg?: any, ...args: any[]) => {
-      const logObj = arg ? { payload: formatArg(arg), ...args } : { ...args };
+      const logObj = arg ? { payload: arg, ...args } : { ...args };
       logger.warn(logObj, message);
     },
     info: (message: string, arg?: any) => {
-      const logObj = arg ? { payload: formatArg(arg) } : {};
+      const logObj = arg ? { payload: arg } : {};
       logger.info(logObj, message);
     },
     error: (message: string, arg?: any, ...args: any[]) => {
-      const logObj = arg ? { payload: formatArg(arg), ...args } : { ...args };
+      const logObj = arg ? { payload: arg, ...args } : { ...args };
       logger.error(logObj, message);
     },
     debug: (message: string, arg?: any) => {
-      const logObj = arg ? { payload: formatArg(arg) } : {};
+      const logObj = arg ? { payload: arg } : {};
       logger.debug(logObj, message);
     },
   };
