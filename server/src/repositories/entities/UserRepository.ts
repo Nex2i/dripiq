@@ -32,6 +32,7 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
     const user: User = {
       id: userRow.users.id,
       supabaseId: userRow.users.supabaseId,
+      calendarLink: userRow.users.calendarLink,
       email: userRow.users.email,
       name: userRow.users.name,
       avatar: userRow.users.avatar,
