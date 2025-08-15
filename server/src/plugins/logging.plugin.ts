@@ -18,10 +18,14 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
       userAgent: request.headers['user-agent'],
       remoteAddress: request.ip,
       remotePort: (request.socket as any)?.remotePort,
-      queryParams: Object.keys(request.query as object).length > 0 ? request.query : undefined,
+      // Flatten query params to top level with prefix
+      ...(Object.keys(request.query as object).length > 0 &&
+        Object.fromEntries(
+          Object.entries(request.query as object).map(([key, value]) => [`query_${key}`, value])
+        )),
     };
 
-    fastify.log.info(logData, 'incoming request');
+    fastify.log.info('incoming request', logData);
   });
 
   // Log outgoing responses with flattened properties
@@ -42,7 +46,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     };
 
     const level = reply.statusCode >= 400 ? 'warn' : 'info';
-    fastify.log[level](logData, 'request completed');
+    fastify.log[level]('request completed', logData);
   });
 
   // Log errors with flattened properties
@@ -61,7 +65,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
         stack: error.stack,
       };
 
-      fastify.log.error(logData, 'request error');
+      fastify.log.error('request error', logData);
     }
   );
 };

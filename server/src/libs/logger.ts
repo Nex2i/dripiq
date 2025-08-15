@@ -8,55 +8,52 @@ export const loggerOptions: LoggerOptions = {
     },
   },
   timestamp: pino.stdTimeFunctions.isoTime,
-  // Configure request serializer to flatten properties
-  serializers: {
-    req: (request: any) => ({
-      method: request.method,
-      url: request.url,
-      host: request.headers?.host,
-      userAgent: request.headers?.['user-agent'],
-      remoteAddress: request.ip || request.socket?.remoteAddress,
-      remotePort: request.socket?.remotePort,
-      reqId: request.id,
-    }),
-    res: (response: any) => ({
-      statusCode: response.statusCode,
-      contentLength: response.headers?.['content-length'],
-    }),
-    err: pino.stdSerializers.err,
-  },
+  // Remove serializers to prevent nested structures - we'll handle flattening manually
+  serializers: {},
 };
 
 export const baseLogger = pino(loggerOptions);
 
-const formatArg = (arg: any): any => {
-  if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
-    const formattedObject: any = {};
-    for (const [key, value] of Object.entries(arg)) {
-      formattedObject[key] = formatArg(value);
+const flattenObject = (obj: any, prefix: string = ''): any => {
+  const flattened: any = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}_${key}` : key;
+
+    if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+      // Recursively flatten nested objects
+      Object.assign(flattened, flattenObject(value, newKey));
+    } else {
+      flattened[newKey] = value;
     }
-    return formattedObject;
   }
-  return arg;
+
+  return flattened;
 };
 
 const createLoggerWithOverride = (logger: Logger) => {
   return {
     warn: (message: string, arg?: any, ...args: any[]) => {
-      const logObj = arg ? { payload: formatArg(arg), ...args } : { ...args };
-      logger.warn(logObj, message);
+      const flattenedArg = arg ? flattenObject(arg) : {};
+      const flattenedArgs = args.length > 0 ? flattenObject({ extraData: args }) : {};
+      const logObj = { ...flattenedArg, ...flattenedArgs, msg: message };
+      logger.warn(logObj);
     },
     info: (message: string, arg?: any) => {
-      const logObj = arg ? { payload: formatArg(arg) } : {};
-      logger.info(logObj, message);
+      const flattenedArg = arg ? flattenObject(arg) : {};
+      const logObj = { ...flattenedArg, msg: message };
+      logger.info(logObj);
     },
     error: (message: string, arg?: any, ...args: any[]) => {
-      const logObj = arg ? { payload: formatArg(arg), ...args } : { ...args };
-      logger.error(logObj, message);
+      const flattenedArg = arg ? flattenObject(arg) : {};
+      const flattenedArgs = args.length > 0 ? flattenObject({ extraData: args }) : {};
+      const logObj = { ...flattenedArg, ...flattenedArgs, msg: message };
+      logger.error(logObj);
     },
     debug: (message: string, arg?: any) => {
-      const logObj = arg ? { payload: formatArg(arg) } : {};
-      logger.debug(logObj, message);
+      const flattenedArg = arg ? flattenObject(arg) : {};
+      const logObj = { ...flattenedArg, msg: message };
+      logger.debug(logObj);
     },
   };
 };
