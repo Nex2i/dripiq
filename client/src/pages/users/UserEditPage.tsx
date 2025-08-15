@@ -22,6 +22,7 @@ export default function UserEditPage() {
   const [error, setError] = useState<string | null>(null)
   const [name, setName] = useState<string>('')
   const [email, setEmail] = useState<string>('')
+  const [calendarLink, setCalendarLink] = useState<string>('')
   const [saving, setSaving] = useState<boolean>(false)
 
   // sender identity UI state
@@ -56,11 +57,13 @@ export default function UserEditPage() {
           if (!active) return
           setName(u.name || '')
           setEmail(u.email)
+          setCalendarLink(u.calendarLink || '')
           setFromName(u.name || '')
           setFromEmail(u.email)
         } else if (selfUser) {
           setName(selfUser.name || '')
           setEmail(selfUser.email)
+          setCalendarLink(selfUser.calendarLink || '')
         }
       } catch (e: any) {
         if (!active) return
@@ -85,9 +88,9 @@ export default function UserEditPage() {
       setSaving(true)
       const svc = getUsersService()
       if (isAdminMode) {
-        await svc.updateUserProfile(targetUserId!, name.trim())
+        await svc.updateUserProfile(targetUserId!, name.trim(), calendarLink.trim() || undefined)
       } else {
-        await svc.updateMyProfile(name.trim())
+        await svc.updateMyProfile(name.trim(), calendarLink.trim() || undefined)
         await refreshUser()
       }
       navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })
@@ -193,6 +196,21 @@ export default function UserEditPage() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Email cannot be changed.
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Calendar Link
+              </label>
+              <input
+                type="url"
+                value={calendarLink}
+                onChange={(e) => setCalendarLink(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+                placeholder="https://calendly.com/your-link or other calendar URL"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Optional calendar booking link for scheduling meetings.
               </p>
             </div>
           </div>
