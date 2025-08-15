@@ -70,7 +70,6 @@ export default function UserEditPage() {
           userData = selfUser
         }
 
-        // Common logic for setting user data (no duplication)
         if (userData) {
           setName(userData.name || '')
           setEmail(userData.email)
