@@ -15,6 +15,8 @@ export const {
   PLAID_SECRET,
   NODE_ENV,
   DB_SCHEMA,
+  REDIS_URL,
+  BULLMQ_PREFIX,
 } = process.env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
