@@ -1,18 +1,13 @@
 import pino, { Logger, LoggerOptions } from 'pino';
 
 const loggerOptions: LoggerOptions = {
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      translateTime: true,
-      ignore: 'pid,hostname',
-      levelFirst: true,
-      prettifier: true,
-      useLevelLabels: true,
-      levelKey: 'level',
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  formatters: {
+    level: (label) => {
+      return { level: pino.levels.values[label] };
     },
   },
-  level: 'warn',
+  timestamp: pino.stdTimeFunctions.isoTime,
 };
 
 export const baseLogger = pino(loggerOptions);
@@ -31,17 +26,20 @@ const formatArg = (arg: any): any => {
 const createLoggerWithOverride = (logger: Logger) => {
   return {
     warn: (message: string, arg?: any, ...args: any[]) => {
-      logger.warn({ payload: formatArg(arg), ...args }, message);
+      const logObj = arg ? { payload: formatArg(arg), ...args } : { ...args };
+      logger.warn(logObj, message);
     },
     info: (message: string, arg?: any) => {
-      console.log(message, arg ? formatArg(arg) : '');
-      logger.info({ payload: formatArg(arg) }, message);
+      const logObj = arg ? { payload: formatArg(arg) } : {};
+      logger.info(logObj, message);
     },
     error: (message: string, arg?: any, ...args: any[]) => {
-      logger.error({ payload: formatArg(arg), ...args }, message);
+      const logObj = arg ? { payload: formatArg(arg), ...args } : { ...args };
+      logger.error(logObj, message);
     },
     debug: (message: string, arg?: any) => {
-      logger.debug({ payload: formatArg(arg) }, message);
+      const logObj = arg ? { payload: formatArg(arg) } : {};
+      logger.debug(logObj, message);
     },
   };
 };
