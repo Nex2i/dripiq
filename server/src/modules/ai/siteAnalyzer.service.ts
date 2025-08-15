@@ -3,8 +3,8 @@ import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { updateLeadStatuses } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
+import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
 import { EmbeddingsService } from './embeddings.service';
-import { LeadAnalyzerService } from './leadAnalyzer.service';
 import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
 
 export interface SiteAnalyzerDto {
@@ -45,14 +45,21 @@ export const SiteAnalyzerService = {
 
     switch (metadata.type) {
       case 'lead_site':
-        // Remove "Scraping Site" status when scraping is complete
         await updateLeadStatuses(
           metadata.tenantId,
           metadata.leadId,
           [],
           [LEAD_STATUS.SCRAPING_SITE]
         );
-        LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
+
+        await LeadAnalysisPublisher.publish({
+          tenantId: metadata.tenantId,
+          leadId: metadata.leadId,
+          metadata: {
+            firecrawlJobId: payload.id,
+            crawlCompleteAt: new Date().toISOString(),
+          },
+        });
         break;
 
       case 'organization_site':

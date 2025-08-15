@@ -77,6 +77,13 @@ export const getQueueEvents = (name: string, queueEventsOptions?: QueueEventsOpt
   });
 };
 
+const defaultWorkerOptions: Partial<WorkerOptions> = {
+  concurrency: 5,
+  lockDuration: 1000 * 60 * 5, // 5 minutes default
+  lockRenewTime: 1000 * 60 * 2.5, // 2.5 minutes default
+  maxStalledCount: 2, // Allow 2 stalls before failure
+};
+
 export const getWorker = <T = any, R = any, N extends string = string>(
   name: string,
   processor: Processor<T, R, N>,
@@ -86,7 +93,10 @@ export const getWorker = <T = any, R = any, N extends string = string>(
   const worker = new Worker<T, R, N>(name, processor, {
     connection,
     prefix: BULLMQ_PREFIX || undefined,
-    concurrency: workerOptions?.concurrency ?? 5,
+    concurrency: workerOptions?.concurrency ?? defaultWorkerOptions.concurrency,
+    lockDuration: workerOptions?.lockDuration ?? defaultWorkerOptions.lockDuration,
+    lockRenewTime: workerOptions?.lockRenewTime ?? defaultWorkerOptions.lockRenewTime,
+    maxStalledCount: workerOptions?.maxStalledCount ?? defaultWorkerOptions.maxStalledCount,
     ...(workerOptions || {}),
   });
 
