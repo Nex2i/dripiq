@@ -14,7 +14,7 @@ function startTestQueuePublisher() {
       });
     } catch (err) {
       // Non-fatal test publisher error
-      // eslint-disable-next-line no-console
+
       console.error('Test publisher failed to enqueue message', err);
     }
   }, 5000);

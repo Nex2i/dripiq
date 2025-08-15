@@ -1,4 +1,12 @@
-import { Queue, Worker, QueueEvents, QueueOptions, WorkerOptions, QueueEventsOptions, type Processor } from 'bullmq';
+import {
+  Queue,
+  Worker,
+  QueueEvents,
+  QueueOptions,
+  WorkerOptions,
+  QueueEventsOptions,
+  type Processor,
+} from 'bullmq';
 import Redis, { type RedisOptions } from 'ioredis';
 import { logger } from '@/libs/logger';
 import { IS_PRODUCTION, BULLMQ_PREFIX } from '@/config';
@@ -7,12 +15,16 @@ export type RedisConnectionOptions = RedisOptions & { maxRetriesPerRequest?: num
 
 let sharedRedisConnection: Redis | null = null;
 
-export const createRedisConnection = (redisUrl?: string, overrides?: Partial<RedisConnectionOptions>) => {
+export const createRedisConnection = (
+  redisUrl?: string,
+  overrides?: Partial<RedisConnectionOptions>
+) => {
   if (sharedRedisConnection) return sharedRedisConnection;
 
   const url = redisUrl || process.env.REDIS_URL || '';
   if (!url) {
-    const message = 'REDIS_URL is required but missing. Set it in your environment to start the server.';
+    const message =
+      'REDIS_URL is required but missing. Set it in your environment to start the server.';
     logger.error(message);
     throw new Error(message);
   }
@@ -79,7 +91,12 @@ export const getWorker = <T = any, R = any, N extends string = string>(
   });
 
   worker.on('failed', (job, err) => {
-    logger.error('BullMQ job failed', { queue: name, jobId: job?.id, name: (job as any)?.name, err: String(err) });
+    logger.error('BullMQ job failed', {
+      queue: name,
+      jobId: job?.id,
+      name: (job as any)?.name,
+      err: String(err),
+    });
   });
 
   worker.on('completed', (job) => {

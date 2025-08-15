@@ -1,6 +1,9 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { Type } from '@sinclair/typebox';
-import { MessagePublisherService, PublishMessagePayload } from '@/modules/messages/publisher.service';
+import {
+  MessagePublisherService,
+  PublishMessagePayload,
+} from '@/modules/messages/publisher.service';
 
 const messagesRoutes: FastifyPluginAsyncTypebox = async (app) => {
   app.post(
