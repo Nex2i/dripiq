@@ -3,10 +3,9 @@ import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { updateLeadStatuses } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
-import { EmbeddingsService } from './embeddings.service';
-import { LeadAnalyzerService } from './leadAnalyzer.service';
-import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
 import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
+import { EmbeddingsService } from './embeddings.service';
+import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
@@ -53,7 +52,7 @@ export const SiteAnalyzerService = {
           [],
           [LEAD_STATUS.SCRAPING_SITE]
         );
-        
+
         // NEW: Use queue-based processing instead of direct call
         await LeadAnalysisPublisher.publish({
           tenantId: metadata.tenantId,

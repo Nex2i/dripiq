@@ -3,7 +3,10 @@ import { getWorker } from '@/libs/bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
-import { CampaignCreationPublisher, type CampaignCreationJobPayload } from './campaignCreation.publisher.service';
+import {
+  CampaignCreationPublisher,
+  type CampaignCreationJobPayload,
+} from './campaignCreation.publisher.service';
 import type { LeadAnalysisJobPayload } from './leadAnalysis.publisher.service';
 
 export type LeadAnalysisJobResult = {
@@ -13,7 +16,9 @@ export type LeadAnalysisJobResult = {
   error?: string;
 };
 
-async function processLeadAnalysis(job: Job<LeadAnalysisJobPayload>): Promise<LeadAnalysisJobResult> {
+async function processLeadAnalysis(
+  job: Job<LeadAnalysisJobPayload>
+): Promise<LeadAnalysisJobResult> {
   const { tenantId, leadId, metadata } = job.data;
 
   try {
@@ -37,24 +42,26 @@ async function processLeadAnalysis(job: Job<LeadAnalysisJobPayload>): Promise<Le
     });
 
     // Create campaign creation jobs for each contact found
-    const campaignJobs: CampaignCreationJobPayload[] = analysisResult.contactsFound.map(contact => ({
-      tenantId,
-      leadId,
-      contactId: contact.id,
-      userId: undefined, // Automated creation, no specific user
-      metadata: {
-        ...metadata,
-        automatedCreation: true,
-        parentJobId: job.id,
-      },
-    }));
+    const campaignJobs: CampaignCreationJobPayload[] = analysisResult.contactsFound.map(
+      (contact) => ({
+        tenantId,
+        leadId,
+        contactId: contact.id,
+        userId: undefined, // Automated creation, no specific user
+        metadata: {
+          ...metadata,
+          automatedCreation: true,
+          parentJobId: job.id,
+        },
+      })
+    );
 
     let campaignJobsCreated = 0;
     if (campaignJobs.length > 0) {
       try {
         await CampaignCreationPublisher.publishBatch(campaignJobs);
         campaignJobsCreated = campaignJobs.length;
-        
+
         logger.info('[LeadAnalysisWorker] Published campaign creation jobs', {
           jobId: job.id,
           tenantId,
@@ -78,7 +85,6 @@ async function processLeadAnalysis(job: Job<LeadAnalysisJobPayload>): Promise<Le
       contactsFound: analysisResult.contactsFound.length,
       campaignJobsCreated,
     };
-
   } catch (error) {
     logger.error('[LeadAnalysisWorker] Lead analysis failed', {
       jobId: job.id,
@@ -101,21 +107,21 @@ const leadAnalysisWorker = getWorker<LeadAnalysisJobPayload, LeadAnalysisJobResu
   QUEUE_NAMES.lead_analysis,
   async (job: Job<LeadAnalysisJobPayload>) => {
     if (job.name !== JOB_NAMES.lead_analysis.process) {
-      logger.warn('[LeadAnalysisWorker] Skipping unexpected job name', { 
-        jobId: job.id, 
-        jobName: job.name 
+      logger.warn('[LeadAnalysisWorker] Skipping unexpected job name', {
+        jobId: job.id,
+        jobName: job.name,
       });
-      return { 
-        success: false, 
-        contactsFound: 0, 
-        campaignJobsCreated: 0, 
-        error: 'Unexpected job name' 
+      return {
+        success: false,
+        contactsFound: 0,
+        campaignJobsCreated: 0,
+        error: 'Unexpected job name',
       };
     }
 
     return processLeadAnalysis(job);
   },
-  { 
+  {
     concurrency: 2, // Limit concurrency for AI-intensive operations
   }
 );

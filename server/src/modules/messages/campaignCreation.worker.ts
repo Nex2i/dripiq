@@ -14,7 +14,9 @@ export type CampaignCreationJobResult = {
   cached?: boolean;
 };
 
-async function processCampaignCreation(job: Job<CampaignCreationJobPayload>): Promise<CampaignCreationJobResult> {
+async function processCampaignCreation(
+  job: Job<CampaignCreationJobPayload>
+): Promise<CampaignCreationJobResult> {
   const { tenantId, leadId, contactId, userId, metadata } = job.data;
 
   try {
@@ -50,7 +52,6 @@ async function processCampaignCreation(job: Job<CampaignCreationJobPayload>): Pr
       // Note: The campaignId is created internally by contactCampaignPlanService.persistPlan
       // We could potentially return it if needed by modifying the generateContactStrategy service
     };
-
   } catch (error) {
     logger.error('[CampaignCreationWorker] Campaign creation failed', {
       jobId: job.id,
@@ -62,10 +63,11 @@ async function processCampaignCreation(job: Job<CampaignCreationJobPayload>): Pr
     });
 
     // Don't retry if it's a validation or configuration error
-    const isRetryableError = !(error instanceof Error) || 
-      (!(error.message.includes('not found')) && 
-       !(error.message.includes('invalid')) && 
-       !(error.message.includes('access denied')));
+    const isRetryableError =
+      !(error instanceof Error) ||
+      (!error.message.includes('not found') &&
+        !error.message.includes('invalid') &&
+        !error.message.includes('access denied'));
 
     if (!isRetryableError) {
       logger.warn('[CampaignCreationWorker] Non-retryable error, marking as failed', {
@@ -90,21 +92,21 @@ const campaignCreationWorker = getWorker<CampaignCreationJobPayload, CampaignCre
   QUEUE_NAMES.campaign_creation,
   async (job: Job<CampaignCreationJobPayload>) => {
     if (job.name !== JOB_NAMES.campaign_creation.create) {
-      logger.warn('[CampaignCreationWorker] Skipping unexpected job name', { 
-        jobId: job.id, 
-        jobName: job.name 
+      logger.warn('[CampaignCreationWorker] Skipping unexpected job name', {
+        jobId: job.id,
+        jobName: job.name,
       });
-      return { 
-        success: false, 
+      return {
+        success: false,
         contactId: job.data.contactId,
         leadId: job.data.leadId,
-        error: 'Unexpected job name' 
+        error: 'Unexpected job name',
       };
     }
 
     return processCampaignCreation(job);
   },
-  { 
+  {
     concurrency: 3, // Limit concurrency for AI-intensive operations
   }
 );

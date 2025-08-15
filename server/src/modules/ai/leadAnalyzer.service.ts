@@ -25,15 +25,17 @@ export const LeadAnalyzerService = {
     );
 
     // Return contact information for automated campaign creation
-    const contacts = contactExtractionResult.status === 'fulfilled' 
-      ? contactExtractionResult.value?.contacts || []
-      : [];
+    const contacts =
+      contactExtractionResult.status === 'fulfilled'
+        ? contactExtractionResult.value?.contacts || []
+        : [];
 
     return {
       contactsFound: contacts,
-      contactsCreated: contactExtractionResult.status === 'fulfilled' 
-        ? contactExtractionResult.value?.contactsCreated || 0
-        : 0,
+      contactsCreated:
+        contactExtractionResult.status === 'fulfilled'
+          ? contactExtractionResult.value?.contactsCreated || 0
+          : 0,
       siteAnalysisSuccess: siteAnalysisResult.status === 'fulfilled',
       contactExtractionSuccess: contactExtractionResult.status === 'fulfilled',
     };
