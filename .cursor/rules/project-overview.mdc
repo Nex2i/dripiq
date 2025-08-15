@@ -7,3 +7,5 @@ alwaysApply: true
 This project is a monorepo with the client and backend. 
 
 Before starting any work always return back first your plan before writing or commiting any code.
+
+Before pushing a new commit run the scripts inside `ci.yml`. If any fail fix the issue, if it is a lint run the `lint --fix` command for the linter to fix for you.
