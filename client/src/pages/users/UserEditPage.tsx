@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
+import { UrlValidator } from '../../utils/urlValidation'
 import {
   useMySenderIdentity,
   useCreateMySenderIdentity,
@@ -40,23 +41,11 @@ export default function UserEditPage() {
   const [senderError, setSenderError] = useState<string | null>(null)
   const [pasteValue, setPasteValue] = useState('')
 
-  // Validate calendar link URL
-  const validateCalendarLink = useCallback((url: string, initialValue: string = initialCalendarLink): string => {
-    if (!url.trim()) {
-      // If there was initially a calendar link, don't allow empty
-      if (initialValue.trim()) {
-        return 'Calendar link cannot be removed once set. Please provide a valid URL.'
-      }
-      return '' // Empty is ok if there was no initial value
-    }
-    
-    try {
-      new URL(url.trim())
-      return '' // Valid URL
-    } catch {
-      return 'Please enter a valid URL (e.g., https://calendly.com/your-link)'
-    }
-  }, [initialCalendarLink])
+  // Validate calendar link using utility
+  const validateCalendarLink = (url: string): string => {
+    const result = UrlValidator.validateCalendarLinkStrict(url, initialCalendarLink)
+    return result.error || ''
+  }
 
   useEffect(() => {
     if (!isAdminMode && selfUser) {
@@ -80,7 +69,7 @@ export default function UserEditPage() {
           const calLink = u.calendarLink || ''
           setCalendarLink(calLink)
           setInitialCalendarLink(calLink)
-          setCalendarLinkError(validateCalendarLink(calLink, calLink))
+          setCalendarLinkError(validateCalendarLink(calLink))
           setFromName(u.name || '')
           setFromEmail(u.email)
         } else if (selfUser) {
@@ -89,7 +78,7 @@ export default function UserEditPage() {
           const calLink = selfUser.calendarLink || ''
           setCalendarLink(calLink)
           setInitialCalendarLink(calLink)
-          setCalendarLinkError(validateCalendarLink(calLink, calLink))
+          setCalendarLinkError(validateCalendarLink(calLink))
         }
       } catch (e: any) {
         if (!active) return
