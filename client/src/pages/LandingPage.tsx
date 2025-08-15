@@ -71,6 +71,12 @@ function LandingPage() {
             </div>
             <div className="flex items-center space-x-4">
               <button
+                onClick={() => navigate({ to: '/about' })}
+                className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
+              >
+                About
+              </button>
+              <button
                 onClick={handleContactSales}
                 className="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
               >
@@ -260,6 +266,12 @@ function LandingPage() {
               className="text-gray-400 hover:text-white transition-colors duration-200"
             >
               Contact Sales
+            </button>
+            <button
+              onClick={() => navigate({ to: '/about' })}
+              className="text-gray-400 hover:text-white transition-colors duration-200"
+            >
+              About
             </button>
             <button
               onClick={() => navigate({ to: '/privacy-policy' })}
