@@ -2,9 +2,6 @@ import fp from 'fastify-plugin';
 import { getQueueEvents, shutdownQueues } from '@/libs/bullmq';
 import { QUEUE_NAMES } from '@/constants/queues';
 
-// Import workers
-import { leadAnalysisWorker, campaignCreationWorker } from '@/workers';
-
 export default fp(async function queuesPlugin(app) {
   // Initialize queue events listeners for monitoring
   const leadAnalysisEvents = getQueueEvents(QUEUE_NAMES.lead_analysis);
@@ -34,7 +31,7 @@ export default fp(async function queuesPlugin(app) {
   // Graceful shutdown
   app.addHook('onClose', async () => {
     app.log.info('Shutting down queue workers and connections');
-    await Promise.all([leadAnalysisWorker.close(), campaignCreationWorker.close()]);
+
     await shutdownQueues();
   });
 });
