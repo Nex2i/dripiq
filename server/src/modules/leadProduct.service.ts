@@ -1,6 +1,6 @@
+import { logger } from '@/libs/logger';
 import { leadProductRepository } from '../repositories';
 import type { LeadProduct } from '../db/schema';
-import { logger } from '@/libs/logger';
 
 /**
  * Get all products attached to a specific lead

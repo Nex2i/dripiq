@@ -1,7 +1,7 @@
+import { logger } from '@/libs/logger';
 import { RoleService } from '../modules/role.service';
 import { roles } from './schema';
 import { db } from './index';
-import { logger } from '@/libs/logger';
 
 /**
  * Seed the database with predefined roles and permissions

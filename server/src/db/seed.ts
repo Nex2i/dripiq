@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { TenantService } from '@/modules/tenant.service';
 import { RoleService } from '@/modules/role.service';
+import { logger } from '@/libs/logger';
 import { tenants, users, userTenants } from './schema';
 import { seedRoles } from './seed-roles';
 import { db } from './index';
-import { logger } from '@/libs/logger';
 
 async function seed() {
   try {

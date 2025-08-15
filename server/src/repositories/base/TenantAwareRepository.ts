@@ -1,7 +1,7 @@
 import { eq, and, inArray } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
-import { BaseRepository } from './BaseRepository';
 import { logger } from '@/libs/logger';
+import { BaseRepository } from './BaseRepository';
 
 export abstract class TenantAwareRepository<
   TTable extends PgTable,
