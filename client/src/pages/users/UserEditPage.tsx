@@ -119,7 +119,7 @@ export default function UserEditPage() {
       
       const svc = getUsersService()
       if (isAdminMode) {
-        await svc.updateUserProfile(targetUserId!, name.trim(), calendarLink.trim() || undefined)
+        await svc.updateUserProfile(targetUserId!, { name: name.trim(), calendarLink: calendarLink.trim() || undefined })
       } else {
         await svc.updateMyProfile({ name: name.trim(), calendarLink: calendarLink.trim() || undefined })
         await refreshUser()
