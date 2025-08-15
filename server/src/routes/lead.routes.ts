@@ -552,8 +552,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       const userId = user?.id;
 
       try {
-        const _startTime = Date.now();
-
         const result = await generateContactStrategy({
           leadId,
           contactId,
