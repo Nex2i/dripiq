@@ -11,7 +11,7 @@ export const LeadAnalyzerService = {
     const { url } = await getLeadById(tenantId, leadId);
     const domain = url.getDomain();
 
-    await Promise.allSettled([
+    const [siteAnalysisResult, contactExtractionResult] = await Promise.allSettled([
       LeadAnalyzerService.summarizeSite(tenantId, leadId, domain),
       LeadAnalyzerService.extractContacts(tenantId, leadId, domain),
     ]);
@@ -23,6 +23,20 @@ export const LeadAnalyzerService = {
       [LEAD_STATUS.PROCESSED],
       [LEAD_STATUS.ANALYZING_SITE, LEAD_STATUS.EXTRACTING_CONTACTS]
     );
+
+    // Return contact information for automated campaign creation
+    const contacts = contactExtractionResult.status === 'fulfilled' 
+      ? contactExtractionResult.value?.contacts || []
+      : [];
+
+    return {
+      contactsFound: contacts,
+      contactsCreated: contactExtractionResult.status === 'fulfilled' 
+        ? contactExtractionResult.value?.contactsCreated || 0
+        : 0,
+      siteAnalysisSuccess: siteAnalysisResult.status === 'fulfilled',
+      contactExtractionSuccess: contactExtractionResult.status === 'fulfilled',
+    };
   },
   summarizeSite: async (tenantId: string, leadId: string, domain: string) => {
     await updateLeadStatuses(

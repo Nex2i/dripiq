@@ -6,6 +6,7 @@ import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { EmbeddingsService } from './embeddings.service';
 import { LeadAnalyzerService } from './leadAnalyzer.service';
 import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
+import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
@@ -52,7 +53,16 @@ export const SiteAnalyzerService = {
           [],
           [LEAD_STATUS.SCRAPING_SITE]
         );
-        LeadAnalyzerService.analyze(metadata.tenantId, metadata.leadId);
+        
+        // NEW: Use queue-based processing instead of direct call
+        await LeadAnalysisPublisher.publish({
+          tenantId: metadata.tenantId,
+          leadId: metadata.leadId,
+          metadata: {
+            firecrawlJobId: payload.id,
+            crawlCompleteAt: new Date().toISOString(),
+          },
+        });
         break;
 
       case 'organization_site':
