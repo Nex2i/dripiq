@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import { MessagePublisherService } from '@/modules/messages/publisher.service';
 import { logger } from '@/libs/logger';
+import { IS_PRODUCTION } from '@/config';
 
 // TODO - Remove, testing logic only
 function startTestQueuePublisher() {
@@ -23,6 +24,11 @@ function startTestQueuePublisher() {
 }
 
 export default fp(async function testQueuePublisherPlugin(app) {
+  if (IS_PRODUCTION) {
+    logger.info('Skipping test queue publisher in production');
+    return;
+  }
+
   const interval = startTestQueuePublisher();
 
   app.addHook('onClose', async () => {
