@@ -10,6 +10,16 @@ export type ProcessMessageJob = {
   metadata?: Record<string, unknown>;
 };
 
+// TODO - Remove, testing logic only
+function logTestMessage(job: Job<ProcessMessageJob>) {
+  // eslint-disable-next-line no-console
+  console.log(`[Worker] Test message received:`, {
+    id: job.id,
+    name: job.name,
+    data: job.data,
+  });
+}
+
 const worker = getWorker<ProcessMessageJob, { ok: boolean }>(
   QUEUE_NAMES.messages,
   async (job: Job<ProcessMessageJob>) => {
@@ -20,7 +30,7 @@ const worker = getWorker<ProcessMessageJob, { ok: boolean }>(
       return { ok: true };
     }
 
-    logger.info('Processing message job', { jobId: job.id, data });
+    logTestMessage(job);
 
     return { ok: true };
   },
