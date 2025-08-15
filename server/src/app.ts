@@ -10,7 +10,7 @@ import { CREDENTIALS } from '@/config';
 import { schema } from '@/utils/validateEnv';
 import '@/extensions';
 import initIac from '@/utils/iac';
-import { baseLogger, logger } from '@/libs/logger';
+import { baseLogger, logger, loggerOptions } from '@/libs/logger';
 import { globalErrorHandler } from '@/utils/globalErrorHandler';
 
 async function startServer() {
@@ -23,7 +23,9 @@ async function startServer() {
       },
       plugins: [],
     },
-    logger: baseLogger, // Use our custom logger instead of true
+    // Fastify v5 expects either boolean, a pino logger options object, or a Fastify-compatible logger
+    // Passing the options object avoids the FST_ERR_LOG_INVALID_LOGGER_CONFIG error
+    logger: loggerOptions,
     trustProxy: true,
     genReqId: (_req) => {
       // Generate a simple request ID

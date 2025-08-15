@@ -1,6 +1,6 @@
 import pino, { Logger, LoggerOptions } from 'pino';
 
-const loggerOptions: LoggerOptions = {
+export const loggerOptions: LoggerOptions = {
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   formatters: {
     level: (label) => {
