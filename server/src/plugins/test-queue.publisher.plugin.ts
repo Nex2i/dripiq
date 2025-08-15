@@ -1,5 +1,4 @@
 import fp from 'fastify-plugin';
-import { IS_PRODUCTION } from '@/config';
 import { MessagePublisherService } from '@/modules/messages/publisher.service';
 import { logger } from '@/libs/logger';
 
