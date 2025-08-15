@@ -7,8 +7,6 @@ import { logger } from '@/libs/logger';
 function startTestQueuePublisher() {
   const interval = setInterval(async () => {
     try {
-      logger.info('Publishing test message');
-
       await MessagePublisherService.publish({
         tenantId: 'test-tenant',
         userId: 'test-user',
@@ -18,7 +16,7 @@ function startTestQueuePublisher() {
     } catch (err) {
       // Non-fatal test publisher error
 
-      console.error('Test publisher failed to enqueue message', err);
+      logger.error('Test publisher failed to enqueue message', err);
     }
   }, 5000);
 
@@ -26,11 +24,6 @@ function startTestQueuePublisher() {
 }
 
 export default fp(async function testQueuePublisherPlugin(app) {
-  if (IS_PRODUCTION) {
-    app.log.info('Skipping test queue publisher in production');
-    return;
-  }
-
   const interval = startTestQueuePublisher();
 
   app.addHook('onClose', async () => {
