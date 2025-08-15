@@ -3,19 +3,14 @@ import { getQueueEvents, shutdownQueues } from '@/libs/bullmq';
 import { QUEUE_NAMES } from '@/constants/queues';
 
 // Import workers
-import { messagesWorker, leadAnalysisWorker, campaignCreationWorker } from '@/workers';
+import { leadAnalysisWorker, campaignCreationWorker } from '@/workers';
 
 export default fp(async function queuesPlugin(app) {
   // Initialize queue events listeners for monitoring
-  const messagesEvents = getQueueEvents(QUEUE_NAMES.messages);
   const leadAnalysisEvents = getQueueEvents(QUEUE_NAMES.lead_analysis);
   const campaignCreationEvents = getQueueEvents(QUEUE_NAMES.campaign_creation);
 
   // Set up event listeners for job failures
-  messagesEvents.on('failed', ({ jobId, failedReason }) => {
-    app.log.error({ jobId, failedReason }, 'Message job failed');
-  });
-
   leadAnalysisEvents.on('failed', ({ jobId, failedReason }) => {
     app.log.error({ jobId, failedReason }, 'Lead analysis job failed');
   });
@@ -39,11 +34,7 @@ export default fp(async function queuesPlugin(app) {
   // Graceful shutdown
   app.addHook('onClose', async () => {
     app.log.info('Shutting down queue workers and connections');
-    await Promise.all([
-      messagesWorker.close(),
-      leadAnalysisWorker.close(),
-      campaignCreationWorker.close(),
-    ]);
+    await Promise.all([leadAnalysisWorker.close(), campaignCreationWorker.close()]);
     await shutdownQueues();
   });
 });

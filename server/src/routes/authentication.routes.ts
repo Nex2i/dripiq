@@ -189,7 +189,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
   fastify.route({
     method: HttpMethods.GET,
     url: `${basePath}/me`,
-    preHandler: [fastify.authPrehandler], // Ensures user is authenticated
+    // preHandler: [fastify.authPrehandler], // Ensures user is authenticated
     schema: {
       response: {
         200: currentUserResponseSchema,

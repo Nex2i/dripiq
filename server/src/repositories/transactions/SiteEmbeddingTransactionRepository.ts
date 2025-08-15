@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import db from '@/libs/drizzleClient';
 import { SiteEmbeddingDomain, siteEmbeddingDomains } from '@/db/schema';
+import { db } from '@/db';
 
 export class SiteEmbeddingTransactionRepository {
   /**
