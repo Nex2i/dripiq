@@ -59,7 +59,10 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       summary: 'Update own profile',
       description: "Update the authenticated user's profile (name only).",
     },
-    handler: async (request: FastifyRequest<{ Body: { name: string; calendarLink?: string } }>, reply: FastifyReply) => {
+    handler: async (
+      request: FastifyRequest<{ Body: { name: string; calendarLink?: string } }>,
+      reply: FastifyReply
+    ) => {
       try {
         const { name, calendarLink } = request.body;
         const supabaseId = (request as any).user?.supabaseId as string;
@@ -67,7 +70,12 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         const updated = await UserService.updateUser(supabaseId, { name, calendarLink });
         reply.send({
           message: 'Profile updated',
-          user: { id: updated.id, email: updated.email, name: updated.name, calendarLink: updated.calendarLink },
+          user: {
+            id: updated.id,
+            email: updated.email,
+            name: updated.name,
+            calendarLink: updated.calendarLink,
+          },
         });
       } catch (error: any) {
         fastify.log.error(`Error updating profile: ${error.message}`);
@@ -89,7 +97,10 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       description: "Update a user's profile (name only) within current tenant (admin only).",
     },
     handler: async (
-      request: FastifyRequest<{ Params: { userId: string }; Body: { name: string; calendarLink?: string } }>,
+      request: FastifyRequest<{
+        Params: { userId: string };
+        Body: { name: string; calendarLink?: string };
+      }>,
       reply: FastifyReply
     ) => {
       try {
@@ -110,7 +121,12 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         const updated = await UserService.updateUser(targetUser.supabaseId, { name, calendarLink });
         reply.send({
           message: 'User updated',
-          user: { id: updated.id, email: updated.email, name: updated.name, calendarLink: updated.calendarLink },
+          user: {
+            id: updated.id,
+            email: updated.email,
+            name: updated.name,
+            calendarLink: updated.calendarLink,
+          },
         });
       } catch (error: any) {
         fastify.log.error(`Error updating user profile: ${error.message}`);
