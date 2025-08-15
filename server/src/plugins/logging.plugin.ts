@@ -10,6 +10,14 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     // Store request start time for response time calculation
     requestStartTimes.set(request.id, Date.now());
 
+    if (request.url.includes('/health')) {
+      return;
+    }
+
+    if (request.method === 'OPTIONS') {
+      return;
+    }
+
     const logData = {
       reqId: request.id,
       req: {
@@ -23,7 +31,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
       },
     };
 
-    fastify.log.info(logData, 'incoming request');
+    fastify.log.info(logData, `incoming request ${request.method} ${request.url}`);
   });
 
   // Log outgoing responses with structured data
