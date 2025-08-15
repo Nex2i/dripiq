@@ -30,11 +30,11 @@
     "test": "ENV_FILE=./config/.env.test jest",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings=0",
     "lint:fix": "npm run lint -- --fix",
-    "worker": "node dist/modules/messages/worker.run.js",
-    "dev:worker": "tsx src/modules/messages/worker.run.ts",
+    "workers": "node dist/workers/worker.run.js",
+    "dev:workers": "tsx src/workers/worker.run.ts",
     "dev:prepare": "npm run install:all && npm run clear:dist && npm run db:deploy",
-    "dev:both": "npm run dev:prepare && concurrently -n server,worker -c green,cyan --kill-others-on-fail \"npm run nodemon\" \"npm run dev:worker\"",
-    "start:both": "npm run build && concurrently -n server,worker -c green,cyan --kill-others-on-fail \"npm run start\" \"npm run worker\""
+    "dev:both": "npm run dev:prepare && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run nodemon\" \"npm run dev:workers\"",
+    "start:both": "npm run build && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run start\" \"npm run workers\""
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.0",
