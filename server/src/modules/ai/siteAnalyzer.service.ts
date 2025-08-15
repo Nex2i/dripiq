@@ -45,7 +45,6 @@ export const SiteAnalyzerService = {
 
     switch (metadata.type) {
       case 'lead_site':
-        // Remove "Scraping Site" status when scraping is complete
         await updateLeadStatuses(
           metadata.tenantId,
           metadata.leadId,
@@ -53,7 +52,6 @@ export const SiteAnalyzerService = {
           [LEAD_STATUS.SCRAPING_SITE]
         );
 
-        // NEW: Use queue-based processing instead of direct call
         await LeadAnalysisPublisher.publish({
           tenantId: metadata.tenantId,
           leadId: metadata.leadId,

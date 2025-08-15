@@ -6,8 +6,8 @@ import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import {
   CampaignCreationPublisher,
   type CampaignCreationJobPayload,
-} from './campaignCreation.publisher.service';
-import type { LeadAnalysisJobPayload } from './leadAnalysis.publisher.service';
+} from '@/modules/messages/campaignCreation.publisher.service';
+import type { LeadAnalysisJobPayload } from '@/modules/messages/leadAnalysis.publisher.service';
 
 export type LeadAnalysisJobResult = {
   success: boolean;

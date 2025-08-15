@@ -19,7 +19,7 @@ function logTestMessage(job: Job<ProcessMessageJob>) {
   });
 }
 
-const worker = getWorker<ProcessMessageJob, { ok: boolean }>(
+const messagesWorker = getWorker<ProcessMessageJob, { ok: boolean }>(
   QUEUE_NAMES.messages,
   async (job: Job<ProcessMessageJob>) => {
     if (job.name !== JOB_NAMES.messages.process) {
@@ -34,4 +34,4 @@ const worker = getWorker<ProcessMessageJob, { ok: boolean }>(
   { concurrency: 5 }
 );
 
-export default worker;
+export default messagesWorker;

@@ -3,9 +3,7 @@ import { getQueueEvents, shutdownQueues } from '@/libs/bullmq';
 import { QUEUE_NAMES } from '@/constants/queues';
 
 // Import workers
-import messagesWorker from '@/modules/messages/worker';
-import leadAnalysisWorker from '@/modules/messages/leadAnalysis.worker';
-import campaignCreationWorker from '@/modules/messages/campaignCreation.worker';
+import { messagesWorker, leadAnalysisWorker, campaignCreationWorker } from '@/workers';
 
 export default fp(async function queuesPlugin(app) {
   // Initialize queue events listeners for monitoring

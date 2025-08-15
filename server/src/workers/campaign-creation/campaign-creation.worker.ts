@@ -3,7 +3,7 @@ import { getWorker } from '@/libs/bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 import { generateContactStrategy } from '@/modules/ai/contactStrategy.service';
-import type { CampaignCreationJobPayload } from './campaignCreation.publisher.service';
+import type { CampaignCreationJobPayload } from '@/modules/messages/campaignCreation.publisher.service';
 
 export type CampaignCreationJobResult = {
   success: boolean;
@@ -105,9 +105,6 @@ const campaignCreationWorker = getWorker<CampaignCreationJobPayload, CampaignCre
     }
 
     return processCampaignCreation(job);
-  },
-  {
-    concurrency: 3, // Limit concurrency for AI-intensive operations
   }
 );
 
