@@ -1,4 +1,4 @@
-import { UrlValidator, UrlValidationResult } from './urlValidation';
+import { UrlValidator, type UrlValidationResult } from './urlValidation';
 
 describe('UrlValidator', () => {
   describe('isValidUrl', () => {
