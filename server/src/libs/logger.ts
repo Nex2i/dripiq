@@ -2,7 +2,7 @@ import pino, { Logger, LoggerOptions } from 'pino';
 
 // highlight.io configuration
 const highlightConfig = {
-  projectID: process.env.HIGHLIGHT_PROJECT_ID || '', // You'll need to set this in your environment
+  projectID: process.env.HIGHLIGHT_PROJECT_ID || '130249',
   serviceName: process.env.SERVICE_NAME || 'dripiq-backend',
   serviceVersion: process.env.SERVICE_VERSION || 'latest',
   environment: process.env.NODE_ENV || 'development',
