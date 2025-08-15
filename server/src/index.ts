@@ -10,7 +10,6 @@ const PORT: number = Number(process.env.PORT || 3001);
   try {
     const app = await App();
 
-    logger.info('PORT from env', { port: process.env.PORT });
     logger.info('PORT', { port: PORT });
 
     app.listen({ port: Number(PORT), host: '0.0.0.0' }, () => {
