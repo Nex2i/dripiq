@@ -121,7 +121,7 @@ export default function UserEditPage() {
       if (isAdminMode) {
         await svc.updateUserProfile(targetUserId!, name.trim(), calendarLink.trim() || undefined)
       } else {
-        await svc.updateMyProfile(name.trim(), calendarLink.trim() || undefined)
+        await svc.updateMyProfile({ name: name.trim(), calendarLink: calendarLink.trim() || undefined })
         await refreshUser()
       }
       navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })

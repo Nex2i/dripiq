@@ -41,7 +41,7 @@ class UsersService {
     return res.json()
   }
 
-  async updateMyProfile(name: string, calendarLink?: string): Promise<{ message: string; user: SimpleUser }> {
+  async updateMyProfile(profileData: { name: string; calendarLink?: string }): Promise<{ message: string; user: SimpleUser }> {
     const authHeaders = await authService.getAuthHeaders()
     const res = await fetch(`${this.baseUrl}/me/profile`, {
       method: 'PUT',
@@ -49,7 +49,7 @@ class UsersService {
         'Content-Type': 'application/json',
         ...authHeaders,
       },
-      body: JSON.stringify({ name, calendarLink }),
+      body: JSON.stringify(profileData),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
