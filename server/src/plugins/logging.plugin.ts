@@ -6,7 +6,7 @@ const requestStartTimes = new Map<string, number>();
 
 const loggingPlugin = async (fastify: FastifyInstance) => {
   // Log incoming requests with flattened properties
-  fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.addHook('onRequest', async (request: FastifyRequest, _reply: FastifyReply) => {
     // Store request start time for response time calculation
     requestStartTimes.set(request.id, Date.now());
 
@@ -28,10 +28,10 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
   fastify.addHook('onResponse', async (request: FastifyRequest, reply: FastifyReply) => {
     const startTime = requestStartTimes.get(request.id);
     const responseTime = startTime ? Date.now() - startTime : undefined;
-    
+
     // Clean up the stored start time
     requestStartTimes.delete(request.id);
-    
+
     const logData = {
       reqId: request.id,
       method: request.method,
@@ -46,21 +46,24 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
   });
 
   // Log errors with flattened properties
-  fastify.addHook('onError', async (request: FastifyRequest, reply: FastifyReply, error: Error) => {
-    // Clean up the stored start time on error
-    requestStartTimes.delete(request.id);
+  fastify.addHook(
+    'onError',
+    async (request: FastifyRequest, _reply: FastifyReply, error: Error) => {
+      // Clean up the stored start time on error
+      requestStartTimes.delete(request.id);
 
-    const logData = {
-      reqId: request.id,
-      method: request.method,
-      url: request.url,
-      errorName: error.name,
-      errorMessage: error.message,
-      stack: error.stack,
-    };
+      const logData = {
+        reqId: request.id,
+        method: request.method,
+        url: request.url,
+        errorName: error.name,
+        errorMessage: error.message,
+        stack: error.stack,
+      };
 
-    fastify.log.error(logData, 'request error');
-  });
+      fastify.log.error(logData, 'request error');
+    }
+  );
 };
 
 export default fp(loggingPlugin, {

@@ -25,7 +25,7 @@ async function startServer() {
     },
     logger: baseLogger, // Use our custom logger instead of true
     trustProxy: true,
-    genReqId: (req) => {
+    genReqId: (_req) => {
       // Generate a simple request ID
       return `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     },
