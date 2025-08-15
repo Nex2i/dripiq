@@ -9,7 +9,7 @@ import {
 } from 'bullmq';
 import Redis, { type RedisOptions } from 'ioredis';
 import { logger } from '@/libs/logger';
-import { IS_PRODUCTION, BULLMQ_PREFIX } from '@/config';
+import { BULLMQ_PREFIX } from '@/config';
 
 export type RedisConnectionOptions = RedisOptions & { maxRetriesPerRequest?: number | null };
 
@@ -30,7 +30,7 @@ export const createRedisConnection = (
   }
 
   const options: RedisConnectionOptions = {
-    maxRetriesPerRequest: IS_PRODUCTION ? 2 : null,
+    maxRetriesPerRequest: null,
     enableReadyCheck: true,
     lazyConnect: false,
     ...(overrides || {}),
