@@ -5,8 +5,8 @@ import {
   campaignTransitionRepository,
 } from '@/repositories';
 import type { ContactCampaign } from '@/db/schema';
-import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
-import { calculateScheduleTime } from '../campaign/scheduleUtils';
+import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
+import { calculateScheduleTime } from './scheduleUtils';
 
 export interface CampaignExecutionContext {
   tenantId: string;

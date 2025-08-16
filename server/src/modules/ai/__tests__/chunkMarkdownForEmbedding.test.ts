@@ -1,4 +1,4 @@
-import { chunkMarkdownForEmbedding, cleanMarkdown } from './chunkMarkdownForEmbedding';
+import { chunkMarkdownForEmbedding, cleanMarkdown } from '../chunkMarkdownForEmbedding';
 
 const makeMarkdown = (length: number, char = 'a') => Array(length).fill(char).join('');
 
