@@ -175,8 +175,8 @@ describe('Schedule Utils', () => {
         const result = calculateScheduleTime('PT1H', 'UTC', quietHours, duringQuietTime);
 
         // Should be moved to after quiet hours (7 AM next day)
-        expect(result.getHours()).toBe(7);
-        expect(result.getMinutes()).toBe(0);
+        expect(result.getUTCHours()).toBe(7);
+        expect(result.getUTCMinutes()).toBe(0);
       });
 
       it('should not modify time when outside quiet hours', () => {
@@ -611,7 +611,12 @@ describe('Schedule Utils', () => {
       const baseTime = new Date('2024-01-15T06:00:00.000Z'); // 6 AM UTC = 10 PM PST (previous day)
       const quietHours = { start: '22:00', end: '07:00' };
 
-      const scheduledTime = calculateScheduleTime('PT1H', 'America/Los_Angeles', quietHours, baseTime);
+      const scheduledTime = calculateScheduleTime(
+        'PT1H',
+        'America/Los_Angeles',
+        quietHours,
+        baseTime
+      );
 
       // Should be adjusted for Pacific timezone quiet hours
       expect(scheduledTime).toBeInstanceOf(Date);

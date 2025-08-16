@@ -79,8 +79,8 @@ function getTimeInTimezone(utcDate: Date, timezone: string): { hour: number; min
     });
 
     const parts = formatter.formatToParts(utcDate);
-    const hour = parseInt(parts.find(part => part.type === 'hour')?.value || '0', 10);
-    const minute = parseInt(parts.find(part => part.type === 'minute')?.value || '0', 10);
+    const hour = parseInt(parts.find((part) => part.type === 'hour')?.value || '0', 10);
+    const minute = parseInt(parts.find((part) => part.type === 'minute')?.value || '0', 10);
 
     return { hour, minute };
   } catch (error) {
@@ -96,21 +96,28 @@ function getTimeInTimezone(utcDate: Date, timezone: string): { hour: number; min
 /**
  * Creates a new Date in UTC that represents the same wall-clock time in the target timezone
  */
-function createDateInTimezone(year: number, month: number, day: number, hour: number, minute: number, timezone: string): Date {
+function createDateInTimezone(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  timezone: string
+): Date {
   try {
     // Create a temporary date in UTC
     const tempDate = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
-    
+
     // Get what this UTC time would be in the target timezone
     const { hour: targetHour, minute: targetMinute } = getTimeInTimezone(tempDate, timezone);
-    
+
     // Calculate the difference between what we want and what we got
     const wantedMinutes = hour * 60 + minute;
     const actualMinutes = targetHour * 60 + targetMinute;
     const offsetMinutes = wantedMinutes - actualMinutes;
-    
+
     // Adjust the UTC time by the offset
-    return new Date(tempDate.getTime() + (offsetMinutes * 60 * 1000));
+    return new Date(tempDate.getTime() + offsetMinutes * 60 * 1000);
   } catch (error) {
     logger.warn('Failed to create date in timezone, using UTC', {
       timezone,
@@ -164,9 +171,9 @@ export function applyQuietHours(
     });
 
     const parts = formatter.formatToParts(scheduledAt);
-    const year = parseInt(parts.find(part => part.type === 'year')?.value || '0', 10);
-    const month = parseInt(parts.find(part => part.type === 'month')?.value || '0', 10);
-    const day = parseInt(parts.find(part => part.type === 'day')?.value || '0', 10);
+    const year = parseInt(parts.find((part) => part.type === 'year')?.value || '0', 10);
+    const month = parseInt(parts.find((part) => part.type === 'month')?.value || '0', 10);
+    const day = parseInt(parts.find((part) => part.type === 'day')?.value || '0', 10);
 
     let adjustedYear = year;
     let adjustedMonth = month;
@@ -181,7 +188,14 @@ export function applyQuietHours(
     }
 
     // Create the adjusted date in the target timezone
-    const adjustedDate = createDateInTimezone(adjustedYear, adjustedMonth, adjustedDay, endHour || 0, endMin || 0, timezone);
+    const adjustedDate = createDateInTimezone(
+      adjustedYear,
+      adjustedMonth,
+      adjustedDay,
+      endHour || 0,
+      endMin || 0,
+      timezone
+    );
 
     return adjustedDate;
   } catch (error) {
@@ -191,26 +205,6 @@ export function applyQuietHours(
       error: error instanceof Error ? error.message : 'Unknown error',
     });
     return scheduledAt;
-  }
-}
-
-/**
- * Gets timezone offset in milliseconds for a given date and timezone
- */
-function getTimezoneOffset(timezone: string, date: Date): number {
-  try {
-    // Create a date formatter for the target timezone
-    const utcDate = new Date(date.toISOString());
-    const zonedTime = new Date(utcDate.toLocaleString('en-US', { timeZone: timezone }));
-    const utcTime = new Date(utcDate.toLocaleString('en-US', { timeZone: 'UTC' }));
-
-    return utcTime.getTime() - zonedTime.getTime();
-  } catch (error) {
-    logger.warn('Failed to calculate timezone offset', {
-      timezone,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return 0;
   }
 }
 
