@@ -138,47 +138,4 @@ export class ScheduledActionRepository extends TenantAwareRepository<
         )
       );
   }
-
-  // TODO: Add these methods when campaign execution is activated
-  /*
-  async listByCampaignForTenant(tenantId: string, campaignId: string): Promise<ScheduledAction[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          eq(this.table.campaignId, campaignId)
-        )
-      );
-  }
-
-  async countPendingByCampaignForTenant(tenantId: string, campaignId: string): Promise<number> {
-    const result = await this.db
-      .select({ id: this.table.id })
-      .from(this.table)
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          eq(this.table.campaignId, campaignId),
-          eq(this.table.status, 'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number])
-        )
-      );
-    return result.length;
-  }
-
-  async cancelByCampaignForTenant(tenantId: string, campaignId: string): Promise<ScheduledAction[]> {
-    return await this.db
-      .update(this.table)
-      .set({ status: 'canceled' as (typeof scheduledActionStatusEnum)['enumValues'][number] })
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          eq(this.table.campaignId, campaignId),
-          eq(this.table.status, 'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number])
-        )
-      )
-      .returning();
-  }
-  */
 }
