@@ -34,6 +34,7 @@ BULL_BOARD_PASSWORD=your_secure_password
 The dashboard monitors the following queues:
 - `lead_analysis` - Lead analysis processing jobs
 - `campaign_creation` - Campaign creation jobs
+- `campaign_execution` - Campaign node execution jobs (send emails, process events, etc.)
 
 ## Environment Configuration
 
