@@ -1,10 +1,10 @@
+import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
 import {
   normalizeCampaignPlanIds,
   validatePlanReferences,
   previewIdNormalization,
   isPlanNormalized,
 } from './planIdNormalizer';
-import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
 
 /**
  * Demonstration of the plan ID normalizer using the provided example

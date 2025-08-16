@@ -1,3 +1,4 @@
+import { logger } from '@/libs/logger';
 import {
   parseIsoDuration,
   calculateScheduleTime,
@@ -7,7 +8,6 @@ import {
   isValidTimeFormat,
   isValidTimezone,
 } from '../scheduleUtils';
-import { logger } from '@/libs/logger';
 
 // Mock the logger to avoid console output during tests
 jest.mock('@/libs/logger');
@@ -70,7 +70,7 @@ describe('Schedule Utils', () => {
     describe('Complex Durations', () => {
       it('should parse combined durations correctly', () => {
         // P1DT12H30M = 1 day + 12 hours + 30 minutes
-        const expected = (1 * 24 * 60 * 60 * 1000) + (12 * 60 * 60 * 1000) + (30 * 60 * 1000);
+        const expected = 1 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000 + 30 * 60 * 1000;
         expect(parseIsoDuration('P1DT12H30M')).toBe(expected);
       });
 
@@ -89,7 +89,7 @@ describe('Schedule Utils', () => {
 
       it('should handle decimal components', () => {
         // PT1.5H30.5M
-        const expected = (1.5 * 60 * 60 * 1000) + (30.5 * 60 * 1000);
+        const expected = 1.5 * 60 * 60 * 1000 + 30.5 * 60 * 1000;
         expect(parseIsoDuration('PT1.5H30.5M')).toBe(expected);
       });
     });
@@ -144,7 +144,7 @@ describe('Schedule Utils', () => {
       });
 
       it('should add delay to base time', () => {
-        const expected = new Date(mockBaseTime.getTime() + (2 * 60 * 60 * 1000)); // +2 hours
+        const expected = new Date(mockBaseTime.getTime() + 2 * 60 * 60 * 1000); // +2 hours
         const result = calculateScheduleTime('PT2H', 'UTC', undefined, mockBaseTime);
         expect(result).toEqual(expected);
       });
@@ -160,7 +160,7 @@ describe('Schedule Utils', () => {
 
       it('should handle complex durations', () => {
         // P1DT12H = 36 hours
-        const expected = new Date(mockBaseTime.getTime() + (36 * 60 * 60 * 1000));
+        const expected = new Date(mockBaseTime.getTime() + 36 * 60 * 60 * 1000);
         const result = calculateScheduleTime('P1DT12H', 'UTC', undefined, mockBaseTime);
         expect(result).toEqual(expected);
       });
@@ -183,7 +183,7 @@ describe('Schedule Utils', () => {
         const quietHours = { start: '22:00', end: '07:00' };
         const outsideQuietTime = new Date('2024-01-15T10:00:00.000Z'); // 10 AM UTC
 
-        const expected = new Date(outsideQuietTime.getTime() + (1 * 60 * 60 * 1000)); // +1 hour
+        const expected = new Date(outsideQuietTime.getTime() + 1 * 60 * 60 * 1000); // +1 hour
         const result = calculateScheduleTime('PT1H', 'UTC', quietHours, outsideQuietTime);
 
         expect(result).toEqual(expected);
@@ -538,9 +538,9 @@ describe('Schedule Utils', () => {
       it('should return false for invalid time formats', () => {
         expect(isValidTimeFormat('24:00')).toBe(false); // Invalid hour
         expect(isValidTimeFormat('12:60')).toBe(false); // Invalid minute
-        expect(isValidTimeFormat('9:30')).toBe(false);  // Single digit hour
-        expect(isValidTimeFormat('09:5')).toBe(false);  // Single digit minute
-        expect(isValidTimeFormat('12')).toBe(false);    // Missing minutes
+        expect(isValidTimeFormat('9:30')).toBe(false); // Single digit hour
+        expect(isValidTimeFormat('09:5')).toBe(false); // Single digit minute
+        expect(isValidTimeFormat('12')).toBe(false); // Missing minutes
         expect(isValidTimeFormat('12:30:00')).toBe(false); // Includes seconds
         expect(isValidTimeFormat('invalid')).toBe(false);
         expect(isValidTimeFormat('')).toBe(false);
@@ -611,7 +611,12 @@ describe('Schedule Utils', () => {
       const baseTime = new Date('2024-01-15T06:00:00.000Z'); // 6 AM UTC = 10 PM PST (previous day)
       const quietHours = { start: '22:00', end: '07:00' };
 
-      const scheduledTime = calculateScheduleTime('PT1H', 'America/Los_Angeles', quietHours, baseTime);
+      const scheduledTime = calculateScheduleTime(
+        'PT1H',
+        'America/Los_Angeles',
+        quietHours,
+        baseTime
+      );
 
       // Should be adjusted for Pacific timezone quiet hours
       expect(scheduledTime).toBeInstanceOf(Date);

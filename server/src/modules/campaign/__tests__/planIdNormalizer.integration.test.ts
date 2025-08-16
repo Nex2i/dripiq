@@ -1,9 +1,9 @@
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import {
   normalizeCampaignPlanIds,
   validatePlanReferences,
   isPlanNormalized,
 } from '../planIdNormalizer';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
 describe('Plan ID Normalizer Integration Tests', () => {
   describe('Real-world Campaign Plan Processing', () => {

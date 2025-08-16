@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
-import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
+import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
 
 /**
  * Mapping of original node IDs to new CUID values

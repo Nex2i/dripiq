@@ -6,8 +6,8 @@ import {
   emailSenderIdentityRepository,
 } from '@/repositories';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
-import { normalizeCampaignPlanIds, isPlanNormalized } from './planIdNormalizer';
 import { logger } from '@/libs/logger';
+import { normalizeCampaignPlanIds, isPlanNormalized } from './planIdNormalizer';
 
 export type PersistPlanArgs = {
   tenantId: string;
