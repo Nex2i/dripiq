@@ -12,4 +12,6 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  // Force tests to run in UTC timezone to avoid timezone-related failures
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
 };

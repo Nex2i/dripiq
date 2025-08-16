@@ -1,8 +1,8 @@
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
+import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
-import { contactCampaignPlanService } from './contactCampaignPlan.service';
 
 export interface GenerateContactStrategyParams {
   leadId: string;

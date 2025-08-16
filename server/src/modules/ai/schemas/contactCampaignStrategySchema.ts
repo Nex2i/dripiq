@@ -99,6 +99,9 @@ const StopNode = BaseNode.extend({
 /** ========= Discriminated Union ========= */
 const Node = z.discriminatedUnion('action', [SendNode, WaitNode, StopNode]);
 
+// Export the Node type for use in other modules
+export type CampaignPlanNode = z.infer<typeof Node>;
+
 /** ========= Plan ========= */
 export const campaignPlanOutputSchema = z.object({
   version: z.string().default('1.0').describe('Schema version.'),

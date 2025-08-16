@@ -122,7 +122,7 @@ export class ScheduledActionRepository extends TenantAwareRepository<
       .returning()) as ScheduledAction[];
   }
 
-  // Domain helper
+  // Domain helpers
   async listDuePendingForTenant(tenantId: string, beforeOrAt: Date): Promise<ScheduledAction[]> {
     return await this.db
       .select()
@@ -137,5 +137,16 @@ export class ScheduledActionRepository extends TenantAwareRepository<
           lte(this.table.scheduledAt, beforeOrAt)
         )
       );
+  }
+
+  // cancel by campaign id
+  async cancelByCampaignForTenant(
+    tenantId: string,
+    campaignId: string
+  ): Promise<ScheduledAction[]> {
+    return await this.db
+      .update(this.table)
+      .set({ status: 'canceled' as (typeof scheduledActionStatusEnum)['enumValues'][number] })
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)));
   }
 }
