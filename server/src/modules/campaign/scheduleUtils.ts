@@ -255,7 +255,7 @@ function applyQuietHoursUTC(scheduledAt: Date, quietHours: { start: string; end:
   }
 
   // Set to the end time of quiet hours
-  adjustedDate.setUTCHours(endHour || 0, endMin || 0, 0, 0);
+  adjustedDate.setUTCHours(endHour ?? 0, endMin ?? 0, 0, 0);
 
   return adjustedDate;
 }
