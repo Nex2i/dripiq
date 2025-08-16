@@ -106,6 +106,7 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
     const headerRight = (
       <div className="flex items-center space-x-2">
         <span
+          title={`${node.action}-${node.id}-${index}`}
           className={`text-xs font-medium px-2.5 py-0.5 rounded ${actionColor}`}
         >
           {node.action}

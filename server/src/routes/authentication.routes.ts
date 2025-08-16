@@ -8,6 +8,7 @@ import { RoleService } from '@/modules/role.service';
 import { authCache } from '@/cache/AuthCache';
 
 // Import all authentication schemas from organized schema files
+import isFakeMail from '@/libs/isFakeMail.client';
 import {
   registerBodySchema,
   registerSuccessResponseSchema,
@@ -52,6 +53,15 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     ) => {
       try {
         const { email, password, name, tenantName } = request.body;
+
+        const isRealEmail = await isFakeMail(email);
+
+        if (!isRealEmail) {
+          reply.status(400).send({
+            message: 'Invalid email address',
+          });
+          return;
+        }
 
         // Step 1: Create user in Supabase
         const { data: supabaseAuth, error: signUpError } = await supabase.auth.signUp({
