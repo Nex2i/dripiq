@@ -6,6 +6,8 @@ import {
   emailSenderIdentityRepository,
 } from '@/repositories';
 import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
+import { normalizeCampaignPlanIds, isPlanNormalized } from './utils/planIdNormalizer';
+import { logger } from '@/libs/logger';
 
 export type PersistPlanArgs = {
   tenantId: string;
@@ -31,10 +33,28 @@ export type PersistPlanResult = {
  */
 export class ContactCampaignPlanService {
   async persistPlan(args: PersistPlanArgs): Promise<PersistPlanResult> {
-    const { tenantId, leadId, contactId, plan, channel = 'email' } = args;
+    const { tenantId, leadId, contactId, channel = 'email' } = args;
+    
+    // Normalize plan IDs to CUIDs before processing
+    let normalizedPlan = args.plan;
+    if (!isPlanNormalized(args.plan)) {
+      logger.info('Normalizing campaign plan node IDs to CUIDs', {
+        tenantId,
+        leadId,
+        contactId,
+        originalStartNodeId: args.plan.startNodeId,
+      });
+      normalizedPlan = normalizeCampaignPlanIds(args.plan);
+      logger.info('Campaign plan normalized successfully', {
+        tenantId,
+        leadId,
+        contactId,
+        newStartNodeId: normalizedPlan.startNodeId,
+      });
+    }
 
-    const baseVersion = plan.version || '1.0';
-    const planHash = this.computePlanHash(plan);
+    const baseVersion = normalizedPlan.version || '1.0';
+    const planHash = this.computePlanHash(normalizedPlan);
 
     // Upsert campaign by (tenant, contact, channel)
     const existingCampaign = await contactCampaignRepository.findByContactAndChannelForTenant(
@@ -55,8 +75,8 @@ export class ContactCampaignPlanService {
         contactId,
         channel,
         status: 'draft',
-        currentNodeId: plan.startNodeId,
-        planJson: plan,
+        currentNodeId: normalizedPlan.startNodeId,
+        planJson: normalizedPlan,
         planVersion: baseVersion,
         planHash,
         senderIdentityId,
@@ -64,8 +84,8 @@ export class ContactCampaignPlanService {
     } else if (campaign.planHash !== planHash) {
       // Update to the new plan
       campaign = await contactCampaignRepository.updateByIdForTenant(campaign.id, tenantId, {
-        currentNodeId: plan.startNodeId,
-        planJson: plan,
+        currentNodeId: normalizedPlan.startNodeId,
+        planJson: normalizedPlan,
         planVersion: baseVersion,
         planHash,
         senderIdentityId,
@@ -81,7 +101,7 @@ export class ContactCampaignPlanService {
       tenantId,
       campaignId: campaign.id,
       userId: args.userId,
-      plan,
+      plan: normalizedPlan,
       baseVersion,
       planHash,
     });
@@ -106,7 +126,7 @@ export class ContactCampaignPlanService {
           tenantId,
           campaignId: campaignIdFinal,
           contactId,
-          plan,
+          plan: normalizedPlan,
         });
       } catch (executionError) {
         logger.error('Failed to initialize campaign execution', {
