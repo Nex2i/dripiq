@@ -1,12 +1,7 @@
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { logger } from '@/libs/logger';
-import {
-  leadPointOfContactRepository,
-  leadRepository,
-  contactCampaignRepository,
-} from '@/repositories';
+import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
-import { CampaignExecutionPublisher } from '@/modules/messages';
 
 /**
  * Gets a contact by ID, ensuring it belongs to the specified tenant and lead.
@@ -195,62 +190,14 @@ export const toggleContactManuallyReviewed = async (
       throw new Error('Failed to update contact manually reviewed status');
     }
 
-    // If contact is being marked as manually reviewed, check for associated campaign
+    // If contact is being marked as manually reviewed, trigger campaign execution
     if (manuallyReviewed) {
       try {
-        // Check if there's an existing campaign for this contact (default to email channel)
-        const existingCampaign = await contactCampaignRepository.findByContactAndChannelForTenant(
+        await campaignPlanExecutionService.handleManuallyReviewedExecution(
           tenantId,
           contactId,
-          'email'
+          leadId
         );
-
-        if (existingCampaign && existingCampaign.planJson) {
-          logger.info(
-            'Found existing campaign for manually reviewed contact, initializing execution',
-            {
-              tenantId,
-              leadId,
-              contactId,
-              campaignId: existingCampaign.id,
-            }
-          );
-
-          const campaignPlan = existingCampaign.planJson as any; // Cast from jsonb to CampaignPlanOutput
-
-          // Initialize campaign execution using the service
-          await campaignPlanExecutionService.initializeCampaignExecution({
-            tenantId,
-            campaignId: existingCampaign.id,
-            contactId,
-            plan: campaignPlan,
-          });
-
-          // Publish queue message for asynchronous processing
-          await CampaignExecutionPublisher.publish({
-            tenantId,
-            campaignId: existingCampaign.id,
-            contactId,
-            plan: campaignPlan,
-            metadata: {
-              triggeredBy: 'manual_review',
-              leadId,
-            },
-          });
-
-          logger.info('Campaign execution initialized and queue message published', {
-            tenantId,
-            leadId,
-            contactId,
-            campaignId: existingCampaign.id,
-          });
-        } else {
-          logger.info('No existing campaign found for manually reviewed contact', {
-            tenantId,
-            leadId,
-            contactId,
-          });
-        }
       } catch (campaignError) {
         // Log the error but don't fail the manually reviewed status update
         logger.error('Failed to initialize campaign execution for manually reviewed contact', {
