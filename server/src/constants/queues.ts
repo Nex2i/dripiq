@@ -1,6 +1,7 @@
 export const QUEUE_NAMES = {
   lead_analysis: 'lead_analysis',
   campaign_creation: 'campaign_creation',
+  campaign_execution: 'campaign_execution',
 } as const;
 
 export const JOB_NAMES = {
@@ -9,5 +10,8 @@ export const JOB_NAMES = {
   },
   campaign_creation: {
     create: 'campaign_creation.create',
+  },
+  campaign_execution: {
+    initialize: 'campaign_execution.initialize',
   },
 } as const;
