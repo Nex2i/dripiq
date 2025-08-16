@@ -17,6 +17,8 @@ export const {
   DB_SCHEMA,
   REDIS_URL,
   BULLMQ_PREFIX,
+  BULL_BOARD_USERNAME,
+  BULL_BOARD_PASSWORD,
 } = process.env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
