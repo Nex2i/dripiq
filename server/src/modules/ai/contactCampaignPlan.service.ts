@@ -96,6 +96,31 @@ export class ContactCampaignPlanService {
     // At this point, campaign is guaranteed not null; ensure non-null assertion for TS
     const campaignIdFinal = campaign!.id;
 
+    // TODO: Initialize campaign execution when ready to activate
+    // Uncomment the following lines to enable campaign execution:
+    /*
+    if (isNewCampaign || isNewVersion) {
+      try {
+        const { campaignPlanExecutionService } = await import('./campaignPlanExecution.service');
+        await campaignPlanExecutionService.initializeCampaignExecution({
+          tenantId,
+          campaignId: campaignIdFinal,
+          contactId,
+          plan,
+        });
+      } catch (executionError) {
+        logger.error('Failed to initialize campaign execution', {
+          tenantId,
+          campaignId: campaignIdFinal,
+          contactId,
+          error: executionError instanceof Error ? executionError.message : 'Unknown error',
+        });
+        // Don't throw here to avoid breaking campaign creation
+        // The campaign is still saved, just not executing yet
+      }
+    }
+    */
+
     return {
       campaignId: campaignIdFinal,
       planHash,

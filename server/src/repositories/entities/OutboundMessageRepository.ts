@@ -153,4 +153,37 @@ export class OutboundMessageRepository extends TenantAwareRepository<
       .where(and(eq(this.table.tenantId, tenantId), eq(this.table.state, state)))
       .orderBy(desc(this.table.createdAt));
   }
+
+  // TODO: Add these methods when campaign execution is activated
+  /*
+  async countByCampaignForTenant(tenantId: string, campaignId: string): Promise<number> {
+    const result = await this.db
+      .select({ id: this.table.id })
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.campaignId, campaignId)
+        )
+      );
+    return result.length;
+  }
+
+  async findByProviderMessageIdForTenant(
+    tenantId: string,
+    providerMessageId: string
+  ): Promise<OutboundMessage | undefined> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.providerMessageId, providerMessageId)
+        )
+      )
+      .limit(1);
+    return results[0];
+  }
+  */
 }
