@@ -13,10 +13,10 @@
 
 import { logger } from '@/libs/logger';
 import { createRedisConnection } from '@/libs/bullmq';
-import { leadAnalysisWorker, campaignCreationWorker } from './index';
+import { leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker } from './index';
 
 // Track active workers for graceful shutdown
-const activeWorkers = [leadAnalysisWorker, campaignCreationWorker];
+const activeWorkers = [leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker];
 
 async function startWorkers() {
   try {
@@ -27,7 +27,7 @@ async function startWorkers() {
 
     // Log worker startup
     logger.info('🚀 Starting BullMQ workers...', {
-      workers: ['messages', 'lead-analysis', 'campaign-creation'],
+      workers: ['lead-analysis', 'campaign-creation', 'campaign-execution'],
       timestamp: new Date().toISOString(),
     });
 
@@ -36,6 +36,7 @@ async function startWorkers() {
     logger.info('✅ All workers started successfully', {
       leadAnalysisWorker: leadAnalysisWorker.isRunning(),
       campaignCreationWorker: campaignCreationWorker.isRunning(),
+      campaignExecutionWorker: campaignExecutionWorker.isRunning(),
     });
 
     // Keep the process alive
@@ -57,7 +58,7 @@ async function gracefulShutdown(signal: string) {
     // Close all workers
     await Promise.all(
       activeWorkers.map(async (worker, index) => {
-        const workerNames = ['messages', 'lead-analysis', 'campaign-creation'];
+        const workerNames = ['lead-analysis', 'campaign-creation', 'campaign-execution'];
         logger.info(`🛑 Closing ${workerNames[index]} worker...`);
         await worker.close();
         logger.info(`✅ ${workerNames[index]} worker closed`);

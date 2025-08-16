@@ -104,19 +104,40 @@ export class CampaignPlanExecutionService {
         plan: campaignPlan,
       });
 
-      // Publish queue message for asynchronous processing
-      await CampaignExecutionPublisher.publish({
-        tenantId,
-        campaignId: existingCampaign.id,
-        contactId,
-        plan: campaignPlan,
-        metadata: {
-          triggeredBy: 'manual_review',
-          leadId,
-        },
-      });
+      // Find the start node to publish specific execution message
+      const startNode = campaignPlan.nodes.find(
+        (node: any) => node.id === campaignPlan.startNodeId
+      );
+      if (startNode && startNode.action === 'send') {
+        // Publish queue message for the specific start node execution
+        const job = await CampaignExecutionPublisher.publish({
+          tenantId,
+          campaignId: existingCampaign.id,
+          contactId,
+          nodeId: startNode.id,
+          actionType: 'send',
+          nodeData: {
+            subject: startNode.subject,
+            body: startNode.body,
+            channel: startNode.channel,
+          },
+          metadata: {
+            triggeredBy: 'manual_review',
+            leadId,
+          },
+        });
 
-      logger.info('Campaign execution initialized and queue message published', {
+        // TODO: Update the corresponding scheduled action with the job ID
+        // This will be implemented once we have the scheduled action ID available
+        logger.info('Node execution job queued', {
+          tenantId,
+          campaignId: existingCampaign.id,
+          nodeId: startNode.id,
+          jobId: job.id,
+        });
+      }
+
+      logger.info('Campaign execution initialized and node job published', {
         tenantId,
         leadId,
         contactId,

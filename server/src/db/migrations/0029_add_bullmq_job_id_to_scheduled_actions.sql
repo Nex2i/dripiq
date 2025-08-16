@@ -1,0 +1,1 @@
+ALTER TABLE "prompt_depot"."scheduled_actions" ADD COLUMN "bullmq_job_id" text;
