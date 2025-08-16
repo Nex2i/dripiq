@@ -66,6 +66,62 @@ export function calculateScheduleTime(
 }
 
 /**
+ * Gets the hour and minute in a specific timezone for a given UTC date
+ */
+function getTimeInTimezone(utcDate: Date, timezone: string): { hour: number; minute: number } {
+  try {
+    // Use Intl.DateTimeFormat to get the time components in the target timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(utcDate);
+    const hour = parseInt(parts.find(part => part.type === 'hour')?.value || '0', 10);
+    const minute = parseInt(parts.find(part => part.type === 'minute')?.value || '0', 10);
+
+    return { hour, minute };
+  } catch (error) {
+    logger.warn('Failed to get time in timezone, using UTC', {
+      timezone,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    // Fallback to UTC
+    return { hour: utcDate.getUTCHours(), minute: utcDate.getUTCMinutes() };
+  }
+}
+
+/**
+ * Creates a new Date in UTC that represents the same wall-clock time in the target timezone
+ */
+function createDateInTimezone(year: number, month: number, day: number, hour: number, minute: number, timezone: string): Date {
+  try {
+    // Create a temporary date in UTC
+    const tempDate = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+    
+    // Get what this UTC time would be in the target timezone
+    const { hour: targetHour, minute: targetMinute } = getTimeInTimezone(tempDate, timezone);
+    
+    // Calculate the difference between what we want and what we got
+    const wantedMinutes = hour * 60 + minute;
+    const actualMinutes = targetHour * 60 + targetMinute;
+    const offsetMinutes = wantedMinutes - actualMinutes;
+    
+    // Adjust the UTC time by the offset
+    return new Date(tempDate.getTime() + (offsetMinutes * 60 * 1000));
+  } catch (error) {
+    logger.warn('Failed to create date in timezone, using UTC', {
+      timezone,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    // Fallback to UTC
+    return new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  }
+}
+
+/**
  * Adjusts a scheduled time to respect quiet hours in the given timezone
  */
 export function applyQuietHours(
@@ -74,11 +130,8 @@ export function applyQuietHours(
   quietHours: { start: string; end: string }
 ): Date {
   try {
-    // Convert to timezone-aware date
-    const zonedDate = new Date(scheduledAt.toLocaleString('en-US', { timeZone: timezone }));
-
-    const hour = zonedDate.getHours();
-    const minute = zonedDate.getMinutes();
+    // Get the time components in the target timezone
+    const { hour, minute } = getTimeInTimezone(scheduledAt, timezone);
     const currentTime = hour * 60 + minute; // Minutes since midnight
 
     // Parse quiet hours (HH:MM format)
@@ -90,10 +143,10 @@ export function applyQuietHours(
     // Determine if current time is in quiet hours
     let isQuietTime = false;
     if (quietEnd > quietStart) {
-      // Quiet hours don't span midnight (e.g., 22:00 to 06:00 next day)
+      // Quiet hours don't span midnight (e.g., 09:00 to 17:00)
       isQuietTime = currentTime >= quietStart && currentTime <= quietEnd;
     } else {
-      // Quiet hours span midnight (e.g., 22:00 to 06:00)
+      // Quiet hours span midnight (e.g., 22:00 to 07:00)
       isQuietTime = currentTime >= quietStart || currentTime <= quietEnd;
     }
 
@@ -102,20 +155,35 @@ export function applyQuietHours(
     }
 
     // Move to end of quiet hours
-    const adjustedDate = new Date(zonedDate);
-    adjustedDate.setHours(endHour || 0, endMin || 0, 0, 0);
+    // Get the date components in the target timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    });
 
-    // If quiet hours span midnight and we're before midnight,
-    // the end time is tomorrow
+    const parts = formatter.formatToParts(scheduledAt);
+    const year = parseInt(parts.find(part => part.type === 'year')?.value || '0', 10);
+    const month = parseInt(parts.find(part => part.type === 'month')?.value || '0', 10);
+    const day = parseInt(parts.find(part => part.type === 'day')?.value || '0', 10);
+
+    let adjustedYear = year;
+    let adjustedMonth = month;
+    let adjustedDay = day;
+
+    // If quiet hours span midnight and we're before midnight, the end time is tomorrow
     if (quietEnd < quietStart && currentTime >= quietStart) {
-      adjustedDate.setDate(adjustedDate.getDate() + 1);
+      const nextDay = new Date(year, month - 1, day + 1);
+      adjustedYear = nextDay.getFullYear();
+      adjustedMonth = nextDay.getMonth() + 1;
+      adjustedDay = nextDay.getDate();
     }
 
-    // Convert back from timezone to UTC
-    const timezoneOffset = getTimezoneOffset(timezone, adjustedDate);
-    const utcTime = new Date(adjustedDate.getTime() + timezoneOffset);
+    // Create the adjusted date in the target timezone
+    const adjustedDate = createDateInTimezone(adjustedYear, adjustedMonth, adjustedDay, endHour || 0, endMin || 0, timezone);
 
-    return utcTime;
+    return adjustedDate;
   } catch (error) {
     logger.warn('Failed to apply quiet hours, using original time', {
       timezone,
@@ -131,9 +199,10 @@ export function applyQuietHours(
  */
 function getTimezoneOffset(timezone: string, date: Date): number {
   try {
-    // Create date in timezone and UTC
-    const zonedTime = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
-    const utcTime = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+    // Create a date formatter for the target timezone
+    const utcDate = new Date(date.toISOString());
+    const zonedTime = new Date(utcDate.toLocaleString('en-US', { timeZone: timezone }));
+    const utcTime = new Date(utcDate.toLocaleString('en-US', { timeZone: 'UTC' }));
 
     return utcTime.getTime() - zonedTime.getTime();
   } catch (error) {
@@ -154,9 +223,8 @@ export function isInQuietHours(
   quietHours: { start: string; end: string }
 ): boolean {
   try {
-    const zonedDate = new Date(time.toLocaleString('en-US', { timeZone: timezone }));
-    const hour = zonedDate.getHours();
-    const minute = zonedDate.getMinutes();
+    // Get the time components in the target timezone
+    const { hour, minute } = getTimeInTimezone(time, timezone);
     const currentTime = hour * 60 + minute;
 
     const [startHour, startMin] = quietHours.start.split(':').map(Number);
