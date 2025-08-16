@@ -598,9 +598,9 @@ describe('Schedule Utils', () => {
       const scheduledTime = calculateScheduleTime('PT2H', 'UTC', quietHours, baseTime);
 
       // Should be moved to end of quiet hours (7 AM next day)
-      expect(scheduledTime.getUTCDate()).toBe(16); // Next day
-      expect(scheduledTime.getUTCHours()).toBe(7);
-      expect(scheduledTime.getUTCMinutes()).toBe(0);
+      // Use toISOString() for consistent, timezone-independent comparison
+      const expectedTime = '2024-01-16T07:00:00.000Z';
+      expect(scheduledTime.toISOString()).toBe(expectedTime);
 
       // Verify it's no longer in quiet hours
       expect(isInQuietHours(scheduledTime, 'UTC', quietHours)).toBe(true); // Exactly at end time
