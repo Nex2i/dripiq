@@ -74,11 +74,24 @@ export class CampaignPlanExecutionService {
         return;
       }
 
+      // Check if campaign is already active to prevent duplicate execution
+      if (existingCampaign.status !== 'draft') {
+        logger.info('Campaign already initialized, skipping execution', {
+          tenantId,
+          leadId,
+          contactId,
+          campaignId: existingCampaign.id,
+          currentStatus: existingCampaign.status,
+        });
+        return;
+      }
+
       logger.info('Found existing campaign for manually reviewed contact, initializing execution', {
         tenantId,
         leadId,
         contactId,
         campaignId: existingCampaign.id,
+        status: existingCampaign.status,
       });
 
       const campaignPlan = existingCampaign.planJson as any; // Cast from jsonb to CampaignPlanOutput
