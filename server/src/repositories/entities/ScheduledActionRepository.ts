@@ -138,4 +138,15 @@ export class ScheduledActionRepository extends TenantAwareRepository<
         )
       );
   }
+
+  // cancel by campaign id
+  async cancelByCampaignForTenant(
+    tenantId: string,
+    campaignId: string
+  ): Promise<ScheduledAction[]> {
+    return await this.db
+      .update(this.table)
+      .set({ status: 'canceled' as (typeof scheduledActionStatusEnum)['enumValues'][number] })
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)));
+  }
 }

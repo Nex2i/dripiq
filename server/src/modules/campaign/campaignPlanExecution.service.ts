@@ -321,8 +321,7 @@ export class CampaignPlanExecutionService {
       // and update their status to 'canceled'
       logger.info('Canceling campaign actions', { tenantId, campaignId });
 
-      // TODO: Implement when we add campaign action lookup methods
-      // await scheduledActionRepository.cancelByCampaignForTenant(tenantId, campaignId);
+      await scheduledActionRepository.cancelByCampaignForTenant(tenantId, campaignId);
     } catch (error) {
       logger.error('Failed to cancel campaign actions', {
         tenantId,

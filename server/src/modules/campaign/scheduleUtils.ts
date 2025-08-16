@@ -149,7 +149,6 @@ export function applyQuietHours(
     // Parse quiet hours (HH:MM format)
     const [startHour, startMin] = quietHours.start.split(':').map(Number);
     const [endHour, endMin] = quietHours.end.split(':').map(Number);
-    const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
     const quietStart = startHour !== undefined ? startHour * 60 + (startMin || 0) : 0;
     const quietEnd = endHour !== undefined ? endHour * 60 + (endMin || 0) : 0;
 
@@ -198,7 +197,6 @@ export function applyQuietHours(
       adjustedYear,
       adjustedMonth,
       adjustedDay,
-      endHour || 0,
       endHour ?? 0,
       endMin ?? 0,
       timezone
@@ -227,7 +225,6 @@ function applyQuietHoursUTC(scheduledAt: Date, quietHours: { start: string; end:
   // Parse quiet hours (HH:MM format)
   const [startHour, startMin] = quietHours.start.split(':').map(Number);
   const [endHour, endMin] = quietHours.end.split(':').map(Number);
-  const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
   const quietStart = startHour !== undefined ? startHour * 60 + (startMin || 0) : 0;
   const quietEnd = endHour !== undefined ? endHour * 60 + (endMin || 0) : 0;
 
@@ -280,9 +277,8 @@ export function isInQuietHours(
 
     const [startHour, startMin] = quietHours.start.split(':').map(Number);
     const [endHour, endMin] = quietHours.end.split(':').map(Number);
-    const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
-    const quietStart = !isNaN(startHour) ? startHour * 60 + (startMin || 0) : 0;
-    const quietEnd = !isNaN(endHour) ? endHour * 60 + (endMin || 0) : 0;
+    const quietStart = startHour !== undefined ? startHour * 60 + (startMin || 0) : 0;
+    const quietEnd = endHour !== undefined ? endHour * 60 + (endMin || 0) : 0;
 
     if (quietEnd > quietStart) {
       return currentTime >= quietStart && currentTime <= quietEnd;
@@ -310,7 +306,6 @@ function isInQuietHoursUTC(time: Date, quietHours: { start: string; end: string 
 
   const [startHour, startMin] = quietHours.start.split(':').map(Number);
   const [endHour, endMin] = quietHours.end.split(':').map(Number);
-  const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
   const quietStart = startHour !== undefined ? startHour * 60 + (startMin || 0) : 0;
   const quietEnd = endHour !== undefined ? endHour * 60 + (endMin || 0) : 0;
 
