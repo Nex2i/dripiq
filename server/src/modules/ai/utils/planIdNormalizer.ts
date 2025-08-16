@@ -16,6 +16,11 @@ type NodeIdMapping = Record<string, string>;
  */
 export function normalizeCampaignPlanIds(plan: CampaignPlanOutput): CampaignPlanOutput {
   try {
+    // Early return if plan is already normalized
+    if (isPlanNormalized(plan)) {
+      return plan;
+    }
+
     logger.debug('Normalizing campaign plan node IDs to CUIDs', {
       originalStartNodeId: plan.startNodeId,
       nodeCount: plan.nodes.length,
@@ -158,8 +163,8 @@ export function previewIdNormalization(plan: CampaignPlanOutput): {
  * @returns True if all node IDs appear to be CUIDs
  */
 export function isPlanNormalized(plan: CampaignPlanOutput): boolean {
-  // Basic CUID pattern check (starts with 'c' and is 24+ chars)
-  const cuidPattern = /^c[a-z0-9]{23,}$/;
+  // Basic CUID pattern check (starts with letter and is exactly 24 chars)
+  const cuidPattern = /^[a-z][a-z0-9]{23}$/;
   
   // Check startNodeId
   if (!cuidPattern.test(plan.startNodeId)) {
