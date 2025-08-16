@@ -3,7 +3,7 @@ import {
   validatePlanReferences,
   isPlanNormalized,
 } from '../planIdNormalizer';
-import type { CampaignPlanOutput } from '../../schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
 describe('Plan ID Normalizer Integration Tests', () => {
   describe('Real-world Campaign Plan Processing', () => {

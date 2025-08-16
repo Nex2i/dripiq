@@ -1,5 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
-import type { CampaignPlanOutput } from '../schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
 
 /**
@@ -10,7 +10,7 @@ type NodeIdMapping = Record<string, string>;
 /**
  * Converts all node IDs in a campaign plan to CUIDs while maintaining proper references.
  * This ensures database uniqueness while preserving the plan's internal logic.
- * 
+ *
  * @param plan - The original campaign plan with simple string IDs
  * @returns A new plan with CUID node IDs and updated references
  */
@@ -28,15 +28,15 @@ export function normalizeCampaignPlanIds(plan: CampaignPlanOutput): CampaignPlan
 
     // Step 1: Create mapping of original IDs to new CUIDs
     const idMapping: NodeIdMapping = {};
-    
+
     // Collect all unique node IDs
     const uniqueNodeIds = new Set<string>();
-    plan.nodes.forEach(node => {
+    plan.nodes.forEach((node) => {
       uniqueNodeIds.add(node.id);
     });
 
     // Generate CUID for each unique node ID
-    uniqueNodeIds.forEach(originalId => {
+    uniqueNodeIds.forEach((originalId) => {
       idMapping[originalId] = createId();
     });
 
@@ -46,16 +46,17 @@ export function normalizeCampaignPlanIds(plan: CampaignPlanOutput): CampaignPlan
       // Update startNodeId reference
       startNodeId: idMapping[plan.startNodeId] || plan.startNodeId,
       // Transform all nodes
-      nodes: plan.nodes.map(node => ({
+      nodes: plan.nodes.map((node) => ({
         ...node,
         // Update node's own ID
         id: idMapping[node.id] || node.id,
         // Update transition references
-        transitions: node.transitions?.map(transition => ({
-          ...transition,
-          // Update the 'to' field to reference the new CUID
-          to: idMapping[transition.to] || transition.to,
-        })) || [],
+        transitions:
+          node.transitions?.map((transition) => ({
+            ...transition,
+            // Update the 'to' field to reference the new CUID
+            to: idMapping[transition.to] || transition.to,
+          })) || [],
       })),
     };
 
@@ -71,7 +72,7 @@ export function normalizeCampaignPlanIds(plan: CampaignPlanOutput): CampaignPlan
       error: error instanceof Error ? error.message : 'Unknown error',
       originalStartNodeId: plan.startNodeId,
     });
-    
+
     // Return original plan if normalization fails
     return plan;
   }
@@ -80,7 +81,7 @@ export function normalizeCampaignPlanIds(plan: CampaignPlanOutput): CampaignPlan
 /**
  * Validates that all node references in a plan are valid.
  * Useful for testing the normalization process.
- * 
+ *
  * @param plan - The campaign plan to validate
  * @returns Validation result with any issues found
  */
@@ -91,7 +92,7 @@ export function validatePlanReferences(plan: CampaignPlanOutput): {
   referencedIds: string[];
 } {
   const issues: string[] = [];
-  const nodeIds = plan.nodes.map(node => node.id);
+  const nodeIds = plan.nodes.map((node) => node.id);
   const referencedIds: string[] = [];
 
   // Check if startNodeId exists
@@ -101,8 +102,8 @@ export function validatePlanReferences(plan: CampaignPlanOutput): {
   referencedIds.push(plan.startNodeId);
 
   // Check all transition references
-  plan.nodes.forEach(node => {
-    node.transitions?.forEach(transition => {
+  plan.nodes.forEach((node) => {
+    node.transitions?.forEach((transition) => {
       referencedIds.push(transition.to);
       if (!nodeIds.includes(transition.to)) {
         issues.push(`Node "${node.id}" transition references non-existent node "${transition.to}"`);
@@ -121,7 +122,7 @@ export function validatePlanReferences(plan: CampaignPlanOutput): {
 /**
  * Preview what ID changes would be made without actually applying them.
  * Useful for debugging and testing.
- * 
+ *
  * @param plan - The campaign plan to analyze
  * @returns Preview of the ID mapping that would be created
  */
@@ -135,15 +136,15 @@ export function previewIdNormalization(plan: CampaignPlanOutput): {
   // Collect all unique node IDs
   const uniqueNodeIds = new Set<string>();
   let totalTransitions = 0;
-  
-  plan.nodes.forEach(node => {
+
+  plan.nodes.forEach((node) => {
     uniqueNodeIds.add(node.id);
     totalTransitions += node.transitions?.length || 0;
   });
 
   // Generate preview mapping
   const idMappings: NodeIdMapping = {};
-  uniqueNodeIds.forEach(originalId => {
+  uniqueNodeIds.forEach((originalId) => {
     idMappings[originalId] = createId();
   });
 
@@ -158,14 +159,14 @@ export function previewIdNormalization(plan: CampaignPlanOutput): {
 
 /**
  * Checks if a campaign plan has already been normalized (all IDs are CUIDs).
- * 
+ *
  * @param plan - The campaign plan to check
  * @returns True if all node IDs appear to be CUIDs
  */
 export function isPlanNormalized(plan: CampaignPlanOutput): boolean {
   // Basic CUID pattern check (starts with letter and is exactly 24 chars)
   const cuidPattern = /^[a-z][a-z0-9]{23}$/;
-  
+
   // Check startNodeId
   if (!cuidPattern.test(plan.startNodeId)) {
     return false;
@@ -202,55 +203,55 @@ export const exampleUsage = {
          const normalizedPlan = normalizeCampaignPlanIds(originalPlan);
     // Result: all IDs converted to CUIDs, references maintained
   `,
-  
+
   /**
    * Test plan with the provided example structure
    */
   testPlan: {
-    version: "1.0",
-    timezone: "America/Los_Angeles",
-    quietHours: { start: "21:00", end: "07:30" },
-    startNodeId: "email_intro",
+    version: '1.0',
+    timezone: 'America/Los_Angeles',
+    quietHours: { start: '21:00', end: '07:30' },
+    startNodeId: 'email_intro',
     nodes: [
       {
-        id: "email_intro",
-        channel: "email" as const,
-        action: "send" as const,
-        subject: "Introduction to our solution",
-        body: "Hi {{name}}, ...",
-        schedule: { delay: "PT0S" },
+        id: 'email_intro',
+        channel: 'email' as const,
+        action: 'send' as const,
+        subject: 'Introduction to our solution',
+        body: 'Hi {{name}}, ...',
+        schedule: { delay: 'PT0S' },
         transitions: [
-          { on: "opened" as const, to: "wait_click", within: "PT72H" },
-          { on: "no_open" as const, to: "email_bump_1", after: "PT72H" }
-        ]
+          { on: 'opened' as const, to: 'wait_click', within: 'PT72H' },
+          { on: 'no_open' as const, to: 'email_bump_1', after: 'PT72H' },
+        ],
       },
       {
-        id: "wait_click",
-        channel: "email" as const,
-        action: "wait" as const,
+        id: 'wait_click',
+        channel: 'email' as const,
+        action: 'wait' as const,
         transitions: [
-          { on: "clicked" as const, to: "stop", within: "PT24H" },
-          { on: "no_click" as const, to: "email_bump_1", after: "PT24H" }
-        ]
+          { on: 'clicked' as const, to: 'stop', within: 'PT24H' },
+          { on: 'no_click' as const, to: 'email_bump_1', after: 'PT24H' },
+        ],
       },
       {
-        id: "email_bump_1",
-        channel: "email" as const,
-        action: "send" as const,
-        subject: "Follow-up: Did you see our solution?",
-        body: "Hi {{name}}, I wanted to follow up...",
-        schedule: { delay: "PT0S" },
+        id: 'email_bump_1',
+        channel: 'email' as const,
+        action: 'send' as const,
+        subject: 'Follow-up: Did you see our solution?',
+        body: 'Hi {{name}}, I wanted to follow up...',
+        schedule: { delay: 'PT0S' },
         transitions: [
-          { on: "opened" as const, to: "stop", within: "PT72H" },
-          { on: "no_open" as const, to: "stop", after: "PT72H" }
-        ]
+          { on: 'opened' as const, to: 'stop', within: 'PT72H' },
+          { on: 'no_open' as const, to: 'stop', after: 'PT72H' },
+        ],
       },
       {
-        id: "stop",
-        channel: "email" as const,
-        action: "stop" as const,
-        transitions: []
-      }
-    ]
-  } as CampaignPlanOutput
+        id: 'stop',
+        channel: 'email' as const,
+        action: 'stop' as const,
+        transitions: [],
+      },
+    ],
+  } as CampaignPlanOutput,
 };

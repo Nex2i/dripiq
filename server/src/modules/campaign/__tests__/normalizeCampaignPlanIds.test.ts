@@ -1,6 +1,6 @@
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { createId } from '@paralleldrive/cuid2';
 import { normalizeCampaignPlanIds } from '../planIdNormalizer';
-import type { CampaignPlanOutput } from '../../schemas/contactCampaignStrategySchema';
 
 // Mock the createId function to make tests deterministic
 jest.mock('@paralleldrive/cuid2');

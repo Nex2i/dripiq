@@ -5,8 +5,8 @@ import {
   leadRepository,
   emailSenderIdentityRepository,
 } from '@/repositories';
-import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
-import { normalizeCampaignPlanIds, isPlanNormalized } from './utils/planIdNormalizer';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { normalizeCampaignPlanIds, isPlanNormalized } from './planIdNormalizer';
 import { logger } from '@/libs/logger';
 
 export type PersistPlanArgs = {
@@ -34,7 +34,7 @@ export type PersistPlanResult = {
 export class ContactCampaignPlanService {
   async persistPlan(args: PersistPlanArgs): Promise<PersistPlanResult> {
     const { tenantId, leadId, contactId, channel = 'email' } = args;
-    
+
     // Normalize plan IDs to CUIDs before processing
     let normalizedPlan = args.plan;
     if (!isPlanNormalized(args.plan)) {

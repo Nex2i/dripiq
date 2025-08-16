@@ -6,7 +6,7 @@ import {
 } from '@/repositories';
 import type { ContactCampaign } from '@/db/schema';
 import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
-import { calculateScheduleTime } from './utils/scheduleUtils';
+import { calculateScheduleTime } from '../campaign/scheduleUtils';
 
 export interface CampaignExecutionContext {
   tenantId: string;

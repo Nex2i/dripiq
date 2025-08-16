@@ -84,8 +84,8 @@ export function applyQuietHours(
     // Parse quiet hours (HH:MM format)
     const [startHour, startMin] = quietHours.start.split(':').map(Number);
     const [endHour, endMin] = quietHours.end.split(':').map(Number);
-    const quietStart = startHour * 60 + startMin;
-    const quietEnd = endHour * 60 + endMin;
+    const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
+    const quietEnd = endHour ? endHour * 60 + (endMin || 0) : 0;
 
     // Determine if current time is in quiet hours
     let isQuietTime = false;
@@ -103,7 +103,7 @@ export function applyQuietHours(
 
     // Move to end of quiet hours
     const adjustedDate = new Date(zonedDate);
-    adjustedDate.setHours(endHour, endMin, 0, 0);
+    adjustedDate.setHours(endHour || 0, endMin || 0, 0, 0);
 
     // If quiet hours span midnight and we're before midnight,
     // the end time is tomorrow
@@ -161,8 +161,8 @@ export function isInQuietHours(
 
     const [startHour, startMin] = quietHours.start.split(':').map(Number);
     const [endHour, endMin] = quietHours.end.split(':').map(Number);
-    const quietStart = startHour * 60 + startMin;
-    const quietEnd = endHour * 60 + endMin;
+    const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
+    const quietEnd = endHour ? endHour * 60 + (endMin || 0) : 0;
 
     if (quietEnd > quietStart) {
       return currentTime >= quietStart && currentTime <= quietEnd;
