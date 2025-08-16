@@ -5,7 +5,10 @@ import {
   campaignTransitionRepository,
 } from '@/repositories';
 import type { ContactCampaign } from '@/db/schema';
-import type { CampaignPlanOutput, CampaignPlanNode } from '../ai/schemas/contactCampaignStrategySchema';
+import type {
+  CampaignPlanOutput,
+  CampaignPlanNode,
+} from '../ai/schemas/contactCampaignStrategySchema';
 import { calculateScheduleTime } from './scheduleUtils';
 
 export interface CampaignExecutionContext {
