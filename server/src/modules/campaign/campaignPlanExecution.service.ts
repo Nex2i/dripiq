@@ -5,7 +5,7 @@ import {
   campaignTransitionRepository,
 } from '@/repositories';
 import type { ContactCampaign } from '@/db/schema';
-import type { CampaignPlanOutput } from '../ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput, CampaignPlanNode } from '../ai/schemas/contactCampaignStrategySchema';
 import { calculateScheduleTime } from './scheduleUtils';
 
 export interface CampaignExecutionContext {
@@ -283,7 +283,7 @@ export class CampaignPlanExecutionService {
   private async scheduleNodeTimeouts(
     tenantId: string,
     campaignId: string,
-    node: any,
+    node: CampaignPlanNode,
     plan: CampaignPlanOutput
   ): Promise<void> {
     if (!node.transitions) return;
