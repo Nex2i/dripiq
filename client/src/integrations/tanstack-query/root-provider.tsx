@@ -12,12 +12,12 @@ const queryClient = new QueryClient({
       // Refetch on window focus and reconnect
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      // Retry failed requests once
-      retry: 1,
+      // Disable retry on failed requests
+      retry: 0,
     },
     mutations: {
-      // Retry failed mutations once
-      retry: 1,
+      // Disable retry on failed mutations
+      retry: 0,
     },
   },
 })
