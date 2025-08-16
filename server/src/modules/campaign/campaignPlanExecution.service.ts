@@ -5,6 +5,7 @@ import {
   campaignTransitionRepository,
 } from '@/repositories';
 import type { ContactCampaign } from '@/db/schema';
+import { CampaignExecutionPublisher } from '@/modules/messages';
 import type {
   CampaignPlanOutput,
   CampaignPlanNode,
@@ -41,6 +42,85 @@ export interface ProcessTransitionParams {
  * Bridges the gap between AI-generated JSON plans and the BullMQ execution workflow.
  */
 export class CampaignPlanExecutionService {
+  /**
+   * Handles campaign execution when a contact is manually reviewed.
+   * Checks for existing campaigns and initializes execution if appropriate.
+   */
+  async handleManuallyReviewedExecution(
+    tenantId: string,
+    contactId: string,
+    leadId: string
+  ): Promise<void> {
+    try {
+      logger.info('Processing manually reviewed contact for campaign execution', {
+        tenantId,
+        contactId,
+        leadId,
+      });
+
+      // Check if there's an existing campaign for this contact (default to email channel)
+      const existingCampaign = await contactCampaignRepository.findByContactAndChannelForTenant(
+        tenantId,
+        contactId,
+        'email'
+      );
+
+      if (!existingCampaign || !existingCampaign.planJson) {
+        logger.info('No existing campaign found for manually reviewed contact', {
+          tenantId,
+          leadId,
+          contactId,
+        });
+        return;
+      }
+
+      logger.info('Found existing campaign for manually reviewed contact, initializing execution', {
+        tenantId,
+        leadId,
+        contactId,
+        campaignId: existingCampaign.id,
+      });
+
+      const campaignPlan = existingCampaign.planJson as any; // Cast from jsonb to CampaignPlanOutput
+
+      // Initialize campaign execution using the service
+      await this.initializeCampaignExecution({
+        tenantId,
+        campaignId: existingCampaign.id,
+        contactId,
+        plan: campaignPlan,
+      });
+
+      // Publish queue message for asynchronous processing
+      await CampaignExecutionPublisher.publish({
+        tenantId,
+        campaignId: existingCampaign.id,
+        contactId,
+        plan: campaignPlan,
+        metadata: {
+          triggeredBy: 'manual_review',
+          leadId,
+        },
+      });
+
+      logger.info('Campaign execution initialized and queue message published', {
+        tenantId,
+        leadId,
+        contactId,
+        campaignId: existingCampaign.id,
+      });
+    } catch (error) {
+      logger.error('Failed to handle manually reviewed campaign execution', {
+        tenantId,
+        contactId,
+        leadId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Re-throw the error so the calling service can handle it appropriately
+      throw error;
+    }
+  }
+
   /**
    * Initializes a campaign for execution by creating the first scheduled action
    * and updating campaign status to active.

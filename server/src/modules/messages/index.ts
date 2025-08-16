@@ -1,10 +1,12 @@
 // Publishers
 export { LeadAnalysisPublisher } from './leadAnalysis.publisher.service';
 export { CampaignCreationPublisher } from './campaignCreation.publisher.service';
+export { CampaignExecutionPublisher } from './campaignExecution.publisher.service';
 
 // Types
 export type { LeadAnalysisJobPayload } from './leadAnalysis.publisher.service';
 export type { CampaignCreationJobPayload } from './campaignCreation.publisher.service';
+export type { CampaignExecutionJobPayload } from './campaignExecution.publisher.service';
 
 // Worker result types (workers are now in @/workers/)
 export type { LeadAnalysisJobResult } from '@/workers/lead-analysis/lead-analysis.worker';

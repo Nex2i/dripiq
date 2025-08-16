@@ -1,6 +1,7 @@
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { logger } from '@/libs/logger';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
+import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 
 /**
  * Gets a contact by ID, ensuring it belongs to the specified tenant and lead.
@@ -159,6 +160,8 @@ export const deleteContact = async (
 
 /**
  * Toggles the manually reviewed status of a contact.
+ * If the contact is being marked as manually reviewed and has an associated campaign,
+ * it will initialize campaign execution and publish a queue message.
  * @param tenantId - The ID of the tenant.
  * @param leadId - The ID of the lead the contact belongs to.
  * @param contactId - The ID of the contact to toggle.
@@ -178,13 +181,33 @@ export const toggleContactManuallyReviewed = async (
       throw new Error(`Contact not found with ID: ${contactId} for lead: ${leadId}`);
     }
 
-    // Update the contact's manually reviewed status
+    // Update the contact's manually reviewed status first
     const updatedContact = await leadPointOfContactRepository.updateById(contactId, {
       manuallyReviewed,
     });
 
     if (!updatedContact) {
       throw new Error('Failed to update contact manually reviewed status');
+    }
+
+    // If contact is being marked as manually reviewed, trigger campaign execution
+    if (manuallyReviewed) {
+      try {
+        await campaignPlanExecutionService.handleManuallyReviewedExecution(
+          tenantId,
+          contactId,
+          leadId
+        );
+      } catch (campaignError) {
+        // Log the error but don't fail the manually reviewed status update
+        logger.error('Failed to initialize campaign execution for manually reviewed contact', {
+          tenantId,
+          leadId,
+          contactId,
+          error: campaignError instanceof Error ? campaignError.message : 'Unknown error',
+        });
+        // Continue execution - the manually reviewed status was still updated successfully
+      }
     }
 
     logger.info(`Updated contact ${contactId} manually reviewed status to ${manuallyReviewed}`);
