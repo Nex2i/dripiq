@@ -75,10 +75,8 @@ export function applyQuietHours(
 ): Date {
   try {
     // Convert to timezone-aware date
-    const zonedDate = new Date(
-      scheduledAt.toLocaleString('en-US', { timeZone: timezone })
-    );
-    
+    const zonedDate = new Date(scheduledAt.toLocaleString('en-US', { timeZone: timezone }));
+
     const hour = zonedDate.getHours();
     const minute = zonedDate.getMinutes();
     const currentTime = hour * 60 + minute; // Minutes since midnight
@@ -107,7 +105,7 @@ export function applyQuietHours(
     const adjustedDate = new Date(zonedDate);
     adjustedDate.setHours(endHour, endMin, 0, 0);
 
-    // If quiet hours span midnight and we're before midnight, 
+    // If quiet hours span midnight and we're before midnight,
     // the end time is tomorrow
     if (quietEnd < quietStart && currentTime >= quietStart) {
       adjustedDate.setDate(adjustedDate.getDate() + 1);
@@ -136,7 +134,7 @@ function getTimezoneOffset(timezone: string, date: Date): number {
     // Create date in timezone and UTC
     const zonedTime = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
     const utcTime = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-    
+
     return utcTime.getTime() - zonedTime.getTime();
   } catch (error) {
     logger.warn('Failed to calculate timezone offset', {

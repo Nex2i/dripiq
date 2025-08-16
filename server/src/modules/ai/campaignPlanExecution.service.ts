@@ -3,11 +3,10 @@ import {
   scheduledActionRepository,
   contactCampaignRepository,
   campaignTransitionRepository,
-  outboundMessageRepository,
 } from '@/repositories';
-import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
 import type { ContactCampaign } from '@/db/schema';
-import { calculateScheduleTime, parseIsoDuration } from './utils/scheduleUtils';
+import type { CampaignPlanOutput } from './schemas/contactCampaignStrategySchema';
+import { calculateScheduleTime } from './utils/scheduleUtils';
 
 export interface CampaignExecutionContext {
   tenantId: string;
@@ -169,7 +168,7 @@ export class CampaignPlanExecutionService {
    * Processes an event-driven transition in the campaign plan
    */
   async processTransition(params: ProcessTransitionParams): Promise<void> {
-    const { tenantId, campaignId, eventType, currentNodeId, plan, eventRef } = params;
+    const { tenantId, campaignId, eventType, currentNodeId, plan } = params;
 
     try {
       logger.info('Processing campaign transition', {
@@ -310,8 +309,6 @@ export class CampaignPlanExecutionService {
     }
   }
 
-
-
   /**
    * Cancels all pending scheduled actions for a campaign
    */
@@ -347,11 +344,11 @@ export class CampaignPlanExecutionService {
   }> {
     try {
       const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
-      
+
       // TODO: Add methods to count related records
       // const pendingActions = await scheduledActionRepository.countPendingByCampaign(tenantId, campaignId);
       // const sentMessages = await outboundMessageRepository.countByCampaign(tenantId, campaignId);
-      
+
       return {
         campaign,
         pendingActions: 0, // TODO: Implement count
