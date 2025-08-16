@@ -137,6 +137,11 @@ export function applyQuietHours(
   quietHours: { start: string; end: string }
 ): Date {
   try {
+    // Special handling for UTC to avoid cross-platform timezone calculation differences
+    if (timezone === 'UTC') {
+      return applyQuietHoursUTC(scheduledAt, quietHours);
+    }
+
     // Get the time components in the target timezone
     const { hour, minute } = getTimeInTimezone(scheduledAt, timezone);
     const currentTime = hour * 60 + minute; // Minutes since midnight
@@ -209,6 +214,50 @@ export function applyQuietHours(
 }
 
 /**
+ * UTC-specific implementation of quiet hours to avoid cross-platform timezone differences
+ */
+function applyQuietHoursUTC(scheduledAt: Date, quietHours: { start: string; end: string }): Date {
+  // Get UTC time components directly
+  const hour = scheduledAt.getUTCHours();
+  const minute = scheduledAt.getUTCMinutes();
+  const currentTime = hour * 60 + minute; // Minutes since midnight
+
+  // Parse quiet hours (HH:MM format)
+  const [startHour, startMin] = quietHours.start.split(':').map(Number);
+  const [endHour, endMin] = quietHours.end.split(':').map(Number);
+  const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
+  const quietEnd = endHour ? endHour * 60 + (endMin || 0) : 0;
+
+  // Determine if current time is in quiet hours
+  let isQuietTime = false;
+  if (quietEnd > quietStart) {
+    // Quiet hours don't span midnight (e.g., 09:00 to 17:00)
+    isQuietTime = currentTime >= quietStart && currentTime <= quietEnd;
+  } else {
+    // Quiet hours span midnight (e.g., 22:00 to 07:00)
+    isQuietTime = currentTime >= quietStart || currentTime <= quietEnd;
+  }
+
+  if (!isQuietTime) {
+    return scheduledAt; // Not in quiet hours, keep original time
+  }
+
+  // Move to end of quiet hours using pure UTC calculations
+  let adjustedDate = new Date(scheduledAt);
+
+  // If quiet hours span midnight and we're before midnight, the end time is tomorrow
+  if (quietEnd < quietStart && currentTime >= quietStart) {
+    // We're in the late night portion (e.g., 22:30), move to next day's end time
+    adjustedDate.setUTCDate(adjustedDate.getUTCDate() + 1);
+  }
+
+  // Set to the end time of quiet hours
+  adjustedDate.setUTCHours(endHour || 0, endMin || 0, 0, 0);
+
+  return adjustedDate;
+}
+
+/**
  * Checks if a given time falls within quiet hours for a timezone
  */
 export function isInQuietHours(
@@ -217,6 +266,11 @@ export function isInQuietHours(
   quietHours: { start: string; end: string }
 ): boolean {
   try {
+    // Special handling for UTC to avoid cross-platform timezone calculation differences
+    if (timezone === 'UTC') {
+      return isInQuietHoursUTC(time, quietHours);
+    }
+
     // Get the time components in the target timezone
     const { hour, minute } = getTimeInTimezone(time, timezone);
     const currentTime = hour * 60 + minute;
@@ -238,6 +292,27 @@ export function isInQuietHours(
       error: error instanceof Error ? error.message : 'Unknown error',
     });
     return false;
+  }
+}
+
+/**
+ * UTC-specific implementation of quiet hours check
+ */
+function isInQuietHoursUTC(time: Date, quietHours: { start: string; end: string }): boolean {
+  // Get UTC time components directly
+  const hour = time.getUTCHours();
+  const minute = time.getUTCMinutes();
+  const currentTime = hour * 60 + minute;
+
+  const [startHour, startMin] = quietHours.start.split(':').map(Number);
+  const [endHour, endMin] = quietHours.end.split(':').map(Number);
+  const quietStart = startHour ? startHour * 60 + (startMin || 0) : 0;
+  const quietEnd = endHour ? endHour * 60 + (endMin || 0) : 0;
+
+  if (quietEnd > quietStart) {
+    return currentTime >= quietStart && currentTime <= quietEnd;
+  } else {
+    return currentTime >= quietStart || currentTime <= quietEnd;
   }
 }
 
