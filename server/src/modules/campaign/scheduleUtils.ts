@@ -199,7 +199,8 @@ export function applyQuietHours(
       adjustedMonth,
       adjustedDay,
       endHour || 0,
-      endMin || 0,
+      endHour ?? 0,
+      endMin ?? 0,
       timezone
     );
 
