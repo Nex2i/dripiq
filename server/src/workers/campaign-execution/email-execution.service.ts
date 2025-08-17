@@ -1,7 +1,7 @@
+import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { emailSenderIdentityRepository, outboundMessageRepository } from '@/repositories';
-import { createId } from '@paralleldrive/cuid2';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { NewOutboundMessage } from '@/db/schema';
 
@@ -79,7 +79,10 @@ export class EmailExecutionService {
           success: existingMessage.state === 'sent',
           outboundMessageId: existingMessage.id,
           providerMessageId: existingMessage.providerMessageId || undefined,
-          error: existingMessage.state === 'failed' ? existingMessage.lastError || 'Send failed' : undefined,
+          error:
+            existingMessage.state === 'failed'
+              ? existingMessage.lastError || 'Send failed'
+              : undefined,
         };
       }
 
@@ -158,10 +161,9 @@ export class EmailExecutionService {
         outboundMessageId,
         providerMessageId: providerIds.providerMessageId,
       };
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+
       logger.error('[EmailExecutionService] Email send failed', {
         tenantId,
         campaignId,
