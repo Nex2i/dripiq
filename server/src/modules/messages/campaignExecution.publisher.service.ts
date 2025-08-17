@@ -8,13 +8,6 @@ export type CampaignExecutionJobPayload = {
   contactId: string;
   nodeId: string;
   actionType: 'send' | 'wait' | 'timeout';
-  nodeData?: {
-    subject?: string;
-    body?: string;
-    channel?: string;
-    eventType?: string;
-    targetNodeId?: string;
-  };
   metadata?: {
     triggeredBy?: string;
     leadId?: string;

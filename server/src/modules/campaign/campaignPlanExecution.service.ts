@@ -116,11 +116,6 @@ export class CampaignPlanExecutionService {
           contactId,
           nodeId: startNode.id,
           actionType: 'send',
-          nodeData: {
-            subject: startNode.subject,
-            body: startNode.body,
-            channel: startNode.channel,
-          },
           metadata: {
             triggeredBy: 'manual_review',
             leadId,

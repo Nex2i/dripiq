@@ -2,6 +2,7 @@ import type { Job } from 'bullmq';
 import { getWorker } from '@/libs/bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
+import { contactCampaignRepository, leadPointOfContactRepository } from '@/repositories';
 import type { CampaignExecutionJobPayload } from '@/modules/messages/campaignExecution.publisher.service';
 
 export type CampaignExecutionJobResult = {
@@ -16,7 +17,7 @@ export type CampaignExecutionJobResult = {
 async function processCampaignExecution(
   job: Job<CampaignExecutionJobPayload>
 ): Promise<CampaignExecutionJobResult> {
-  const { tenantId, campaignId, contactId, nodeId, actionType, nodeData, metadata } = job.data;
+  const { tenantId, campaignId, contactId, nodeId, actionType, metadata } = job.data;
 
   try {
     logger.info('[CampaignExecutionWorker] Processing campaign node execution', {
@@ -29,30 +30,55 @@ async function processCampaignExecution(
       triggeredBy: metadata?.triggeredBy,
     });
 
-    // Log the node data received for verification
-    logger.info('[CampaignExecutionWorker] Node data received', {
+    // Fetch campaign data to get the plan and node details
+    const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+    if (!campaign) {
+      throw new Error(`Campaign not found: ${campaignId}`);
+    }
+
+    const campaignPlan = campaign.planJson as any;
+    if (!campaignPlan) {
+      throw new Error(`Campaign plan not found for campaign: ${campaignId}`);
+    }
+
+    // Find the specific node in the plan
+    const node = campaignPlan.nodes?.find((n: any) => n.id === nodeId);
+    if (!node) {
+      throw new Error(`Node not found in campaign plan: ${nodeId}`);
+    }
+
+    // Fetch contact information if needed
+    const contact = await leadPointOfContactRepository.findById(contactId);
+    if (!contact) {
+      throw new Error(`Contact not found: ${contactId}`);
+    }
+
+    // Log the fetched node data for verification
+    logger.info('[CampaignExecutionWorker] Node data fetched', {
       jobId: job.id,
       nodeId,
       actionType,
-      nodeData: {
-        subject: nodeData?.subject,
-        body: nodeData?.body ? `${nodeData.body.substring(0, 100)}...` : undefined, // Log truncated body
-        channel: nodeData?.channel,
-        eventType: nodeData?.eventType,
-        targetNodeId: nodeData?.targetNodeId,
+      nodeDetails: {
+        action: node.action,
+        subject: node.subject,
+        body: node.body ? `${node.body.substring(0, 100)}...` : undefined, // Log truncated body
+        channel: node.channel,
+        schedule: node.schedule,
       },
-      metadata,
+      contactEmail: contact.email,
+      contactName: contact.name,
     });
 
-    // For now, just log the execution based on action type
+    // Process based on action type with fetched data
     switch (actionType) {
       case 'send':
         logger.info('[CampaignExecutionWorker] Would send message', {
           jobId: job.id,
           nodeId,
-          subject: nodeData?.subject,
-          channel: nodeData?.channel,
-          contactId,
+          subject: node.subject,
+          channel: node.channel,
+          contactEmail: contact.email,
+          contactName: contact.name,
         });
         break;
 
@@ -60,7 +86,7 @@ async function processCampaignExecution(
         logger.info('[CampaignExecutionWorker] Would wait for event', {
           jobId: job.id,
           nodeId,
-          eventType: nodeData?.eventType,
+          eventTypes: node.transitions?.map((t: any) => t.on) || [],
           contactId,
         });
         break;
@@ -69,8 +95,7 @@ async function processCampaignExecution(
         logger.info('[CampaignExecutionWorker] Would process timeout', {
           jobId: job.id,
           nodeId,
-          eventType: nodeData?.eventType,
-          targetNodeId: nodeData?.targetNodeId,
+          timeoutTransitions: node.transitions?.filter((t: any) => t.on.startsWith('no_')) || [],
           contactId,
         });
         break;
