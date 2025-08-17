@@ -6,6 +6,7 @@ import {
 } from '@/repositories';
 import type { ContactCampaign } from '@/db/schema';
 import { CampaignExecutionPublisher } from '@/modules/messages';
+import type { ScheduledAction } from '@/db/schema';
 import type {
   CampaignPlanOutput,
   CampaignPlanNode,
@@ -97,7 +98,7 @@ export class CampaignPlanExecutionService {
       const campaignPlan = existingCampaign.planJson as CampaignPlanOutput;
 
       // Initialize campaign execution using the service
-      await this.initializeCampaignExecution({
+      const scheduledActionId = await this.initializeCampaignExecution({
         tenantId,
         campaignId: existingCampaign.id,
         contactId,
@@ -122,13 +123,37 @@ export class CampaignPlanExecutionService {
           },
         });
 
-        // TODO: Update the corresponding scheduled action with the job ID
-        // This will be implemented once we have the scheduled action ID available
+        // Update the corresponding scheduled action with the job ID
+        if (scheduledActionId) {
+          try {
+            await scheduledActionRepository.updateByIdForTenant(scheduledActionId, tenantId, {
+              bullmqJobId: job.id,
+            });
+
+            logger.info('Scheduled action updated with job ID', {
+              tenantId,
+              scheduledActionId,
+              jobId: job.id,
+              campaignId: existingCampaign.id,
+              nodeId: startNode.id,
+            });
+          } catch (updateError) {
+            logger.error('Failed to update scheduled action with job ID', {
+              tenantId,
+              scheduledActionId,
+              jobId: job.id,
+              error: updateError instanceof Error ? updateError.message : 'Unknown error',
+            });
+            // Don't throw here - the job was published successfully, just log the update failure
+          }
+        }
+
         logger.info('Node execution job queued', {
           tenantId,
           campaignId: existingCampaign.id,
           nodeId: startNode.id,
           jobId: job.id,
+          scheduledActionId,
         });
       }
 
@@ -153,8 +178,9 @@ export class CampaignPlanExecutionService {
   /**
    * Initializes a campaign for execution by creating the first scheduled action
    * and updating campaign status to active.
+   * @returns The ID of the created scheduled action, or null if no action was scheduled
    */
-  async initializeCampaignExecution(context: CampaignExecutionContext): Promise<void> {
+  async initializeCampaignExecution(context: CampaignExecutionContext): Promise<string | null> {
     const { tenantId, campaignId, plan } = context;
 
     try {
@@ -170,6 +196,8 @@ export class CampaignPlanExecutionService {
         throw new Error(`Start node ${plan.startNodeId} not found in campaign plan`);
       }
 
+      let scheduledActionId: string | null = null;
+
       // Only initialize if the start node is a send action
       if (startNode.action === 'send') {
         const scheduledAt = calculateScheduleTime(
@@ -179,7 +207,7 @@ export class CampaignPlanExecutionService {
         );
 
         // Create initial scheduled action
-        await this.scheduleAction({
+        const scheduledAction = await this.scheduleAction({
           tenantId,
           campaignId,
           nodeId: startNode.id,
@@ -191,6 +219,8 @@ export class CampaignPlanExecutionService {
             channel: startNode.channel,
           },
         });
+
+        scheduledActionId = scheduledAction.id;
 
         // Update campaign status to active
         await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
@@ -206,6 +236,7 @@ export class CampaignPlanExecutionService {
           campaignId,
           startNodeId: startNode.id,
           scheduledAt,
+          scheduledActionId,
         });
       } else if (startNode.action === 'wait') {
         // For wait nodes, just update status and schedule timeouts
@@ -229,6 +260,8 @@ export class CampaignPlanExecutionService {
           action: startNode.action,
         });
       }
+
+      return scheduledActionId;
     } catch (error) {
       logger.error('Failed to initialize campaign execution', {
         tenantId,
@@ -242,11 +275,11 @@ export class CampaignPlanExecutionService {
   /**
    * Creates a scheduled action record for later execution by workers
    */
-  async scheduleAction(params: ScheduleActionParams): Promise<void> {
+  async scheduleAction(params: ScheduleActionParams): Promise<ScheduledAction> {
     const { tenantId, campaignId, nodeId, actionType, scheduledAt, payload } = params;
 
     try {
-      await scheduledActionRepository.createForTenant(tenantId, {
+      const scheduledAction = await scheduledActionRepository.createForTenant(tenantId, {
         campaignId,
         actionType,
         scheduledAt,
@@ -263,7 +296,10 @@ export class CampaignPlanExecutionService {
         nodeId,
         actionType,
         scheduledAt,
+        scheduledActionId: scheduledAction.id,
       });
+
+      return scheduledAction;
     } catch (error) {
       logger.error('Failed to schedule action', {
         tenantId,
