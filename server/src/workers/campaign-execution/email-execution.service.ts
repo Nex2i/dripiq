@@ -85,7 +85,7 @@ export class EmailExecutionService {
 
       // Create outbound message record
       const outboundMessageId = createId();
-      const outboundMessage = await outboundMessageRepository.createForTenant(tenantId, {
+      await outboundMessageRepository.createForTenant(tenantId, {
         id: outboundMessageId,
         campaignId,
         contactId,
