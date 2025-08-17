@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
+import fastifyRateLimit from '@fastify/rate-limit';
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
@@ -29,7 +30,7 @@ const WebhookErrorSchema = Type.Object({
 
 export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
   // Register rate limiting for webhook endpoint
-  await fastify.register(import('@fastify/rate-limit'), {
+  await fastify.register(fastifyRateLimit, {
     max: 1000, // Max 1000 requests per window
     timeWindow: '1 minute',
     keyGenerator: (request: FastifyRequest) => {
