@@ -3,7 +3,7 @@ import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { emailSenderIdentityRepository, outboundMessageRepository } from '@/repositories';
 import type { SendBase } from '@/libs/email/sendgrid.types';
-import type { ContactCampaign, LeadPointOfContact, NewOutboundMessage } from '@/db/schema';
+import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 
 export interface EmailExecutionParams {
   tenantId: string;
