@@ -21,7 +21,7 @@ export type SendGridEventType =
 export type SendGridBounceType = 'hard' | 'soft';
 
 // SendGrid Drop Reasons
-export type SendGridDropReason = 
+export type SendGridDropReason =
   | 'Invalid SMTPAPI header'
   | 'Spam Content (if spam checker app enabled)'
   | 'Unsubscribed Address'
@@ -41,7 +41,7 @@ export interface SendGridEventBase {
   sg_message_id: string;
   useragent?: string;
   ip?: string;
-  
+
   // Custom arguments (our internal tracking data)
   tenant_id?: string;
   campaign_id?: string;
@@ -215,7 +215,7 @@ export const SENDGRID_EVENT_TYPES: SendGridEventType[] = [
   'spam_report',
   'unsubscribe',
   'group_unsubscribe',
-  'group_resubscribe'
+  'group_resubscribe',
 ];
 
 export const EVENT_NORMALIZATION_MAP: Record<SendGridEventType, EventNormalizationMapping> = {
@@ -223,60 +223,60 @@ export const EVENT_NORMALIZATION_MAP: Record<SendGridEventType, EventNormalizati
     sendgridType: 'delivered',
     normalizedType: 'delivered',
     shouldCreateMessageEvent: true,
-    priority: 1
+    priority: 1,
   },
   bounce: {
     sendgridType: 'bounce',
     normalizedType: 'bounce',
     shouldCreateMessageEvent: true,
-    priority: 2
+    priority: 2,
   },
   deferred: {
     sendgridType: 'deferred',
     normalizedType: 'deferred',
     shouldCreateMessageEvent: false, // Don't create events for temporary deferrals
-    priority: 0
+    priority: 0,
   },
   dropped: {
     sendgridType: 'dropped',
     normalizedType: 'dropped',
     shouldCreateMessageEvent: true,
-    priority: 3
+    priority: 3,
   },
   open: {
     sendgridType: 'open',
     normalizedType: 'open',
     shouldCreateMessageEvent: true,
-    priority: 1
+    priority: 1,
   },
   click: {
     sendgridType: 'click',
     normalizedType: 'click',
     shouldCreateMessageEvent: true,
-    priority: 1
+    priority: 1,
   },
   spam_report: {
     sendgridType: 'spam_report',
     normalizedType: 'spam',
     shouldCreateMessageEvent: true,
-    priority: 2
+    priority: 2,
   },
   unsubscribe: {
     sendgridType: 'unsubscribe',
     normalizedType: 'unsubscribe',
     shouldCreateMessageEvent: true,
-    priority: 2
+    priority: 2,
   },
   group_unsubscribe: {
     sendgridType: 'group_unsubscribe',
     normalizedType: 'unsubscribe',
     shouldCreateMessageEvent: true,
-    priority: 2
+    priority: 2,
   },
   group_resubscribe: {
     sendgridType: 'group_resubscribe',
     normalizedType: 'resubscribe',
     shouldCreateMessageEvent: true,
-    priority: 1
-  }
+    priority: 1,
+  },
 };

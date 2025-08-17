@@ -1,17 +1,16 @@
 import { logger } from '@/libs/logger';
 import { webhookDeliveryRepository, messageEventRepository } from '@/repositories';
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
+import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
 import {
   SendGridEvent,
   SendGridWebhookPayload,
-  SendGridEventType,
   ProcessedEventResult,
   WebhookProcessingResult,
   SendGridWebhookError,
   EVENT_NORMALIZATION_MAP,
-  SENDGRID_EVENT_TYPES
+  SENDGRID_EVENT_TYPES,
 } from './sendgrid.webhook.types';
-import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
 
 /**
  * SendGrid Webhook Service
@@ -50,10 +49,10 @@ export class SendGridWebhookService {
     rawPayload: string
   ): Promise<WebhookProcessingResult> {
     const startTime = Date.now();
-    
+
     logger.info('Processing SendGrid webhook', {
       payloadSize: rawPayload.length,
-      headers: this.sanitizeHeaders(headers)
+      headers: this.sanitizeHeaders(headers),
     });
 
     try {
@@ -70,11 +69,7 @@ export class SendGridWebhookService {
       // Step 2: Parse webhook payload
       const events = this.parseWebhookPayload(rawPayload);
       if (!events || events.length === 0) {
-        throw new SendGridWebhookError(
-          'No events found in webhook payload',
-          'EMPTY_PAYLOAD',
-          400
-        );
+        throw new SendGridWebhookError('No events found in webhook payload', 'EMPTY_PAYLOAD', 400);
       }
 
       // Step 3: Determine tenant ID from events
@@ -99,11 +94,7 @@ export class SendGridWebhookService {
       const processedEvents = await this.processEvents(tenantId, events);
 
       // Step 6: Update webhook delivery status
-      await this.updateWebhookDeliveryStatus(
-        webhookDelivery.id,
-        tenantId,
-        processedEvents
-      );
+      await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
 
       const processingTime = Date.now() - startTime;
       const result: WebhookProcessingResult = {
@@ -111,27 +102,29 @@ export class SendGridWebhookService {
         webhookDeliveryId: webhookDelivery.id,
         processedEvents,
         totalEvents: events.length,
-        successfulEvents: processedEvents.filter(e => e.success && !e.skipped).length,
-        failedEvents: processedEvents.filter(e => !e.success).length,
-        skippedEvents: processedEvents.filter(e => e.skipped).length,
-        errors: processedEvents.filter(e => e.error).map(e => e.error!).filter(Boolean)
+        successfulEvents: processedEvents.filter((e) => e.success && !e.skipped).length,
+        failedEvents: processedEvents.filter((e) => !e.success).length,
+        skippedEvents: processedEvents.filter((e) => e.skipped).length,
+        errors: processedEvents
+          .filter((e) => e.error)
+          .map((e) => e.error!)
+          .filter(Boolean),
       };
 
       logger.info('SendGrid webhook processed successfully', {
         ...result,
         processingTimeMs: processingTime,
-        tenantId
+        tenantId,
       });
 
       return result;
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
       logger.error('SendGrid webhook processing failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         processingTimeMs: processingTime,
-        payloadSize: rawPayload.length
+        payloadSize: rawPayload.length,
       });
 
       if (error instanceof SendGridWebhookError) {
@@ -155,7 +148,7 @@ export class SendGridWebhookService {
   private parseWebhookPayload(rawPayload: string): SendGridWebhookPayload {
     try {
       const parsed = JSON.parse(rawPayload);
-      
+
       // Validate that it's an array
       if (!Array.isArray(parsed)) {
         throw new SendGridWebhookError(
@@ -174,18 +167,14 @@ export class SendGridWebhookService {
         } catch (error) {
           logger.warn(`Invalid event at index ${index}`, {
             event,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
           // Continue processing other events instead of failing the entire webhook
         }
       }
 
       if (validatedEvents.length === 0) {
-        throw new SendGridWebhookError(
-          'No valid events found in payload',
-          'NO_VALID_EVENTS',
-          400
-        );
+        throw new SendGridWebhookError('No valid events found in payload', 'NO_VALID_EVENTS', 400);
       }
 
       return validatedEvents;
@@ -193,12 +182,9 @@ export class SendGridWebhookService {
       if (error instanceof SendGridWebhookError) {
         throw error;
       }
-      throw new SendGridWebhookError(
-        'Failed to parse webhook payload JSON',
-        'INVALID_JSON',
-        400,
-        { originalError: error }
-      );
+      throw new SendGridWebhookError('Failed to parse webhook payload JSON', 'INVALID_JSON', 400, {
+        originalError: error,
+      });
     }
   }
 
@@ -212,7 +198,14 @@ export class SendGridWebhookService {
       throw new Error('Event must be an object');
     }
 
-    const requiredFields = ['email', 'timestamp', 'smtp-id', 'event', 'sg_event_id', 'sg_message_id'];
+    const requiredFields = [
+      'email',
+      'timestamp',
+      'smtp-id',
+      'event',
+      'sg_event_id',
+      'sg_message_id',
+    ];
     for (const field of requiredFields) {
       if (!event[field]) {
         throw new Error(`Missing required field: ${field}`);
@@ -269,7 +262,7 @@ export class SendGridWebhookService {
       messageId: this.extractMessageId(events),
       payload: JSON.parse(payload),
       signature,
-      status: 'received'
+      status: 'received',
     };
 
     return await webhookDeliveryRepository.createForTenant(tenantId, webhookData);
@@ -301,9 +294,9 @@ export class SendGridWebhookService {
 
     if (this.batchProcessing) {
       // Process all events in parallel for better performance
-      const promises = events.map(event => this.processEvent(tenantId, event));
+      const promises = events.map((event) => this.processEvent(tenantId, event));
       const eventResults = await Promise.allSettled(promises);
-      
+
       for (const [index, result] of eventResults.entries()) {
         if (result.status === 'fulfilled') {
           results.push(result.value);
@@ -312,7 +305,7 @@ export class SendGridWebhookService {
             success: false,
             eventId: events[index].sg_event_id,
             eventType: events[index].event,
-            error: result.reason instanceof Error ? result.reason.message : 'Unknown error'
+            error: result.reason instanceof Error ? result.reason.message : 'Unknown error',
           });
         }
       }
@@ -327,7 +320,7 @@ export class SendGridWebhookService {
             success: false,
             eventId: event.sg_event_id,
             eventType: event.event,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
       }
@@ -347,7 +340,7 @@ export class SendGridWebhookService {
     event: SendGridEvent
   ): Promise<ProcessedEventResult> {
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
-    
+
     // Check if we should create a message event for this type
     if (!eventMapping.shouldCreateMessageEvent) {
       return {
@@ -355,7 +348,7 @@ export class SendGridWebhookService {
         eventId: event.sg_event_id,
         eventType: event.event,
         skipped: true,
-        reason: 'Event type does not require message event creation'
+        reason: 'Event type does not require message event creation',
       };
     }
 
@@ -368,7 +361,7 @@ export class SendGridWebhookService {
           eventId: event.sg_event_id,
           eventType: event.event,
           skipped: true,
-          reason: 'Duplicate event detected'
+          reason: 'Duplicate event detected',
         };
       }
     }
@@ -381,7 +374,7 @@ export class SendGridWebhookService {
       success: true,
       eventId: event.sg_event_id,
       eventType: event.event,
-      messageId: created.id
+      messageId: created.id,
     };
   }
 
@@ -396,11 +389,12 @@ export class SendGridWebhookService {
     // In production, you might want a more sophisticated approach
     try {
       const existing = await messageEventRepository.findAllForTenant(tenantId);
-      return existing.some(existingEvent => 
-        existingEvent.data && 
-        typeof existingEvent.data === 'object' &&
-        'sg_event_id' in existingEvent.data &&
-        existingEvent.data.sg_event_id === event.sg_event_id
+      return existing.some(
+        (existingEvent) =>
+          existingEvent.data &&
+          typeof existingEvent.data === 'object' &&
+          'sg_event_id' in existingEvent.data &&
+          existingEvent.data.sg_event_id === event.sg_event_id
       );
     } catch (error) {
       logger.warn('Error checking for duplicates', { error, eventId: event.sg_event_id });
@@ -414,9 +408,12 @@ export class SendGridWebhookService {
    * @param event - SendGrid event
    * @returns Normalized message event data
    */
-  private normalizeEvent(tenantId: string, event: SendGridEvent): Omit<NewMessageEvent, 'tenantId'> {
+  private normalizeEvent(
+    tenantId: string,
+    event: SendGridEvent
+  ): Omit<NewMessageEvent, 'tenantId'> {
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
-    
+
     return {
       messageId: event.outbound_message_id || 'unknown',
       type: eventMapping.normalizedType,
@@ -427,8 +424,8 @@ export class SendGridWebhookService {
         // Add processing metadata
         processedAt: new Date().toISOString(),
         provider: 'sendgrid',
-        normalizedType: eventMapping.normalizedType
-      }
+        normalizedType: eventMapping.normalizedType,
+      },
     };
   }
 
@@ -443,14 +440,10 @@ export class SendGridWebhookService {
     tenantId: string,
     results: ProcessedEventResult[]
   ): Promise<void> {
-    const hasErrors = results.some(r => !r.success);
+    const hasErrors = results.some((r) => !r.success);
     const status = hasErrors ? 'partial_failure' : 'processed';
 
-    await webhookDeliveryRepository.updateByIdForTenant(
-      webhookDeliveryId,
-      tenantId,
-      { status }
-    );
+    await webhookDeliveryRepository.updateByIdForTenant(webhookDeliveryId, tenantId, { status });
   }
 
   /**
@@ -460,12 +453,12 @@ export class SendGridWebhookService {
    */
   private sanitizeHeaders(headers: Record<string, any>): Record<string, any> {
     const sanitized = { ...headers };
-    
+
     // Remove sensitive headers
     delete sanitized['x-twilio-email-event-webhook-signature'];
     delete sanitized['authorization'];
     delete sanitized['cookie'];
-    
+
     return sanitized;
   }
 
@@ -475,10 +468,10 @@ export class SendGridWebhookService {
    */
   public static fromEnvironment(): SendGridWebhookService {
     const validator = SendGridWebhookValidator.fromEnvironment();
-    
+
     return new SendGridWebhookService(validator, {
       enableDuplicateDetection: process.env.SENDGRID_WEBHOOK_DUPLICATE_DETECTION !== 'false',
-      batchProcessing: process.env.SENDGRID_WEBHOOK_BATCH_PROCESSING !== 'false'
+      batchProcessing: process.env.SENDGRID_WEBHOOK_BATCH_PROCESSING !== 'false',
     });
   }
 }
@@ -492,5 +485,5 @@ export const sendGridWebhookService = {
       _sendGridWebhookService = SendGridWebhookService.fromEnvironment();
     }
     return _sendGridWebhookService;
-  }
+  },
 };

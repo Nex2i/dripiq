@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { SendGridWebhookValidator } from '../sendgrid.webhook.validator';
 import { SendGridWebhookError } from '@/modules/webhooks/sendgrid.webhook.types';
+import { SendGridWebhookValidator } from '../sendgrid.webhook.validator';
 
 describe('SendGridWebhookValidator', () => {
   const testSecret = 'test-webhook-secret-123456789';
@@ -21,7 +21,7 @@ describe('SendGridWebhookValidator', () => {
       const currentTimestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '{"test": true}';
       const signature = generateTestSignature(currentTimestamp, payload, testSecret);
-      
+
       const result = validator.verifySignature(signature, currentTimestamp, payload);
       expect(result.isValid).toBe(true);
     });
@@ -139,7 +139,7 @@ describe('SendGridWebhookValidator', () => {
         'x-twilio-email-event-webhook-signature': signature,
         'x-twilio-email-event-webhook-timestamp': timestamp,
         'content-type': 'application/json',
-        'user-agent': 'SendGrid Event Webhook'
+        'user-agent': 'SendGrid Event Webhook',
       };
 
       const result = validator.verifyWebhookRequest(headers, payload);
@@ -150,7 +150,7 @@ describe('SendGridWebhookValidator', () => {
     it('should reject request with missing headers', () => {
       const payload = '[{"event": "delivered"}]';
       const headers = {
-        'content-type': 'application/json'
+        'content-type': 'application/json',
       };
 
       const result = validator.verifyWebhookRequest(headers, payload);
@@ -165,14 +165,14 @@ describe('SendGridWebhookValidator', () => {
 
       // Missing signature
       let headers = {
-        'x-twilio-email-event-webhook-timestamp': timestamp
+        'x-twilio-email-event-webhook-timestamp': timestamp,
       };
       let result = validator.verifyWebhookRequest(headers, payload);
       expect(result.isValid).toBe(false);
 
       // Missing timestamp
       headers = {
-        'x-twilio-email-event-webhook-signature': 'test-signature'
+        'x-twilio-email-event-webhook-signature': 'test-signature',
       } as any;
       result = validator.verifyWebhookRequest(headers, payload);
       expect(result.isValid).toBe(false);
@@ -183,7 +183,7 @@ describe('SendGridWebhookValidator', () => {
     it('should validate correct configuration', () => {
       const config = {
         webhookSecret: 'valid-secret-123456789',
-        maxTimestampAge: 300
+        maxTimestampAge: 300,
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).not.toThrow();
@@ -191,31 +191,37 @@ describe('SendGridWebhookValidator', () => {
 
     it('should reject missing webhook secret', () => {
       const config = {
-        maxTimestampAge: 300
+        maxTimestampAge: 300,
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
-      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow('SendGrid webhook secret is required');
+      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(
+        'SendGrid webhook secret is required'
+      );
     });
 
     it('should reject weak webhook secret', () => {
       const config = {
         webhookSecret: 'short', // Less than 16 characters
-        maxTimestampAge: 300
+        maxTimestampAge: 300,
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
-      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow('SendGrid webhook secret must be at least 16 characters');
+      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(
+        'SendGrid webhook secret must be at least 16 characters'
+      );
     });
 
     it('should reject invalid max timestamp age', () => {
       const config = {
         webhookSecret: 'valid-secret-123456789',
-        maxTimestampAge: 30 // Too low
+        maxTimestampAge: 30, // Too low
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
-      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow('Max timestamp age must be between 60 and 3600 seconds');
+      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(
+        'Max timestamp age must be between 60 and 3600 seconds'
+      );
 
       config.maxTimestampAge = 4000; // Too high
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
@@ -303,7 +309,7 @@ describe('SendGridWebhookValidator', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const payload1 = '{"test":"data"}';
       const payload2 = '{ "test" : "data" }';
-      
+
       const signature1 = generateTestSignature(timestamp, payload1, testSecret);
       const signature2 = generateTestSignature(timestamp, payload2, testSecret);
 

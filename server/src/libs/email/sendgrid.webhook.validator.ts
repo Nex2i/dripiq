@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import { logger } from '@/libs/logger';
-import { 
-  SendGridSignatureVerification, 
+import {
+  SendGridSignatureVerification,
   SendGridWebhookError,
-  SendGridWebhookHeaders
+  SendGridWebhookHeaders,
 } from '@/modules/webhooks/sendgrid.webhook.types';
 
 /**
@@ -15,7 +15,8 @@ export class SendGridWebhookValidator {
   private readonly webhookSecret: string;
   private readonly maxTimestampAge: number;
 
-  constructor(webhookSecret: string, maxTimestampAge: number = 600) { // 10 minutes default
+  constructor(webhookSecret: string, maxTimestampAge: number = 600) {
+    // 10 minutes default
     if (!webhookSecret) {
       throw new Error('SendGrid webhook secret is required');
     }
@@ -31,15 +32,15 @@ export class SendGridWebhookValidator {
    * @returns Verification result with details
    */
   public verifySignature(
-    signature: string, 
-    timestamp: string, 
+    signature: string,
+    timestamp: string,
     payload: string
   ): SendGridSignatureVerification {
     const result: SendGridSignatureVerification = {
       signature,
       timestamp,
       payload,
-      isValid: false
+      isValid: false,
     };
 
     try {
@@ -71,7 +72,7 @@ export class SendGridWebhookValidator {
           receivedSignature: signature,
           expectedSignature,
           timestamp,
-          payloadLength: payload.length
+          payloadLength: payload.length,
         });
         return result;
       }
@@ -79,17 +80,16 @@ export class SendGridWebhookValidator {
       result.isValid = true;
       logger.debug('SendGrid webhook signature verified successfully', {
         timestamp,
-        payloadLength: payload.length
+        payloadLength: payload.length,
       });
 
       return result;
-
     } catch (error) {
       result.error = `Signature verification error: ${error instanceof Error ? error.message : 'Unknown error'}`;
       logger.error('SendGrid webhook signature verification failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp,
-        payloadLength: payload?.length || 0
+        payloadLength: payload?.length || 0,
       });
       return result;
     }
@@ -102,7 +102,7 @@ export class SendGridWebhookValidator {
    * @returns Verification result
    */
   public verifyWebhookRequest(
-    headers: Partial<SendGridWebhookHeaders>, 
+    headers: Partial<SendGridWebhookHeaders>,
     rawBody: string
   ): SendGridSignatureVerification {
     const signature = headers['x-twilio-email-event-webhook-signature'];
@@ -114,7 +114,7 @@ export class SendGridWebhookValidator {
         timestamp: timestamp || '',
         payload: rawBody,
         isValid: false,
-        error: 'Missing SendGrid signature or timestamp headers'
+        error: 'Missing SendGrid signature or timestamp headers',
       };
     }
 
@@ -138,17 +138,18 @@ export class SendGridWebhookValidator {
     const timestampAge = currentTime - timestampNumber;
 
     if (timestampAge > this.maxTimestampAge) {
-      return { 
-        isValid: false, 
-        error: `Timestamp too old: ${timestampAge}s (max: ${this.maxTimestampAge}s)` 
+      return {
+        isValid: false,
+        error: `Timestamp too old: ${timestampAge}s (max: ${this.maxTimestampAge}s)`,
       };
     }
 
     // Check if timestamp is too far in the future (clock skew protection)
-    if (timestampAge < -300) { // 5 minutes tolerance for future timestamps
-      return { 
-        isValid: false, 
-        error: `Timestamp too far in future: ${Math.abs(timestampAge)}s` 
+    if (timestampAge < -300) {
+      // 5 minutes tolerance for future timestamps
+      return {
+        isValid: false,
+        error: `Timestamp too far in future: ${Math.abs(timestampAge)}s`,
       };
     }
 
@@ -233,7 +234,7 @@ export class SendGridWebhookValidator {
    */
   public static fromEnvironment(): SendGridWebhookValidator {
     const webhookSecret = process.env.SENDGRID_WEBHOOK_SECRET;
-    const maxTimestampAge = process.env.SENDGRID_WEBHOOK_MAX_AGE 
+    const maxTimestampAge = process.env.SENDGRID_WEBHOOK_MAX_AGE
       ? parseInt(process.env.SENDGRID_WEBHOOK_MAX_AGE, 10)
       : 600;
 
@@ -252,5 +253,5 @@ export const sendGridWebhookValidator = {
       _sendGridWebhookValidator = SendGridWebhookValidator.fromEnvironment();
     }
     return _sendGridWebhookValidator;
-  }
+  },
 };

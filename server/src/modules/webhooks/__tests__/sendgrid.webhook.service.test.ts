@@ -1,18 +1,18 @@
-import { SendGridWebhookService } from '../sendgrid.webhook.service';
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
-import { SendGridWebhookError, SendGridEvent } from '../sendgrid.webhook.types';
 import { webhookDeliveryRepository, messageEventRepository } from '@/repositories';
+import { SendGridWebhookService } from '../sendgrid.webhook.service';
+import { SendGridWebhookError, SendGridEvent } from '../sendgrid.webhook.types';
 
 // Mock dependencies
 jest.mock('@/repositories', () => ({
   webhookDeliveryRepository: {
     createForTenant: jest.fn(),
-    updateByIdForTenant: jest.fn()
+    updateByIdForTenant: jest.fn(),
   },
   messageEventRepository: {
     createForTenant: jest.fn(),
-    findAllForTenant: jest.fn()
-  }
+    findAllForTenant: jest.fn(),
+  },
 }));
 
 jest.mock('@/libs/logger', () => ({
@@ -20,29 +20,31 @@ jest.mock('@/libs/logger', () => ({
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    debug: jest.fn()
-  }
+    debug: jest.fn(),
+  },
 }));
 
 describe('SendGridWebhookService', () => {
   let service: SendGridWebhookService;
   let mockValidator: jest.Mocked<SendGridWebhookValidator>;
 
-  const mockWebhookDeliveryRepo = webhookDeliveryRepository as jest.Mocked<typeof webhookDeliveryRepository>;
+  const mockWebhookDeliveryRepo = webhookDeliveryRepository as jest.Mocked<
+    typeof webhookDeliveryRepository
+  >;
   const mockMessageEventRepo = messageEventRepository as jest.Mocked<typeof messageEventRepository>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Create mock validator
     mockValidator = {
       verifyWebhookRequest: jest.fn(),
-      verifySignature: jest.fn()
+      verifySignature: jest.fn(),
     } as any;
 
     service = new SendGridWebhookService(mockValidator, {
       enableDuplicateDetection: true,
-      batchProcessing: true
+      batchProcessing: true,
     });
   });
 
@@ -50,7 +52,7 @@ describe('SendGridWebhookService', () => {
     const mockHeaders = {
       'x-twilio-email-event-webhook-signature': 'valid-signature',
       'x-twilio-email-event-webhook-timestamp': '1234567890',
-      'content-type': 'application/json'
+      'content-type': 'application/json',
     };
 
     const mockSendGridEvent: SendGridEvent = {
@@ -64,7 +66,7 @@ describe('SendGridWebhookService', () => {
       tenant_id: 'tenant-123',
       campaign_id: 'campaign-456',
       outbound_message_id: 'message-789',
-      response: 'Message delivered'
+      response: 'Message delivered',
     } as any;
 
     const mockPayload = JSON.stringify([mockSendGridEvent]);
@@ -75,7 +77,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: mockPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -89,7 +91,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.createForTenant.mockResolvedValue({
@@ -100,7 +102,7 @@ describe('SendGridWebhookService', () => {
         eventAt: new Date(),
         data: mockSendGridEvent,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
@@ -122,14 +124,14 @@ describe('SendGridWebhookService', () => {
         expect.objectContaining({
           provider: 'sendgrid',
           eventType: 'delivered',
-          messageId: 'message-789'
+          messageId: 'message-789',
         })
       );
       expect(mockMessageEventRepo.createForTenant).toHaveBeenCalledWith(
         'tenant-123',
         expect.objectContaining({
           messageId: 'message-789',
-          type: 'delivered'
+          type: 'delivered',
         })
       );
     });
@@ -140,11 +142,12 @@ describe('SendGridWebhookService', () => {
         timestamp: '1234567890',
         payload: mockPayload,
         isValid: false,
-        error: 'Signature verification failed'
+        error: 'Signature verification failed',
       });
 
-      await expect(service.processWebhook(mockHeaders, mockPayload))
-        .rejects.toThrow(SendGridWebhookError);
+      await expect(service.processWebhook(mockHeaders, mockPayload)).rejects.toThrow(
+        SendGridWebhookError
+      );
 
       expect(mockWebhookDeliveryRepo.createForTenant).not.toHaveBeenCalled();
       expect(mockMessageEventRepo.createForTenant).not.toHaveBeenCalled();
@@ -156,13 +159,15 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: emptyPayload,
-        isValid: true
+        isValid: true,
       });
 
-      await expect(service.processWebhook(mockHeaders, emptyPayload))
-        .rejects.toThrow(SendGridWebhookError);
-      await expect(service.processWebhook(mockHeaders, emptyPayload))
-        .rejects.toThrow('No events found in webhook payload');
+      await expect(service.processWebhook(mockHeaders, emptyPayload)).rejects.toThrow(
+        SendGridWebhookError
+      );
+      await expect(service.processWebhook(mockHeaders, emptyPayload)).rejects.toThrow(
+        'No events found in webhook payload'
+      );
     });
 
     it('should reject webhook with invalid JSON', async () => {
@@ -171,11 +176,12 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: invalidJson,
-        isValid: true
+        isValid: true,
       });
 
-      await expect(service.processWebhook(mockHeaders, invalidJson))
-        .rejects.toThrow(SendGridWebhookError);
+      await expect(service.processWebhook(mockHeaders, invalidJson)).rejects.toThrow(
+        SendGridWebhookError
+      );
     });
 
     it('should reject webhook without tenant ID', async () => {
@@ -187,13 +193,15 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload,
-        isValid: true
+        isValid: true,
       });
 
-      await expect(service.processWebhook(mockHeaders, payload))
-        .rejects.toThrow(SendGridWebhookError);
-      await expect(service.processWebhook(mockHeaders, payload))
-        .rejects.toThrow('Unable to determine tenant ID from webhook events');
+      await expect(service.processWebhook(mockHeaders, payload)).rejects.toThrow(
+        SendGridWebhookError
+      );
+      await expect(service.processWebhook(mockHeaders, payload)).rejects.toThrow(
+        'Unable to determine tenant ID from webhook events'
+      );
     });
 
     it('should handle batch events', async () => {
@@ -202,7 +210,7 @@ describe('SendGridWebhookService', () => {
         event: 'open',
         sg_event_id: 'sg-event-456',
         useragent: 'Mozilla/5.0',
-        ip: '192.168.1.1'
+        ip: '192.168.1.1',
       } as any;
 
       const batchPayload = JSON.stringify([mockSendGridEvent, event2]);
@@ -211,7 +219,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: batchPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -225,7 +233,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.createForTenant
@@ -237,7 +245,7 @@ describe('SendGridWebhookService', () => {
           eventAt: new Date(),
           data: mockSendGridEvent,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .mockResolvedValueOnce({
           id: 'message-event-456',
@@ -247,7 +255,7 @@ describe('SendGridWebhookService', () => {
           eventAt: new Date(),
           data: event2,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
 
       mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
@@ -265,7 +273,7 @@ describe('SendGridWebhookService', () => {
         ...mockSendGridEvent,
         event: 'deferred',
         response: 'Temporarily deferred',
-        attempt: '1'
+        attempt: '1',
       } as any;
 
       const payload = JSON.stringify([deferredEvent]);
@@ -274,7 +282,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -288,7 +296,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       const result = await service.processWebhook(mockHeaders, payload);
@@ -305,7 +313,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: mockPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -319,7 +327,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       // Mock existing event (duplicate)
@@ -332,8 +340,8 @@ describe('SendGridWebhookService', () => {
           eventAt: new Date(),
           data: { sg_event_id: 'sg-event-123' },
           createdAt: new Date(),
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       ]);
 
       const result = await service.processWebhook(mockHeaders, mockPayload);
@@ -349,7 +357,7 @@ describe('SendGridWebhookService', () => {
       const event2: SendGridEvent = {
         ...mockSendGridEvent,
         sg_event_id: 'sg-event-456',
-        event: 'open'
+        event: 'open',
       } as any;
 
       const batchPayload = JSON.stringify([mockSendGridEvent, event2]);
@@ -358,7 +366,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: batchPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -372,7 +380,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
@@ -387,7 +395,7 @@ describe('SendGridWebhookService', () => {
           eventAt: new Date(),
           data: mockSendGridEvent,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .mockRejectedValueOnce(new Error('Database error'));
 
@@ -412,7 +420,7 @@ describe('SendGridWebhookService', () => {
       const invalidEvent = {
         // Missing required fields
         email: 'test@example.com',
-        event: 'delivered'
+        event: 'delivered',
       };
 
       const validEvent = { ...mockSendGridEvent, sg_event_id: 'valid-event' };
@@ -422,7 +430,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: mixedPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -436,7 +444,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
@@ -448,7 +456,7 @@ describe('SendGridWebhookService', () => {
         eventAt: new Date(),
         data: validEvent,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       const result = await service.processWebhook(mockHeaders, mixedPayload);
@@ -466,7 +474,7 @@ describe('SendGridWebhookService', () => {
         { timestamp: 123456789 }, // Missing email
         { email: 'invalid-email' }, // Invalid email format
         { email: 'test@example.com', timestamp: 'invalid' }, // Invalid timestamp
-        { email: 'test@example.com', timestamp: 123456789, event: 'invalid' } // Invalid event type
+        { email: 'test@example.com', timestamp: 123456789, event: 'invalid' }, // Invalid event type
       ];
 
       const payload = JSON.stringify(invalidEvents);
@@ -475,11 +483,13 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload,
-        isValid: true
+        isValid: true,
       });
 
       // Should throw because no valid events found
-      expect(service.processWebhook({}, payload)).rejects.toThrow('No valid events found in payload');
+      expect(service.processWebhook({}, payload)).rejects.toThrow(
+        'No valid events found in payload'
+      );
     });
   });
 
@@ -487,14 +497,14 @@ describe('SendGridWebhookService', () => {
     it('should disable duplicate detection when configured', async () => {
       const serviceWithoutDuplicateDetection = new SendGridWebhookService(mockValidator, {
         enableDuplicateDetection: false,
-        batchProcessing: true
+        batchProcessing: true,
       });
 
       mockValidator.verifyWebhookRequest.mockReturnValue({
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: mockPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -508,7 +518,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.createForTenant.mockResolvedValue({
@@ -519,7 +529,7 @@ describe('SendGridWebhookService', () => {
         eventAt: new Date(),
         data: mockSendGridEvent,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       await serviceWithoutDuplicateDetection.processWebhook(mockHeaders, mockPayload);
@@ -532,13 +542,13 @@ describe('SendGridWebhookService', () => {
     it('should process events sequentially when batch processing is disabled', async () => {
       const serviceWithoutBatchProcessing = new SendGridWebhookService(mockValidator, {
         enableDuplicateDetection: true,
-        batchProcessing: false
+        batchProcessing: false,
       });
 
       const event2: SendGridEvent = {
         ...mockSendGridEvent,
         sg_event_id: 'sg-event-456',
-        event: 'open'
+        event: 'open',
       } as any;
 
       const batchPayload = JSON.stringify([mockSendGridEvent, event2]);
@@ -547,7 +557,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         timestamp: '1234567890',
         payload: batchPayload,
-        isValid: true
+        isValid: true,
       });
 
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
@@ -561,7 +571,7 @@ describe('SendGridWebhookService', () => {
         signature: 'valid-signature',
         status: 'received',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
       mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
@@ -574,7 +584,7 @@ describe('SendGridWebhookService', () => {
           eventAt: new Date(),
           data: mockSendGridEvent,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .mockResolvedValueOnce({
           id: 'message-event-456',
@@ -584,7 +594,7 @@ describe('SendGridWebhookService', () => {
           eventAt: new Date(),
           data: event2,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
 
       const result = await serviceWithoutBatchProcessing.processWebhook(mockHeaders, batchPayload);
