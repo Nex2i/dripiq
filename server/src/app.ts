@@ -23,9 +23,8 @@ async function startServer() {
       },
       plugins: [],
     },
-    // Fastify v5 expects either boolean, a pino logger options object, or a Fastify-compatible logger
-    // Passing the options object avoids the FST_ERR_LOG_INVALID_LOGGER_CONFIG error
     logger: loggerOptions,
+    disableRequestLogging: true,
     trustProxy: true,
     genReqId: (_req) => {
       // Generate a simple request ID
