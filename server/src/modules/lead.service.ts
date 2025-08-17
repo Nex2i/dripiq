@@ -8,6 +8,7 @@ import {
 } from '../repositories';
 import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
 import { logger } from '../libs/logger';
+import { formatPhoneForStorage } from '../libs/phoneFormatter';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
 import { storageService } from './storage/storage.service';
 import { ProductsService } from './products.service';
@@ -303,11 +304,17 @@ export const createContact = async (
       throw new Error(`Lead not found or does not belong to tenant: ${leadId}`);
     }
 
+    // Format phone number if provided
+    const formattedContactData = {
+      ...contactData,
+      phone: contactData.phone ? formatPhoneForStorage(contactData.phone) : contactData.phone,
+    };
+
     // Create the contact using repository
     const createdContact = await leadPointOfContactRepository.createForLeadAndTenant(
       leadId,
       tenantId,
-      contactData
+      formattedContactData
     );
 
     logger.info(`Created contact ${createdContact.name} for lead ${leadId}`);
