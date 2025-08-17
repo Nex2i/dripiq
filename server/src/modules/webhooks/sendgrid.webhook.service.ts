@@ -258,7 +258,7 @@ export class SendGridWebhookService {
   ) {
     const webhookData: Omit<NewWebhookDelivery, 'tenantId'> = {
       provider: 'sendgrid',
-      eventType: events.length === 1 ? events[0].event : 'batch',
+      eventType: events.length === 1 && events[0] ? events[0].event : 'batch',
       messageId: this.extractMessageId(events),
       payload: JSON.parse(payload),
       signature,
@@ -274,7 +274,7 @@ export class SendGridWebhookService {
    * @returns Message ID or null
    */
   private extractMessageId(events: SendGridEvent[]): string | null {
-    if (events.length === 1 && events[0].outbound_message_id) {
+    if (events.length === 1 && events[0] && events[0].outbound_message_id) {
       return events[0].outbound_message_id;
     }
     return null;
@@ -298,6 +298,10 @@ export class SendGridWebhookService {
       const eventResults = await Promise.allSettled(promises);
 
       for (const [index, result] of eventResults.entries()) {
+        if (!events[index]) {
+          continue;
+        }
+
         if (result.status === 'fulfilled') {
           results.push(result.value);
         } else {
@@ -367,7 +371,7 @@ export class SendGridWebhookService {
     }
 
     // Create normalized message event
-    const messageEvent = this.normalizeEvent(tenantId, event);
+    const messageEvent = this.normalizeEvent(event);
     const created = await messageEventRepository.createForTenant(tenantId, messageEvent);
 
     return {
@@ -404,14 +408,10 @@ export class SendGridWebhookService {
 
   /**
    * Normalize SendGrid event to internal message event format
-   * @param tenantId - Tenant ID
    * @param event - SendGrid event
    * @returns Normalized message event data
    */
-  private normalizeEvent(
-    tenantId: string,
-    event: SendGridEvent
-  ): Omit<NewMessageEvent, 'tenantId'> {
+  private normalizeEvent(event: SendGridEvent): Omit<NewMessageEvent, 'tenantId'> {
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
 
     return {

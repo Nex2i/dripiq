@@ -33,6 +33,29 @@ describe('SendGridWebhookService', () => {
   >;
   const mockMessageEventRepo = messageEventRepository as jest.Mocked<typeof messageEventRepository>;
 
+  // Shared mock data accessible throughout all test blocks
+  const mockHeaders = {
+    'x-twilio-email-event-webhook-signature': 'valid-signature',
+    'x-twilio-email-event-webhook-timestamp': '1234567890',
+    'content-type': 'application/json',
+  };
+
+  const mockSendGridEvent: SendGridEvent = {
+    email: 'test@example.com',
+    timestamp: 1234567890,
+    'smtp-id': 'smtp-id-123',
+    event: 'delivered',
+    category: ['test'],
+    sg_event_id: 'sg-event-123',
+    sg_message_id: 'sg-message-456',
+    tenant_id: 'tenant-123',
+    campaign_id: 'campaign-456',
+    outbound_message_id: 'message-789',
+    response: 'Message delivered',
+  } as any;
+
+  const mockPayload = JSON.stringify([mockSendGridEvent]);
+
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -49,28 +72,6 @@ describe('SendGridWebhookService', () => {
   });
 
   describe('processWebhook', () => {
-    const mockHeaders = {
-      'x-twilio-email-event-webhook-signature': 'valid-signature',
-      'x-twilio-email-event-webhook-timestamp': '1234567890',
-      'content-type': 'application/json',
-    };
-
-    const mockSendGridEvent: SendGridEvent = {
-      email: 'test@example.com',
-      timestamp: 1234567890,
-      'smtp-id': 'smtp-id-123',
-      event: 'delivered',
-      category: ['test'],
-      sg_event_id: 'sg-event-123',
-      sg_message_id: 'sg-message-456',
-      tenant_id: 'tenant-123',
-      campaign_id: 'campaign-456',
-      outbound_message_id: 'message-789',
-      response: 'Message delivered',
-    } as any;
-
-    const mockPayload = JSON.stringify([mockSendGridEvent]);
-
     it('should successfully process valid webhook', async () => {
       // Setup mocks
       mockValidator.verifyWebhookRequest.mockReturnValue({
@@ -166,7 +167,7 @@ describe('SendGridWebhookService', () => {
         SendGridWebhookError
       );
       await expect(service.processWebhook(mockHeaders, emptyPayload)).rejects.toThrow(
-        'No events found in webhook payload'
+        'No valid events found in payload'
       );
     });
 

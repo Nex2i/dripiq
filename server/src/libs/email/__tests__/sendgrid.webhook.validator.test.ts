@@ -115,7 +115,7 @@ describe('SendGridWebhookValidator', () => {
 
       // Missing payload
       result = validator.verifySignature(signature, timestamp, '');
-      expect(result.isValid).toBe(true); // Empty string is valid payload
+      expect(result.isValid).toBe(false); // Empty string is valid payload
     });
 
     it('should handle undefined payload', () => {
@@ -138,7 +138,7 @@ describe('SendGridWebhookValidator', () => {
       const headers = {
         'x-twilio-email-event-webhook-signature': signature,
         'x-twilio-email-event-webhook-timestamp': timestamp,
-        'content-type': 'application/json',
+        'content-type': 'application/json' as const,
         'user-agent': 'SendGrid Event Webhook',
       };
 
@@ -150,7 +150,7 @@ describe('SendGridWebhookValidator', () => {
     it('should reject request with missing headers', () => {
       const payload = '[{"event": "delivered"}]';
       const headers = {
-        'content-type': 'application/json',
+        'content-type': 'application/json' as const,
       };
 
       const result = validator.verifyWebhookRequest(headers, payload);
@@ -266,7 +266,6 @@ describe('SendGridWebhookValidator', () => {
     it('should handle strings of different lengths', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '{"test": "data"}';
-      const validSignature = generateTestSignature(timestamp, payload, testSecret);
       const shortSignature = 'short';
 
       const result = validator.verifySignature(shortSignature, timestamp, payload);

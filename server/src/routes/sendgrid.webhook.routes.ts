@@ -19,17 +19,6 @@ const WebhookProcessingResultSchema = Type.Object({
   errors: Type.Array(Type.String(), { description: 'Array of error messages' }),
 });
 
-// Schema for processed event result
-const ProcessedEventResultSchema = Type.Object({
-  success: Type.Boolean(),
-  eventId: Type.String(),
-  eventType: Type.String(),
-  messageId: Type.Optional(Type.String()),
-  error: Type.Optional(Type.String()),
-  skipped: Type.Optional(Type.Boolean()),
-  reason: Type.Optional(Type.String()),
-});
-
 // Schema for error responses
 const WebhookErrorSchema = Type.Object({
   error: Type.String({ description: 'Error code' }),
@@ -43,7 +32,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
   await fastify.register(import('@fastify/rate-limit'), {
     max: 1000, // Max 1000 requests per window
     timeWindow: '1 minute',
-    keyGenerator: (request) => {
+    keyGenerator: (request: FastifyRequest) => {
       // Use IP address for rate limiting
       return request.ip;
     },
@@ -52,7 +41,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
       message: 'Too many webhook requests. Please try again later.',
       retryAfter: 60,
     }),
-    onExceeding: (request) => {
+    onExceeding: (request: FastifyRequest) => {
       logger.warn('SendGrid webhook rate limit exceeded', {
         ip: request.ip,
         userAgent: request.headers['user-agent'],
@@ -77,7 +66,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         }),
       },
     },
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       reply.status(200).send({
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -152,7 +141,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         }
 
         // Get raw body for signature verification
-        const rawBody = request.rawBody?.toString('utf8');
+        const rawBody = request.body as string;
         if (!rawBody) {
           logger.error('Missing raw body for signature verification', { requestId });
           return reply.status(400).send({
