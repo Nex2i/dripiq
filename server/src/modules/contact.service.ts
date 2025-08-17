@@ -1,5 +1,6 @@
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { logger } from '@/libs/logger';
+import { formatPhoneForStorage } from '@/libs/phoneFormatter';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 
@@ -64,8 +65,17 @@ export const updateContact = async (
       throw new Error('Invalid email format');
     }
 
+    // Format phone number if provided
+    const formattedContactData = { ...contactData };
+    if (contactData.phone !== undefined) {
+      formattedContactData.phone = formatPhoneForStorage(contactData.phone);
+    }
+
     // Update the contact
-    const updatedContact = await leadPointOfContactRepository.updateById(contactId, contactData);
+    const updatedContact = await leadPointOfContactRepository.updateById(
+      contactId,
+      formattedContactData
+    );
 
     if (!updatedContact) {
       throw new Error('Failed to update contact');
@@ -109,9 +119,13 @@ export const createContact = async (
       throw new Error('Invalid email format');
     }
 
+    // Format phone number if provided
+    const formattedPhone = contactData.phone ? formatPhoneForStorage(contactData.phone) : null;
+
     // Create the contact
     const newContact: NewLeadPointOfContact = {
       ...contactData,
+      phone: formattedPhone,
       leadId,
     };
 

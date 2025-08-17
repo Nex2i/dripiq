@@ -1,5 +1,6 @@
 import { compareTwoStrings } from 'string-similarity';
 import { logger } from '@/libs/logger';
+import { formatPhoneForStorage, normalizePhoneForComparison } from '@/libs/phoneFormatter';
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { createContact } from '../lead.service';
@@ -126,9 +127,7 @@ export const ContactExtractionService = {
       }
 
       // Check for phone duplicates
-      const normalizedPhone = contact.phone
-        ? ContactExtractionService.normalizePhone(contact.phone)
-        : null;
+      const normalizedPhone = contact.phone ? normalizePhoneForComparison(contact.phone) : null;
       if (normalizedPhone && seenPhones.has(normalizedPhone)) {
         logger.debug(`Skipping duplicate phone contact: ${contact.name} (${normalizedPhone})`);
         continue;
@@ -374,12 +373,12 @@ export const ContactExtractionService = {
 
     // Exact phone match also gets high priority
     if (contact1.phone && contact2.phone) {
-      const phone1 = ContactExtractionService.normalizePhone(contact1.phone);
-      const phone2 = ContactExtractionService.normalizePhone(contact2.phone);
+      const phone1 = normalizePhoneForComparison(contact1.phone);
+      const phone2 = normalizePhoneForComparison(contact2.phone);
 
       if (phone1 === phone2) {
         return 1.0; // Perfect match on phone
-      } else {
+      } else if (phone1 && phone2) {
         const phoneScore = compareTwoStrings(phone1, phone2);
         totalScore += phoneScore * weights.phone;
       }
@@ -408,13 +407,6 @@ export const ContactExtractionService = {
 
     // Return weighted average
     return totalWeight > 0 ? totalScore / totalWeight : 0;
-  },
-
-  /**
-   * Normalize phone number for comparison
-   */
-  normalizePhone: (phone: string): string => {
-    return phone.replace(/[\s\-()[\]+]/g, '').replace(/^1/, '');
   },
 
   /**
@@ -590,7 +582,7 @@ export const ContactExtractionService = {
     return {
       name,
       email: extractedContact.email || null,
-      phone: extractedContact.phone || null,
+      phone: formatPhoneForStorage(extractedContact.phone),
       title: title || null,
       company,
       sourceUrl: extractedContact.sourceUrl || null,
