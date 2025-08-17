@@ -94,7 +94,7 @@ export class CampaignPlanExecutionService {
         status: existingCampaign.status,
       });
 
-      const campaignPlan = existingCampaign.planJson as any; // Cast from jsonb to CampaignPlanOutput
+      const campaignPlan = existingCampaign.planJson as CampaignPlanOutput;
 
       // Initialize campaign execution using the service
       await this.initializeCampaignExecution({
