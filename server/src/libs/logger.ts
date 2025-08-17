@@ -68,19 +68,19 @@ if (typeof process.env.NEXT_RUNTIME === 'undefined' || process.env.NEXT_RUNTIME 
 const createLoggerWithOverride = (logger: Logger) => {
   return {
     warn: (message: string, payload?: any) => {
-      const logObj = payload ? { payload: payload } : {};
+      const logObj = payload || {};
       logger.warn(logObj, message);
     },
     info: (message: string, payload?: any) => {
-      const logObj = payload ? { payload: payload } : {};
+      const logObj = payload || {};
       logger.info(logObj, message);
     },
     error: (message: string, payload?: any) => {
-      const logObj = payload ? { payload: payload } : {};
+      const logObj = payload || {};
       logger.error(logObj, message);
     },
     debug: (message: string, payload?: any) => {
-      const logObj = payload ? { payload: payload } : {};
+      const logObj = payload || {};
       logger.debug(logObj, message);
     },
   };
