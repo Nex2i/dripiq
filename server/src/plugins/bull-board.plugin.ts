@@ -5,6 +5,7 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { FastifyAdapter } from '@bull-board/fastify';
 import { getQueue } from '@/libs/bullmq';
 import { QUEUE_NAMES } from '@/constants/queues';
+import { logger } from '@/libs/logger';
 
 export default fp(async function bullBoardPlugin(app) {
   // Create queue instances for monitoring
@@ -67,7 +68,7 @@ export default fp(async function bullBoardPlugin(app) {
     }
   });
 
-  app.log.info('Bull-Board dashboard initialized', {
+  logger.info('Bull-Board dashboard initialized', {
     path: '/admin/queues',
     queues: Object.values(QUEUE_NAMES),
   });

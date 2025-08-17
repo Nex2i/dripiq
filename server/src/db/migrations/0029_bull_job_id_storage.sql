@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."scheduled_actions" ADD COLUMN "bullmq_job_id" text;
