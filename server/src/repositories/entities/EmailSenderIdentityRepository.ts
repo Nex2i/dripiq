@@ -1,5 +1,10 @@
 import { eq, and, inArray } from 'drizzle-orm';
-import { emailSenderIdentities, EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
+import {
+  emailSenderIdentities,
+  EmailSenderIdentity,
+  NewEmailSenderIdentity,
+  leads,
+} from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
@@ -173,6 +178,25 @@ export class EmailSenderIdentityRepository extends TenantAwareRepository<
     }
 
     return results[0].id;
+  }
+
+  async findByLeadIdForTenant(
+    leadId: string,
+    tenantId: string
+  ): Promise<EmailSenderIdentity | undefined> {
+    const results = await this.db
+      .select()
+      .from(emailSenderIdentities)
+      .innerJoin(leads, eq(emailSenderIdentities.userId, leads.ownerId))
+      .where(
+        and(
+          eq(leads.id, leadId),
+          eq(leads.tenantId, tenantId),
+          eq(emailSenderIdentities.tenantId, tenantId)
+        )
+      )
+      .limit(1);
+    return results[0]?.email_sender_identities;
   }
 
   async findByUserIdForTenant(

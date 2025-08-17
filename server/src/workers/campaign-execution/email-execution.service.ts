@@ -3,7 +3,7 @@ import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { emailSenderIdentityRepository, outboundMessageRepository } from '@/repositories';
 import type { SendBase } from '@/libs/email/sendgrid.types';
-import type { NewOutboundMessage } from '@/db/schema';
+import type { ContactCampaign, LeadPointOfContact, NewOutboundMessage } from '@/db/schema';
 
 export interface EmailExecutionParams {
   tenantId: string;
@@ -16,15 +16,8 @@ export interface EmailExecutionParams {
     channel: string;
     [key: string]: any;
   };
-  contact: {
-    email: string;
-    name?: string;
-    [key: string]: any;
-  };
-  campaign: {
-    senderIdentityId?: string;
-    [key: string]: any;
-  };
+  contact: LeadPointOfContact;
+  campaign: ContactCampaign;
 }
 
 export interface EmailExecutionResult {
@@ -36,7 +29,7 @@ export interface EmailExecutionResult {
 
 export class EmailExecutionService {
   async executeEmailSend(params: EmailExecutionParams): Promise<EmailExecutionResult> {
-    const { tenantId, campaignId, contactId, nodeId, node, contact, campaign } = params;
+    const { tenantId, campaignId, contactId, nodeId, node, contact } = params;
 
     try {
       // Validate that this is an email channel
@@ -54,7 +47,7 @@ export class EmailExecutionService {
       }
 
       // Fetch and validate sender identity
-      const senderIdentity = await this.getSenderIdentity(tenantId, campaign.senderIdentityId);
+      const senderIdentity = await this.getSenderIdentityByLeadId(tenantId, contact.leadId);
 
       // Generate dedupe key
       const dedupeKey = `${tenantId}:${contactId}:${campaignId}:${nodeId}:email`;
@@ -206,18 +199,18 @@ export class EmailExecutionService {
     }
   }
 
-  private async getSenderIdentity(tenantId: string, senderIdentityId?: string) {
-    if (!senderIdentityId) {
+  private async getSenderIdentityByLeadId(tenantId: string, leadId?: string) {
+    if (!leadId) {
       throw new Error('No sender identity configured for campaign');
     }
 
-    const senderIdentity = await emailSenderIdentityRepository.findByIdForTenant(
-      senderIdentityId,
+    const senderIdentity = await emailSenderIdentityRepository.findByLeadIdForTenant(
+      leadId,
       tenantId
     );
 
     if (!senderIdentity) {
-      throw new Error(`Sender identity not found: ${senderIdentityId}`);
+      throw new Error(`Sender identity not found: ${leadId}`);
     }
 
     if (senderIdentity.validationStatus !== 'verified') {
