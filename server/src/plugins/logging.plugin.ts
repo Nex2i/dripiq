@@ -6,7 +6,7 @@ import { logger } from '@/libs/logger';
 const requestStartTimes = new Map<string, number>();
 
 const ignoredMethods = ['OPTIONS', 'HEAD'];
-const ignoredPaths = ['/health', '/metrics'];
+const ignoredPaths = ['/health', '/metrics', '/admin/queues'];
 
 const loggingPlugin = async (fastify: FastifyInstance) => {
   // Log incoming requests with structured data
@@ -14,7 +14,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     // Store request start time for response time calculation
     requestStartTimes.set(request.id, Date.now());
 
-    if (ignoredPaths.includes(request.url)) {
+    if (shouldUrlBeIgnored(request.url)) {
       return;
     }
 
@@ -43,7 +43,7 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     const startTime = requestStartTimes.get(request.id);
     const responseTime = startTime ? Date.now() - startTime : undefined;
 
-    if (ignoredPaths.includes(request.url)) {
+    if (shouldUrlBeIgnored(request.url)) {
       return;
     }
 
@@ -91,6 +91,15 @@ const loggingPlugin = async (fastify: FastifyInstance) => {
     }
   );
 };
+
+function shouldUrlBeIgnored(url: string) {
+  for (const ignoredPath of ignoredPaths) {
+    if (url.includes(ignoredPath)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export default fp(loggingPlugin, {
   name: 'logging-plugin',

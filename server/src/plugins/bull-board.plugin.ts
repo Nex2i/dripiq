@@ -5,18 +5,24 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { FastifyAdapter } from '@bull-board/fastify';
 import { getQueue } from '@/libs/bullmq';
 import { QUEUE_NAMES } from '@/constants/queues';
+import { logger } from '@/libs/logger';
 
 export default fp(async function bullBoardPlugin(app) {
   // Create queue instances for monitoring
   const leadAnalysisQueue = getQueue(QUEUE_NAMES.lead_analysis);
   const campaignCreationQueue = getQueue(QUEUE_NAMES.campaign_creation);
+  const campaignExecutionQueue = getQueue(QUEUE_NAMES.campaign_execution);
 
   // Create the Fastify adapter for Bull-Board
   const serverAdapter = new FastifyAdapter();
 
   // Create the Bull-Board instance with the queues
   createBullBoard({
-    queues: [new BullMQAdapter(leadAnalysisQueue), new BullMQAdapter(campaignCreationQueue)],
+    queues: [
+      new BullMQAdapter(leadAnalysisQueue),
+      new BullMQAdapter(campaignCreationQueue),
+      new BullMQAdapter(campaignExecutionQueue),
+    ],
     serverAdapter,
   });
 
@@ -62,7 +68,7 @@ export default fp(async function bullBoardPlugin(app) {
     }
   });
 
-  app.log.info('Bull-Board dashboard initialized', {
+  logger.info('Bull-Board dashboard initialized', {
     path: '/admin/queues',
     queues: Object.values(QUEUE_NAMES),
   });

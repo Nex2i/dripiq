@@ -525,6 +525,7 @@ export const scheduledActions = appSchema.table(
     scheduledAt: timestamp('scheduled_at').notNull(),
     status: scheduledActionStatusEnum('status').notNull().default('pending'),
     payload: jsonb('payload'),
+    bullmqJobId: text('bullmq_job_id'), // Track BullMQ job ID for cancellation
     attemptCount: integer('attempt_count').notNull().default(0),
     lastError: text('last_error'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
