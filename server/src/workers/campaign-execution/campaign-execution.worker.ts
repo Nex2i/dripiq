@@ -4,6 +4,7 @@ import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, leadPointOfContactRepository } from '@/repositories';
 import type { CampaignExecutionJobPayload } from '@/modules/messages/campaignExecution.publisher.service';
+import { EmailExecutionService } from './email-execution.service';
 
 export type CampaignExecutionJobResult = {
   success: boolean;
@@ -20,6 +21,8 @@ async function processCampaignExecution(
   const { tenantId, campaignId, contactId, nodeId, actionType, metadata } = job.data;
 
   try {
+    // Initialize email execution service
+    const emailExecutionService = new EmailExecutionService();
     logger.info('[CampaignExecutionWorker] Processing campaign node execution', {
       jobId: job.id,
       tenantId,
@@ -72,14 +75,44 @@ async function processCampaignExecution(
     // Process based on action type with fetched data
     switch (actionType) {
       case 'send':
-        logger.info('[CampaignExecutionWorker] Would send message', {
-          jobId: job.id,
-          nodeId,
-          subject: node.subject,
-          channel: node.channel,
-          contactEmail: contact.email,
-          contactName: contact.name,
-        });
+        if (node.channel === 'email') {
+          logger.info('[CampaignExecutionWorker] Executing email send', {
+            jobId: job.id,
+            nodeId,
+            subject: node.subject,
+            contactEmail: contact.email,
+            contactName: contact.name,
+          });
+
+          const emailResult = await emailExecutionService.executeEmailSend({
+            tenantId,
+            campaignId,
+            contactId,
+            nodeId,
+            node,
+            contact,
+            campaign,
+          });
+
+          if (!emailResult.success) {
+            throw new Error(`Email send failed: ${emailResult.error}`);
+          }
+
+          logger.info('[CampaignExecutionWorker] Email sent successfully', {
+            jobId: job.id,
+            nodeId,
+            outboundMessageId: emailResult.outboundMessageId,
+            providerMessageId: emailResult.providerMessageId,
+          });
+        } else {
+          logger.info('[CampaignExecutionWorker] Would send message (non-email channel)', {
+            jobId: job.id,
+            nodeId,
+            channel: node.channel,
+            contactEmail: contact.email,
+            contactName: contact.name,
+          });
+        }
         break;
 
       case 'wait':
