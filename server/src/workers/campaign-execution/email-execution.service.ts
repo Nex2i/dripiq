@@ -50,7 +50,7 @@ export class EmailExecutionService {
       const senderIdentity = await this.getSenderIdentityByLeadId(tenantId, contact.leadId);
 
       // Generate dedupe key
-      const dedupeKey = `${tenantId}:${contactId}:${campaignId}:${nodeId}:email`;
+      const dedupeKey = this.buildDedupeKey(params);
 
       // Check if message already exists (idempotency)
       const existingMessage = await outboundMessageRepository.findByDedupeKeyForTenant(
@@ -98,7 +98,7 @@ export class EmailExecutionService {
         scheduledAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as Omit<NewOutboundMessage, 'tenantId'>);
+      });
 
       // Prepare SendGrid payload
       const sendPayload: SendBase = {
@@ -168,7 +168,7 @@ export class EmailExecutionService {
 
       // Try to update outbound message with failure if it was created
       try {
-        const dedupeKey = `${tenantId}:${contactId}:${campaignId}:${nodeId}:email`;
+        const dedupeKey = this.buildDedupeKey(params);
         const existingMessage = await outboundMessageRepository.findByDedupeKeyForTenant(
           tenantId,
           dedupeKey
@@ -220,5 +220,9 @@ export class EmailExecutionService {
     }
 
     return senderIdentity;
+  }
+
+  private buildDedupeKey(params: EmailExecutionParams) {
+    return `${params.tenantId}:${params.campaignId}:${params.contactId}:${params.nodeId}:email`;
   }
 }
