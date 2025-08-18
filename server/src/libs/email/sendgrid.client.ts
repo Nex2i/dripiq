@@ -178,7 +178,10 @@ class SendgridClient {
   }
 
   private buildUnsubscribeUrl(tenantId: string, email: string, campaignId?: string): string {
-    const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.API_URL;
+    if (!baseUrl) {
+      throw new Error('API_URL is not set');
+    }
     const params = new URLSearchParams({
       email: email.toLowerCase(),
       tenant: tenantId,
