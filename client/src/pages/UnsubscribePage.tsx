@@ -96,20 +96,9 @@ export const UnsubscribePage: React.FC = () => {
             }}
           >
             Please note: You may still receive emails that were already
-            scheduled before this request. These should stop within 24-48 hours.
+            scheduled before this request. These should stop within 7 days.
           </p>
         </div>
-
-        <p
-          style={{
-            fontSize: '12px',
-            color: '#9ca3af',
-            margin: '0',
-          }}
-        >
-          If you continue to receive emails after 48 hours, please contact our
-          support team.
-        </p>
       </div>
     </div>
   )
