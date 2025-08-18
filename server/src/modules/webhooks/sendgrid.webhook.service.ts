@@ -84,12 +84,7 @@ export class SendGridWebhookService {
       }
 
       // Step 4: Store raw webhook delivery
-      const webhookDelivery = await this.storeRawWebhook(
-        tenantId,
-        rawPayload,
-        verification.signature,
-        events
-      );
+      const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
 
       // Step 5: Process events
       const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
@@ -251,12 +246,7 @@ export class SendGridWebhookService {
    * @param events - Parsed events
    * @returns Stored webhook delivery
    */
-  private async storeRawWebhook(
-    tenantId: string,
-    payload: string,
-    signature: string,
-    events: SendGridEvent[]
-  ) {
+  private async storeRawWebhook(tenantId: string, signature: string, events: SendGridEvent[]) {
     const webhookData: Omit<NewWebhookDelivery, 'tenantId'> = {
       provider: 'sendgrid',
       eventType: events.length === 1 && events[0] ? events[0].event : 'batch',
