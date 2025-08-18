@@ -78,7 +78,7 @@ export class UnsubscribeService {
         channelValues
       );
 
-      return new Set(unsubscribes.map(u => u.channelValue));
+      return new Set(unsubscribes.map((u) => u.channelValue));
     } catch (error) {
       logger.error('Failed to get unsubscribed channel values', {
         tenantId,
@@ -143,11 +143,11 @@ export class UnsubscribeService {
   async getUnsubscribeStats(tenantId: string, channel?: string) {
     try {
       let unsubscribes;
-      
+
       if (channel) {
         // Get unsubscribes for specific channel
         unsubscribes = await contactUnsubscribeRepository.findAllForTenant(tenantId);
-        unsubscribes = unsubscribes.filter(u => u.channel === channel);
+        unsubscribes = unsubscribes.filter((u) => u.channel === channel);
       } else {
         // Get all unsubscribes for tenant
         unsubscribes = await contactUnsubscribeRepository.findAllForTenant(tenantId);
@@ -155,27 +155,34 @@ export class UnsubscribeService {
 
       const stats = {
         total: unsubscribes.length,
-        byChannel: unsubscribes.reduce((acc, u) => {
-          acc[u.channel] = (acc[u.channel] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        bySource: unsubscribes.reduce((acc, u) => {
-          acc[u.unsubscribeSource] = (acc[u.unsubscribeSource] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
+        byChannel: unsubscribes.reduce(
+          (acc, u) => {
+            acc[u.channel] = (acc[u.channel] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+        bySource: unsubscribes.reduce(
+          (acc, u) => {
+            acc[u.unsubscribeSource] = (acc[u.unsubscribeSource] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
         recentUnsubscribes: unsubscribes
-          .sort((a, b) => new Date(b.unsubscribedAt).getTime() - new Date(a.unsubscribedAt).getTime())
+          .sort(
+            (a, b) => new Date(b.unsubscribedAt).getTime() - new Date(a.unsubscribedAt).getTime()
+          )
           .slice(0, 10), // Last 10 unsubscribes
       };
 
-      logger.info('Generated unsubscribe stats', { 
-        tenantId, 
-        channel, 
-        totalUnsubscribes: stats.total 
+      logger.info('Generated unsubscribe stats', {
+        tenantId,
+        channel,
+        totalUnsubscribes: stats.total,
       });
-      
+
       return stats;
-      
     } catch (error) {
       logger.error('Failed to generate unsubscribe stats', {
         tenantId,
@@ -227,7 +234,7 @@ export class UnsubscribeService {
 
       return {
         total: unsubscribes.length,
-        unsubscribes: unsubscribes.map(u => ({
+        unsubscribes: unsubscribes.map((u) => ({
           id: u.id,
           channel: u.channel,
           channelValue: u.channelValue,

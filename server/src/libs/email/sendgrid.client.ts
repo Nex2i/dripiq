@@ -17,7 +17,7 @@ class SendgridClient {
     }
 
     // Inject unsubscribe link if HTML content
-    const finalHtml = input.html 
+    const finalHtml = input.html
       ? this.appendUnsubscribeLink(input.html, input.tenantId, input.to, input.campaignId)
       : body;
 
@@ -159,7 +159,7 @@ class SendgridClient {
     campaignId?: string
   ): string {
     const unsubscribeUrl = this.buildUnsubscribeUrl(tenantId, toEmail, campaignId);
-    
+
     const unsubscribeLink = `
       <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
         <p style="margin: 0;">
@@ -183,7 +183,7 @@ class SendgridClient {
       email: email.toLowerCase(),
       tenant: tenantId,
     });
-    
+
     if (campaignId) {
       params.append('campaign', campaignId);
     }

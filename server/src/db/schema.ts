@@ -810,7 +810,9 @@ export const contactUnsubscribes = appSchema.table(
     unsubscribedAt: timestamp('unsubscribed_at').notNull().defaultNow(),
     unsubscribeSource: text('unsubscribe_source').notNull(), // 'link_click', 'sendgrid_webhook', 'manual'
     campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'set null' }),
-    contactId: text('contact_id').references(() => leadPointOfContacts.id, { onDelete: 'set null' }), // Optional context
+    contactId: text('contact_id').references(() => leadPointOfContacts.id, {
+      onDelete: 'set null',
+    }), // Optional context
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
     createdAt: timestamp('created_at').notNull().defaultNow(),

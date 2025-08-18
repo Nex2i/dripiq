@@ -19,18 +19,18 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         type: 'object',
         required: ['email', 'tenant'],
         properties: {
-          email: { 
-            type: 'string', 
+          email: {
+            type: 'string',
             format: 'email',
-            description: 'Email address to unsubscribe'
+            description: 'Email address to unsubscribe',
           },
-          tenant: { 
+          tenant: {
             type: 'string',
-            description: 'Tenant ID'
+            description: 'Tenant ID',
           },
-          campaign: { 
+          campaign: {
             type: 'string',
-            description: 'Campaign ID (optional)'
+            description: 'Campaign ID (optional)',
           },
         },
       },
@@ -50,14 +50,14 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
 
         // Validate required parameters
         if (!email || !tenant) {
-          return reply.status(400).send({ 
-            error: 'Missing required parameters: email and tenant' 
+          return reply.status(400).send({
+            error: 'Missing required parameters: email and tenant',
           });
         }
 
         // Normalize email
         const normalizedEmail = email.toLowerCase().trim();
-        
+
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(normalizedEmail)) {
@@ -97,18 +97,18 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         );
 
         // Redirect to frontend success page
-        const frontendUrl = process.env.UNSUBSCRIBE_FRONTEND_URL || 'http://localhost:5173/unsubscribe/success';
+        const frontendUrl =
+          process.env.UNSUBSCRIBE_FRONTEND_URL || 'http://localhost:5173/unsubscribe/success';
         const redirectUrl = `${frontendUrl}?email=${encodeURIComponent(normalizedEmail)}`;
-        
-        return reply.redirect(302, redirectUrl);
 
+        return reply.redirect(302, redirectUrl);
       } catch (error) {
         logger.error('Unsubscribe request failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           query: request.query,
           ip: request.ip,
         });
-        
+
         return reply.status(500).send({ error: 'Failed to process unsubscribe request' });
       }
     },
@@ -127,19 +127,19 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         type: 'object',
         required: ['email', 'tenantId'],
         properties: {
-          email: { 
-            type: 'string', 
-            format: 'email',
-            description: 'Email address to unsubscribe'
-          },
-          tenantId: { 
+          email: {
             type: 'string',
-            description: 'Tenant ID'
+            format: 'email',
+            description: 'Email address to unsubscribe',
           },
-          source: { 
+          tenantId: {
+            type: 'string',
+            description: 'Tenant ID',
+          },
+          source: {
             type: 'string',
             default: 'manual',
-            description: 'Source of unsubscribe'
+            description: 'Source of unsubscribe',
           },
         },
       },
@@ -160,14 +160,14 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
 
         // Security check: ensure user can only unsubscribe for their tenant
         if (tenantId !== requestingTenantId) {
-          return reply.status(403).send({ 
-            error: 'You can only manage unsubscribes for your own tenant' 
+          return reply.status(403).send({
+            error: 'You can only manage unsubscribes for your own tenant',
           });
         }
 
         if (!email || !tenantId) {
-          return reply.status(400).send({ 
-            error: 'Missing required fields: email and tenantId' 
+          return reply.status(400).send({
+            error: 'Missing required fields: email and tenantId',
           });
         }
 
@@ -183,13 +183,12 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         );
 
         return reply.send({ success: true, message: 'Successfully unsubscribed' });
-
       } catch (error) {
         logger.error('Manual unsubscribe failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           body: request.body,
         });
-        
+
         return reply.status(500).send({ error: 'Failed to process unsubscribe' });
       }
     },
@@ -208,15 +207,15 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         type: 'object',
         required: ['email'],
         properties: {
-          email: { 
-            type: 'string', 
+          email: {
+            type: 'string',
             format: 'email',
-            description: 'Email address to check'
+            description: 'Email address to check',
           },
-          channel: { 
+          channel: {
             type: 'string',
             default: 'email',
-            description: 'Communication channel'
+            description: 'Communication channel',
           },
         },
       },
@@ -235,8 +234,8 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         const tenantId = (request as any).tenantId as string;
 
         if (!email) {
-          return reply.status(400).send({ 
-            error: 'Missing required parameter: email' 
+          return reply.status(400).send({
+            error: 'Missing required parameter: email',
           });
         }
 
@@ -246,18 +245,17 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
           email.toLowerCase().trim()
         );
 
-        return reply.send({ 
+        return reply.send({
           email: email.toLowerCase().trim(),
           channel,
-          isUnsubscribed 
+          isUnsubscribed,
         });
-
       } catch (error) {
         logger.error('Check unsubscribe status failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           query: request.query,
         });
-        
+
         return reply.status(500).send({ error: 'Failed to check unsubscribe status' });
       }
     },
@@ -275,9 +273,9 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
       querystring: {
         type: 'object',
         properties: {
-          channel: { 
+          channel: {
             type: 'string',
-            description: 'Filter by communication channel'
+            description: 'Filter by communication channel',
           },
         },
       },
@@ -297,13 +295,12 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         const stats = await unsubscribeService.getUnsubscribeStats(tenantId, channel);
 
         return reply.send(stats);
-
       } catch (error) {
         logger.error('Get unsubscribe stats failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           query: request.query,
         });
-        
+
         return reply.status(500).send({ error: 'Failed to get unsubscribe statistics' });
       }
     },

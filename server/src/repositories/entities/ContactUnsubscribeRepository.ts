@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { contactUnsubscribes, ContactUnsubscribe, NewContactUnsubscribe } from '@/db/schema';
-import { TenantAwareRepository } from '../base/TenantAwareRepository';
 import { logger } from '@/libs/logger';
+import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
  * <summary>ContactUnsubscribeRepository manages channel-based unsubscribe tracking.</summary>
@@ -24,7 +24,10 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
   ): Promise<ContactUnsubscribe> {
     const [result] = await this.db
       .insert(this.table)
-      .values({ ...(data as Omit<NewContactUnsubscribe, 'tenantId'>), tenantId } as NewContactUnsubscribe)
+      .values({
+        ...(data as Omit<NewContactUnsubscribe, 'tenantId'>),
+        tenantId,
+      } as NewContactUnsubscribe)
       .returning();
     return result as ContactUnsubscribe;
   }
@@ -52,7 +55,7 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
 
     try {
       const [result] = await this.db.insert(this.table).values(newUnsubscribe).returning();
-      
+
       logger.info('Created unsubscribe record', {
         id: result.id,
         tenantId: data.tenantId,
@@ -70,12 +73,16 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
           channel: data.channel,
           channelValue: data.channelValue,
         });
-        
+
         // Return existing record
-        const existing = await this.findByChannelValue(data.tenantId, data.channel, data.channelValue);
+        const existing = await this.findByChannelValue(
+          data.tenantId,
+          data.channel,
+          data.channelValue
+        );
         if (existing) return existing;
       }
-      
+
       logger.error('Failed to create unsubscribe record', {
         error: error instanceof Error ? error.message : 'Unknown error',
         data,
@@ -117,7 +124,9 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
   ): Promise<ContactUnsubscribe | undefined> {
     const [result] = await this.db
       .update(this.table)
-      .set(data as Partial<Omit<NewContactUnsubscribe, 'tenantId'>> as Partial<NewContactUnsubscribe>)
+      .set(
+        data as Partial<Omit<NewContactUnsubscribe, 'tenantId'>> as Partial<NewContactUnsubscribe>
+      )
       .where(and(eq(this.table.id, id), eq(this.table.tenantId, tenantId)))
       .returning();
     return result as ContactUnsubscribe | undefined;
@@ -191,7 +200,7 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
   ): Promise<ContactUnsubscribe[]> {
     if (channelValues.length === 0) return [];
 
-    const normalizedValues = channelValues.map(v => v.toLowerCase().trim());
+    const normalizedValues = channelValues.map((v) => v.toLowerCase().trim());
 
     return await this.db
       .select()
@@ -220,7 +229,7 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
             // Use proper date comparison operators
             // Note: This would need proper date range operators in a real implementation
             eq(this.table.unsubscribedAt, startDate), // Placeholder - would use gte/lte
-            eq(this.table.unsubscribedAt, endDate)    // Placeholder - would use gte/lte
+            eq(this.table.unsubscribedAt, endDate) // Placeholder - would use gte/lte
           )
         )
       );
@@ -236,30 +245,17 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
     return await this.db
       .select()
       .from(this.table)
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          eq(this.table.campaignId, campaignId)
-        )
-      );
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)));
   }
 
   /**
    * Find unsubscribes by source for analytics
    */
-  async findBySourceForTenant(
-    tenantId: string,
-    source: string
-  ): Promise<ContactUnsubscribe[]> {
+  async findBySourceForTenant(tenantId: string, source: string): Promise<ContactUnsubscribe[]> {
     return await this.db
       .select()
       .from(this.table)
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          eq(this.table.unsubscribeSource, source)
-        )
-      );
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.unsubscribeSource, source)));
   }
 }
 
