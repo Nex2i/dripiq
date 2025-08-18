@@ -218,6 +218,13 @@
       "when": 1755475050389,
       "tag": "0030_add_sg_event_id_to_message_events",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1755480274746,
+      "tag": "0031_add_contact_unsubscribes",
+      "breakpoints": true
     }
   ]
 }

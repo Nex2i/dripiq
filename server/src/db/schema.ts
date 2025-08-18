@@ -795,6 +795,37 @@ export const campaignTransitions = appSchema.table(
   (table) => [index('campaign_transitions_campaign_idx').on(table.campaignId, table.occurredAt)]
 );
 
+// Contact Unsubscribes - channel-based unsubscribe tracking
+export const contactUnsubscribes = appSchema.table(
+  'contact_unsubscribes',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    channel: text('channel').notNull(), // 'email', 'sms', etc.
+    channelValue: text('channel_value').notNull(), // email address, phone number, etc. (normalized/lowercase)
+    unsubscribedAt: timestamp('unsubscribed_at').notNull().defaultNow(),
+    unsubscribeSource: text('unsubscribe_source').notNull(), // 'link_click', 'sendgrid_webhook', 'manual'
+    campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'set null' }),
+    contactId: text('contact_id').references(() => leadPointOfContacts.id, {
+      onDelete: 'set null',
+    }), // Optional context
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('contact_unsubscribes_unique').on(table.tenantId, table.channel, table.channelValue),
+    index('contact_unsubscribes_tenant_channel_idx').on(table.tenantId, table.channel),
+    index('contact_unsubscribes_channel_value_idx').on(table.channel, table.channelValue),
+    index('contact_unsubscribes_unsubscribed_at_idx').on(table.unsubscribedAt),
+    index('contact_unsubscribes_source_idx').on(table.unsubscribeSource),
+  ]
+);
+
 // Relations for new tables
 export const emailSenderIdentitiesRelations = relations(emailSenderIdentities, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -973,6 +1004,21 @@ export const campaignTransitionsRelations = relations(campaignTransitions, ({ on
   }),
 }));
 
+export const contactUnsubscribesRelations = relations(contactUnsubscribes, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [contactUnsubscribes.tenantId],
+    references: [tenants.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [contactUnsubscribes.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [contactUnsubscribes.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -1026,3 +1072,5 @@ export type ContactChannel = typeof contactChannels.$inferSelect;
 export type NewContactChannel = typeof contactChannels.$inferInsert;
 export type CampaignTransition = typeof campaignTransitions.$inferSelect;
 export type NewCampaignTransition = typeof campaignTransitions.$inferInsert;
+export type ContactUnsubscribe = typeof contactUnsubscribes.$inferSelect;
+export type NewContactUnsubscribe = typeof contactUnsubscribes.$inferInsert;
