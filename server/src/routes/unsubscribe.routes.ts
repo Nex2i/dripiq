@@ -28,7 +28,6 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
       description: 'Process email unsubscribe request and redirect to success page.',
       querystring: UnsubscribeQuerySchema,
       response: {
-        302: Type.Void(),
         400: UnsubscribeErrorResponseSchema,
         404: UnsubscribeErrorResponseSchema,
         500: UnsubscribeErrorResponseSchema,
