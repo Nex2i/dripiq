@@ -369,7 +369,8 @@ export class SendGridWebhookService {
 
     // Handle unsubscribe events
     if (event.event === 'unsubscribe' || event.event === 'group_unsubscribe') {
-      await this.handleUnsubscribeEvent(event, tenantId);
+      // TODO: Implement unsubscribe handling
+      // await this.handleUnsubscribeEvent(event, tenantId);
     }
 
     // Create normalized message event
