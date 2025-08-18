@@ -1,4 +1,5 @@
 import { Type } from '@sinclair/typebox';
+import { DEFAULT_CALENDAR_TIE_IN } from '../../../constants';
 
 // Request schema for updating own profile or another user's profile (admin)
 export const UpdateProfileRequestSchema = Type.Object({
@@ -11,7 +12,7 @@ export const UpdateProfileRequestSchema = Type.Object({
   ),
   calendarTieIn: Type.String({ 
     description: 'Introductory text used before presenting the calendar link in emails',
-    default: "If you're interested, feel free to grab some time on my calendar"
+    default: DEFAULT_CALENDAR_TIE_IN
   }),
 });
 
