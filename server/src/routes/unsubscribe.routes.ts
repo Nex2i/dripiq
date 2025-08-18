@@ -1,8 +1,19 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify';
+import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { tenantRepository } from '@/repositories';
 import { logger } from '@/libs/logger';
+import {
+  UnsubscribeQuerySchema,
+  ManualUnsubscribeRequestSchema,
+  UnsubscribeStatusQuerySchema,
+  UnsubscribeStatsQuerySchema,
+  UnsubscribeSuccessResponseSchema,
+  UnsubscribeStatusResponseSchema,
+  UnsubscribeStatsResponseSchema,
+  UnsubscribeErrorResponseSchema,
+} from './apiSchema/unsubscribe';
 
 const basePath = '';
 
@@ -15,24 +26,12 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
       tags: ['Unsubscribe'],
       summary: 'Process unsubscribe request',
       description: 'Process email unsubscribe request and redirect to success page.',
-      querystring: {
-        type: 'object',
-        required: ['email', 'tenant'],
-        properties: {
-          email: {
-            type: 'string',
-            format: 'email',
-            description: 'Email address to unsubscribe',
-          },
-          tenant: {
-            type: 'string',
-            description: 'Tenant ID',
-          },
-          campaign: {
-            type: 'string',
-            description: 'Campaign ID (optional)',
-          },
-        },
+      querystring: UnsubscribeQuerySchema,
+      response: {
+        302: Type.Void(),
+        400: UnsubscribeErrorResponseSchema,
+        404: UnsubscribeErrorResponseSchema,
+        500: UnsubscribeErrorResponseSchema,
       },
     },
     handler: async (
@@ -98,11 +97,10 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
 
         // Redirect to frontend success page
         const frontendUrl =
-          process.env.FRONTEND_ORIGIN + '/unsubscribe/success' ||
-          'http://localhost:5173/unsubscribe/success';
+          process.env.UNSUBSCRIBE_FRONTEND_URL || 'http://localhost:5173/unsubscribe/success';
         const redirectUrl = `${frontendUrl}?email=${encodeURIComponent(normalizedEmail)}`;
 
-        return reply.redirect(redirectUrl, 302);
+        return reply.redirect(redirectUrl);
       } catch (error) {
         logger.error('Unsubscribe request failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -124,25 +122,12 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
       tags: ['Unsubscribe'],
       summary: 'Manual unsubscribe',
       description: 'Manually unsubscribe an email address (admin use).',
-      body: {
-        type: 'object',
-        required: ['email', 'tenantId'],
-        properties: {
-          email: {
-            type: 'string',
-            format: 'email',
-            description: 'Email address to unsubscribe',
-          },
-          tenantId: {
-            type: 'string',
-            description: 'Tenant ID',
-          },
-          source: {
-            type: 'string',
-            default: 'manual',
-            description: 'Source of unsubscribe',
-          },
-        },
+      body: ManualUnsubscribeRequestSchema,
+      response: {
+        200: UnsubscribeSuccessResponseSchema,
+        400: UnsubscribeErrorResponseSchema,
+        403: UnsubscribeErrorResponseSchema,
+        500: UnsubscribeErrorResponseSchema,
       },
     },
     handler: async (
@@ -204,21 +189,11 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
       tags: ['Unsubscribe'],
       summary: 'Check unsubscribe status',
       description: 'Check if an email address is unsubscribed.',
-      querystring: {
-        type: 'object',
-        required: ['email'],
-        properties: {
-          email: {
-            type: 'string',
-            format: 'email',
-            description: 'Email address to check',
-          },
-          channel: {
-            type: 'string',
-            default: 'email',
-            description: 'Communication channel',
-          },
-        },
+      querystring: UnsubscribeStatusQuerySchema,
+      response: {
+        200: UnsubscribeStatusResponseSchema,
+        400: UnsubscribeErrorResponseSchema,
+        500: UnsubscribeErrorResponseSchema,
       },
     },
     handler: async (
@@ -271,14 +246,10 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
       tags: ['Unsubscribe'],
       summary: 'Get unsubscribe statistics',
       description: 'Get unsubscribe statistics for the tenant (admin only).',
-      querystring: {
-        type: 'object',
-        properties: {
-          channel: {
-            type: 'string',
-            description: 'Filter by communication channel',
-          },
-        },
+      querystring: UnsubscribeStatsQuerySchema,
+      response: {
+        200: UnsubscribeStatsResponseSchema,
+        500: UnsubscribeErrorResponseSchema,
       },
     },
     handler: async (
