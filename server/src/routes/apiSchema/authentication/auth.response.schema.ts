@@ -7,6 +7,7 @@ export const userObjectSchema = Type.Object({
   name: Type.Optional(Type.String()),
   avatar: Type.Optional(Type.String()),
   calendarLink: Type.Optional(Type.String()),
+  calendarTieIn: Type.String(),
   createdAt: Type.String(),
   updatedAt: Type.String(),
 });

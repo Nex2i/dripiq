@@ -9,6 +9,10 @@ export const UpdateProfileRequestSchema = Type.Object({
       format: 'uri',
     })
   ),
+  calendarTieIn: Type.String({ 
+    description: 'Introductory text used before presenting the calendar link in emails',
+    default: "If you're interested, feel free to grab some time on my calendar"
+  }),
 });
 
 // Params schema for routes that target a specific user by ID

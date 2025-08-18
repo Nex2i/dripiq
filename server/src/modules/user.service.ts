@@ -7,6 +7,7 @@ export interface CreateUserData {
   name?: string;
   avatar?: string;
   calendarLink?: string;
+  calendarTieIn?: string;
 }
 
 export class UserService {
