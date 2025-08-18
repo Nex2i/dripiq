@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from '@tanstack/react-router'
+import { useParams } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
@@ -12,7 +12,6 @@ import {
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 
 export default function UserEditPage() {
-  const navigate = useNavigate()
   const params = useParams({ strict: false }) as { userId?: string }
   const { user: authUser, refreshUser } = useAuth()
 
@@ -45,7 +44,10 @@ export default function UserEditPage() {
 
   // Validate calendar link using utility
   const validateCalendarLink = (url: string): string => {
-    const result = UrlValidator.validateCalendarLinkStrict(url, initialCalendarLink)
+    const result = UrlValidator.validateCalendarLinkStrict(
+      url,
+      initialCalendarLink,
+    )
     return result.error || ''
   }
 
@@ -62,7 +64,7 @@ export default function UserEditPage() {
     async function load() {
       try {
         let userData = null
-        
+
         if (isAdminMode) {
           setLoading(true)
           const svc = getUsersService()
@@ -112,7 +114,7 @@ export default function UserEditPage() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      
+
       // Final validation before save
       const finalCalendarError = validateCalendarLink(calendarLink)
       if (finalCalendarError) {
@@ -120,16 +122,23 @@ export default function UserEditPage() {
         setError('Please fix the calendar link validation error before saving.')
         return
       }
-      
+
       const svc = getUsersService()
       const finalCalendarTieIn = calendarTieIn.trim() || DEFAULT_CALENDAR_TIE_IN
       if (isAdminMode) {
-        await svc.updateUserProfile(targetUserId!, { name: name.trim(), calendarLink: calendarLink.trim() || undefined, calendarTieIn: finalCalendarTieIn })
+        await svc.updateUserProfile(targetUserId!, {
+          name: name.trim(),
+          calendarLink: calendarLink.trim() || undefined,
+          calendarTieIn: finalCalendarTieIn,
+        })
       } else {
-        await svc.updateMyProfile({ name: name.trim(), calendarLink: calendarLink.trim() || undefined, calendarTieIn: finalCalendarTieIn })
+        await svc.updateMyProfile({
+          name: name.trim(),
+          calendarLink: calendarLink.trim() || undefined,
+          calendarTieIn: finalCalendarTieIn,
+        })
         await refreshUser()
       }
-      navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })
     } catch (e: any) {
       setError(e?.message || 'Failed to save')
     } finally {
@@ -137,9 +146,7 @@ export default function UserEditPage() {
     }
   }
 
-  const handleCancel = () => {
-    navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })
-  }
+  const handleCancel = () => {}
 
   const handleCreateSender = async () => {
     setSenderError(null)
@@ -250,13 +257,12 @@ export default function UserEditPage() {
                 placeholder="https://calendly.com/your-link or other HTTPS calendar URL"
               />
               {calendarLinkError ? (
-                <p className="text-xs text-red-600 mt-1">
-                  {calendarLinkError}
-                </p>
+                <p className="text-xs text-red-600 mt-1">{calendarLinkError}</p>
               ) : (
                 <p className="text-xs text-gray-500 mt-1">
                   Optional calendar booking link for scheduling meetings.
-                  {initialCalendarLink && ' Once set, this field cannot be left empty.'}
+                  {initialCalendarLink &&
+                    ' Once set, this field cannot be left empty.'}
                 </p>
               )}
             </div>
@@ -272,7 +278,8 @@ export default function UserEditPage() {
                 rows={3}
               />
               <p className="text-xs text-gray-500 mt-1">
-                This message will appear in emails before presenting your calendar link. If left empty, the default message will be used.
+                This message will appear in emails before presenting your
+                calendar link. If left empty, the default message will be used.
               </p>
             </div>
           </div>

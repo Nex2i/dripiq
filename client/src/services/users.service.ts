@@ -1,10 +1,12 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { authService } from './auth.service'
+import { inviteQueryKeys } from './invites.service'
 
 export const userQueryKeys = {
   all: ['users'] as const,
   lists: () => [...userQueryKeys.all, 'list'] as const,
-  list: (filters?: Record<string, any>) => [...userQueryKeys.lists(), filters] as const,
+  list: (filters?: Record<string, any>) =>
+    [...userQueryKeys.lists(), filters] as const,
   details: () => [...userQueryKeys.all, 'detail'] as const,
   detail: (id: string) => [...userQueryKeys.details(), id] as const,
   me: () => [...userQueryKeys.all, 'me'] as const,
@@ -42,7 +44,11 @@ class UsersService {
     return res.json()
   }
 
-  async updateMyProfile(profileData: { name: string; calendarLink?: string; calendarTieIn: string }): Promise<{ message: string; user: SimpleUser }> {
+  async updateMyProfile(profileData: {
+    name: string
+    calendarLink?: string
+    calendarTieIn: string
+  }): Promise<{ message: string; user: SimpleUser }> {
     const authHeaders = await authService.getAuthHeaders()
     const res = await fetch(`${this.baseUrl}/me/profile`, {
       method: 'PUT',
@@ -69,7 +75,7 @@ class UsersService {
 
   async updateUserProfile(
     userId: string,
-    profileData: { name: string; calendarLink?: string; calendarTieIn: string }
+    profileData: { name: string; calendarLink?: string; calendarTieIn: string },
   ): Promise<{ message: string; user: SimpleUser }> {
     const authHeaders = await authService.getAuthHeaders()
     const res = await fetch(`${this.baseUrl}/users/${userId}/profile`, {
@@ -87,11 +93,14 @@ class UsersService {
     const result = await res.json()
 
     if (this.queryClient) {
-      this.queryClient.invalidateQueries({ queryKey: userQueryKeys.detail(userId) })
+      this.queryClient.invalidateQueries({
+        queryKey: userQueryKeys.detail(userId),
+      })
       // Also invalidate lists based on existing invites list key
       try {
-        const { inviteQueryKeys } = await import('./invites.service')
-        this.queryClient.invalidateQueries({ queryKey: inviteQueryKeys.usersList() })
+        this.queryClient.invalidateQueries({
+          queryKey: inviteQueryKeys.usersList(),
+        })
       } catch {}
     }
 
@@ -102,13 +111,16 @@ class UsersService {
 let usersServiceInstance: UsersService | null = null
 
 export const createUsersService = (queryClient: QueryClient): UsersService => {
-  if (!usersServiceInstance) usersServiceInstance = new UsersService(queryClient)
+  if (!usersServiceInstance)
+    usersServiceInstance = new UsersService(queryClient)
   return usersServiceInstance
 }
 
 export const getUsersService = (): UsersService => {
   if (!usersServiceInstance) {
-    throw new Error('UsersService not initialized. Call createUsersService() first.')
+    throw new Error(
+      'UsersService not initialized. Call createUsersService() first.',
+    )
   }
   return usersServiceInstance
 }
