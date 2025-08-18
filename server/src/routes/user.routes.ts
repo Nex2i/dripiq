@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fas
 import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
 import { userTenantRepository } from '@/repositories';
+import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { UpdateProfileRequestSchema, UserIdParamsSchema } from './apiSchema/users';
 
 const basePath = '';
@@ -40,6 +41,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           email: user.email,
           name: user.name || '',
           calendarLink: user.calendarLink || '',
+          calendarTieIn: user.calendarTieIn || DEFAULT_CALENDAR_TIE_IN,
         });
       } catch (error: any) {
         fastify.log.error(`Error getting user: ${error.message}`);
@@ -60,14 +62,21 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       description: "Update the authenticated user's profile (name only).",
     },
     handler: async (
-      request: FastifyRequest<{ Body: { name: string; calendarLink?: string } }>,
+      request: FastifyRequest<{
+        Body: { name: string; calendarLink?: string; calendarTieIn: string };
+      }>,
       reply: FastifyReply
     ) => {
       try {
-        const { name, calendarLink } = request.body;
+        const { name, calendarLink, calendarTieIn } = request.body;
         const supabaseId = (request as any).user?.supabaseId as string;
+        const finalCalendarTieIn = calendarTieIn?.trim() || DEFAULT_CALENDAR_TIE_IN;
 
-        const updated = await UserService.updateUser(supabaseId, { name, calendarLink });
+        const updated = await UserService.updateUser(supabaseId, {
+          name,
+          calendarLink,
+          calendarTieIn: finalCalendarTieIn,
+        });
         reply.send({
           message: 'Profile updated',
           user: {
@@ -75,6 +84,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
             email: updated.email,
             name: updated.name,
             calendarLink: updated.calendarLink,
+            calendarTieIn: updated.calendarTieIn,
           },
         });
       } catch (error: any) {
@@ -99,14 +109,15 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
     handler: async (
       request: FastifyRequest<{
         Params: { userId: string };
-        Body: { name: string; calendarLink?: string };
+        Body: { name: string; calendarLink?: string; calendarTieIn: string };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const { userId } = request.params;
-        const { name, calendarLink } = request.body;
+        const { name, calendarLink, calendarTieIn } = request.body;
         const tenantId = (request as any).tenantId as string;
+        const finalCalendarTieIn = calendarTieIn?.trim() || DEFAULT_CALENDAR_TIE_IN;
 
         // Ensure target user is part of this tenant
         await userTenantRepository.findByUserIdForTenant(userId, tenantId);
@@ -118,7 +129,11 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        const updated = await UserService.updateUser(targetUser.supabaseId, { name, calendarLink });
+        const updated = await UserService.updateUser(targetUser.supabaseId, {
+          name,
+          calendarLink,
+          calendarTieIn: finalCalendarTieIn,
+        });
         reply.send({
           message: 'User updated',
           user: {
@@ -126,6 +141,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
             email: updated.email,
             name: updated.name,
             calendarLink: updated.calendarLink,
+            calendarTieIn: updated.calendarTieIn,
           },
         });
       } catch (error: any) {

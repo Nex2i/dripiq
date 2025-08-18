@@ -6,6 +6,7 @@ import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
 import { RoleService } from '@/modules/role.service';
 import { authCache } from '@/cache/AuthCache';
+import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 
 // Import all authentication schemas from organized schema files
 import isFakeMail from '@/libs/isFakeMail.client';
@@ -262,6 +263,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
             name: dbUser.name,
             avatar: dbUser.avatar,
             calendarLink: dbUser.calendarLink,
+            calendarTieIn: dbUser.calendarTieIn || DEFAULT_CALENDAR_TIE_IN,
             createdAt: dbUser.createdAt,
             updatedAt: dbUser.updatedAt,
           },

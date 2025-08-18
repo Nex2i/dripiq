@@ -7,6 +7,7 @@ export interface BackendUser {
   name: string | null
   avatar: string | null
   calendarLink: string | null
+  calendarTieIn: string
   createdAt: string
   updatedAt: string
 }

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from '@tanstack/react-router'
+import { useParams } from '@tanstack/react-router'
 import { useAuth } from '../../contexts/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { getUsersService } from '../../services/users.service'
@@ -9,9 +9,9 @@ import {
   useResendMySenderVerification,
   useVerifyMySenderIdentity,
 } from '../../hooks/useSenderIdentities'
+import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 
 export default function UserEditPage() {
-  const navigate = useNavigate()
   const params = useParams({ strict: false }) as { userId?: string }
   const { user: authUser, refreshUser } = useAuth()
 
@@ -26,6 +26,7 @@ export default function UserEditPage() {
   const [calendarLink, setCalendarLink] = useState<string>('')
   const [initialCalendarLink, setInitialCalendarLink] = useState<string>('')
   const [calendarLinkError, setCalendarLinkError] = useState<string>('')
+  const [calendarTieIn, setCalendarTieIn] = useState<string>('')
   const [saving, setSaving] = useState<boolean>(false)
 
   // sender identity UI state
@@ -43,7 +44,10 @@ export default function UserEditPage() {
 
   // Validate calendar link using utility
   const validateCalendarLink = (url: string): string => {
-    const result = UrlValidator.validateCalendarLinkStrict(url, initialCalendarLink)
+    const result = UrlValidator.validateCalendarLinkStrict(
+      url,
+      initialCalendarLink,
+    )
     return result.error || ''
   }
 
@@ -60,7 +64,7 @@ export default function UserEditPage() {
     async function load() {
       try {
         let userData = null
-        
+
         if (isAdminMode) {
           setLoading(true)
           const svc = getUsersService()
@@ -77,6 +81,8 @@ export default function UserEditPage() {
           setCalendarLink(calLink)
           setInitialCalendarLink(calLink)
           setCalendarLinkError(validateCalendarLink(calLink))
+          const calTieIn = userData.calendarTieIn || DEFAULT_CALENDAR_TIE_IN
+          setCalendarTieIn(calTieIn)
           setFromName(userData.name || '')
           setFromEmail(userData.email)
         }
@@ -108,7 +114,7 @@ export default function UserEditPage() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      
+
       // Final validation before save
       const finalCalendarError = validateCalendarLink(calendarLink)
       if (finalCalendarError) {
@@ -116,15 +122,23 @@ export default function UserEditPage() {
         setError('Please fix the calendar link validation error before saving.')
         return
       }
-      
+
       const svc = getUsersService()
+      const finalCalendarTieIn = calendarTieIn.trim() || DEFAULT_CALENDAR_TIE_IN
       if (isAdminMode) {
-        await svc.updateUserProfile(targetUserId!, { name: name.trim(), calendarLink: calendarLink.trim() || undefined })
+        await svc.updateUserProfile(targetUserId!, {
+          name: name.trim(),
+          calendarLink: calendarLink.trim() || undefined,
+          calendarTieIn: finalCalendarTieIn,
+        })
       } else {
-        await svc.updateMyProfile({ name: name.trim(), calendarLink: calendarLink.trim() || undefined })
+        await svc.updateMyProfile({
+          name: name.trim(),
+          calendarLink: calendarLink.trim() || undefined,
+          calendarTieIn: finalCalendarTieIn,
+        })
         await refreshUser()
       }
-      navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })
     } catch (e: any) {
       setError(e?.message || 'Failed to save')
     } finally {
@@ -132,9 +146,7 @@ export default function UserEditPage() {
     }
   }
 
-  const handleCancel = () => {
-    navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })
-  }
+  const handleCancel = () => {}
 
   const handleCreateSender = async () => {
     setSenderError(null)
@@ -245,15 +257,30 @@ export default function UserEditPage() {
                 placeholder="https://calendly.com/your-link or other HTTPS calendar URL"
               />
               {calendarLinkError ? (
-                <p className="text-xs text-red-600 mt-1">
-                  {calendarLinkError}
-                </p>
+                <p className="text-xs text-red-600 mt-1">{calendarLinkError}</p>
               ) : (
                 <p className="text-xs text-gray-500 mt-1">
                   Optional calendar booking link for scheduling meetings.
-                  {initialCalendarLink && ' Once set, this field cannot be left empty.'}
+                  {initialCalendarLink &&
+                    ' Once set, this field cannot be left empty.'}
                 </p>
               )}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Calendar Introduction Message
+              </label>
+              <textarea
+                value={calendarTieIn}
+                onChange={(e) => setCalendarTieIn(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+                placeholder={DEFAULT_CALENDAR_TIE_IN}
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This message will appear in emails before presenting your
+                calendar link. If left empty, the default message will be used.
+              </p>
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">

@@ -33,6 +33,7 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
       id: userRow.users.id,
       supabaseId: userRow.users.supabaseId,
       calendarLink: userRow.users.calendarLink,
+      calendarTieIn: userRow.users.calendarTieIn,
       email: userRow.users.email,
       name: userRow.users.name,
       avatar: userRow.users.avatar,

@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 import { DATABASE_SCHEMA } from '../config';
+import { DEFAULT_CALENDAR_TIE_IN } from '../constants';
 
 // Define the custom schema
 export const appSchema = pgSchema(DATABASE_SCHEMA);
@@ -26,6 +27,7 @@ export const users = appSchema.table('users', {
   name: text('name'),
   avatar: text('avatar'),
   calendarLink: text('calendar_link'),
+  calendarTieIn: text('calendar_tie_in').notNull().default(DEFAULT_CALENDAR_TIE_IN),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
