@@ -49,6 +49,7 @@ export class SendGridWebhookService {
     rawPayload: string
   ): Promise<WebhookProcessingResult> {
     const startTime = Date.now();
+    const processedAtTimestamp = new Date().toISOString();
 
     logger.info('Processing SendGrid webhook', {
       payloadSize: rawPayload.length,
@@ -91,7 +92,7 @@ export class SendGridWebhookService {
       );
 
       // Step 5: Process events
-      const processedEvents = await this.processEvents(tenantId, events);
+      const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
 
       // Step 6: Update webhook delivery status
       await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
@@ -260,7 +261,7 @@ export class SendGridWebhookService {
       provider: 'sendgrid',
       eventType: events.length === 1 && events[0] ? events[0].event : 'batch',
       messageId: this.extractMessageId(events),
-      payload: JSON.parse(payload),
+      payload: events,
       signature,
       status: 'received',
     };
@@ -284,17 +285,21 @@ export class SendGridWebhookService {
    * Process array of events
    * @param tenantId - Tenant ID
    * @param events - Array of validated events
+   * @param processedAtTimestamp - Pre-generated timestamp for batch processing
    * @returns Array of processing results
    */
   private async processEvents(
     tenantId: string,
-    events: SendGridEvent[]
+    events: SendGridEvent[],
+    processedAtTimestamp: string
   ): Promise<ProcessedEventResult[]> {
     const results: ProcessedEventResult[] = [];
 
     if (this.batchProcessing) {
       // Process all events in parallel for better performance
-      const promises = events.map((event) => this.processEvent(tenantId, event));
+      const promises = events.map((event) =>
+        this.processEvent(tenantId, event, processedAtTimestamp)
+      );
       const eventResults = await Promise.allSettled(promises);
 
       for (const [index, result] of eventResults.entries()) {
@@ -317,7 +322,7 @@ export class SendGridWebhookService {
       // Process events sequentially
       for (const event of events) {
         try {
-          const result = await this.processEvent(tenantId, event);
+          const result = await this.processEvent(tenantId, event, processedAtTimestamp);
           results.push(result);
         } catch (error) {
           results.push({
@@ -337,11 +342,13 @@ export class SendGridWebhookService {
    * Process individual event
    * @param tenantId - Tenant ID
    * @param event - SendGrid event
+   * @param processedAtTimestamp - Pre-generated timestamp for batch processing
    * @returns Processing result
    */
   private async processEvent(
     tenantId: string,
-    event: SendGridEvent
+    event: SendGridEvent,
+    processedAtTimestamp: string
   ): Promise<ProcessedEventResult> {
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
 
@@ -371,7 +378,7 @@ export class SendGridWebhookService {
     }
 
     // Create normalized message event
-    const messageEvent = this.normalizeEvent(event);
+    const messageEvent = this.normalizeEvent(event, processedAtTimestamp);
     const created = await messageEventRepository.createForTenant(tenantId, messageEvent);
 
     return {
@@ -409,9 +416,13 @@ export class SendGridWebhookService {
   /**
    * Normalize SendGrid event to internal message event format
    * @param event - SendGrid event
+   * @param processedAtTimestamp - Pre-generated timestamp for batch processing
    * @returns Normalized message event data
    */
-  private normalizeEvent(event: SendGridEvent): Omit<NewMessageEvent, 'tenantId'> {
+  private normalizeEvent(
+    event: SendGridEvent,
+    processedAtTimestamp: string
+  ): Omit<NewMessageEvent, 'tenantId'> {
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
 
     return {
@@ -423,7 +434,7 @@ export class SendGridWebhookService {
         // Store complete original event for debugging and analytics
         ...event,
         // Add processing metadata
-        processedAt: new Date().toISOString(),
+        processedAt: processedAtTimestamp,
         provider: 'sendgrid',
         normalizedType: eventMapping.normalizedType,
       },
