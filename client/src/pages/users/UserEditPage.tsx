@@ -9,6 +9,7 @@ import {
   useResendMySenderVerification,
   useVerifyMySenderIdentity,
 } from '../../hooks/useSenderIdentities'
+import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 
 export default function UserEditPage() {
   const navigate = useNavigate()
@@ -78,7 +79,7 @@ export default function UserEditPage() {
           setCalendarLink(calLink)
           setInitialCalendarLink(calLink)
           setCalendarLinkError(validateCalendarLink(calLink))
-          const calTieIn = userData.calendarTieIn || "If you're interested, feel free to grab some time on my calendar"
+          const calTieIn = userData.calendarTieIn || DEFAULT_CALENDAR_TIE_IN
           setCalendarTieIn(calTieIn)
           setFromName(userData.name || '')
           setFromEmail(userData.email)
@@ -121,7 +122,7 @@ export default function UserEditPage() {
       }
       
       const svc = getUsersService()
-      const finalCalendarTieIn = calendarTieIn.trim() || "If you're interested, feel free to grab some time on my calendar"
+      const finalCalendarTieIn = calendarTieIn.trim() || DEFAULT_CALENDAR_TIE_IN
       if (isAdminMode) {
         await svc.updateUserProfile(targetUserId!, { name: name.trim(), calendarLink: calendarLink.trim() || undefined, calendarTieIn: finalCalendarTieIn })
       } else {
@@ -267,7 +268,7 @@ export default function UserEditPage() {
                 value={calendarTieIn}
                 onChange={(e) => setCalendarTieIn(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-                placeholder="If you're interested, feel free to grab some time on my calendar"
+                placeholder={DEFAULT_CALENDAR_TIE_IN}
                 rows={3}
               />
               <p className="text-xs text-gray-500 mt-1">
