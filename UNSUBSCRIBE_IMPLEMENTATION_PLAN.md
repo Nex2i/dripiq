@@ -20,50 +20,30 @@ This document outlines the comprehensive implementation plan for adding unsubscr
 - **Persistence**: Unsubscribe status survives contact deletions/re-uploads
 - **Multi-channel ready**: Extensible to SMS, push notifications, etc.
 
-### Flow Diagram
+### User Flow
+```
+1. User receives email with unsubscribe link
+2. User clicks unsubscribe (opens in new tab)
+3. New tab loads API URL: /api/unsubscribe?email=x&tenant=y
+4. Backend processes unsubscribe request
+5. Backend returns 3xx redirect to frontend success page
+6. User sees simple unsubscribe confirmation with basic messaging
+```
+
+### System Flow Diagram
 ```
 Email Send Request → Check Unsubscribe Status → Send/Skip → Update Logs
                                 ↓
 SendGrid Webhook → Process Event → Update Unsubscribe Status
                                 ↓
-Unsubscribe Link Click → Record Unsubscribe → Redirect to Success Page
+Unsubscribe Link Click (New Tab) → Record Unsubscribe → 3xx Redirect → FE Success Page
 ```
 
 ---
 
 ## 🗄️ Database Implementation
 
-### 1. Create Migration File
-
-**File**: `server/src/db/migrations/0031_add_contact_unsubscribes.sql`
-
-```sql
--- Contact unsubscribes table for channel-based unsubscribe tracking
-CREATE TABLE contact_unsubscribes (
-  id TEXT PRIMARY KEY DEFAULT generate_cuid(),
-  tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-  channel TEXT NOT NULL, -- 'email', 'sms', etc.
-  channel_value TEXT NOT NULL, -- email address, phone number, etc. (normalized/lowercase)
-  unsubscribed_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  unsubscribe_source TEXT NOT NULL, -- 'link_click', 'sendgrid_webhook', 'manual'
-  campaign_id TEXT REFERENCES contact_campaigns(id) ON DELETE SET NULL,
-  contact_id TEXT REFERENCES lead_point_of_contacts(id) ON DELETE SET NULL, -- Optional context
-  ip_address TEXT,
-  user_agent TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  
-  -- Ensure one unsubscribe record per tenant/channel/value combination
-  UNIQUE(tenant_id, channel, channel_value)
-);
-
--- Performance indexes
-CREATE INDEX idx_contact_unsubscribes_tenant_channel ON contact_unsubscribes(tenant_id, channel);
-CREATE INDEX idx_contact_unsubscribes_channel_value ON contact_unsubscribes(channel, channel_value);
-CREATE INDEX idx_contact_unsubscribes_unsubscribed_at ON contact_unsubscribes(unsubscribed_at);
-CREATE INDEX idx_contact_unsubscribes_source ON contact_unsubscribes(unsubscribe_source);
-```
-
-### 2. Update Schema File
+### 1. Update Schema File (Drizzle will auto-generate migration)
 
 **File**: `server/src/db/schema.ts`
 
@@ -402,7 +382,7 @@ class SendgridClient {
       <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
         <p style="margin: 0;">
           If you no longer wish to receive these emails, you can 
-          <a href="${unsubscribeUrl}" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
+          <a href="${unsubscribeUrl}" target="_blank" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
         </p>
       </div>
     `;
@@ -738,55 +718,98 @@ export class SendGridWebhookService {
 ```tsx
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export const UnsubscribePage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <CheckCircleIcon className="mx-auto h-16 w-16 text-green-500" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Successfully Unsubscribed
-          </h2>
-          {email && (
-            <p className="mt-2 text-lg text-gray-600">
-              <span className="font-medium">{email}</span> has been removed from our email list.
-            </p>
-          )}
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#f9fafb',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      <div style={{
+        maxWidth: '500px',
+        width: '100%',
+        backgroundColor: 'white',
+        padding: '40px',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          backgroundColor: '#10b981',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 24px',
+          color: 'white',
+          fontSize: '24px'
+        }}>
+          ✓
         </div>
-
-        <div className="bg-green-50 border border-green-200 rounded-md p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <CheckCircleIcon className="h-5 w-5 text-green-400" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800">
-                You have been successfully unsubscribed
-              </h3>
-              <div className="mt-2 text-sm text-green-700">
-                <p>
-                  You will no longer receive marketing emails from us. Please note:
-                </p>
-                <ul className="mt-2 list-disc list-inside">
-                  <li>You may still receive emails that were already scheduled before this request</li>
-                  <li>These should stop within 24-48 hours</li>
-                  <li>You may still receive transactional emails related to your account</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            If you continue to receive emails after 48 hours, please contact our support team.
+        
+        <h1 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#111827',
+          margin: '0 0 16px'
+        }}>
+          Successfully Unsubscribed
+        </h1>
+        
+        {email && (
+          <p style={{
+            fontSize: '16px',
+            color: '#6b7280',
+            margin: '0 0 24px'
+          }}>
+            <strong>{email}</strong> has been removed from our email list.
+          </p>
+        )}
+        
+        <div style={{
+          backgroundColor: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          borderRadius: '6px',
+          padding: '16px',
+          textAlign: 'left',
+          marginBottom: '24px'
+        }}>
+          <p style={{
+            fontSize: '14px',
+            color: '#15803d',
+            margin: '0 0 12px',
+            fontWeight: '500'
+          }}>
+            You will no longer receive marketing emails from us.
+          </p>
+          <p style={{
+            fontSize: '14px',
+            color: '#15803d',
+            margin: '0',
+            lineHeight: '1.5'
+          }}>
+            Please note: You may still receive emails that were already scheduled before this request. 
+            These should stop within 24-48 hours.
           </p>
         </div>
+        
+        <p style={{
+          fontSize: '12px',
+          color: '#9ca3af',
+          margin: '0'
+        }}>
+          If you continue to receive emails after 48 hours, please contact our support team.
+        </p>
       </div>
     </div>
   );
@@ -972,12 +995,15 @@ describe('Unsubscribe Routes', () => {
 
 ## 🚀 Deployment & Monitoring
 
-### 16. Database Migration
+### 16. Generate and Run Database Migration
 
-Run the migration:
+After updating the schema, generate the migration:
 
 ```bash
-# Development
+# Generate migration from schema changes
+npm run db:migrate:new
+
+# Apply the migration
 npm run db:migrate
 
 # Production
