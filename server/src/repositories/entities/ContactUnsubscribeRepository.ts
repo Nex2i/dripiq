@@ -56,6 +56,10 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
     try {
       const [result] = await this.db.insert(this.table).values(newUnsubscribe).returning();
 
+      if (!result) {
+        throw new Error('Failed to create unsubscribe record');
+      }
+
       logger.info('Created unsubscribe record', {
         id: result.id,
         tenantId: data.tenantId,

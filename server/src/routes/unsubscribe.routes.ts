@@ -101,7 +101,7 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
           process.env.UNSUBSCRIBE_FRONTEND_URL || 'http://localhost:5173/unsubscribe/success';
         const redirectUrl = `${frontendUrl}?email=${encodeURIComponent(normalizedEmail)}`;
 
-        return reply.redirect(302, redirectUrl);
+        return reply.redirect(redirectUrl, 302);
       } catch (error) {
         logger.error('Unsubscribe request failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
