@@ -114,7 +114,7 @@ export async function handleExistingSupabaseUser(
  */
 export async function createNewUserInvite(inviteData: CreateInviteData, tenantId: string) {
   // Use Supabase's built-in invite functionality first to get the user ID
-  const redirectUrl = `${process.env.FRONTEND_ORIGIN}/setup-password`;
+  const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/setup-password`;
   const supabaseUser = await SupabaseAdminService.inviteUserByEmail({
     email: inviteData.email,
     redirectTo: redirectUrl,
