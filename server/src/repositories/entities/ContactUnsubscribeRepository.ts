@@ -219,6 +219,16 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
   }
 
   /**
+   * Find unsubscribes by channel for a tenant
+   */
+  async findByChannelForTenant(tenantId: string, channel: string): Promise<ContactUnsubscribe[]> {
+    return await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.channel, channel)));
+  }
+
+  /**
    * Find unsubscribes by campaign for analytics
    */
   async findByCampaignForTenant(

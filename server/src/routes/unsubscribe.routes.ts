@@ -96,9 +96,7 @@ export default async function UnsubscribeRoutes(fastify: FastifyInstance, _opts:
         );
 
         // Redirect to frontend success page
-        const frontendUrl =
-          process.env.FRONTEND_ORIGIN + '/unsubscribe/success' ||
-          'http://localhost:5173/unsubscribe/success';
+        const frontendUrl = process.env.FRONTEND_ORIGIN + '/unsubscribe/success';
         const redirectUrl = `${frontendUrl}?email=${encodeURIComponent(normalizedEmail)}`;
 
         return reply.redirect(redirectUrl);

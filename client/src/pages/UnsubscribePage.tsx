@@ -1,14 +1,8 @@
-import React, { useEffect } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import React from 'react'
+import { useSearch } from '@tanstack/react-router'
 
 export const UnsubscribePage: React.FC = () => {
-  const queryClient = useQueryClient()
-
-  const email = new URLSearchParams(window.location.search).get('email')
-
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['unsubscribe', email] })
-  }, [email])
+  const { email } = useSearch({ from: '/unsubscribe/success' })
 
   return (
     <div

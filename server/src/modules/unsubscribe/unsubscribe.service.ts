@@ -146,8 +146,7 @@ export class UnsubscribeService {
 
       if (channel) {
         // Get unsubscribes for specific channel
-        unsubscribes = await contactUnsubscribeRepository.findAllForTenant(tenantId);
-        unsubscribes = unsubscribes.filter((u) => u.channel === channel);
+        unsubscribes = await contactUnsubscribeRepository.findByChannelForTenant(tenantId, channel);
       } else {
         // Get all unsubscribes for tenant
         unsubscribes = await contactUnsubscribeRepository.findAllForTenant(tenantId);

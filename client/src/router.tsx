@@ -28,6 +28,7 @@ import ProductsPage from './pages/settings/ProductsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import NotFoundPage from './pages/NotFoundPage'
 import UserEditPage from './pages/users/UserEditPage'
+import UnsubscribePage from './pages/UnsubscribePage'
 
 // Import demo components directly
 import FormSimpleDemo from './pages/demo/demo.form.simple'
@@ -99,6 +100,16 @@ const privacyPolicyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy-policy',
   component: () => <PrivacyPolicyPage />,
+})
+
+// Unsubscribe success route - public
+const unsubscribeSuccessRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/unsubscribe/success',
+  component: () => <UnsubscribePage />,
+  validateSearch: (search: Record<string, unknown>) => ({
+    email: search.email as string | undefined,
+  }),
 })
 
 // Dashboard route - protected
@@ -206,7 +217,6 @@ const settingsProductsRoute = createRoute({
   component: () => <ProductsPage />,
 })
 
-
 // Create all protected demo routes directly
 const formSimpleRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -281,6 +291,7 @@ const routeTree = rootRoute.addChildren([
   landingRoute,
   setupPasswordRoute,
   privacyPolicyRoute,
+  unsubscribeSuccessRoute,
   protectedRouteTree,
   authRouteTree,
   notFoundRoute,
