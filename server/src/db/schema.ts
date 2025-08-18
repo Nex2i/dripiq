@@ -591,6 +591,7 @@ export const messageEvents = appSchema.table(
       .references(() => outboundMessages.id, { onDelete: 'cascade' }),
     type: text('type').notNull(), // delivered|open|click|bounce|spam|unsubscribe|reply
     eventAt: timestamp('event_at').notNull(),
+    sgEventId: text('sg_event_id'), // SendGrid's unique event identifier for efficient duplicate detection
     data: jsonb('data'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -598,6 +599,7 @@ export const messageEvents = appSchema.table(
   (table) => [
     index('message_events_tenant_type_idx').on(table.tenantId, table.type),
     index('message_events_event_at_idx').on(table.eventAt),
+    index('message_events_sg_event_id_idx').on(table.sgEventId),
   ]
 );
 

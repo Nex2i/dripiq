@@ -12,6 +12,7 @@ jest.mock('@/repositories', () => ({
   messageEventRepository: {
     createForTenant: jest.fn(),
     findAllForTenant: jest.fn(),
+    findBySgEventIdForTenant: jest.fn(),
   },
 }));
 
@@ -101,12 +102,13 @@ describe('SendGridWebhookService', () => {
         messageId: 'message-789',
         type: 'delivered',
         eventAt: new Date(),
+        sgEventId: 'sg-event-123',
         data: mockSendGridEvent,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
 
       // Execute
       const result = await service.processWebhook(mockHeaders, mockPayload);
@@ -244,6 +246,7 @@ describe('SendGridWebhookService', () => {
           messageId: 'message-789',
           type: 'delivered',
           eventAt: new Date(),
+          sgEventId: 'sg-event-123',
           data: mockSendGridEvent,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -254,12 +257,13 @@ describe('SendGridWebhookService', () => {
           messageId: 'message-789',
           type: 'open',
           eventAt: new Date(),
+          sgEventId: 'sg-event-456',
           data: event2,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
 
-      mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
 
       const result = await service.processWebhook(mockHeaders, batchPayload);
 
@@ -332,18 +336,17 @@ describe('SendGridWebhookService', () => {
       });
 
       // Mock existing event (duplicate)
-      mockMessageEventRepo.findAllForTenant.mockResolvedValue([
-        {
-          id: 'existing-event',
-          tenantId: 'tenant-123',
-          messageId: 'message-789',
-          type: 'delivered',
-          eventAt: new Date(),
-          data: { sg_event_id: 'sg-event-123' },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue({
+        id: 'existing-event',
+        tenantId: 'tenant-123',
+        messageId: 'message-789',
+        type: 'delivered',
+        eventAt: new Date(),
+        sgEventId: 'sg-event-123',
+        data: { sg_event_id: 'sg-event-123' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       const result = await service.processWebhook(mockHeaders, mockPayload);
 
@@ -384,7 +387,7 @@ describe('SendGridWebhookService', () => {
         updatedAt: new Date(),
       });
 
-      mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
 
       // First event succeeds, second fails
       mockMessageEventRepo.createForTenant
@@ -394,6 +397,7 @@ describe('SendGridWebhookService', () => {
           messageId: 'message-789',
           type: 'delivered',
           eventAt: new Date(),
+          sgEventId: 'sg-event-123',
           data: mockSendGridEvent,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -448,13 +452,14 @@ describe('SendGridWebhookService', () => {
         updatedAt: new Date(),
       });
 
-      mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
       mockMessageEventRepo.createForTenant.mockResolvedValue({
         id: 'message-event-123',
         tenantId: 'tenant-123',
         messageId: 'message-789',
         type: 'delivered',
         eventAt: new Date(),
+        sgEventId: 'valid-event',
         data: validEvent,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -528,6 +533,7 @@ describe('SendGridWebhookService', () => {
         messageId: 'message-789',
         type: 'delivered',
         eventAt: new Date(),
+        sgEventId: 'sg-event-123',
         data: mockSendGridEvent,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -536,7 +542,7 @@ describe('SendGridWebhookService', () => {
       await serviceWithoutDuplicateDetection.processWebhook(mockHeaders, mockPayload);
 
       // Should not check for duplicates
-      expect(mockMessageEventRepo.findAllForTenant).not.toHaveBeenCalled();
+      expect(mockMessageEventRepo.findBySgEventIdForTenant).not.toHaveBeenCalled();
       expect(mockMessageEventRepo.createForTenant).toHaveBeenCalled();
     });
 
@@ -575,7 +581,7 @@ describe('SendGridWebhookService', () => {
         updatedAt: new Date(),
       });
 
-      mockMessageEventRepo.findAllForTenant.mockResolvedValue([]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
       mockMessageEventRepo.createForTenant
         .mockResolvedValueOnce({
           id: 'message-event-123',
@@ -583,6 +589,7 @@ describe('SendGridWebhookService', () => {
           messageId: 'message-789',
           type: 'delivered',
           eventAt: new Date(),
+          sgEventId: 'sg-event-123',
           data: mockSendGridEvent,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -593,6 +600,7 @@ describe('SendGridWebhookService', () => {
           messageId: 'message-789',
           type: 'open',
           eventAt: new Date(),
+          sgEventId: 'sg-event-456',
           data: event2,
           createdAt: new Date(),
           updatedAt: new Date(),

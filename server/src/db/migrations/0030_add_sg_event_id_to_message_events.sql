@@ -1,0 +1,2 @@
+ALTER TABLE "dripiq_app"."message_events" ADD COLUMN "sg_event_id" text;--> statement-breakpoint
+CREATE INDEX "message_events_sg_event_id_idx" ON "dripiq_app"."message_events" USING btree ("sg_event_id");

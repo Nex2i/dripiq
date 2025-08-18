@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { Type } from '@sinclair/typebox';
@@ -6,6 +7,11 @@ import { defaultRouteResponse } from '@/types/response';
 import { logger } from '@/libs/logger';
 import { sendGridWebhookService } from '@/modules/webhooks/sendgrid.webhook.service';
 import { SendGridWebhookError } from '@/modules/webhooks/sendgrid.webhook.types';
+
+// Extend FastifyRequest to include raw body
+interface WebhookRequest extends FastifyRequest {
+  rawBody?: Buffer;
+}
 
 const basePath = '/webhooks/sendgrid';
 
@@ -29,6 +35,23 @@ const WebhookErrorSchema = Type.Object({
 });
 
 export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
+  // Register custom content type parser to preserve raw body for signature verification
+  fastify.addContentTypeParser(
+    'application/json',
+    { parseAs: 'buffer' },
+    async (request: WebhookRequest, payload: Buffer) => {
+      // Store the raw body for signature verification
+      request.rawBody = payload;
+
+      try {
+        // Parse the JSON for normal usage
+        return JSON.parse(payload.toString('utf8'));
+      } catch (_error) {
+        throw new Error('Invalid JSON payload');
+      }
+    }
+  );
+
   // Register rate limiting for webhook endpoint
   await fastify.register(fastifyRateLimit, {
     max: 1000, // Max 1000 requests per window
@@ -113,7 +136,46 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
     },
     // Add request size limit (5MB max)
     bodyLimit: 5 * 1024 * 1024,
-    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+    preHandler: async (request: WebhookRequest, reply: FastifyReply) => {
+      // Check for required headers early
+      const signature = request.headers['x-twilio-email-event-webhook-signature'];
+      const timestamp = request.headers['x-twilio-email-event-webhook-timestamp'];
+
+      if (!signature || !timestamp) {
+        logger.warn('Missing required SendGrid webhook headers', {
+          requestId: request.id,
+          hasSignature: !!signature,
+          hasTimestamp: !!timestamp,
+          ip: request.ip,
+        });
+
+        return reply.status(401).send({
+          error: 'Unauthorized',
+          message: 'Missing required SendGrid webhook signature or timestamp headers',
+        });
+      }
+
+      // Basic IP validation (optional - can be configured)
+      const allowedIPs = process.env.SENDGRID_WEBHOOK_ALLOWED_IPS?.split(',').map((ip) =>
+        ip.trim()
+      );
+      if (allowedIPs && allowedIPs.length > 0) {
+        const clientIP = request.ip;
+        if (!allowedIPs.includes(clientIP)) {
+          logger.warn('SendGrid webhook request from unauthorized IP', {
+            requestId: request.id,
+            clientIP,
+            allowedIPs,
+          });
+
+          return reply.status(403).send({
+            error: 'Forbidden',
+            message: 'Webhook requests from this IP address are not allowed',
+          });
+        }
+      }
+    },
+    handler: async (request: WebhookRequest, reply: FastifyReply) => {
       const requestId = request.id;
       const startTime = Date.now();
 
@@ -142,7 +204,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         }
 
         // Get raw body for signature verification
-        const rawBody = request.body as string;
+        const rawBody = request.rawBody;
         if (!rawBody) {
           logger.error('Missing raw body for signature verification', { requestId });
           return reply.status(400).send({
@@ -167,7 +229,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         // Process the webhook
         const result = await sendGridWebhookService.instance.processWebhook(
           request.headers,
-          rawBody
+          rawBody.toString('utf8')
         );
 
         const processingTime = Date.now() - startTime;
@@ -212,46 +274,6 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
           error: 'Internal Server Error',
           message: 'An unexpected error occurred while processing the webhook',
         });
-      }
-    },
-    // Add custom preHandler for additional validation
-    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-      // Check for required headers early
-      const signature = request.headers['x-twilio-email-event-webhook-signature'];
-      const timestamp = request.headers['x-twilio-email-event-webhook-timestamp'];
-
-      if (!signature || !timestamp) {
-        logger.warn('Missing required SendGrid webhook headers', {
-          requestId: request.id,
-          hasSignature: !!signature,
-          hasTimestamp: !!timestamp,
-          ip: request.ip,
-        });
-
-        return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Missing required SendGrid webhook signature or timestamp headers',
-        });
-      }
-
-      // Basic IP validation (optional - can be configured)
-      const allowedIPs = process.env.SENDGRID_WEBHOOK_ALLOWED_IPS?.split(',').map((ip) =>
-        ip.trim()
-      );
-      if (allowedIPs && allowedIPs.length > 0) {
-        const clientIP = request.ip;
-        if (!allowedIPs.includes(clientIP)) {
-          logger.warn('SendGrid webhook request from unauthorized IP', {
-            requestId: request.id,
-            clientIP,
-            allowedIPs,
-          });
-
-          return reply.status(403).send({
-            error: 'Forbidden',
-            message: 'Webhook requests from this IP address are not allowed',
-          });
-        }
       }
     },
   });

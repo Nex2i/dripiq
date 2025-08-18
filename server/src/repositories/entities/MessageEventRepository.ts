@@ -130,4 +130,22 @@ export class MessageEventRepository extends TenantAwareRepository<
       .orderBy(desc(this.table.eventAt))
       .limit(limit)) as MessageEvent[];
   }
+
+  /**
+   * Find message event by SendGrid event ID for duplicate detection
+   * @param tenantId - Tenant ID
+   * @param sgEventId - SendGrid event ID
+   * @returns MessageEvent if found, undefined otherwise
+   */
+  async findBySgEventIdForTenant(
+    tenantId: string,
+    sgEventId: string
+  ): Promise<MessageEvent | undefined> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.sgEventId, sgEventId)))
+      .limit(1);
+    return results[0];
+  }
 }

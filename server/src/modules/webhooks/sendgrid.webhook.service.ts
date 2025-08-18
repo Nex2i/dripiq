@@ -389,17 +389,17 @@ export class SendGridWebhookService {
    * @returns True if duplicate found
    */
   private async checkForDuplicate(tenantId: string, event: SendGridEvent): Promise<boolean> {
-    // For now, implement a simple duplicate check based on sg_event_id
-    // In production, you might want a more sophisticated approach
+    if (!event.sg_event_id) {
+      // If no sg_event_id, we can't perform duplicate detection
+      return false;
+    }
+
     try {
-      const existing = await messageEventRepository.findAllForTenant(tenantId);
-      return existing.some(
-        (existingEvent) =>
-          existingEvent.data &&
-          typeof existingEvent.data === 'object' &&
-          'sg_event_id' in existingEvent.data &&
-          existingEvent.data.sg_event_id === event.sg_event_id
+      const existing = await messageEventRepository.findBySgEventIdForTenant(
+        tenantId,
+        event.sg_event_id
       );
+      return !!existing;
     } catch (error) {
       logger.warn('Error checking for duplicates', { error, eventId: event.sg_event_id });
       return false; // If we can't check, proceed with processing
@@ -418,6 +418,7 @@ export class SendGridWebhookService {
       messageId: event.outbound_message_id || 'unknown',
       type: eventMapping.normalizedType,
       eventAt: new Date(event.timestamp * 1000),
+      sgEventId: event.sg_event_id || null,
       data: {
         // Store complete original event for debugging and analytics
         ...event,
