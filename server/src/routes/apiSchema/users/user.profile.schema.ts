@@ -10,9 +10,9 @@ export const UpdateProfileRequestSchema = Type.Object({
       format: 'uri',
     })
   ),
-  calendarTieIn: Type.String({ 
+  calendarTieIn: Type.String({
     description: 'Introductory text used before presenting the calendar link in emails',
-    default: DEFAULT_CALENDAR_TIE_IN
+    default: DEFAULT_CALENDAR_TIE_IN,
   }),
 });
 

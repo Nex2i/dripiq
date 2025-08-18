@@ -2,8 +2,8 @@ import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fas
 import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
 import { userTenantRepository } from '@/repositories';
-import { UpdateProfileRequestSchema, UserIdParamsSchema } from './apiSchema/users';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
+import { UpdateProfileRequestSchema, UserIdParamsSchema } from './apiSchema/users';
 
 const basePath = '';
 
@@ -62,7 +62,9 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       description: "Update the authenticated user's profile (name only).",
     },
     handler: async (
-      request: FastifyRequest<{ Body: { name: string; calendarLink?: string; calendarTieIn: string } }>,
+      request: FastifyRequest<{
+        Body: { name: string; calendarLink?: string; calendarTieIn: string };
+      }>,
       reply: FastifyReply
     ) => {
       try {
@@ -70,7 +72,11 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         const supabaseId = (request as any).user?.supabaseId as string;
         const finalCalendarTieIn = calendarTieIn?.trim() || DEFAULT_CALENDAR_TIE_IN;
 
-        const updated = await UserService.updateUser(supabaseId, { name, calendarLink, calendarTieIn: finalCalendarTieIn });
+        const updated = await UserService.updateUser(supabaseId, {
+          name,
+          calendarLink,
+          calendarTieIn: finalCalendarTieIn,
+        });
         reply.send({
           message: 'Profile updated',
           user: {
@@ -123,7 +129,11 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        const updated = await UserService.updateUser(targetUser.supabaseId, { name, calendarLink, calendarTieIn: finalCalendarTieIn });
+        const updated = await UserService.updateUser(targetUser.supabaseId, {
+          name,
+          calendarLink,
+          calendarTieIn: finalCalendarTieIn,
+        });
         reply.send({
           message: 'User updated',
           user: {
