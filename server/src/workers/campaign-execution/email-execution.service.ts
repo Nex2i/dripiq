@@ -2,6 +2,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { emailSenderIdentityRepository, outboundMessageRepository } from '@/repositories';
+import { unsubscribeService } from '@/modules/unsubscribe';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 
@@ -25,6 +26,8 @@ export interface EmailExecutionResult {
   outboundMessageId?: string;
   providerMessageId?: string;
   error?: string;
+  skipped?: boolean;
+  skipReason?: string;
 }
 
 export class EmailExecutionService {
@@ -44,6 +47,30 @@ export class EmailExecutionService {
 
       if (!contact.email) {
         throw new Error('Contact email is required');
+      }
+
+      // CHECK UNSUBSCRIBE STATUS FIRST
+      const isUnsubscribed = await unsubscribeService.isChannelUnsubscribed(
+        tenantId,
+        'email',
+        contact.email.toLowerCase()
+      );
+
+      if (isUnsubscribed) {
+        logger.info('[EmailExecutionService] Skipping email send - contact unsubscribed', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          email: contact.email,
+        });
+
+        return {
+          success: false,
+          error: 'Contact has unsubscribed from emails',
+          skipped: true,
+          skipReason: 'unsubscribed',
+        };
       }
 
       // Fetch and validate sender identity

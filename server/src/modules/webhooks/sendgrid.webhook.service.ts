@@ -1,6 +1,7 @@
 import { logger } from '@/libs/logger';
 import { webhookDeliveryRepository, messageEventRepository } from '@/repositories';
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
+import { unsubscribeService } from '@/modules/unsubscribe';
 import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
 import {
   SendGridEvent,
@@ -365,6 +366,11 @@ export class SendGridWebhookService {
           reason: 'Duplicate event detected',
         };
       }
+    }
+
+    // Handle unsubscribe events
+    if (event.event === 'unsubscribe' || event.event === 'group_unsubscribe') {
+      await this.handleUnsubscribeEvent(event, tenantId);
     }
 
     // Create normalized message event

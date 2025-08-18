@@ -29,6 +29,7 @@ export { SendRateLimitRepository } from './entities/SendRateLimitRepository';
 export { EmailValidationResultRepository } from './entities/EmailValidationResultRepository';
 export { ContactChannelRepository } from './entities/ContactChannelRepository';
 export { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
+export { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -95,6 +96,7 @@ import { SendRateLimitRepository } from './entities/SendRateLimitRepository';
 import { EmailValidationResultRepository } from './entities/EmailValidationResultRepository';
 import { ContactChannelRepository } from './entities/ContactChannelRepository';
 import { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
+import { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepository';
 import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
 import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
@@ -126,6 +128,7 @@ const sendRateLimitRepository = new SendRateLimitRepository();
 const emailValidationResultRepository = new EmailValidationResultRepository();
 const contactChannelRepository = new ContactChannelRepository();
 const campaignTransitionRepository = new CampaignTransitionRepository();
+const contactUnsubscribeRepository = new ContactUnsubscribeRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -161,6 +164,7 @@ export const repositories = {
   emailValidationResult: emailValidationResultRepository,
   contactChannel: contactChannelRepository,
   campaignTransition: campaignTransitionRepository,
+  contactUnsubscribe: contactUnsubscribeRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -196,6 +200,7 @@ export {
   emailValidationResultRepository,
   contactChannelRepository,
   campaignTransitionRepository,
+  contactUnsubscribeRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,

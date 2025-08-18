@@ -16,11 +16,16 @@ class SendgridClient {
       throw new Error('Email body is required: provide html or text');
     }
 
+    // Inject unsubscribe link if HTML content
+    const finalHtml = input.html 
+      ? this.appendUnsubscribeLink(input.html, input.tenantId, input.to, input.campaignId)
+      : body;
+
     const msg: MailDataRequired = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      html: body,
+      html: finalHtml,
       headers: input.headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
@@ -145,6 +150,45 @@ class SendgridClient {
       ...(input.outboundMessageId ? { outbound_message_id: input.outboundMessageId } : {}),
       ...(input.dedupeKey ? { dedupe_key: input.dedupeKey } : {}),
     } as Record<string, string>;
+  }
+
+  private appendUnsubscribeLink(
+    html: string,
+    tenantId: string,
+    toEmail: string,
+    campaignId?: string
+  ): string {
+    const unsubscribeUrl = this.buildUnsubscribeUrl(tenantId, toEmail, campaignId);
+    
+    const unsubscribeLink = `
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
+        <p style="margin: 0;">
+          If you no longer wish to receive these emails, you can 
+          <a href="${unsubscribeUrl}" target="_blank" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
+        </p>
+      </div>
+    `;
+
+    // Try to insert before closing body tag, otherwise append
+    if (html.includes('</body>')) {
+      return html.replace('</body>', `${unsubscribeLink}</body>`);
+    } else {
+      return html + unsubscribeLink;
+    }
+  }
+
+  private buildUnsubscribeUrl(tenantId: string, email: string, campaignId?: string): string {
+    const baseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3000';
+    const params = new URLSearchParams({
+      email: email.toLowerCase(),
+      tenant: tenantId,
+    });
+    
+    if (campaignId) {
+      params.append('campaign', campaignId);
+    }
+
+    return `${baseUrl}/api/unsubscribe?${params.toString()}`;
   }
 
   private normalizeSendgridError(err: any, fallbackMessage: string) {
