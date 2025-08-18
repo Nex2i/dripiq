@@ -456,10 +456,22 @@ export class SendGridWebhookService {
   private sanitizeHeaders(headers: Record<string, any>): Record<string, any> {
     const sanitized = { ...headers };
 
-    // Remove sensitive headers
-    delete sanitized['x-twilio-email-event-webhook-signature'];
-    delete sanitized['authorization'];
-    delete sanitized['cookie'];
+    // List of sensitive header names to remove
+    const sensitiveHeaders = ['x-twilio-email-event-webhook-signature', 'authorization', 'cookie'];
+
+    // Remove sensitive headers (handle both string and string array values)
+    sensitiveHeaders.forEach((headerName) => {
+      delete sanitized[headerName];
+    });
+
+    // For remaining headers, sanitize any array values to prevent accidental logging of sensitive data
+    Object.keys(sanitized).forEach((key) => {
+      const value = sanitized[key];
+      if (Array.isArray(value)) {
+        // Convert array to safe representation showing count and type info
+        sanitized[key] = `[array of ${value.length} value(s)]`;
+      }
+    });
 
     return sanitized;
   }

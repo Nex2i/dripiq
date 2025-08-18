@@ -613,4 +613,82 @@ describe('SendGridWebhookService', () => {
       expect(result.successfulEvents).toBe(2);
     });
   });
+
+  describe('header sanitization', () => {
+    it('should sanitize array headers in logging to prevent sensitive data exposure', async () => {
+      // Mock the logger to capture what gets logged
+      const { logger } = require('@/libs/logger');
+      const loggerInfoSpy = jest.spyOn(logger, 'info');
+
+      // Setup headers with arrays (potential sensitive data)
+      const headersWithArrays = {
+        'x-twilio-email-event-webhook-signature': ['signature1', 'signature2'],
+        authorization: ['Bearer token1', 'Bearer token2'],
+        cookie: ['session=abc123', 'csrf=xyz789'],
+        'content-type': 'application/json',
+        'user-agent': ['agent1', 'agent2', 'agent3'],
+        'x-forwarded-for': ['ip1', 'ip2'],
+      };
+
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        isValid: true,
+        signature: 'test-signature',
+        timestamp: new Date().toISOString(),
+        payload: mockPayload,
+      });
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        messageId: 'message-123',
+        receivedAt: new Date(),
+        payload: {},
+        signature: 'test-signature',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.createForTenant.mockResolvedValue({
+        id: 'event-123',
+        tenantId: 'tenant-123',
+        messageId: 'message-123',
+        type: 'delivered',
+        eventAt: new Date(),
+        sgEventId: 'sg-event-123',
+        data: mockSendGridEvent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.processWebhook(headersWithArrays, mockPayload);
+
+      // Verify that the logged headers don't contain sensitive information
+      expect(loggerInfoSpy).toHaveBeenCalledWith(
+        'Processing SendGrid webhook',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'content-type': 'application/json',
+            'user-agent': '[array of 3 value(s)]',
+            'x-forwarded-for': '[array of 2 value(s)]',
+          }),
+        })
+      );
+
+      // Verify sensitive headers are completely removed
+      const loggedCall = loggerInfoSpy.mock.calls.find(
+        (call) => call[0] === 'Processing SendGrid webhook'
+      );
+      const loggedHeaders = (loggedCall?.[1] as any)?.headers;
+
+      expect(loggedHeaders).not.toHaveProperty('x-twilio-email-event-webhook-signature');
+      expect(loggedHeaders).not.toHaveProperty('authorization');
+      expect(loggedHeaders).not.toHaveProperty('cookie');
+
+      loggerInfoSpy.mockRestore();
+    });
+  });
 });

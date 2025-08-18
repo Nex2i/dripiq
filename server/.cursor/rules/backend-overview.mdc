@@ -159,3 +159,4 @@ fastify.route({
 when implementing a default route response schema make sure that is the first spread argument so it doesnt override the route specific schema.
 
 Whenever comitting code run `npm run lint:fix` to have consistent formatting. 
+Run `npm run build` to validate the server builds properly.

@@ -7,6 +7,7 @@ import { defaultRouteResponse } from '@/types/response';
 import { logger } from '@/libs/logger';
 import { sendGridWebhookService } from '@/modules/webhooks/sendgrid.webhook.service';
 import { SendGridWebhookError } from '@/modules/webhooks/sendgrid.webhook.types';
+import { webhookDeliveryRepository } from '@/repositories';
 
 // Extend FastifyRequest to include raw body
 interface WebhookRequest extends FastifyRequest {
@@ -314,7 +315,6 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
       const limit = request.query.limit || 10;
 
       try {
-        const { webhookDeliveryRepository } = await import('@/repositories');
         const deliveries = await webhookDeliveryRepository.listByProviderForTenant(
           tenantId,
           'sendgrid',
