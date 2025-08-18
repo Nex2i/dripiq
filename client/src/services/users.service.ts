@@ -15,6 +15,7 @@ export interface SimpleUser {
   email: string
   name: string | null
   calendarLink?: string | null
+  calendarTieIn: string
 }
 
 class UsersService {
@@ -41,7 +42,7 @@ class UsersService {
     return res.json()
   }
 
-  async updateMyProfile(profileData: { name: string; calendarLink?: string }): Promise<{ message: string; user: SimpleUser }> {
+  async updateMyProfile(profileData: { name: string; calendarLink?: string; calendarTieIn: string }): Promise<{ message: string; user: SimpleUser }> {
     const authHeaders = await authService.getAuthHeaders()
     const res = await fetch(`${this.baseUrl}/me/profile`, {
       method: 'PUT',
@@ -68,7 +69,7 @@ class UsersService {
 
   async updateUserProfile(
     userId: string,
-    profileData: { name: string; calendarLink?: string }
+    profileData: { name: string; calendarLink?: string; calendarTieIn: string }
   ): Promise<{ message: string; user: SimpleUser }> {
     const authHeaders = await authService.getAuthHeaders()
     const res = await fetch(`${this.baseUrl}/users/${userId}/profile`, {

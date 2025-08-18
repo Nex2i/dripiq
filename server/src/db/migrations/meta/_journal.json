@@ -225,6 +225,13 @@
       "when": 1755480274746,
       "tag": "0031_add_contact_unsubscribes",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1755533043016,
+      "tag": "0032_calendar_tie_in",
+      "breakpoints": true
     }
   ]
 }

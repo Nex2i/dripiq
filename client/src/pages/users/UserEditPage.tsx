@@ -26,6 +26,7 @@ export default function UserEditPage() {
   const [calendarLink, setCalendarLink] = useState<string>('')
   const [initialCalendarLink, setInitialCalendarLink] = useState<string>('')
   const [calendarLinkError, setCalendarLinkError] = useState<string>('')
+  const [calendarTieIn, setCalendarTieIn] = useState<string>('')
   const [saving, setSaving] = useState<boolean>(false)
 
   // sender identity UI state
@@ -77,6 +78,8 @@ export default function UserEditPage() {
           setCalendarLink(calLink)
           setInitialCalendarLink(calLink)
           setCalendarLinkError(validateCalendarLink(calLink))
+          const calTieIn = userData.calendarTieIn || "If you're interested, feel free to grab some time on my calendar"
+          setCalendarTieIn(calTieIn)
           setFromName(userData.name || '')
           setFromEmail(userData.email)
         }
@@ -118,10 +121,11 @@ export default function UserEditPage() {
       }
       
       const svc = getUsersService()
+      const finalCalendarTieIn = calendarTieIn.trim() || "If you're interested, feel free to grab some time on my calendar"
       if (isAdminMode) {
-        await svc.updateUserProfile(targetUserId!, { name: name.trim(), calendarLink: calendarLink.trim() || undefined })
+        await svc.updateUserProfile(targetUserId!, { name: name.trim(), calendarLink: calendarLink.trim() || undefined, calendarTieIn: finalCalendarTieIn })
       } else {
-        await svc.updateMyProfile({ name: name.trim(), calendarLink: calendarLink.trim() || undefined })
+        await svc.updateMyProfile({ name: name.trim(), calendarLink: calendarLink.trim() || undefined, calendarTieIn: finalCalendarTieIn })
         await refreshUser()
       }
       navigate({ to: isAdminMode ? '/settings/users' : '/dashboard' })
@@ -254,6 +258,21 @@ export default function UserEditPage() {
                   {initialCalendarLink && ' Once set, this field cannot be left empty.'}
                 </p>
               )}
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Calendar Introduction Message
+              </label>
+              <textarea
+                value={calendarTieIn}
+                onChange={(e) => setCalendarTieIn(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+                placeholder="If you're interested, feel free to grab some time on my calendar"
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This message will appear in emails before presenting your calendar link. If left empty, the default message will be used.
+              </p>
             </div>
           </div>
           <div className="mt-6 flex items-center gap-3">

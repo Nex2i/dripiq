@@ -1,1 +1,0 @@
-ALTER TABLE "dripiq_app"."users" ADD COLUMN "calendar_tie_in" text NOT NULL DEFAULT 'If you''re interested, feel free to grab some time on my calendar';
