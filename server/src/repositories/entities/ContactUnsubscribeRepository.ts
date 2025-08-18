@@ -218,27 +218,6 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
       );
   }
 
-  async findByTenantAndDateRange(
-    tenantId: string,
-    startDate: Date,
-    endDate: Date
-  ): Promise<ContactUnsubscribe[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          and(
-            // Use proper date comparison operators
-            // Note: This would need proper date range operators in a real implementation
-            eq(this.table.unsubscribedAt, startDate), // Placeholder - would use gte/lte
-            eq(this.table.unsubscribedAt, endDate) // Placeholder - would use gte/lte
-          )
-        )
-      );
-  }
-
   /**
    * Find unsubscribes by campaign for analytics
    */
@@ -250,16 +229,6 @@ export class ContactUnsubscribeRepository extends TenantAwareRepository<
       .select()
       .from(this.table)
       .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)));
-  }
-
-  /**
-   * Find unsubscribes by source for analytics
-   */
-  async findBySourceForTenant(tenantId: string, source: string): Promise<ContactUnsubscribe[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.unsubscribeSource, source)));
   }
 }
 
