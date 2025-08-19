@@ -339,6 +339,17 @@ export class EmailExecutionService {
     const jobId = `timeout:${params.campaignId}:${params.nodeId}:${params.eventType}:${params.messageId}`;
     const delayMs = Math.max(0, params.scheduledAt.getTime() - Date.now());
 
+    if (delayMs <= 0) {
+      logger.warn('[EmailExecutionService] Timeout job scheduled with negative delay', {
+        tenantId: this.tenantId,
+        campaignId: params.campaignId,
+        nodeId: params.nodeId,
+        messageId: params.messageId,
+        eventType: params.eventType,
+      });
+      return;
+    }
+
     await timeoutQueue.add('timeout', params, {
       delay: delayMs,
       jobId,
