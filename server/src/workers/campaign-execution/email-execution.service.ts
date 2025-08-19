@@ -11,6 +11,11 @@ import { unsubscribeService } from '@/modules/unsubscribe';
 import { getQueue } from '@/libs/bullmq';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
 import { db } from '@/db';
+import {
+  DEFAULT_NO_OPEN_TIMEOUT,
+  DEFAULT_NO_CLICK_TIMEOUT,
+  TIMEOUT_JOB_OPTIONS,
+} from '@/constants/timeout-jobs';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
@@ -330,8 +335,8 @@ export class EmailExecutionService {
   ): Promise<void> {
     const defaults = plan.defaults?.timers;
 
-    // Schedule no_open timeout (default 72h)
-    const noOpenDelay = defaults?.no_open_after || 'PT72H';
+    // Schedule no_open timeout (default from constants)
+    const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
     const noOpenDelayMs = parseIsoDuration(noOpenDelay);
     await this.scheduleTimeoutJob({
       campaignId,
@@ -341,8 +346,8 @@ export class EmailExecutionService {
       scheduledAt: new Date(Date.now() + noOpenDelayMs),
     });
 
-    // Schedule no_click timeout (default 24h)
-    const noClickDelay = defaults?.no_click_after || 'PT24H';
+    // Schedule no_click timeout (default from constants)
+    const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
     const noClickDelayMs = parseIsoDuration(noClickDelay);
     await this.scheduleTimeoutJob({
       campaignId,
@@ -392,8 +397,7 @@ export class EmailExecutionService {
         await timeoutQueue.add('timeout', params, {
           delay: delayMs,
           jobId,
-          removeOnComplete: { age: 60 * 60, count: 100 }, // Keep completed timeout jobs for 1 hour
-          removeOnFail: { age: 24 * 60 * 60, count: 50 }, // Keep failed timeout jobs for 24 hours
+          ...TIMEOUT_JOB_OPTIONS,
         });
 
         logger.info('[EmailExecutionService] Timeout job scheduled', {
