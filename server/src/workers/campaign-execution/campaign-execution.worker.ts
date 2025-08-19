@@ -21,8 +21,8 @@ async function processCampaignExecution(
   const { tenantId, campaignId, contactId, nodeId, actionType, metadata } = job.data;
 
   try {
-    // Initialize email execution service
-    const emailExecutionService = new EmailExecutionService();
+    // Initialize email execution service with tenantId
+    const emailExecutionService = new EmailExecutionService(tenantId);
     logger.info('[CampaignExecutionWorker] Processing campaign node execution', {
       jobId: job.id,
       tenantId,
@@ -92,6 +92,7 @@ async function processCampaignExecution(
             node,
             contact,
             campaign,
+            planJson: campaignPlan,
           });
 
           if (!emailResult.success) {
