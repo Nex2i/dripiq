@@ -10,6 +10,7 @@ import {
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { getQueue } from '@/libs/bullmq';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
+import { db } from '@/db';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
@@ -353,56 +354,75 @@ export class EmailExecutionService {
   }
 
   private async scheduleTimeoutJob(params: TimeoutJobParams): Promise<void> {
-    // Create scheduled_action record
-    const scheduledAction = await scheduledActionRepository.createForTenant(this.tenantId, {
-      campaignId: params.campaignId,
-      actionType: 'timeout',
-      scheduledAt: params.scheduledAt,
-      payload: {
-        nodeId: params.nodeId,
-        messageId: params.messageId,
-        eventType: params.eventType,
-      },
-    });
-
-    // Enqueue BullMQ job
-    const timeoutQueue = getQueue('campaign_execution');
+    // Validate delay BEFORE creating any database records
     const jobId = this.generateTimeoutJobId(params);
     const delayMs = Math.max(0, params.scheduledAt.getTime() - Date.now());
 
     if (delayMs <= 0) {
-      logger.warn('[EmailExecutionService] Timeout job scheduled with negative delay', {
+      logger.warn('[EmailExecutionService] Timeout job scheduled with negative delay, skipping', {
         tenantId: this.tenantId,
         campaignId: params.campaignId,
         nodeId: params.nodeId,
         messageId: params.messageId,
         eventType: params.eventType,
+        scheduledAt: params.scheduledAt,
+        currentTime: new Date(),
       });
       return;
     }
 
-    await timeoutQueue.add('timeout', params, {
-      delay: delayMs,
-      jobId,
-      removeOnComplete: { age: 60 * 60, count: 100 }, // Keep completed timeout jobs for 1 hour
-      removeOnFail: { age: 24 * 60 * 60, count: 50 }, // Keep failed timeout jobs for 24 hours
-    });
+    // Use transaction to ensure atomicity between database record and BullMQ job
+    await db.transaction(async (_tx) => {
+      // Create scheduled_action record within transaction with job ID already set
+      const scheduledAction = await scheduledActionRepository.createForTenant(this.tenantId, {
+        campaignId: params.campaignId,
+        actionType: 'timeout',
+        scheduledAt: params.scheduledAt,
+        payload: {
+          nodeId: params.nodeId,
+          messageId: params.messageId,
+          eventType: params.eventType,
+        },
+        bullmqJobId: jobId, // Set job ID immediately to avoid orphaned records
+      });
 
-    // Update scheduled action with BullMQ job ID
-    await scheduledActionRepository.updateByIdForTenant(scheduledAction.id, this.tenantId, {
-      bullmqJobId: jobId,
-    });
+      try {
+        // Enqueue BullMQ job
+        const timeoutQueue = getQueue('campaign_execution');
+        await timeoutQueue.add('timeout', params, {
+          delay: delayMs,
+          jobId,
+          removeOnComplete: { age: 60 * 60, count: 100 }, // Keep completed timeout jobs for 1 hour
+          removeOnFail: { age: 24 * 60 * 60, count: 50 }, // Keep failed timeout jobs for 24 hours
+        });
 
-    logger.info('[EmailExecutionService] Timeout job scheduled', {
-      tenantId: this.tenantId,
-      campaignId: params.campaignId,
-      nodeId: params.nodeId,
-      messageId: params.messageId,
-      eventType: params.eventType,
-      scheduledAt: params.scheduledAt,
-      delayMs,
-      jobId,
-      scheduledActionId: scheduledAction.id,
+        logger.info('[EmailExecutionService] Timeout job scheduled', {
+          tenantId: this.tenantId,
+          campaignId: params.campaignId,
+          nodeId: params.nodeId,
+          messageId: params.messageId,
+          eventType: params.eventType,
+          scheduledAt: params.scheduledAt,
+          delayMs,
+          jobId,
+          scheduledActionId: scheduledAction.id,
+        });
+      } catch (bullmqError) {
+        // If BullMQ job creation fails, the transaction will be rolled back
+        logger.error(
+          '[EmailExecutionService] BullMQ job creation failed, rolling back transaction',
+          {
+            tenantId: this.tenantId,
+            campaignId: params.campaignId,
+            nodeId: params.nodeId,
+            messageId: params.messageId,
+            eventType: params.eventType,
+            jobId,
+            error: bullmqError instanceof Error ? bullmqError.message : 'Unknown error',
+          }
+        );
+        throw bullmqError; // Re-throw to trigger transaction rollback
+      }
     });
   }
 }
