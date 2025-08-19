@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
@@ -290,6 +291,36 @@ export class EmailExecutionService {
     return `${params.tenantId}:${params.campaignId}:${params.contactId}:${params.nodeId}:email`;
   }
 
+  /**
+   * Generates a robust job ID for timeout jobs that handles special characters
+   * and prevents conflicts by using cryptographic hashing
+   */
+  private generateTimeoutJobId(params: TimeoutJobParams): string {
+    // Create a deterministic string from the parameters
+    const components = [
+      'timeout',
+      params.campaignId,
+      params.nodeId,
+      params.eventType,
+      params.messageId,
+    ];
+
+    // Sanitize each component by replacing problematic characters
+    const sanitizedComponents = components.map((component) =>
+      component.replace(/[^a-zA-Z0-9_-]/g, '_')
+    );
+
+    // Create base job ID with sanitized components
+    const baseJobId = sanitizedComponents.join('_');
+
+    // For extra safety, create a hash of the original components
+    // to ensure uniqueness even if sanitization causes collisions
+    const originalString = components.join('|');
+    const hash = createHash('sha256').update(originalString).digest('hex').substring(0, 8);
+
+    return `${baseJobId}_${hash}`;
+  }
+
   private async scheduleTimeoutJobs(
     campaignId: string,
     nodeId: string,
@@ -336,7 +367,7 @@ export class EmailExecutionService {
 
     // Enqueue BullMQ job
     const timeoutQueue = getQueue('campaign_execution');
-    const jobId = `timeout:${params.campaignId}:${params.nodeId}:${params.eventType}:${params.messageId}`;
+    const jobId = this.generateTimeoutJobId(params);
     const delayMs = Math.max(0, params.scheduledAt.getTime() - Date.now());
 
     if (delayMs <= 0) {
