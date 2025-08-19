@@ -36,28 +36,3 @@ export const TIMEOUT_JOB_OPTIONS = {
     count: TIMEOUT_JOB_FAIL_RETENTION_COUNT,
   },
 } as const;
-
-/**
- * Environment-specific overrides for timeout job configuration
- * Can be extended to support different retention policies per environment
- */
-export const getTimeoutJobOptions = (environment?: string) => {
-  switch (environment) {
-    case 'development':
-      // Keep more jobs in development for debugging
-      return {
-        ...TIMEOUT_JOB_OPTIONS,
-        removeOnComplete: { age: 24 * 60 * 60, count: 200 }, // 24 hours, 200 jobs
-        removeOnFail: { age: 48 * 60 * 60, count: 100 }, // 48 hours, 100 jobs
-      };
-    case 'production':
-      // Aggressive cleanup in production to save memory
-      return {
-        ...TIMEOUT_JOB_OPTIONS,
-        removeOnComplete: { age: 30 * 60, count: 50 }, // 30 minutes, 50 jobs
-        removeOnFail: { age: 12 * 60 * 60, count: 25 }, // 12 hours, 25 jobs
-      };
-    default:
-      return TIMEOUT_JOB_OPTIONS;
-  }
-};
