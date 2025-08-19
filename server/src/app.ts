@@ -12,6 +12,7 @@ import '@/extensions';
 import initIac from '@/utils/iac';
 import { logger, loggerOptions } from '@/libs/logger';
 import { globalErrorHandler } from '@/utils/globalErrorHandler';
+import { recoverScheduledActions } from '@/libs/startup-recovery';
 
 async function startServer() {
   const app = Fastify({
@@ -80,6 +81,20 @@ async function startServer() {
   });
 
   await initIac();
+
+  // Add startup recovery hook
+  app.ready(async () => {
+    try {
+      logger.info('Starting application startup recovery...');
+      await recoverScheduledActions();
+      logger.info('Application startup recovery completed');
+    } catch (error) {
+      logger.error('Startup recovery failed, continuing anyway', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Don't fail startup if recovery fails
+    }
+  });
 
   return app;
 }

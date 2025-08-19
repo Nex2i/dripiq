@@ -149,4 +149,30 @@ export class ScheduledActionRepository extends TenantAwareRepository<
       .set({ status: 'canceled' as (typeof scheduledActionStatusEnum)['enumValues'][number] })
       .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)));
   }
+
+  // Recovery methods for startup recovery
+  async findOrphaned(): Promise<ScheduledAction[]> {
+    const cutoffTime = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
+
+    return await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(
+            this.table.status,
+            'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number]
+          ),
+          lte(this.table.scheduledAt, cutoffTime) // Past due by at least 5 minutes
+        )
+      )
+      .orderBy(this.table.scheduledAt);
+  }
+
+  async markAsExpired(actionId: string, reason: string): Promise<void> {
+    await this.updateById(actionId, {
+      status: 'failed' as (typeof scheduledActionStatusEnum)['enumValues'][number],
+      lastError: reason,
+    });
+  }
 }
