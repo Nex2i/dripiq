@@ -121,6 +121,7 @@ export default [
       'no-useless-catch': 'off',
       'no-shadow': 'off',
       'sort-imports': 'off',
+      'pnpm/json-enforce-catalog': 'off',
     },
   },
 ]
