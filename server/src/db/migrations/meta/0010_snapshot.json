@@ -91,12 +91,8 @@
           "tableFrom": "leads",
           "tableTo": "tenants",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -105,12 +101,8 @@
           "tableFrom": "leads",
           "tableTo": "site_embedding_domains",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "site_embedding_domain_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["site_embedding_domain_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -177,9 +169,7 @@
         "permissions_name_unique": {
           "name": "permissions_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -223,12 +213,8 @@
           "tableFrom": "role_permissions",
           "tableTo": "roles",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "role_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["role_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -237,12 +223,8 @@
           "tableFrom": "role_permissions",
           "tableTo": "permissions",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "permission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["permission_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -252,10 +234,7 @@
         "role_permission_unique": {
           "name": "role_permission_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "role_id",
-            "permission_id"
-          ]
+          "columns": ["role_id", "permission_id"]
         }
       },
       "policies": {},
@@ -306,9 +285,7 @@
         "roles_name_unique": {
           "name": "roles_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -551,12 +528,8 @@
           "tableFrom": "site_embeddings",
           "tableTo": "site_embedding_domains",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "domain_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["domain_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -629,12 +602,8 @@
           "tableFrom": "tenants",
           "tableTo": "site_embedding_domains",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "site_embedding_domain_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["site_embedding_domain_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -721,12 +690,8 @@
           "tableFrom": "user_tenants",
           "tableTo": "users",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -735,12 +700,8 @@
           "tableFrom": "user_tenants",
           "tableTo": "tenants",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -749,12 +710,8 @@
           "tableFrom": "user_tenants",
           "tableTo": "roles",
           "schemaTo": "dripiq_app",
-          "columnsFrom": [
-            "role_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["role_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -764,10 +721,7 @@
         "user_tenant_unique": {
           "name": "user_tenant_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "tenant_id"
-          ]
+          "columns": ["user_id", "tenant_id"]
         }
       },
       "policies": {},
@@ -830,16 +784,12 @@
         "users_supabase_id_unique": {
           "name": "users_supabase_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "supabase_id"
-          ]
+          "columns": ["supabase_id"]
         },
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
