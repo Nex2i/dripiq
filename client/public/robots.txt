@@ -1,9 +1,14 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
+Allow: /
+
+# Block non-public app routes
 Disallow: /dashboard
 Disallow: /profile
 Disallow: /leads
 Disallow: /settings
 Disallow: /demo
+
+# Crawl-delay (optional; ignored by Google but respected by some bots)
+# Crawl-delay: 10
 
 Sitemap: https://dripiq.ai/sitemap.xml

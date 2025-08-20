@@ -35,9 +35,7 @@ const AnimatedCheckbox: React.FC<AnimatedCheckboxProps> = ({
       ) : (
         <Square className="h-4 w-4 text-gray-400" />
       )}
-      <span className="text-sm font-medium text-gray-700">
-        {label}
-      </span>
+      <span className="text-sm font-medium text-gray-700">{label}</span>
     </button>
   )
 }

@@ -52,7 +52,13 @@ export function useUpdateUserRole() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
+    mutationFn: async ({
+      userId,
+      roleId,
+    }: {
+      userId: string
+      roleId: string
+    }) => {
       const result = await invitesService.updateUserRole(userId, roleId)
       return result
     },

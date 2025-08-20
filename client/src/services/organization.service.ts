@@ -160,7 +160,9 @@ class OrganizationService {
 // Create a singleton instance that will be initialized with QueryClient
 let organizationServiceInstance: OrganizationService | null = null
 
-export const createOrganizationService = (queryClient: QueryClient): OrganizationService => {
+export const createOrganizationService = (
+  queryClient: QueryClient,
+): OrganizationService => {
   if (!organizationServiceInstance) {
     organizationServiceInstance = new OrganizationService(queryClient)
   }

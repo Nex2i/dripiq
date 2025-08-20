@@ -10,13 +10,13 @@ export default function NotFoundPage() {
 
   const isAuthenticated = !!(session && user)
 
-      const handleGoHome = () => {
-      if (isAuthenticated) {
-        navigate({ to: HOME_URL })
-      } else {
-        navigate({ to: '/' })
-      }
+  const handleGoHome = () => {
+    if (isAuthenticated) {
+      navigate({ to: HOME_URL })
+    } else {
+      navigate({ to: '/' })
     }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-[var(--color-primary-50)] to-[var(--color-primary-100)] flex items-center justify-center px-4 sm:px-6 lg:px-8">

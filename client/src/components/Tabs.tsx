@@ -13,7 +13,12 @@ interface TabsProps {
   children: React.ReactNode
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange, children }) => {
+const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  activeTab,
+  onTabChange,
+  children,
+}) => {
   return (
     <div className="w-full">
       {/* Tab Navigation */}
@@ -48,9 +53,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange, children }) =
       </div>
 
       {/* Tab Content */}
-      <div className="mt-6">
-        {children}
-      </div>
+      <div className="mt-6">{children}</div>
     </div>
   )
 }

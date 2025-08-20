@@ -7,7 +7,11 @@ interface CopyButtonProps {
   className?: string
 }
 
-const CopyButton: React.FC<CopyButtonProps> = ({ text, label, className = '' }) => {
+const CopyButton: React.FC<CopyButtonProps> = ({
+  text,
+  label,
+  className = '',
+}) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const handleCopy = async () => {

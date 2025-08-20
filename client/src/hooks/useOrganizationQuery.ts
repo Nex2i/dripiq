@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { 
-  organizationService, 
-  organizationQueryKeys
-  
-  
+import {
+  organizationService,
+  organizationQueryKeys,
 } from '../services/organization.service'
-import type {Organization, UpdateOrganizationData} from '../services/organization.service';
+import type {
+  Organization,
+  UpdateOrganizationData,
+} from '../services/organization.service'
 
 // Hook to get organization details
 export function useOrganization(id: string) {

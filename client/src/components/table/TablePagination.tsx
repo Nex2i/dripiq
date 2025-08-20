@@ -1,5 +1,10 @@
 import type { Table } from '@tanstack/react-table'
-import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-react'
+import {
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+} from 'lucide-react'
 
 interface TablePaginationProps {
   table: Table<any>

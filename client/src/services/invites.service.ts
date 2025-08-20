@@ -314,7 +314,9 @@ class InvitesService {
 // Create a singleton instance that will be initialized with QueryClient
 let invitesServiceInstance: InvitesService | null = null
 
-export const createInvitesService = (queryClient: QueryClient): InvitesService => {
+export const createInvitesService = (
+  queryClient: QueryClient,
+): InvitesService => {
   if (!invitesServiceInstance) {
     invitesServiceInstance = new InvitesService(queryClient)
   }

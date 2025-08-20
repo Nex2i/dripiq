@@ -29,7 +29,10 @@ export interface CreateSenderIdentityData {
 class SenderIdentitiesService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
 
-  private async throwDetailedError(response: Response, fallback: string): Promise<never> {
+  private async throwDetailedError(
+    response: Response,
+    fallback: string,
+  ): Promise<never> {
     let data: any = null
     try {
       data = await response.json()
@@ -38,15 +41,18 @@ class SenderIdentitiesService {
     const errors: string[] = Array.isArray(data?.errors)
       ? data.errors
           .map((e: any) => {
-            const field = typeof e?.field === 'string' && e.field ? `${e.field}: ` : ''
-            const message = typeof e?.message === 'string' ? e.message : String(e)
+            const field =
+              typeof e?.field === 'string' && e.field ? `${e.field}: ` : ''
+            const message =
+              typeof e?.message === 'string' ? e.message : String(e)
             return `${field}${message}`
           })
           .filter(Boolean)
       : []
 
     const technical = errors.join(', ')
-    const friendly = typeof data?.message === 'string' && data.message ? data.message : ''
+    const friendly =
+      typeof data?.message === 'string' && data.message ? data.message : ''
 
     const combined = technical
       ? friendly
@@ -63,7 +69,11 @@ class SenderIdentitiesService {
       headers: { 'Content-Type': 'application/json', ...authHeaders },
     })
     if (response.status === 204) return null
-    if (!response.ok) return this.throwDetailedError(response, 'Failed to fetch my sender identity')
+    if (!response.ok)
+      return this.throwDetailedError(
+        response,
+        'Failed to fetch my sender identity',
+      )
     return response.json()
   }
 
@@ -74,7 +84,11 @@ class SenderIdentitiesService {
       headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify(data),
     })
-    if (!response.ok) return this.throwDetailedError(response, 'Failed to create sender identity')
+    if (!response.ok)
+      return this.throwDetailedError(
+        response,
+        'Failed to create sender identity',
+      )
     return response.json()
   }
 
@@ -87,7 +101,8 @@ class SenderIdentitiesService {
         headers: { ...authHeaders },
       },
     )
-    if (!response.ok) return this.throwDetailedError(response, 'Failed to resend verification')
+    if (!response.ok)
+      return this.throwDetailedError(response, 'Failed to resend verification')
     return response.json()
   }
 
@@ -100,7 +115,11 @@ class SenderIdentitiesService {
       headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify(data ?? {}),
     })
-    if (!response.ok) return this.throwDetailedError(response, 'Failed to retry sender identity')
+    if (!response.ok)
+      return this.throwDetailedError(
+        response,
+        'Failed to retry sender identity',
+      )
     return response.json()
   }
 
@@ -114,7 +133,11 @@ class SenderIdentitiesService {
         body: JSON.stringify({ sendgridValidationUrl }),
       },
     )
-    if (!response.ok) return this.throwDetailedError(response, 'Failed to verify sender identity')
+    if (!response.ok)
+      return this.throwDetailedError(
+        response,
+        'Failed to verify sender identity',
+      )
     return response.json()
   }
 }

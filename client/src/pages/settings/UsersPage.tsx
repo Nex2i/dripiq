@@ -343,7 +343,9 @@ export default function UsersPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => (window.location.href = `/settings/users/${userRow.id}`)}
+                                onClick={() =>
+                                  (window.location.href = `/settings/users/${userRow.id}`)
+                                }
                                 className="text-[var(--color-primary-600)] hover:text-blue-900 p-1"
                                 title="Edit user"
                               >

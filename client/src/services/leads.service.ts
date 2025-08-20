@@ -371,7 +371,9 @@ class LeadsService {
   async updateContact(
     leadId: string,
     contactId: string,
-    contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>,
+    contactData: Partial<
+      Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>
+    >,
   ): Promise<{ message: string; contact: LeadPointOfContact }> {
     const authHeaders = await authService.getAuthHeaders()
 
@@ -389,9 +391,7 @@ class LeadsService {
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(
-        errorData.message || 'Failed to update contact',
-      )
+      throw new Error(errorData.message || 'Failed to update contact')
     }
 
     const result = await response.json()
@@ -468,7 +468,10 @@ class LeadsService {
   }
 
   // Generate contact strategy and outreach plan for a contact
-  async generateContactStrategy(leadId: string, contactId: string): Promise<any> {
+  async generateContactStrategy(
+    leadId: string,
+    contactId: string,
+  ): Promise<any> {
     const authHeaders = await authService.getAuthHeaders()
 
     const response = await fetch(

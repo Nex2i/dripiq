@@ -1,6 +1,6 @@
 **Privacy & Data Usage Policy**
 
-*Last updated: **July 28 2025***
+\*Last updated: **July 28 2025\***
 
 ---
 
@@ -32,23 +32,19 @@ We **do not** knowingly collect sensitive personal data (e.g., race, health, pro
 ### 4. How We Use the Data
 
 1. **Provide & Improve the Service**
-
-   * Generate AI-driven outreach content (email, SMS, voicemail scripts, micro-landing pages).
-   * Score engagement and trigger sales-rep alerts.
-   * Maintain, debug, and enhance models.
+   - Generate AI-driven outreach content (email, SMS, voicemail scripts, micro-landing pages).
+   - Score engagement and trigger sales-rep alerts.
+   - Maintain, debug, and enhance models.
 
 2. **Tenant-Level Analytics**
-
-   * Present campaign dashboards and performance reports visible only to your workspace.
+   - Present campaign dashboards and performance reports visible only to your workspace.
 
 3. **Aggregated Product Analytics**
-
-   * Measure overall deliverability, model accuracy, and feature adoption.
-   * Aggregation ensures no single Tenant or individual can be identified.
+   - Measure overall deliverability, model accuracy, and feature adoption.
+   - Aggregation ensures no single Tenant or individual can be identified.
 
 4. **Legal & Security**
-
-   * Detect abuse, enforce our Terms of Service, and comply with applicable law.
+   - Detect abuse, enforce our Terms of Service, and comply with applicable law.
 
 We **never sell, lease, or share** Tenant-specific data with marketers or other third parties for their own purposes.
 
@@ -68,28 +64,27 @@ Each vendor is bound by a Data Processing Agreement (DPA) requiring confidential
 
 ### 6. Security Measures
 
-* **Encryption**
+- **Encryption**
+  - Data in transit: TLS 1.2+
+  - Data at rest: AES-256 (Supabase), disk encryption (Render), HTTPS (OpenAI)
 
-  * Data in transit: TLS 1.2+
-  * Data at rest: AES-256 (Supabase), disk encryption (Render), HTTPS (OpenAI)
-* **Tenant Isolation**
+- **Tenant Isolation**
+  - Logical row-level security and per-Tenant API tokens ensure data cannot be accessed across Tenants.
 
-  * Logical row-level security and per-Tenant API tokens ensure data cannot be accessed across Tenants.
-* **Access Controls**
+- **Access Controls**
+  - Least-privilege IAM; MFA for privileged accounts; audited access logs.
 
-  * Least-privilege IAM; MFA for privileged accounts; audited access logs.
-* **Penetration Testing & Monitoring**
-
-  * Annual third-party penetration tests.
-  * 24×7 infrastructure logging and anomaly detection.
+- **Penetration Testing & Monitoring**
+  - Annual third-party penetration tests.
+  - 24×7 infrastructure logging and anomaly detection.
 
 ---
 
 ### 7. Data Retention & Deletion
 
-* **Tenant Workspace Data** – retained for the life of the subscription. Upon termination or written request, we delete or export data within 30 days.
-* **System Logs & Aggregated Statistics** – retained up to 24 months for security and product analytics, then de-identified or purged.
-* **Back-ups** – encrypted snapshots retained for 30 days before secure deletion.
+- **Tenant Workspace Data** – retained for the life of the subscription. Upon termination or written request, we delete or export data within 30 days.
+- **System Logs & Aggregated Statistics** – retained up to 24 months for security and product analytics, then de-identified or purged.
+- **Back-ups** – encrypted snapshots retained for 30 days before secure deletion.
 
 ---
 
@@ -97,9 +92,9 @@ Each vendor is bound by a Data Processing Agreement (DPA) requiring confidential
 
 Where data is transferred outside its country of origin, we rely on one or more of the following:
 
-* Standard Contractual Clauses (SCCs) approved by the European Commission,
-* UK Addendum to SCCs, or
-* Adequacy decisions, as applicable.
+- Standard Contractual Clauses (SCCs) approved by the European Commission,
+- UK Addendum to SCCs, or
+- Adequacy decisions, as applicable.
 
 ---
 
@@ -107,11 +102,11 @@ Where data is transferred outside its country of origin, we rely on one or more 
 
 Depending on your jurisdiction, you may have the right to:
 
-* Access or correct your personal data;
-* Request deletion (“right to be forgotten”);
-* Object to or restrict certain processing;
-* Receive a copy of data in portable format;
-* Lodge a complaint with a supervisory authority.
+- Access or correct your personal data;
+- Request deletion (“right to be forgotten”);
+- Object to or restrict certain processing;
+- Receive a copy of data in portable format;
+- Lodge a complaint with a supervisory authority.
 
 Requests can be initiated by emailing **[privacy@dripiq.com](mailto:privacy@dripiq.com)**. We will verify identity and respond within the timeframe required by applicable law (30–45 days).
 
