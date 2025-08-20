@@ -4,6 +4,9 @@ import { tanstackConfig } from '@tanstack/eslint-config'
 import { resolve } from 'node:path'
 
 export default [
+  {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
   ...tanstackConfig,
   {
     settings: {

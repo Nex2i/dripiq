@@ -8,7 +8,14 @@ const unusedImports = require('eslint-plugin-unused-imports');
 /** @type {import("eslint").Linter.FlatConfig[]} */
 module.exports = [
   {
-    ignores: ['**/*.css', '**/*.scss', 'node_modules/*'],
+    ignores: [
+      '**/*.css',
+      '**/*.scss',
+      'node_modules/**',
+      'dist/**',
+      'jest.config.js',
+      'jest.setup.js',
+    ],
   },
   js.configs.recommended,
   {
