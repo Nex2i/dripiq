@@ -15,7 +15,7 @@ The SendGrid webhook system captures and processes all email events from SendGri
 ## Architecture
 
 ```
-SendGrid → Webhook Endpoint → Signature Validation → Raw Storage → 
+SendGrid → Webhook Endpoint → Signature Validation → Raw Storage →
 Event Processing → Normalization → MessageEvents Creation → Status Updates
 ```
 
@@ -106,11 +106,13 @@ SENDGRID_WEBHOOK_ALLOWED_IPS=167.89.118.0/24,167.89.119.0/24
 Processes SendGrid webhook events.
 
 **Headers:**
+
 - `x-twilio-email-event-webhook-signature`: HMAC-SHA256 signature
 - `x-twilio-email-event-webhook-timestamp`: Unix timestamp
 - `content-type`: application/json
 
 **Request Body:**
+
 ```json
 [
   {
@@ -130,6 +132,7 @@ Processes SendGrid webhook events.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -143,6 +146,7 @@ Processes SendGrid webhook events.
 ```
 
 **Error Responses:**
+
 - `400`: Invalid payload or missing headers
 - `401`: Invalid signature
 - `403`: IP not allowed
@@ -157,6 +161,7 @@ Processes SendGrid webhook events.
 Returns webhook endpoint health status.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -172,6 +177,7 @@ Returns webhook endpoint health status.
 Tests webhook configuration (requires authentication).
 
 **Response:**
+
 ```json
 {
   "configured": true,
@@ -189,6 +195,7 @@ Tests webhook configuration (requires authentication).
 Lists recent webhook deliveries for debugging (requires authentication).
 
 **Response:**
+
 ```json
 [
   {
@@ -206,18 +213,18 @@ Lists recent webhook deliveries for debugging (requires authentication).
 
 ### Supported Event Types
 
-| Event Type | Description | Creates MessageEvent | Priority |
-|------------|-------------|---------------------|----------|
-| `delivered` | Message successfully delivered | ✅ | 1 |
-| `bounce` | Message bounced (hard/soft) | ✅ | 2 |
-| `deferred` | Temporary delivery delay | ❌ | 0 |
-| `dropped` | Message dropped by SendGrid | ✅ | 3 |
-| `open` | Recipient opened email | ✅ | 1 |
-| `click` | Recipient clicked link | ✅ | 1 |
-| `spam_report` | Marked as spam | ✅ | 2 |
-| `unsubscribe` | Recipient unsubscribed | ✅ | 2 |
-| `group_unsubscribe` | Unsubscribed from group | ✅ | 2 |
-| `group_resubscribe` | Resubscribed to group | ✅ | 1 |
+| Event Type          | Description                    | Creates MessageEvent | Priority |
+| ------------------- | ------------------------------ | -------------------- | -------- |
+| `delivered`         | Message successfully delivered | ✅                   | 1        |
+| `bounce`            | Message bounced (hard/soft)    | ✅                   | 2        |
+| `deferred`          | Temporary delivery delay       | ❌                   | 0        |
+| `dropped`           | Message dropped by SendGrid    | ✅                   | 3        |
+| `open`              | Recipient opened email         | ✅                   | 1        |
+| `click`             | Recipient clicked link         | ✅                   | 1        |
+| `spam_report`       | Marked as spam                 | ✅                   | 2        |
+| `unsubscribe`       | Recipient unsubscribed         | ✅                   | 2        |
+| `group_unsubscribe` | Unsubscribed from group        | ✅                   | 2        |
+| `group_resubscribe` | Resubscribed to group          | ✅                   | 1        |
 
 ### Event Processing Flow
 
@@ -237,7 +244,7 @@ The system extracts tenant and campaign information from SendGrid's custom argum
 ```json
 {
   "tenant_id": "tenant-123",
-  "campaign_id": "campaign-456", 
+  "campaign_id": "campaign-456",
   "node_id": "node-789",
   "outbound_message_id": "message-abc",
   "dedupe_key": "unique-key"
@@ -250,14 +257,14 @@ These are automatically included when sending emails through the existing SendGr
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SENDGRID_WEBHOOK_SECRET` | - | **Required**: Webhook signing secret (min 16 chars) |
-| `SENDGRID_WEBHOOK_ENABLED` | `true` | Enable/disable webhook processing |
-| `SENDGRID_WEBHOOK_MAX_AGE` | `600` | Max timestamp age in seconds (60-3600) |
-| `SENDGRID_WEBHOOK_DUPLICATE_DETECTION` | `true` | Enable duplicate event detection |
-| `SENDGRID_WEBHOOK_BATCH_PROCESSING` | `true` | Process events in parallel |
-| `SENDGRID_WEBHOOK_ALLOWED_IPS` | - | Comma-separated allowed IP ranges |
+| Variable                               | Default | Description                                         |
+| -------------------------------------- | ------- | --------------------------------------------------- |
+| `SENDGRID_WEBHOOK_SECRET`              | -       | **Required**: Webhook signing secret (min 16 chars) |
+| `SENDGRID_WEBHOOK_ENABLED`             | `true`  | Enable/disable webhook processing                   |
+| `SENDGRID_WEBHOOK_MAX_AGE`             | `600`   | Max timestamp age in seconds (60-3600)              |
+| `SENDGRID_WEBHOOK_DUPLICATE_DETECTION` | `true`  | Enable duplicate event detection                    |
+| `SENDGRID_WEBHOOK_BATCH_PROCESSING`    | `true`  | Process events in parallel                          |
+| `SENDGRID_WEBHOOK_ALLOWED_IPS`         | -       | Comma-separated allowed IP ranges                   |
 
 ### Rate Limiting
 
@@ -313,20 +320,20 @@ Monitor webhook-related database operations:
 
 ```sql
 -- Recent webhook deliveries
-SELECT * FROM webhook_deliveries 
-WHERE provider = 'sendgrid' 
-ORDER BY received_at DESC 
+SELECT * FROM webhook_deliveries
+WHERE provider = 'sendgrid'
+ORDER BY received_at DESC
 LIMIT 10;
 
 -- Event processing status
-SELECT status, COUNT(*) 
-FROM webhook_deliveries 
-WHERE provider = 'sendgrid' 
+SELECT status, COUNT(*)
+FROM webhook_deliveries
+WHERE provider = 'sendgrid'
 GROUP BY status;
 
 -- Recent message events
-SELECT type, COUNT(*) 
-FROM message_events 
+SELECT type, COUNT(*)
+FROM message_events
 WHERE created_at > NOW() - INTERVAL '1 hour'
 GROUP BY type;
 ```
@@ -375,6 +382,7 @@ npm test -- --testPathPattern="sendgrid.webhook"
 ```
 
 Tests cover:
+
 - Signature verification
 - Event processing logic
 - Error handling scenarios
@@ -407,6 +415,7 @@ Use SendGrid's built-in test feature:
 ### Common Issues
 
 **1. Signature Verification Fails**
+
 ```bash
 # Check webhook secret
 echo $SENDGRID_WEBHOOK_SECRET
@@ -416,18 +425,21 @@ echo $SENDGRID_WEBHOOK_SECRET | wc -c
 ```
 
 **2. No Events Received**
+
 - Verify webhook URL is publicly accessible
 - Check SendGrid webhook configuration
 - Review rate limiting and IP restrictions
 - Monitor application logs for errors
 
 **3. Events Not Processing**
+
 - Check tenant ID extraction
 - Verify database connectivity
 - Review message event creation
 - Check for duplicate detection issues
 
 **4. Performance Issues**
+
 - Monitor processing time logs
 - Consider disabling duplicate detection
 - Review batch processing settings
@@ -480,6 +492,7 @@ grep "SendGrid webhook processing failed" logs/app.log
 ### Security Headers
 
 The webhook endpoint includes security headers:
+
 - Content-Type validation
 - Request size limits
 - Rate limiting per IP
@@ -501,7 +514,7 @@ The webhook endpoint includes security headers:
 SENDGRID_WEBHOOK_BATCH_PROCESSING=true
 SENDGRID_WEBHOOK_DUPLICATE_DETECTION=false
 
-# Security-focused environments  
+# Security-focused environments
 SENDGRID_WEBHOOK_MAX_AGE=300
 SENDGRID_WEBHOOK_ALLOWED_IPS=167.89.118.0/24
 ```
@@ -517,22 +530,22 @@ SENDGRID_WEBHOOK_ALLOWED_IPS=167.89.118.0/24
 
 ```sql
 -- Processing performance
-SELECT 
+SELECT
   DATE_TRUNC('hour', received_at) as hour,
   COUNT(*) as webhooks,
   AVG(EXTRACT(EPOCH FROM (updated_at - received_at))) as avg_processing_seconds
-FROM webhook_deliveries 
-WHERE provider = 'sendgrid' 
-GROUP BY hour 
+FROM webhook_deliveries
+WHERE provider = 'sendgrid'
+GROUP BY hour
 ORDER BY hour DESC;
 
 -- Event type distribution
-SELECT 
+SELECT
   event_type,
   COUNT(*) as count,
   COUNT(*) * 100.0 / SUM(COUNT(*)) OVER() as percentage
-FROM webhook_deliveries 
-WHERE provider = 'sendgrid' 
+FROM webhook_deliveries
+WHERE provider = 'sendgrid'
 GROUP BY event_type;
 ```
 

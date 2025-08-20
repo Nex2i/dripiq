@@ -13,6 +13,7 @@ This project includes [Bull-Board](https://github.com/felixmosh/bull-board), a p
 ## Access
 
 The Bull-Board dashboard is available at:
+
 ```
 http://localhost:8085/admin/queues
 ```
@@ -20,10 +21,12 @@ http://localhost:8085/admin/queues
 ## Authentication
 
 The dashboard is protected with basic authentication. Default credentials:
+
 - **Username**: `admin`
 - **Password**: `admin123`
 
 You can customize these credentials by setting environment variables:
+
 ```env
 BULL_BOARD_USERNAME=your_username
 BULL_BOARD_PASSWORD=your_secure_password
@@ -32,6 +35,7 @@ BULL_BOARD_PASSWORD=your_secure_password
 ## Monitored Queues
 
 The dashboard monitors the following queues:
+
 - `lead_analysis` - Lead analysis processing jobs
 - `campaign_creation` - Campaign creation jobs
 - `campaign_execution` - Campaign node execution jobs (send emails, process events, etc.)
@@ -49,6 +53,7 @@ BULL_BOARD_PASSWORD=admin123
 ## Production Considerations
 
 ⚠️ **Important**: In production environments:
+
 1. Change the default credentials to secure values
 2. Consider restricting access by IP or using more sophisticated authentication
 3. Use HTTPS for secure communication
@@ -72,6 +77,7 @@ BULL_BOARD_PASSWORD=admin123
 ## Troubleshooting
 
 If you can't access the dashboard:
+
 1. Ensure the server is running
 2. Check that Redis is connected (required for BullMQ)
 3. Verify your credentials

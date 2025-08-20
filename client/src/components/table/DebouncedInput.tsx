@@ -6,7 +6,8 @@ interface DebouncedInputProps {
   debounce?: number
 }
 
-type Props = DebouncedInputProps & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>
+type Props = DebouncedInputProps &
+  Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>
 
 export function DebouncedInput({
   value: initialValue,

@@ -228,6 +228,13 @@ export function useLeadsColumns({
         enableColumnFilter: false,
       },
     ],
-    [users, usersLoading, usersError, assigningOwner, onAssignOwner, formatDate],
+    [
+      users,
+      usersLoading,
+      usersError,
+      assigningOwner,
+      onAssignOwner,
+      formatDate,
+    ],
   )
 }

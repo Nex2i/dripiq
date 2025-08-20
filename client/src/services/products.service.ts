@@ -175,7 +175,10 @@ class ProductsService {
 
       // Update cache after successful update if queryClient is available
       if (this.queryClient) {
-        this.queryClient.setQueryData(productQueryKeys.detail(id), updatedProduct)
+        this.queryClient.setQueryData(
+          productQueryKeys.detail(id),
+          updatedProduct,
+        )
 
         // Update products list cache
         this.queryClient.setQueryData<Product[]>(
@@ -248,7 +251,9 @@ class ProductsService {
 // Create a singleton instance that will be initialized with QueryClient
 let productsServiceInstance: ProductsService | null = null
 
-export const createProductsService = (queryClient: QueryClient): ProductsService => {
+export const createProductsService = (
+  queryClient: QueryClient,
+): ProductsService => {
   if (!productsServiceInstance) {
     productsServiceInstance = new ProductsService(queryClient)
   }

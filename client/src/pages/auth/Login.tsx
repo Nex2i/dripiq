@@ -176,7 +176,7 @@ export default function Login() {
               )}
             </button>
           </form>
-          
+
           <div className="mt-6 text-center">
             <button
               onClick={() => router.navigate({ to: '/privacy-policy' } as any)}

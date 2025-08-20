@@ -262,17 +262,20 @@ export default function ProductsPage() {
 
   const handleToggleDefault = (product: Product) => {
     setLoadingProductId(product.id)
-    updateProductMutation.mutate({
-      id: product.id,
-      data: { isDefault: !product.isDefault }
-    }, {
-      onSettled: () => {
-        setLoadingProductId(null)
+    updateProductMutation.mutate(
+      {
+        id: product.id,
+        data: { isDefault: !product.isDefault },
       },
-      onError: (error) => {
-        console.error('Error updating product default status:', error)
-      }
-    })
+      {
+        onSettled: () => {
+          setLoadingProductId(null)
+        },
+        onError: (error) => {
+          console.error('Error updating product default status:', error)
+        },
+      },
+    )
   }
 
   const openEditModal = (product: Product) => {
@@ -412,7 +415,7 @@ export default function ProductsPage() {
                           <p className="text-sm font-medium text-gray-700 mb-1">
                             Site URL:
                           </p>
-                          <a 
+                          <a
                             href={product.siteUrl}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -430,7 +433,10 @@ export default function ProductsPage() {
                         <AnimatedCheckbox
                           checked={product.isDefault}
                           onChange={() => handleToggleDefault(product)}
-                          disabled={loadingProductId === product.id || updateProductMutation.isPending}
+                          disabled={
+                            loadingProductId === product.id ||
+                            updateProductMutation.isPending
+                          }
                           loading={loadingProductId === product.id}
                           label="Default Product"
                           title={

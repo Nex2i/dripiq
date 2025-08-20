@@ -2,10 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsService, leadQueryKeys } from '../services/leads.service'
 import { invitesService } from '../services/invites.service'
 import type { Lead, LeadPointOfContact } from '../types/lead.types'
-import type {
-  CreateLeadData,
-  UpdateLeadData,
-} from '../services/leads.service'
+import type { CreateLeadData, UpdateLeadData } from '../services/leads.service'
 
 // Hook to get all leads
 export function useLeads(searchQuery?: string) {
@@ -226,26 +223,34 @@ export function useToggleContactManuallyReviewed() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ 
-      leadId, 
-      contactId, 
-      manuallyReviewed 
-    }: { 
-      leadId: string; 
-      contactId: string; 
-      manuallyReviewed: boolean;
-    }) => leadsService.toggleContactManuallyReviewed(leadId, contactId, manuallyReviewed),
+    mutationFn: ({
+      leadId,
+      contactId,
+      manuallyReviewed,
+    }: {
+      leadId: string
+      contactId: string
+      manuallyReviewed: boolean
+    }) =>
+      leadsService.toggleContactManuallyReviewed(
+        leadId,
+        contactId,
+        manuallyReviewed,
+      ),
     onSuccess: (data, { leadId, contactId }) => {
       // Update the individual lead cache
-      queryClient.setQueryData<Lead>(leadQueryKeys.detail(leadId), (oldLead) => {
-        if (!oldLead || !oldLead.pointOfContacts) return oldLead
-        return {
-          ...oldLead,
-          pointOfContacts: oldLead.pointOfContacts.map((contact) =>
-            contact.id === contactId ? data.contact : contact,
-          ),
-        }
-      })
+      queryClient.setQueryData<Lead>(
+        leadQueryKeys.detail(leadId),
+        (oldLead) => {
+          if (!oldLead || !oldLead.pointOfContacts) return oldLead
+          return {
+            ...oldLead,
+            pointOfContacts: oldLead.pointOfContacts.map((contact) =>
+              contact.id === contactId ? data.contact : contact,
+            ),
+          }
+        },
+      )
 
       // Update the leads list cache
       queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
@@ -273,30 +278,38 @@ export function useToggleContactManuallyReviewed() {
 }
 
 // Hook to update a contact
-export function useUpdateContact(onSuccess?: () => void, onError?: (error: any) => void) {
+export function useUpdateContact(
+  onSuccess?: () => void,
+  onError?: (error: any) => void,
+) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ 
-      leadId, 
-      contactId, 
-      contactData 
-    }: { 
-      leadId: string; 
-      contactId: string; 
-      contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>
+    mutationFn: ({
+      leadId,
+      contactId,
+      contactData,
+    }: {
+      leadId: string
+      contactId: string
+      contactData: Partial<
+        Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>
+      >
     }) => leadsService.updateContact(leadId, contactId, contactData),
     onSuccess: (data, { leadId, contactId }) => {
       // Update the individual lead cache
-      queryClient.setQueryData<Lead>(leadQueryKeys.detail(leadId), (oldLead) => {
-        if (!oldLead || !oldLead.pointOfContacts) return oldLead
-        return {
-          ...oldLead,
-          pointOfContacts: oldLead.pointOfContacts.map((contact) =>
-            contact.id === contactId ? data.contact : contact,
-          ),
-        }
-      })
+      queryClient.setQueryData<Lead>(
+        leadQueryKeys.detail(leadId),
+        (oldLead) => {
+          if (!oldLead || !oldLead.pointOfContacts) return oldLead
+          return {
+            ...oldLead,
+            pointOfContacts: oldLead.pointOfContacts.map((contact) =>
+              contact.id === contactId ? data.contact : contact,
+            ),
+          }
+        },
+      )
 
       // Update the leads list cache
       queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
@@ -324,7 +337,7 @@ export function useUpdateContact(onSuccess?: () => void, onError?: (error: any) 
     },
     onError: (error) => {
       console.error('Error updating contact:', error)
-      
+
       // Call the custom error callback if provided
       if (onError) {
         onError(error)

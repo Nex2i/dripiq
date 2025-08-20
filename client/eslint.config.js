@@ -4,6 +4,9 @@ import { tanstackConfig } from '@tanstack/eslint-config'
 import { resolve } from 'node:path'
 
 export default [
+  {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
   ...tanstackConfig,
   {
     settings: {
@@ -114,10 +117,11 @@ export default [
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
-      '@stylistic/js/spaced-comment': 'off',
+      '@stylistic/spaced-comment': 'off',
       'no-useless-catch': 'off',
       'no-shadow': 'off',
       'sort-imports': 'off',
+      'pnpm/json-enforce-catalog': 'off',
     },
   },
 ]

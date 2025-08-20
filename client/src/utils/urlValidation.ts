@@ -1,6 +1,6 @@
 export interface UrlValidationResult {
-  isValid: boolean;
-  error?: string;
+  isValid: boolean
+  error?: string
 }
 
 export class UrlValidator {
@@ -9,15 +9,15 @@ export class UrlValidator {
    */
   static isValidUrl(url: string): boolean {
     if (!url || typeof url !== 'string') {
-      return false;
+      return false
     }
 
     try {
-      const urlObj = new URL(url.trim());
+      const urlObj = new URL(url.trim())
       // Only allow HTTPS protocol
-      return urlObj.protocol === 'https:';
+      return urlObj.protocol === 'https:'
     } catch {
-      return false;
+      return false
     }
   }
 
@@ -30,10 +30,10 @@ export class UrlValidator {
   static validateCalendarLink(
     currentValue: string,
     initialValue: string = '',
-    allowEmpty: boolean = true
+    allowEmpty: boolean = true,
   ): UrlValidationResult {
-    const trimmedCurrent = currentValue?.trim() || '';
-    const trimmedInitial = initialValue?.trim() || '';
+    const trimmedCurrent = currentValue?.trim() || ''
+    const trimmedInitial = initialValue?.trim() || ''
 
     // Check if empty
     if (!trimmedCurrent) {
@@ -41,22 +41,24 @@ export class UrlValidator {
       if (trimmedInitial && !allowEmpty) {
         return {
           isValid: false,
-          error: 'Calendar link cannot be removed once set. Please provide a valid URL.'
-        };
+          error:
+            'Calendar link cannot be removed once set. Please provide a valid URL.',
+        }
       }
       // Empty is okay if no initial value or empty is allowed
-      return { isValid: true };
+      return { isValid: true }
     }
 
     // Validate URL format
     if (!this.isValidUrl(trimmedCurrent)) {
       return {
         isValid: false,
-        error: 'Please enter a valid HTTPS URL (e.g., https://calendly.com/your-link)'
-      };
+        error:
+          'Please enter a valid HTTPS URL (e.g., https://calendly.com/your-link)',
+      }
     }
 
-    return { isValid: true };
+    return { isValid: true }
   }
 
   /**
@@ -64,9 +66,9 @@ export class UrlValidator {
    */
   static validateCalendarLinkStrict(
     currentValue: string,
-    initialValue: string = ''
+    initialValue: string = '',
   ): UrlValidationResult {
-    return this.validateCalendarLink(currentValue, initialValue, false);
+    return this.validateCalendarLink(currentValue, initialValue, false)
   }
 
   /**
@@ -77,8 +79,8 @@ export class UrlValidator {
       'https://calendly.com/your-name',
       'https://cal.com/your-name',
       'https://acuityscheduling.com/schedule.php?owner=12345',
-      'https://outlook.live.com/calendar/published/your-calendar-id'
-    ];
+      'https://outlook.live.com/calendar/published/your-calendar-id',
+    ]
   }
 
   /**
@@ -86,7 +88,7 @@ export class UrlValidator {
    */
   static isCommonCalendarService(url: string): boolean {
     if (!this.isValidUrl(url)) {
-      return false;
+      return false
     }
 
     const calendarDomains = [
@@ -99,18 +101,18 @@ export class UrlValidator {
       'simplybook.me',
       'square.com',
       'outlook.live.com',
-      'calendar.google.com'
-    ];
+      'calendar.google.com',
+    ]
 
     try {
-      const urlObj = new URL(url.trim());
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      return calendarDomains.some(domain => 
-        hostname === domain || hostname.endsWith(`.${domain}`)
-      );
+      const urlObj = new URL(url.trim())
+      const hostname = urlObj.hostname.toLowerCase()
+
+      return calendarDomains.some(
+        (domain) => hostname === domain || hostname.endsWith(`.${domain}`),
+      )
     } catch {
-      return false;
+      return false
     }
   }
 }

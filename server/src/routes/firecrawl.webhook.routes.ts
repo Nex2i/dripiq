@@ -156,7 +156,7 @@ export default async function FirecrawlWebhookRoutes(
           event: type,
         });
       } catch (error: any) {
-        fastify.log.error(`Error processing Firecrawl webhook: ${error.message}`, {
+        logger.error(`Error processing Firecrawl webhook: ${error.message}`, {
           error: error instanceof Error ? error.stack : JSON.stringify(error),
           requestBody: request.body,
         });

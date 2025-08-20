@@ -46,14 +46,14 @@ function AttachProductModal({
       !attachedProductIds.includes(product.id) &&
       (product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        '')
+        ''),
   )
 
   const handleProductToggle = (productId: string) => {
     setSelectedProductIds((prev) =>
       prev.includes(productId)
         ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
+        : [...prev, productId],
     )
   }
 
@@ -112,13 +112,15 @@ function AttachProductModal({
           ) : availableProducts.length === 0 ? (
             <div className="text-center py-8">
               <Package className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No available products</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No available products
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
                 {allProducts.length === 0
                   ? 'No products have been created yet.'
                   : searchTerm
-                  ? 'No products match your search.'
-                  : 'All products are already attached to this lead.'}
+                    ? 'No products match your search.'
+                    : 'All products are already attached to this lead.'}
               </p>
             </div>
           ) : (
@@ -141,9 +143,13 @@ function AttachProductModal({
                       className="mt-1 mr-3"
                     />
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{product.title}</h4>
+                      <h4 className="font-medium text-gray-900">
+                        {product.title}
+                      </h4>
                       {product.description && (
-                        <p className="text-sm text-gray-600 mt-1">{product.description}</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {product.description}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -191,20 +197,26 @@ function ProductCard({
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {product.title}
+          </h3>
           {product.description && (
             <p className="text-gray-600 mb-3">{product.description}</p>
           )}
           {product.salesVoice && (
             <div className="bg-gray-50 rounded-md p-3 mb-3">
-              <p className="text-sm font-medium text-gray-700 mb-1">Sales Voice:</p>
+              <p className="text-sm font-medium text-gray-700 mb-1">
+                Sales Voice:
+              </p>
               <p className="text-sm text-gray-600">{product.salesVoice}</p>
             </div>
           )}
           {product.siteUrl && (
             <div className="bg-[var(--color-primary-50)] rounded-md p-3 mb-3">
-              <p className="text-sm font-medium text-gray-700 mb-1">Site URL:</p>
-              <a 
+              <p className="text-sm font-medium text-gray-700 mb-1">
+                Site URL:
+              </p>
+              <a
                 href={product.siteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -215,7 +227,8 @@ function ProductCard({
             </div>
           )}
           <div className="text-xs text-gray-500">
-            Attached: {new Date(attachedProduct.attachedAt).toLocaleDateString()}
+            Attached:{' '}
+            {new Date(attachedProduct.attachedAt).toLocaleDateString()}
           </div>
         </div>
         <button
@@ -258,7 +271,8 @@ export default function ProductsTab({ leadId }: ProductsTabProps) {
   }
 
   const handleDetachProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to remove this product from the lead?')) return
+    if (!confirm('Are you sure you want to remove this product from the lead?'))
+      return
 
     try {
       await detachProductMutation.mutateAsync({ leadId, productId })
@@ -311,7 +325,9 @@ export default function ProductsTab({ leadId }: ProductsTabProps) {
       {attachedProducts.length === 0 ? (
         <div className="text-center py-12">
           <Package className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No products attached</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            No products attached
+          </h3>
           <p className="mt-1 text-sm text-gray-500">
             Attach products to help qualify this lead opportunity.
           </p>

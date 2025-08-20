@@ -22,7 +22,9 @@ const PrivacyPolicyPage: React.FC = () => {
         const content = await response.text()
         setMarkdownContent(content)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load privacy policy')
+        setError(
+          err instanceof Error ? err.message : 'Failed to load privacy policy',
+        )
       } finally {
         setLoading(false)
       }
@@ -49,14 +51,10 @@ const PrivacyPolicyPage: React.FC = () => {
       </h3>
     ),
     p: ({ children }: any) => (
-      <p className="mb-4 text-gray-700 leading-relaxed">
-        {children}
-      </p>
+      <p className="mb-4 text-gray-700 leading-relaxed">{children}</p>
     ),
     ul: ({ children }: any) => (
-      <ul className="list-disc list-inside mb-4 space-y-1 ml-4">
-        {children}
-      </ul>
+      <ul className="list-disc list-inside mb-4 space-y-1 ml-4">{children}</ul>
     ),
     ol: ({ children }: any) => (
       <ol className="list-decimal list-inside mb-4 space-y-1 ml-4">
@@ -64,22 +62,14 @@ const PrivacyPolicyPage: React.FC = () => {
       </ol>
     ),
     li: ({ children }: any) => (
-      <li className="mb-2 text-gray-700">
-        {children}
-      </li>
+      <li className="mb-2 text-gray-700">{children}</li>
     ),
     strong: ({ children }: any) => (
-      <strong className="font-semibold text-gray-900">
-        {children}
-      </strong>
+      <strong className="font-semibold text-gray-900">{children}</strong>
     ),
-    em: ({ children }: any) => (
-      <em className="italic">
-        {children}
-      </em>
-    ),
+    em: ({ children }: any) => <em className="italic">{children}</em>,
     a: ({ href, children }: any) => (
-      <a 
+      <a
         href={href}
         className="text-blue-600 hover:text-blue-800 underline"
         target="_blank"
@@ -111,20 +101,12 @@ const PrivacyPolicyPage: React.FC = () => {
       </div>
     ),
     thead: ({ children }: any) => (
-      <thead className="bg-gray-50">
-        {children}
-      </thead>
+      <thead className="bg-gray-50">{children}</thead>
     ),
     tbody: ({ children }: any) => (
-      <tbody className="bg-white divide-y divide-gray-200">
-        {children}
-      </tbody>
+      <tbody className="bg-white divide-y divide-gray-200">{children}</tbody>
     ),
-    tr: ({ children }: any) => (
-      <tr className="hover:bg-gray-50">
-        {children}
-      </tr>
-    ),
+    tr: ({ children }: any) => <tr className="hover:bg-gray-50">{children}</tr>,
     th: ({ children }: any) => (
       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
         {children}
@@ -137,9 +119,7 @@ const PrivacyPolicyPage: React.FC = () => {
         </div>
       </td>
     ),
-    hr: () => (
-      <hr className="my-8 border-t border-gray-300" />
-    ),
+    hr: () => <hr className="my-8 border-t border-gray-300" />,
   }
 
   if (loading) {
@@ -159,7 +139,9 @@ const PrivacyPolicyPage: React.FC = () => {
         <div className="text-center">
           <div className="text-red-600 mb-4">
             <AlertCircle className="w-16 h-16 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Error Loading Privacy Policy</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              Error Loading Privacy Policy
+            </h2>
             <p className="text-gray-600">{error}</p>
           </div>
           <button
@@ -195,7 +177,7 @@ const PrivacyPolicyPage: React.FC = () => {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-sm border p-8 lg:p-12">
-          <ReactMarkdown 
+          <ReactMarkdown
             components={markdownComponents}
             remarkPlugins={[remarkGfm]}
           >

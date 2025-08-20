@@ -6,11 +6,15 @@ interface TooltipProps {
   className?: string
 }
 
-const Tooltip: React.FC<TooltipProps> = ({ children, content, className = '' }) => {
+const Tooltip: React.FC<TooltipProps> = ({
+  children,
+  content,
+  className = '',
+}) => {
   const [isVisible, setIsVisible] = useState(false)
 
   return (
-    <div 
+    <div
       className={`relative inline-block ${className}`}
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}

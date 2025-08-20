@@ -36,7 +36,8 @@
     "dev:workers": "tsx src/workers/worker.run.ts",
     "dev:prepare": "npm run install:all && npm run clear:dist && npm run db:deploy",
     "dev:both": "npm run dev:prepare && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run nodemon\" \"npm run dev:workers\"",
-    "start:both": "npm run build && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run start\" \"npm run workers\""
+    "start:both": "npm run build && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run start\" \"npm run workers\"",
+    "check": "prettier --write . && eslint --fix"
   },
   "dependencies": {
     "@bull-board/api": "^6.12.0",

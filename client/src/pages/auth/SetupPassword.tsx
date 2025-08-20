@@ -108,10 +108,10 @@ export default function SetupPassword() {
 
       setStatus('success')
 
-              // Redirect to leads after success
-        setTimeout(() => {
-          router.navigate({ to: HOME_URL })
-        }, 2000)
+      // Redirect to leads after success
+      setTimeout(() => {
+        router.navigate({ to: HOME_URL })
+      }, 2000)
     } catch (err: any) {
       console.error('Password setup error:', err)
       setError(

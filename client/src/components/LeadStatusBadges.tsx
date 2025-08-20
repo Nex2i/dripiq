@@ -1,6 +1,9 @@
 import React from 'react'
 import type { LeadStatus } from '../types/lead.types'
-import { LEAD_STATUS, LEAD_STATUS_PRIORITY } from '../constants/leadStatus.constants'
+import {
+  LEAD_STATUS,
+  LEAD_STATUS_PRIORITY,
+} from '../constants/leadStatus.constants'
 
 interface LeadStatusBadgesProps {
   statuses: LeadStatus[]
@@ -45,11 +48,14 @@ const getStatusIcon = (status: LeadStatus['status']) => {
   }
 }
 
-const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact = false }) => {
+const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({
+  statuses,
+  compact = false,
+}) => {
   if (!statuses || statuses.length === 0) {
     return (
-      <span 
-        className="text-gray-400 text-sm" 
+      <span
+        className="text-gray-400 text-sm"
         title="No status found - database migration may be needed"
       >
         No status
@@ -58,32 +64,36 @@ const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact =
   }
 
   // Sort statuses by creation date to show progression
-  const sortedStatuses = [...statuses].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  const sortedStatuses = [...statuses].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   )
 
   if (compact) {
     // For table view - show the most important status based on priority
-    const mostImportantStatus = sortedStatuses.reduce((prev, current) => 
-      LEAD_STATUS_PRIORITY[current.status] > LEAD_STATUS_PRIORITY[prev.status] ? current : prev
+    const mostImportantStatus = sortedStatuses.reduce((prev, current) =>
+      LEAD_STATUS_PRIORITY[current.status] > LEAD_STATUS_PRIORITY[prev.status]
+        ? current
+        : prev,
     )
-    
+
     const hasMultipleStatuses = sortedStatuses.length > 1
-    
+
     return (
       <div className="relative group">
         <span
           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(mostImportantStatus.status)} ${hasMultipleStatuses ? 'cursor-help' : ''}`}
         >
-          <span className="text-xs">{getStatusIcon(mostImportantStatus.status)}</span>
+          <span className="text-xs">
+            {getStatusIcon(mostImportantStatus.status)}
+          </span>
           {mostImportantStatus.status}
-                     {hasMultipleStatuses && (
-             <span className="ml-1 px-1 py-0.5 bg-transparent rounded-full text-xs font-bold leading-none opacity-70">
-               +{sortedStatuses.length - 1}
-             </span>
-           )}
+          {hasMultipleStatuses && (
+            <span className="ml-1 px-1 py-0.5 bg-transparent rounded-full text-xs font-bold leading-none opacity-70">
+              +{sortedStatuses.length - 1}
+            </span>
+          )}
         </span>
-        
+
         {hasMultipleStatuses && (
           <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-max max-w-xs">
             <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
@@ -93,7 +103,9 @@ const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({ statuses, compact =
                   <div key={status.id} className="flex items-center gap-2">
                     <span>{getStatusIcon(status.status)}</span>
                     <span>{status.status}</span>
-                    {index === 0 && <span className="text-gray-400 text-xs">(primary)</span>}
+                    {index === 0 && (
+                      <span className="text-gray-400 text-xs">(primary)</span>
+                    )}
                   </div>
                 ))}
               </div>
