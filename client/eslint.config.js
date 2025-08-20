@@ -117,7 +117,7 @@ export default [
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
-      '@stylistic/js/spaced-comment': 'off',
+      '@stylistic/spaced-comment': 'off',
       'no-useless-catch': 'off',
       'no-shadow': 'off',
       'sort-imports': 'off',
