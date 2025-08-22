@@ -225,7 +225,7 @@ export class SendGridWebhookValidator {
       );
     }
 
-    // Validate base64 format
+    // Validate base64 format first
     try {
       Buffer.from(config.publicKey, 'base64');
     } catch (_error) {
@@ -236,6 +236,7 @@ export class SendGridWebhookValidator {
       );
     }
 
+    // Then check length
     if (config.publicKey.length < 50) {
       throw new SendGridWebhookError(
         'SendGrid webhook public key appears to be too short',
