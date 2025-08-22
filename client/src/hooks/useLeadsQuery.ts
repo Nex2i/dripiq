@@ -277,6 +277,72 @@ export function useToggleContactManuallyReviewed() {
   })
 }
 
+// Hook to create a new contact
+export function useCreateContact(
+  onSuccess?: (contact: LeadPointOfContact) => void,
+  onError?: (error: any) => void,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      contactData,
+    }: {
+      leadId: string
+      contactData: {
+        name: string
+        email: string
+        phone?: string
+        title?: string
+      }
+    }) => leadsService.createContact(leadId, contactData),
+    onSuccess: (data, { leadId }) => {
+      // Update the individual lead cache
+      queryClient.setQueryData<Lead>(
+        leadQueryKeys.detail(leadId),
+        (oldLead) => {
+          if (!oldLead) return oldLead
+          return {
+            ...oldLead,
+            pointOfContacts: [...(oldLead.pointOfContacts || []), data.contact],
+          }
+        },
+      )
+
+      // Update the leads list cache
+      queryClient.setQueryData<Lead[]>(leadQueryKeys.list(), (oldLeads) => {
+        if (!oldLeads) return oldLeads
+        return oldLeads.map((lead) => {
+          if (lead.id !== leadId) return lead
+          return {
+            ...lead,
+            pointOfContacts: [...(lead.pointOfContacts || []), data.contact],
+          }
+        })
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+
+      // Call the custom success callback if provided
+      if (onSuccess) {
+        onSuccess(data.contact)
+      }
+    },
+    onError: (error) => {
+      console.error('Error creating contact:', error)
+
+      // Call the custom error callback if provided
+      if (onError) {
+        onError(error)
+      }
+    },
+  })
+}
+
 // Hook to update a contact
 export function useUpdateContact(
   onSuccess?: () => void,

@@ -12,16 +12,19 @@ import {
   Edit3,
   Save,
   X,
+  Plus,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import ContactStrategyModal from '../ContactStrategyModal'
+import CreateContactModal from '../CreateContactModal'
 import AnimatedCheckbox from '../AnimatedCheckbox'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
 import {
   useUpdateContact,
   useToggleContactManuallyReviewed,
+  useCreateContact,
 } from '../../hooks/useLeadsQuery'
 
 interface ContactsTabProps {
@@ -45,6 +48,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     useState(false)
   const [contactStrategyData, setContactStrategyData] = useState<any>(null)
   const [selectedContactName, setSelectedContactName] = useState<string>('')
+  const [createContactModalOpen, setCreateContactModalOpen] = useState(false)
   const [editingContactId, setEditingContactId] = useState<string | null>(null)
   const [editFormData, setEditFormData] = useState<Partial<LeadPointOfContact>>(
     {},
@@ -70,6 +74,19 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   )
 
   const toggleManuallyReviewedMutation = useToggleContactManuallyReviewed()
+
+  const createContactMutation = useCreateContact(
+    // onSuccess callback
+    (contact) => {
+      setCreateContactModalOpen(false)
+      console.log('Contact created successfully:', contact)
+    },
+    // onError callback
+    (error) => {
+      console.error('Failed to create contact:', error)
+      // You might want to show a toast notification here
+    },
+  )
 
   const generateContactStrategyMutation = useMutation({
     mutationFn: (contactId: string) =>
@@ -113,6 +130,18 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const handleGenerateContactStrategy = (contactId: string) => {
     generateContactStrategyMutation.mutate(contactId)
+  }
+
+  const handleCreateContact = (contactData: {
+    name: string
+    email: string
+    phone?: string
+    title?: string
+  }) => {
+    createContactMutation.mutate({
+      leadId,
+      contactData,
+    })
   }
 
   const handleEditContact = (contact: LeadPointOfContact) => {
@@ -329,11 +358,24 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-6">
-        <div className="flex items-center mb-6">
-          <Users className="h-5 w-5 text-gray-400 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900">
-            Point of Contacts
-          </h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Users className="h-5 w-5 text-gray-400 mr-2" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              Point of Contacts
+            </h2>
+          </div>
+          <button
+            onClick={() => setCreateContactModalOpen(true)}
+            disabled={
+              editingContactId !== null || createContactMutation.isPending
+            }
+            className="inline-flex items-center px-3 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-sm"
+            title="Create a new contact for this lead"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Contact
+          </button>
         </div>
 
         {!contacts || contacts.length === 0 ? (
@@ -743,6 +785,14 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
         data={contactStrategyData}
         contactName={selectedContactName}
         companyName={companyName || 'Unknown Company'}
+      />
+
+      {/* Create Contact Modal */}
+      <CreateContactModal
+        isOpen={createContactModalOpen}
+        onClose={() => setCreateContactModalOpen(false)}
+        onSubmit={handleCreateContact}
+        isSubmitting={createContactMutation.isPending}
       />
     </div>
   )
