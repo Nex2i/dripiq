@@ -16,7 +16,7 @@ import { createRedisConnection } from '@/libs/bullmq';
 import { leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker } from './index';
 
 // Track active workers for graceful shutdown
-// Note: timeoutWorker uses the same queue as campaignExecutionWorker, so only campaignExecutionWorker is needed
+// Note: timeout processing is handled within campaignExecutionWorker
 const activeWorkers = [leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker];
 
 async function startWorkers() {
@@ -31,8 +31,7 @@ async function startWorkers() {
       workers: [
         'lead-analysis',
         'campaign-creation',
-        'campaign-execution',
-        'timeout (via campaign-execution)',
+        'campaign-execution (includes timeout processing)',
       ],
       timestamp: new Date().toISOString(),
     });
