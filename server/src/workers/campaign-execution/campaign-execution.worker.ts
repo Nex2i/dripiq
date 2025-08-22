@@ -4,6 +4,8 @@ import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, leadPointOfContactRepository } from '@/repositories';
 import type { CampaignExecutionJobPayload } from '@/modules/messages/campaignExecution.publisher.service';
+import type { TimeoutJobPayload } from '@/types/timeout.types';
+import { processTimeout } from '../timeout/timeout.worker';
 import { EmailExecutionService } from './email-execution.service';
 
 export type CampaignExecutionJobResult = {
@@ -181,26 +183,30 @@ async function processCampaignExecution(
   }
 }
 
-const campaignExecutionWorker = getWorker<CampaignExecutionJobPayload, CampaignExecutionJobResult>(
+const campaignExecutionWorker = getWorker<
+  CampaignExecutionJobPayload | TimeoutJobPayload,
+  CampaignExecutionJobResult | any
+>(
   QUEUE_NAMES.campaign_execution,
-  async (job: Job<CampaignExecutionJobPayload>) => {
-    if (job.name !== JOB_NAMES.campaign_execution.initialize) {
+  async (job: Job<CampaignExecutionJobPayload | TimeoutJobPayload>) => {
+    if (job.name === JOB_NAMES.campaign_execution.initialize) {
+      return processCampaignExecution(job as Job<CampaignExecutionJobPayload>);
+    } else if (job.name === JOB_NAMES.campaign_execution.timeout) {
+      return processTimeout(job as Job<TimeoutJobPayload>);
+    } else {
       logger.warn('[CampaignExecutionWorker] Skipping unexpected job name', {
         jobId: job.id,
         jobName: job.name,
-        expectedName: JOB_NAMES.campaign_execution.initialize,
+        expectedNames: [
+          JOB_NAMES.campaign_execution.initialize,
+          JOB_NAMES.campaign_execution.timeout,
+        ],
       });
       return {
         success: false,
-        nodeId: job.data.nodeId,
-        campaignId: job.data.campaignId,
-        contactId: job.data.contactId,
-        actionType: job.data.actionType,
-        error: 'Unexpected job name',
+        error: `Unexpected job name: ${job.name}`,
       };
     }
-
-    return processCampaignExecution(job);
   }
 );
 
