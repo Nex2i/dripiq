@@ -467,6 +467,60 @@ class LeadsService {
     return result
   }
 
+  // Create a new contact for a lead
+  async createContact(
+    leadId: string,
+    contactData: {
+      name: string
+      email: string
+      phone?: string
+      title?: string
+    },
+  ): Promise<{ message: string; contact: LeadPointOfContact }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(`${this.baseUrl}/leads/${leadId}/contacts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(contactData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to create contact')
+    }
+
+    const result = await response.json()
+
+    // Update cache after successful creation if queryClient is available
+    if (this.queryClient) {
+      // Update the specific lead's contacts in the cache
+      this.queryClient.setQueryData<Lead>(
+        leadQueryKeys.detail(leadId),
+        (oldLead) => {
+          if (!oldLead) return oldLead
+          return {
+            ...oldLead,
+            pointOfContacts: [
+              ...(oldLead.pointOfContacts || []),
+              result.contact,
+            ],
+          }
+        },
+      )
+
+      // Invalidate leads list to ensure consistency
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
+
   // Generate contact strategy and outreach plan for a contact
   async generateContactStrategy(
     leadId: string,
