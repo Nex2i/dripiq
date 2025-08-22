@@ -50,7 +50,7 @@ export class StartupRecovery {
 
         for (const action of batch) {
           try {
-            const result = await this.recoverScheduledAction(action);
+            const result = await StartupRecovery.recoverScheduledAction(action);
             if (result.recovered) {
               results.recovered++;
             } else if (result.expired) {
@@ -111,11 +111,11 @@ export class StartupRecovery {
     const delay = Math.max(0, scheduledTime.getTime() - now.getTime());
 
     // Enqueue to appropriate queue
-    const queue = this.getQueueForActionType(action.actionType);
-    const jobId = this.generateJobId(action);
+    const queue = StartupRecovery.getQueueForActionType(action.actionType);
+    const jobId = StartupRecovery.generateJobId(action);
 
     await queue.add(
-      this.getJobNameForActionType(action.actionType),
+      StartupRecovery.getJobNameForActionType(action.actionType),
       {
         tenantId: action.tenantId,
         campaignId: action.campaignId,
