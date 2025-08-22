@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Buffer } from 'node:buffer';
 import { logger } from '@/libs/logger';
 import {
   SendGridSignatureVerification,
@@ -66,9 +67,10 @@ export class SendGridWebhookValidator {
       if (!isSignatureValid) {
         result.error = 'Signature verification failed';
         logger.warn('SendGrid webhook signature mismatch', {
-          receivedSignature: signature.substring(0, 20) + '...', // Only log first 20 chars for security
+          receivedSignature: signature,
           timestamp,
           payloadLength: payload.length,
+          payload: payload,
         });
         return result;
       }
@@ -173,7 +175,7 @@ export class SendGridWebhookValidator {
     try {
       // Create the public key object from base64 encoded key
       const publicKeyPem = this.convertBase64ToPEM(this.publicKey);
-      
+
       // Create verifier
       const verifier = crypto.createVerify('SHA256');
       verifier.update(signedPayload, 'utf8');
@@ -202,10 +204,10 @@ export class SendGridWebhookValidator {
     // We need to convert it to PEM format for crypto.createVerify
     const pemHeader = '-----BEGIN PUBLIC KEY-----';
     const pemFooter = '-----END PUBLIC KEY-----';
-    
+
     // Split the base64 key into 64-character lines
     const keyLines = base64Key.match(/.{1,64}/g) || [];
-    
+
     return [pemHeader, ...keyLines, pemFooter].join('\n');
   }
 
@@ -226,7 +228,7 @@ export class SendGridWebhookValidator {
     // Validate base64 format
     try {
       Buffer.from(config.publicKey, 'base64');
-    } catch (error) {
+    } catch (_error) {
       throw new SendGridWebhookError(
         'SendGrid webhook public key must be valid base64',
         'INVALID_PUBLIC_KEY_FORMAT',

@@ -369,7 +369,8 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
       const config = {
         configured: !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY,
         publicKeyConfigured:
-          !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY && process.env.SENDGRID_WEBHOOK_PUBLIC_KEY.length >= 50,
+          !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY &&
+          process.env.SENDGRID_WEBHOOK_PUBLIC_KEY.length >= 50,
         enabled: process.env.SENDGRID_WEBHOOK_ENABLED !== 'false',
         rateLimitConfigured: true, // Always configured in this implementation
         timestamp: new Date().toISOString(),

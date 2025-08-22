@@ -417,11 +417,11 @@ Use SendGrid's built-in test feature:
 **1. Signature Verification Fails**
 
 ```bash
-# Check webhook secret
-echo $SENDGRID_WEBHOOK_SECRET
+# Check webhook public key
+echo $SENDGRID_WEBHOOK_PUBLIC_KEY
 
-# Verify secret length (minimum 16 characters)
-echo $SENDGRID_WEBHOOK_SECRET | wc -c
+# Verify public key length (should be a long base64 string)
+echo $SENDGRID_WEBHOOK_PUBLIC_KEY | wc -c
 ```
 
 **2. No Events Received**
