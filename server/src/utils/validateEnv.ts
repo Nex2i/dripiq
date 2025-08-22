@@ -17,5 +17,5 @@ export const schema = {
     REDIS_URL: { type: 'string' },
     BULLMQ_PREFIX: { type: 'string' },
   },
-  required: ['PORT', 'NODE_ENV', 'REDIS_URL'],
+  required: ['PORT', 'NODE_ENV', 'REDIS_URL', 'FRONTEND_ORIGIN'],
 } as const;

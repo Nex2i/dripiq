@@ -194,7 +194,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         const { userTenant } = await InviteService.resendInvite(userId, tenantId);
 
         // Use Supabase's invite functionality to resend
-        const redirectUrl = `${process.env.FRONTEND_ORIGIN}/setup-password`;
+        const redirectUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:3030'}/setup-password`;
 
         // Note: We'll need to get user email from the user record
         const user = await UserService.getUserById(userId);
