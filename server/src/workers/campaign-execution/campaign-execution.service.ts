@@ -2,6 +2,10 @@ import type { Job } from 'bullmq';
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, leadPointOfContactRepository } from '@/repositories';
 import type { CampaignExecutionJobPayload } from '@/modules/messages/campaignExecution.publisher.service';
+import {
+  CampaignPlanNode,
+  CampaignPlanOutput,
+} from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { EmailExecutionService } from './email-execution.service';
 
 export type CampaignExecutionJobResult = {
@@ -38,13 +42,15 @@ export class CampaignExecutionService {
         throw new Error(`Campaign not found: ${campaignId}`);
       }
 
-      const campaignPlan = campaign.planJson as any;
+      const campaignPlan = campaign.planJson as CampaignPlanOutput;
       if (!campaignPlan) {
         throw new Error(`Campaign plan not found for campaign: ${campaignId}`);
       }
 
       // Find the specific node in the plan
-      const node = campaignPlan.nodes?.find((n: any) => n.id === nodeId);
+      const node = campaignPlan.nodes?.find(
+        (n: CampaignPlanNode) => n.id === nodeId
+      ) as CampaignPlanNode;
       if (!node) {
         throw new Error(`Node not found in campaign plan: ${nodeId}`);
       }
@@ -56,17 +62,25 @@ export class CampaignExecutionService {
       }
 
       // Log the fetched node data for verification
+      const nodeDetails =
+        node.action === 'send'
+          ? {
+              action: node.action,
+              channel: node.channel,
+              subject: node.subject ?? undefined,
+              body: node.body ? `${node.body.substring(0, 100)}...` : undefined,
+              schedule: node.schedule, // always present on send (after .catch default)
+            }
+          : {
+              action: node.action,
+              channel: node.channel,
+            };
+
       logger.info('[CampaignExecutionWorker] Node data fetched', {
         jobId: job.id,
         nodeId,
         actionType,
-        nodeDetails: {
-          action: node.action,
-          subject: node.subject,
-          body: node.body ? `${node.body.substring(0, 100)}...` : undefined, // Log truncated body
-          channel: node.channel,
-          schedule: node.schedule,
-        },
+        nodeDetails,
         contactEmail: contact.email,
         contactName: contact.name,
       });
@@ -78,7 +92,7 @@ export class CampaignExecutionService {
             logger.info('[CampaignExecutionWorker] Executing email send', {
               jobId: job.id,
               nodeId,
-              subject: node.subject,
+              subject: nodeDetails.subject,
               contactEmail: contact.email,
               contactName: contact.name,
             });

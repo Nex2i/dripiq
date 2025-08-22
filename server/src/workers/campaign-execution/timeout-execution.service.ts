@@ -3,6 +3,7 @@ import { logger } from '@/libs/logger';
 import { contactCampaignRepository, messageEventRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
 export interface TimeoutJobResult {
   success: boolean;
@@ -74,7 +75,7 @@ export class TimeoutExecutionService {
       const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
 
       if (campaign && campaign.planJson && campaign.currentNodeId) {
-        const campaignPlan = campaign.planJson as any;
+        const campaignPlan = campaign.planJson as CampaignPlanOutput;
 
         await campaignPlanExecutionService.processTransition({
           tenantId,
