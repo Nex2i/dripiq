@@ -51,7 +51,7 @@ Add the following environment variables to your `.env` file:
 SENDGRID_API_KEY=your_sendgrid_api_key_here
 
 # SendGrid Webhook Configuration
-SENDGRID_WEBHOOK_SECRET=your_sendgrid_webhook_secret_here_minimum_16_chars
+SENDGRID_WEBHOOK_PUBLIC_KEY=your_sendgrid_webhook_verification_key_here_base64_encoded
 SENDGRID_WEBHOOK_ENABLED=true
 SENDGRID_WEBHOOK_MAX_AGE=600
 SENDGRID_WEBHOOK_DUPLICATE_DETECTION=true
@@ -73,21 +73,21 @@ SENDGRID_WEBHOOK_ALLOWED_IPS=
 
 3. **Configure Security**
    - Enable "Signed Event Webhook"
-   - Generate a webhook verification key (minimum 16 characters)
-   - Use this key as `SENDGRID_WEBHOOK_SECRET`
+   - Copy the webhook verification key (base64 encoded public key)
+   - Use this key as `SENDGRID_WEBHOOK_PUBLIC_KEY`
 
 4. **Test Configuration**
    - Use SendGrid's "Test Your Integration" feature
    - Monitor logs for successful processing
 
-### 3. Webhook Secret Generation
+### 3. Webhook Public Key Configuration
 
-Generate a secure webhook secret:
+Get your webhook verification key from SendGrid:
 
-```bash
-# Generate a random 32-character secret
-openssl rand -base64 32
-```
+1. In SendGrid Console, go to Settings → Mail Settings → Event Webhooks
+2. Select your webhook configuration
+3. Copy the "Verification Key" (base64 encoded public key)
+4. Set this as `SENDGRID_WEBHOOK_PUBLIC_KEY` in your environment variables
 
 ### 4. IP Allowlisting (Optional)
 
@@ -259,7 +259,7 @@ These are automatically included when sending emails through the existing SendGr
 
 | Variable                               | Default | Description                                         |
 | -------------------------------------- | ------- | --------------------------------------------------- |
-| `SENDGRID_WEBHOOK_SECRET`              | -       | **Required**: Webhook signing secret (min 16 chars) |
+| `SENDGRID_WEBHOOK_PUBLIC_KEY`          | -       | **Required**: Webhook verification key (base64 encoded) |
 | `SENDGRID_WEBHOOK_ENABLED`             | `true`  | Enable/disable webhook processing                   |
 | `SENDGRID_WEBHOOK_MAX_AGE`             | `600`   | Max timestamp age in seconds (60-3600)              |
 | `SENDGRID_WEBHOOK_DUPLICATE_DETECTION` | `true`  | Enable duplicate event detection                    |

@@ -3,24 +3,32 @@ import { SendGridWebhookError } from '@/modules/webhooks/sendgrid.webhook.types'
 import { SendGridWebhookValidator } from '../sendgrid.webhook.validator';
 
 describe('SendGridWebhookValidator', () => {
-  const testSecret = 'test-webhook-secret-123456789';
-  const validator = new SendGridWebhookValidator(testSecret, 600);
+  // Test ECDSA key pair for testing
+  const testKeyPair = crypto.generateKeyPairSync('ec', {
+    namedCurve: 'prime256v1',
+    publicKeyEncoding: { type: 'spki', format: 'der' },
+    privateKeyEncoding: { type: 'pkcs8', format: 'der' }
+  });
+  
+  const testPublicKey = testKeyPair.publicKey.toString('base64');
+  const testPrivateKey = testKeyPair.privateKey;
+  const validator = new SendGridWebhookValidator(testPublicKey, 600);
 
   describe('constructor', () => {
-    it('should create validator with valid secret', () => {
-      expect(() => new SendGridWebhookValidator(testSecret)).not.toThrow();
+    it('should create validator with valid public key', () => {
+      expect(() => new SendGridWebhookValidator(testPublicKey)).not.toThrow();
     });
 
-    it('should throw error with empty secret', () => {
-      expect(() => new SendGridWebhookValidator('')).toThrow('SendGrid webhook secret is required');
+    it('should throw error with empty public key', () => {
+      expect(() => new SendGridWebhookValidator('')).toThrow('SendGrid webhook public key is required');
     });
 
     it('should set default max timestamp age', () => {
-      const validator = new SendGridWebhookValidator(testSecret);
+      const validator = new SendGridWebhookValidator(testPublicKey);
       // Test that it accepts recent timestamps (indirect test)
       const currentTimestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '{"test": true}';
-      const signature = generateTestSignature(currentTimestamp, payload, testSecret);
+      const signature = generateTestECDSASignature(currentTimestamp, payload, testPrivateKey);
 
       const result = validator.verifySignature(signature, currentTimestamp, payload);
       expect(result.isValid).toBe(true);
@@ -28,10 +36,10 @@ describe('SendGridWebhookValidator', () => {
   });
 
   describe('verifySignature', () => {
-    it('should verify valid signature', () => {
+    it('should verify valid ECDSA signature', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '{"test": "data"}';
-      const signature = generateTestSignature(timestamp, payload, testSecret);
+      const signature = generateTestECDSASignature(timestamp, payload, testPrivateKey);
 
       const result = validator.verifySignature(signature, timestamp, payload);
 
@@ -57,7 +65,7 @@ describe('SendGridWebhookValidator', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const originalPayload = '{"test": "data"}';
       const tamperedPayload = '{"test": "tampered"}';
-      const signature = generateTestSignature(timestamp, originalPayload, testSecret);
+      const signature = generateTestECDSASignature(timestamp, originalPayload, testPrivateKey);
 
       const result = validator.verifySignature(signature, timestamp, tamperedPayload);
 
@@ -68,7 +76,7 @@ describe('SendGridWebhookValidator', () => {
     it('should reject old timestamp', () => {
       const oldTimestamp = (Math.floor(Date.now() / 1000) - 700).toString(); // 700 seconds ago
       const payload = '{"test": "data"}';
-      const signature = generateTestSignature(oldTimestamp, payload, testSecret);
+      const signature = generateTestECDSASignature(oldTimestamp, payload, testPrivateKey);
 
       const result = validator.verifySignature(signature, oldTimestamp, payload);
 
@@ -79,7 +87,7 @@ describe('SendGridWebhookValidator', () => {
     it('should reject future timestamp', () => {
       const futureTimestamp = (Math.floor(Date.now() / 1000) + 400).toString(); // 400 seconds in future
       const payload = '{"test": "data"}';
-      const signature = generateTestSignature(futureTimestamp, payload, testSecret);
+      const signature = generateTestECDSASignature(futureTimestamp, payload, testPrivateKey);
 
       const result = validator.verifySignature(signature, futureTimestamp, payload);
 
@@ -90,7 +98,7 @@ describe('SendGridWebhookValidator', () => {
     it('should reject invalid timestamp format', () => {
       const invalidTimestamp = 'not-a-number';
       const payload = '{"test": "data"}';
-      const signature = generateTestSignature('1234567890', payload, testSecret);
+      const signature = generateTestECDSASignature('1234567890', payload, testPrivateKey);
 
       const result = validator.verifySignature(signature, invalidTimestamp, payload);
 
@@ -101,7 +109,7 @@ describe('SendGridWebhookValidator', () => {
     it('should handle missing parameters', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '{"test": "data"}';
-      const signature = generateTestSignature(timestamp, payload, testSecret);
+      const signature = generateTestECDSASignature(timestamp, payload, testPrivateKey);
 
       // Missing signature
       let result = validator.verifySignature('', timestamp, payload);
@@ -133,7 +141,7 @@ describe('SendGridWebhookValidator', () => {
     it('should verify valid webhook request', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '[{"event": "delivered", "email": "test@example.com"}]';
-      const signature = generateTestSignature(timestamp, payload, testSecret);
+      const signature = generateTestECDSASignature(timestamp, payload, testPrivateKey);
 
       const headers = {
         'x-twilio-email-event-webhook-signature': signature,
@@ -182,39 +190,51 @@ describe('SendGridWebhookValidator', () => {
   describe('validateConfig', () => {
     it('should validate correct configuration', () => {
       const config = {
-        webhookSecret: 'valid-secret-123456789',
+        publicKey: testPublicKey,
         maxTimestampAge: 300,
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).not.toThrow();
     });
 
-    it('should reject missing webhook secret', () => {
+    it('should reject missing webhook public key', () => {
       const config = {
         maxTimestampAge: 300,
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(
-        'SendGrid webhook secret is required'
+        'SendGrid webhook public key is required'
       );
     });
 
-    it('should reject weak webhook secret', () => {
+    it('should reject invalid base64 public key', () => {
       const config = {
-        webhookSecret: 'short', // Less than 16 characters
+        publicKey: 'invalid-base64!@#$%', 
         maxTimestampAge: 300,
       };
 
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
       expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(
-        'SendGrid webhook secret must be at least 16 characters'
+        'SendGrid webhook public key must be valid base64'
+      );
+    });
+
+    it('should reject short public key', () => {
+      const config = {
+        publicKey: 'dGVzdA==', // 'test' in base64 - too short
+        maxTimestampAge: 300,
+      };
+
+      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(SendGridWebhookError);
+      expect(() => SendGridWebhookValidator.validateConfig(config)).toThrow(
+        'SendGrid webhook public key appears to be too short'
       );
     });
 
     it('should reject invalid max timestamp age', () => {
       const config = {
-        webhookSecret: 'valid-secret-123456789',
+        publicKey: testPublicKey,
         maxTimestampAge: 30, // Too low
       };
 
@@ -241,36 +261,37 @@ describe('SendGridWebhookValidator', () => {
     });
 
     it('should create validator from environment variables', () => {
-      process.env.SENDGRID_WEBHOOK_SECRET = 'test-secret-from-env-123';
+      process.env.SENDGRID_WEBHOOK_PUBLIC_KEY = testPublicKey;
       process.env.SENDGRID_WEBHOOK_MAX_AGE = '300';
 
       expect(() => SendGridWebhookValidator.fromEnvironment()).not.toThrow();
     });
 
     it('should use default max age when not specified', () => {
-      process.env.SENDGRID_WEBHOOK_SECRET = 'test-secret-from-env-123';
+      process.env.SENDGRID_WEBHOOK_PUBLIC_KEY = testPublicKey;
       delete process.env.SENDGRID_WEBHOOK_MAX_AGE;
 
       const validator = SendGridWebhookValidator.fromEnvironment();
       expect(validator).toBeDefined();
     });
 
-    it('should throw when secret is missing from environment', () => {
-      delete process.env.SENDGRID_WEBHOOK_SECRET;
+    it('should throw when public key is missing from environment', () => {
+      delete process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
 
       expect(() => SendGridWebhookValidator.fromEnvironment()).toThrow(SendGridWebhookError);
     });
   });
 
-  describe('constant time comparison', () => {
-    it('should handle strings of different lengths', () => {
+  describe('ECDSA signature verification', () => {
+    it('should handle malformed signatures gracefully', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const payload = '{"test": "data"}';
-      const shortSignature = 'short';
+      const malformedSignature = 'not-a-valid-base64-signature!@#';
 
-      const result = validator.verifySignature(shortSignature, timestamp, payload);
+      const result = validator.verifySignature(malformedSignature, timestamp, payload);
 
       expect(result.isValid).toBe(false);
+      expect(result.error).toBe('Signature verification failed');
     });
 
     it('should handle empty signatures', () => {
@@ -287,7 +308,7 @@ describe('SendGridWebhookValidator', () => {
     it('should handle very large payloads', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const largePayload = JSON.stringify({ data: 'x'.repeat(10000) });
-      const signature = generateTestSignature(timestamp, largePayload, testSecret);
+      const signature = generateTestECDSASignature(timestamp, largePayload, testPrivateKey);
 
       const result = validator.verifySignature(signature, timestamp, largePayload);
 
@@ -297,7 +318,7 @@ describe('SendGridWebhookValidator', () => {
     it('should handle special characters in payload', () => {
       const timestamp = Math.floor(Date.now() / 1000).toString();
       const specialPayload = '{"text": "Hello 世界! 🌍 Special chars: àáâãäåæçèéêë"}';
-      const signature = generateTestSignature(timestamp, specialPayload, testSecret);
+      const signature = generateTestECDSASignature(timestamp, specialPayload, testPrivateKey);
 
       const result = validator.verifySignature(signature, timestamp, specialPayload);
 
@@ -309,8 +330,8 @@ describe('SendGridWebhookValidator', () => {
       const payload1 = '{"test":"data"}';
       const payload2 = '{ "test" : "data" }';
 
-      const signature1 = generateTestSignature(timestamp, payload1, testSecret);
-      const signature2 = generateTestSignature(timestamp, payload2, testSecret);
+      const signature1 = generateTestECDSASignature(timestamp, payload1, testPrivateKey);
+      const signature2 = generateTestECDSASignature(timestamp, payload2, testPrivateKey);
 
       // Same signature should not work for different payloads (even with just whitespace differences)
       const result1 = validator.verifySignature(signature1, timestamp, payload2);
@@ -322,10 +343,12 @@ describe('SendGridWebhookValidator', () => {
   });
 });
 
-// Helper function to generate test signatures
-function generateTestSignature(timestamp: string, payload: string, secret: string): string {
+// Helper function to generate test ECDSA signatures
+function generateTestECDSASignature(timestamp: string, payload: string, privateKey: Buffer): string {
   const signedPayload = timestamp + payload;
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(signedPayload, 'utf8');
-  return hmac.digest('base64');
+  const signer = crypto.createSign('SHA256');
+  signer.update(signedPayload, 'utf8');
+  signer.end();
+  
+  return signer.sign(privateKey).toString('base64');
 }

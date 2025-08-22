@@ -358,7 +358,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         ...defaultRouteResponse(),
         200: Type.Object({
           configured: Type.Boolean(),
-          secretConfigured: Type.Boolean(),
+          publicKeyConfigured: Type.Boolean(),
           enabled: Type.Boolean(),
           rateLimitConfigured: Type.Boolean(),
           timestamp: Type.String({ format: 'date-time' }),
@@ -367,9 +367,9 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const config = {
-        configured: !!process.env.SENDGRID_WEBHOOK_SECRET,
-        secretConfigured:
-          !!process.env.SENDGRID_WEBHOOK_SECRET && process.env.SENDGRID_WEBHOOK_SECRET.length >= 16,
+        configured: !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY,
+        publicKeyConfigured:
+          !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY && process.env.SENDGRID_WEBHOOK_PUBLIC_KEY.length >= 50,
         enabled: process.env.SENDGRID_WEBHOOK_ENABLED !== 'false',
         rateLimitConfigured: true, // Always configured in this implementation
         timestamp: new Date().toISOString(),

@@ -8,24 +8,24 @@ import {
 
 /**
  * SendGrid Webhook Signature Validator
- * Implements HMAC-SHA256 signature verification for SendGrid Event Webhooks
- * Based on SendGrid's security documentation
+ * Implements ECDSA signature verification for SendGrid Event Webhooks
+ * Based on SendGrid's security documentation using public key verification
  */
 export class SendGridWebhookValidator {
-  private readonly webhookSecret: string;
+  private readonly publicKey: string;
   private readonly maxTimestampAge: number;
 
-  constructor(webhookSecret: string, maxTimestampAge: number = 600) {
+  constructor(publicKey: string, maxTimestampAge: number = 600) {
     // 10 minutes default
-    if (!webhookSecret) {
-      throw new Error('SendGrid webhook secret is required');
+    if (!publicKey) {
+      throw new Error('SendGrid webhook public key is required');
     }
-    this.webhookSecret = webhookSecret;
+    this.publicKey = publicKey;
     this.maxTimestampAge = maxTimestampAge;
   }
 
   /**
-   * Verify the SendGrid webhook signature and timestamp
+   * Verify the SendGrid webhook signature and timestamp using ECDSA
    * @param signature - The signature from x-twilio-email-event-webhook-signature header
    * @param timestamp - The timestamp from x-twilio-email-event-webhook-timestamp header
    * @param payload - The raw request body as string
@@ -57,20 +57,16 @@ export class SendGridWebhookValidator {
         return result;
       }
 
-      // Step 3: Construct the signed payload
+      // Step 3: Construct the signed payload (timestamp + payload)
       const signedPayload = this.constructSignedPayload(timestamp, payload);
 
-      // Step 4: Generate expected signature
-      const expectedSignature = this.generateSignature(signedPayload);
-
-      // Step 5: Compare signatures using constant-time comparison
-      const isSignatureValid = this.constantTimeCompare(signature, expectedSignature);
+      // Step 4: Verify signature using ECDSA
+      const isSignatureValid = this.verifyECDSASignature(signedPayload, signature);
 
       if (!isSignatureValid) {
         result.error = 'Signature verification failed';
         logger.warn('SendGrid webhook signature mismatch', {
-          receivedSignature: signature,
-          expectedSignature,
+          receivedSignature: signature.substring(0, 20) + '...', // Only log first 20 chars for security
           timestamp,
           payloadLength: payload.length,
         });
@@ -168,33 +164,49 @@ export class SendGridWebhookValidator {
   }
 
   /**
-   * Generate HMAC-SHA256 signature
-   * @param signedPayload - The payload to sign
-   * @returns Base64 encoded signature
+   * Verify ECDSA signature using the public key
+   * @param signedPayload - The payload to verify
+   * @param signature - Base64 encoded signature
+   * @returns True if signature is valid
    */
-  private generateSignature(signedPayload: string): string {
-    const hmac = crypto.createHmac('sha256', this.webhookSecret);
-    hmac.update(signedPayload, 'utf8');
-    return hmac.digest('base64');
+  private verifyECDSASignature(signedPayload: string, signature: string): boolean {
+    try {
+      // Create the public key object from base64 encoded key
+      const publicKeyPem = this.convertBase64ToPEM(this.publicKey);
+      
+      // Create verifier
+      const verifier = crypto.createVerify('SHA256');
+      verifier.update(signedPayload, 'utf8');
+      verifier.end();
+
+      // Decode the signature from base64
+      const signatureBuffer = Buffer.from(signature, 'base64');
+
+      // Verify the signature
+      return verifier.verify(publicKeyPem, signatureBuffer);
+    } catch (error) {
+      logger.error('ECDSA signature verification error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return false;
+    }
   }
 
   /**
-   * Constant-time string comparison to prevent timing attacks
-   * @param a - First string
-   * @param b - Second string
-   * @returns True if strings match
+   * Convert base64 encoded public key to PEM format
+   * @param base64Key - Base64 encoded public key
+   * @returns PEM formatted public key
    */
-  private constantTimeCompare(a: string, b: string): boolean {
-    if (a.length !== b.length) {
-      return false;
-    }
-
-    let result = 0;
-    for (let i = 0; i < a.length; i++) {
-      result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    }
-
-    return result === 0;
+  private convertBase64ToPEM(base64Key: string): string {
+    // SendGrid provides the public key in base64 format
+    // We need to convert it to PEM format for crypto.createVerify
+    const pemHeader = '-----BEGIN PUBLIC KEY-----';
+    const pemFooter = '-----END PUBLIC KEY-----';
+    
+    // Split the base64 key into 64-character lines
+    const keyLines = base64Key.match(/.{1,64}/g) || [];
+    
+    return [pemHeader, ...keyLines, pemFooter].join('\n');
   }
 
   /**
@@ -202,19 +214,30 @@ export class SendGridWebhookValidator {
    * @param config - Webhook configuration
    * @throws SendGridWebhookError if configuration is invalid
    */
-  public static validateConfig(config: { webhookSecret?: string; maxTimestampAge?: number }): void {
-    if (!config.webhookSecret) {
+  public static validateConfig(config: { publicKey?: string; maxTimestampAge?: number }): void {
+    if (!config.publicKey) {
       throw new SendGridWebhookError(
-        'SendGrid webhook secret is required',
-        'MISSING_WEBHOOK_SECRET',
+        'SendGrid webhook public key is required',
+        'MISSING_WEBHOOK_PUBLIC_KEY',
         500
       );
     }
 
-    if (config.webhookSecret.length < 16) {
+    // Validate base64 format
+    try {
+      Buffer.from(config.publicKey, 'base64');
+    } catch (error) {
       throw new SendGridWebhookError(
-        'SendGrid webhook secret must be at least 16 characters',
-        'WEAK_WEBHOOK_SECRET',
+        'SendGrid webhook public key must be valid base64',
+        'INVALID_PUBLIC_KEY_FORMAT',
+        500
+      );
+    }
+
+    if (config.publicKey.length < 50) {
+      throw new SendGridWebhookError(
+        'SendGrid webhook public key appears to be too short',
+        'INVALID_PUBLIC_KEY',
         500
       );
     }
@@ -233,14 +256,14 @@ export class SendGridWebhookValidator {
    * @returns Configured validator instance
    */
   public static fromEnvironment(): SendGridWebhookValidator {
-    const webhookSecret = process.env.SENDGRID_WEBHOOK_SECRET;
+    const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
     const maxTimestampAge = process.env.SENDGRID_WEBHOOK_MAX_AGE
       ? parseInt(process.env.SENDGRID_WEBHOOK_MAX_AGE, 10)
       : 600;
 
-    this.validateConfig({ webhookSecret, maxTimestampAge });
+    this.validateConfig({ publicKey, maxTimestampAge });
 
-    return new SendGridWebhookValidator(webhookSecret!, maxTimestampAge);
+    return new SendGridWebhookValidator(publicKey!, maxTimestampAge);
   }
 }
 
