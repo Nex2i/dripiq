@@ -1,4 +1,5 @@
 export interface TimeoutJobParams {
+  tenantId: string;
   campaignId: string;
   nodeId: string;
   messageId: string;
