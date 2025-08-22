@@ -6,7 +6,7 @@ import { logger } from '@/libs/logger';
 const requestStartTimes = new Map<string, number>();
 
 const ignoredMethods = ['OPTIONS', 'HEAD'];
-const ignoredPaths = ['/health', '/metrics', '/admin/queues'];
+const ignoredPaths = ['/health', '/metrics', '/admin/queues', '/ping'];
 
 const loggingPlugin = async (fastify: FastifyInstance) => {
   // Log incoming requests with structured data
