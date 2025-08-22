@@ -9,4 +9,7 @@ export { startWorkers, gracefulShutdown } from './worker.run';
 // Export worker result types
 export type { LeadAnalysisJobResult } from './lead-analysis/lead-analysis.worker';
 export type { CampaignCreationJobResult } from './campaign-creation/campaign-creation.worker';
-export type { CampaignExecutionJobResult } from './campaign-execution/campaign-execution.worker';
+export type {
+  CampaignExecutionJobResult,
+  TimeoutJobResult,
+} from './campaign-execution/campaign-execution.worker';

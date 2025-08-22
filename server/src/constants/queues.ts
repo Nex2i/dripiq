@@ -13,5 +13,6 @@ export const JOB_NAMES = {
   },
   campaign_execution: {
     initialize: 'campaign_execution.initialize',
+    timeout: 'campaign_execution.timeout',
   },
 } as const;
