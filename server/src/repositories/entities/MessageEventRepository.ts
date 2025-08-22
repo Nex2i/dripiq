@@ -148,4 +148,27 @@ export class MessageEventRepository extends TenantAwareRepository<
       .limit(1);
     return results[0];
   }
+
+  /**
+   * Find a message event by messageId and event type for a tenant
+   * Used by timeout worker to detect real engagement before emitting synthetic events
+   */
+  async findByMessageAndTypeForTenant(
+    tenantId: string,
+    messageId: string,
+    eventType: string
+  ): Promise<MessageEvent | undefined> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.messageId, messageId),
+          eq(this.table.type, eventType)
+        )
+      )
+      .limit(1);
+    return results[0];
+  }
 }

@@ -259,14 +259,11 @@ export class EmailExecutionService {
           campaignId,
           contactId,
           nodeId,
-          updateError: updateError instanceof Error ? updateError.message : 'Unknown error',
+          error: updateError instanceof Error ? updateError.message : 'Unknown error',
         });
       }
 
-      return {
-        success: false,
-        error: errorMessage,
-      };
+      return { success: false, error: errorMessage };
     }
   }
 
@@ -302,21 +299,24 @@ export class EmailExecutionService {
    * and prevents conflicts by using cryptographic hashing
    */
   private generateTimeoutJobId(params: TimeoutJobParams): string {
-    // Create a deterministic string from the parameters
     const components = [
       'timeout',
       params.campaignId,
       params.nodeId,
-      params.eventType,
       params.messageId,
+      params.eventType,
+      params.scheduledAt.getTime().toString(),
     ];
 
-    // Sanitize each component by replacing problematic characters
-    const sanitizedComponents = components.map((component) =>
-      component.replace(/[^a-zA-Z0-9_-]/g, '_')
+    // Sanitize components to only include alphanumeric and hyphens/underscores
+    const sanitizedComponents = components.map((c) =>
+      c
+        .toString()
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/_+/g, '_')
     );
 
-    // Create base job ID with sanitized components
     const baseJobId = sanitizedComponents.join('_');
 
     // For extra safety, create a hash of the original components
@@ -339,6 +339,7 @@ export class EmailExecutionService {
     const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
     const noOpenDelayMs = parseIsoDuration(noOpenDelay);
     await this.scheduleTimeoutJob({
+      tenantId: this.tenantId,
       campaignId,
       nodeId,
       messageId,
@@ -350,6 +351,7 @@ export class EmailExecutionService {
     const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
     const noClickDelayMs = parseIsoDuration(noClickDelay);
     await this.scheduleTimeoutJob({
+      tenantId: this.tenantId,
       campaignId,
       nodeId,
       messageId,

@@ -4,6 +4,8 @@ import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, leadPointOfContactRepository } from '@/repositories';
 import type { CampaignExecutionJobPayload } from '@/modules/messages/campaignExecution.publisher.service';
+import type { TimeoutJobParams } from '@/types/timeout.types';
+import { processTimeout } from '@/workers/timeout/timeout.worker';
 import { EmailExecutionService } from './email-execution.service';
 
 export type CampaignExecutionJobResult = {
@@ -14,6 +16,31 @@ export type CampaignExecutionJobResult = {
   actionType: string;
   error?: string;
 };
+
+async function processJob(job: Job<any>): Promise<any> {
+  // Route timeout jobs
+  if (job.name === 'timeout') {
+    return await processTimeout(job as Job<TimeoutJobParams>);
+  }
+
+  // Route initialize/execute jobs
+  if (job.name === JOB_NAMES.campaign_execution.initialize) {
+    return await processCampaignExecution(job as Job<CampaignExecutionJobPayload>);
+  }
+
+  logger.warn('[CampaignExecutionWorker] Skipping unexpected job name', {
+    jobId: job.id,
+    jobName: job.name,
+  });
+  return {
+    success: false,
+    nodeId: (job.data && job.data.nodeId) || 'unknown',
+    campaignId: (job.data && job.data.campaignId) || 'unknown',
+    contactId: (job.data && job.data.contactId) || 'unknown',
+    actionType: (job.data && job.data.actionType) || 'unknown',
+    error: 'Unexpected job name',
+  };
+}
 
 async function processCampaignExecution(
   job: Job<CampaignExecutionJobPayload>
@@ -183,25 +210,7 @@ async function processCampaignExecution(
 
 const campaignExecutionWorker = getWorker<CampaignExecutionJobPayload, CampaignExecutionJobResult>(
   QUEUE_NAMES.campaign_execution,
-  async (job: Job<CampaignExecutionJobPayload>) => {
-    if (job.name !== JOB_NAMES.campaign_execution.initialize) {
-      logger.warn('[CampaignExecutionWorker] Skipping unexpected job name', {
-        jobId: job.id,
-        jobName: job.name,
-        expectedName: JOB_NAMES.campaign_execution.initialize,
-      });
-      return {
-        success: false,
-        nodeId: job.data.nodeId,
-        campaignId: job.data.campaignId,
-        contactId: job.data.contactId,
-        actionType: job.data.actionType,
-        error: 'Unexpected job name',
-      };
-    }
-
-    return processCampaignExecution(job);
-  }
+  async (job: Job<any>) => processJob(job)
 );
 
 export default campaignExecutionWorker;

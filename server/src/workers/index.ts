@@ -2,6 +2,7 @@
 export { default as leadAnalysisWorker } from './lead-analysis/lead-analysis.worker';
 export { default as campaignCreationWorker } from './campaign-creation/campaign-creation.worker';
 export { default as campaignExecutionWorker } from './campaign-execution/campaign-execution.worker';
+export { default as timeoutWorker } from './timeout/timeout.worker';
 
 // Export worker runner functions
 export { startWorkers, gracefulShutdown } from './worker.run';
