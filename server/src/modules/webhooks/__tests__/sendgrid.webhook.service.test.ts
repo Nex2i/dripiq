@@ -1,9 +1,9 @@
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
-import {
-  webhookDeliveryRepository,
+import { 
+  webhookDeliveryRepository, 
   messageEventRepository,
   outboundMessageRepository,
-  contactCampaignRepository,
+  contactCampaignRepository 
 } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import { SendGridWebhookService } from '../sendgrid.webhook.service';
@@ -55,15 +55,9 @@ describe('SendGridWebhookService', () => {
     typeof webhookDeliveryRepository
   >;
   const mockMessageEventRepo = messageEventRepository as jest.Mocked<typeof messageEventRepository>;
-  const mockOutboundMessageRepo = outboundMessageRepository as jest.Mocked<
-    typeof outboundMessageRepository
-  >;
-  const mockContactCampaignRepo = contactCampaignRepository as jest.Mocked<
-    typeof contactCampaignRepository
-  >;
-  const mockCampaignPlanExecutionService = campaignPlanExecutionService as jest.Mocked<
-    typeof campaignPlanExecutionService
-  >;
+  const mockOutboundMessageRepo = outboundMessageRepository as jest.Mocked<typeof outboundMessageRepository>;
+  const mockContactCampaignRepo = contactCampaignRepository as jest.Mocked<typeof contactCampaignRepository>;
+  const mockCampaignPlanExecutionService = campaignPlanExecutionService as jest.Mocked<typeof campaignPlanExecutionService>;
 
   // Shared mock data accessible throughout all test blocks
   const mockHeaders = {
@@ -897,18 +891,9 @@ describe('SendGridWebhookService', () => {
       expect(result.successfulEvents).toBe(1);
 
       // Verify batch queries were used (key performance optimization)
-      expect(mockMessageEventRepo.findByIdsForTenant).toHaveBeenCalledWith(
-        ['message-event-123'],
-        'tenant-123'
-      );
-      expect(mockOutboundMessageRepo.findByIdsForTenant).toHaveBeenCalledWith(
-        ['outbound-message-123'],
-        'tenant-123'
-      );
-      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledWith(
-        ['campaign-123'],
-        'tenant-123'
-      );
+      expect(mockMessageEventRepo.findByIdsForTenant).toHaveBeenCalledWith(['message-event-123'], 'tenant-123');
+      expect(mockOutboundMessageRepo.findByIdsForTenant).toHaveBeenCalledWith(['outbound-message-123'], 'tenant-123');
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledWith(['campaign-123'], 'tenant-123');
 
       // Verify campaign transition was triggered
       expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledWith({
@@ -1059,7 +1044,7 @@ describe('SendGridWebhookService', () => {
       mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
       mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
       mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockCampaign]);
-
+      
       // Mock transition service to throw an error
       mockCampaignPlanExecutionService.processTransition.mockRejectedValue(
         new Error('Transition processing failed')
