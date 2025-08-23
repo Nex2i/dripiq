@@ -548,6 +548,35 @@ class LeadsService {
     const result = await response.json()
     return result
   }
+
+  // Update contact strategy with edited data
+  async updateContactStrategy(
+    leadId: string,
+    contactId: string,
+    updatedPlan: any,
+  ): Promise<any> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/contact-strategy`,
+      {
+        method: 'PATCH',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedPlan),
+      },
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to update contact strategy')
+    }
+
+    const result = await response.json()
+    return result
+  }
 }
 
 // Create a singleton instance that will be initialized with QueryClient

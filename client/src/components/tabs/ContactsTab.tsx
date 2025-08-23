@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Users,
   User,
@@ -61,6 +61,14 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   }>({})
   const leadsService = getLeadsService()
 
+  useEffect(() => {
+    if (!contactStrategyModalOpen) {
+      setQualifyingContactId(null)
+      setSelectedContactName('')
+      setContactStrategyData(null)
+    }
+  }, [contactStrategyModalOpen])
+
   const updateContactMutation = useUpdateContact(
     // onSuccess callback
     () => {
@@ -102,9 +110,6 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       // API now returns the plan directly (no { data })
       setContactStrategyData(result)
       setContactStrategyModalOpen(true)
-    },
-    onSettled: () => {
-      setQualifyingContactId(null)
     },
     onError: (error) => {
       console.error('Failed to generate contact strategy:', error)
@@ -778,13 +783,15 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
         )}
       </div>
 
-      {/* Contact Strategy Modal */}
       <ContactStrategyModal
         isOpen={contactStrategyModalOpen}
         onClose={() => setContactStrategyModalOpen(false)}
         data={contactStrategyData}
         contactName={selectedContactName}
         companyName={companyName || 'Unknown Company'}
+        leadId={leadId}
+        contactId={qualifyingContactId || undefined}
+        onDataUpdate={(updatedData) => setContactStrategyData(updatedData)}
       />
 
       {/* Create Contact Modal */}

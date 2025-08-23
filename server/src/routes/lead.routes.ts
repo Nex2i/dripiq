@@ -3,7 +3,8 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
-import { generateContactStrategy } from '@/modules/ai';
+import { generateContactStrategy, updateContactStrategy } from '@/modules/ai';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import {
   getLeads,
   createLead,
@@ -573,6 +574,81 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         reply.status(500).send({ success: false, message: 'Failed to generate contact strategy' });
+      }
+    },
+  });
+
+  // Update contact strategy endpoint
+  fastify.route({
+    method: HttpMethods.PATCH,
+    url: `${basePath}/:leadId/contacts/:contactId/contact-strategy`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      description: 'Update existing contact strategy and outreach plan for a specific contact',
+      tags: ['Leads'],
+      params: {
+        type: 'object',
+        properties: {
+          leadId: { type: 'string' },
+          contactId: { type: 'string' },
+        },
+        required: ['leadId', 'contactId'],
+      },
+      body: {
+        type: 'object',
+        description: 'Updated campaign plan data',
+        additionalProperties: true,
+      },
+      response: {
+        ...defaultRouteResponse(),
+        200: {
+          type: 'object',
+          description: 'Updated campaign plan',
+          additionalProperties: true,
+        },
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      const { leadId, contactId } = request.params as { leadId: string; contactId: string };
+      const userId = user?.id;
+      const updatedPlan = request.body as CampaignPlanOutput;
+
+      try {
+        const result = await updateContactStrategy({
+          leadId,
+          contactId,
+          tenantId,
+          userId,
+          updatedPlan,
+        });
+
+        // Return the updated campaign plan JSON
+        reply.status(200).send(result.finalResponseParsed);
+      } catch (error: any) {
+        fastify.log.error(`Error updating contact strategy: ${error.message}`);
+
+        if (error.message?.includes('Access denied')) {
+          reply.status(403).send({
+            success: false,
+            message: 'Access denied to tenant resources',
+          });
+        } else if (error.message?.includes('validation') || error.message?.includes('Invalid')) {
+          reply.status(400).send({
+            success: false,
+            message: `Validation error: ${error.message}`,
+          });
+        } else if (error.message?.includes('No existing campaign')) {
+          reply.status(400).send({
+            success: false,
+            message: 'No existing campaign found to update',
+          });
+        } else {
+          reply.status(500).send({
+            success: false,
+            message: 'Failed to update contact strategy',
+          });
+        }
       }
     },
   });
