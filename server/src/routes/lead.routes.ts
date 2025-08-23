@@ -4,6 +4,7 @@ import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy, updateContactStrategy } from '@/modules/ai';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import {
   getLeads,
   createLead,
@@ -631,7 +632,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       const { tenantId, user } = request as AuthenticatedRequest;
       const { leadId, contactId } = request.params as { leadId: string; contactId: string };
       const userId = user?.id;
-      const updatedPlan = request.body;
+      const updatedPlan = request.body as CampaignPlanOutput;
 
       try {
         const result = await updateContactStrategy({

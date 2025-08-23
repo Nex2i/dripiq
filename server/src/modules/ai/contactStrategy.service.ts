@@ -3,7 +3,10 @@ import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repo
 import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
-import { campaignPlanOutputSchema } from './schemas/contactCampaignStrategySchema';
+import {
+  CampaignPlanOutput,
+  campaignPlanOutputSchema,
+} from './schemas/contactCampaignStrategySchema';
 
 export interface GenerateContactStrategyParams {
   leadId: string;
@@ -17,7 +20,7 @@ export interface UpdateContactStrategyParams {
   contactId: string;
   tenantId: string;
   userId?: string;
-  updatedPlan: any; // CampaignPlanOutput type
+  updatedPlan: CampaignPlanOutput;
 }
 
 /**
@@ -141,7 +144,7 @@ export const retrieveContactStrategyFromDatabase = async (
     // Reconstruct ContactStrategyResult from database data
     const result: ContactStrategyResult = {
       finalResponse: 'Retrieved from database',
-      finalResponseParsed: latestPlanVersion.planJson as any, // This contains the CampaignPlanOutput
+      finalResponseParsed: latestPlanVersion.planJson as CampaignPlanOutput,
       totalIterations: 1,
       functionCalls: [],
     };
