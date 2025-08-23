@@ -328,13 +328,11 @@ export class CampaignPlanExecutionService {
       throw new Error(`Current node not found in plan: ${currentNodeId}`);
     }
 
-    // Find matching transition
-    const transition = currentNode.transitions?.find(
-      (t) => t.on === eventType && this.isTransitionValid(t, eventRef)
-    );
+    // Find matching transitions by event type first
+    const candidateTransitions = currentNode.transitions?.filter((t) => t.on === eventType) || [];
 
-    if (!transition) {
-      logger.debug('No matching transition found', {
+    if (candidateTransitions.length === 0) {
+      logger.debug('No transitions found for event type', {
         currentNodeId,
         eventType,
         availableTransitions: currentNode.transitions?.map((t) => ({ on: t.on, to: t.to })),
@@ -343,6 +341,38 @@ export class CampaignPlanExecutionService {
         success: false,
         reason: 'no_matching_transition',
         availableTransitions: currentNode.transitions?.length || 0,
+      };
+    }
+
+    // Validate timing constraints for each candidate transition
+    let transition = null;
+    for (const candidate of candidateTransitions) {
+      const isValid = await this.isTransitionValid(
+        candidate,
+        tenantId,
+        campaignId,
+        currentNodeId,
+        new Date(),
+        eventRef
+      );
+
+      if (isValid) {
+        transition = candidate;
+        break; // Use first valid transition
+      }
+    }
+
+    if (!transition) {
+      logger.debug('No valid transitions found (timing constraints not met)', {
+        currentNodeId,
+        eventType,
+        candidateCount: candidateTransitions.length,
+        availableTransitions: currentNode.transitions?.map((t) => ({ on: t.on, to: t.to })),
+      });
+      return {
+        success: false,
+        reason: 'timing_constraints_not_met',
+        availableTransitions: candidateTransitions.length,
       };
     }
 
@@ -553,28 +583,121 @@ export class CampaignPlanExecutionService {
   }
 
   /**
+   * Gets the start time of the current node by finding the most recent transition to it
+   */
+  private async getCurrentNodeStartTime(
+    tenantId: string,
+    campaignId: string,
+    nodeId: string
+  ): Promise<Date | null> {
+    try {
+      // Get the most recent transition that resulted in entering this node
+      const transitions = await campaignTransitionRepository.listByCampaignForTenant(
+        tenantId,
+        campaignId
+      );
+
+      // Find the most recent transition where the reason indicates entering this node
+      // or if this is the start node, use the campaign start time
+      const nodeEntryTransition = transitions.find((t) => t.reason?.includes(`to ${nodeId}`));
+
+      if (nodeEntryTransition) {
+        return nodeEntryTransition.occurredAt;
+      }
+
+      // If no transition found, this might be the start node
+      // Get campaign start time as fallback
+      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+      return campaign?.startedAt || null;
+    } catch (error) {
+      logger.error('Failed to get current node start time', {
+        tenantId,
+        campaignId,
+        nodeId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return null;
+    }
+  }
+
+  /**
    * Validates if a transition is valid based on timing constraints
    */
-  private isTransitionValid(transition: any, _eventRef?: string): boolean {
-    // Check timing constraints
-    if (transition.within) {
-      // Event must happen within specified timeframe from node start
-      // TODO: Implement timing validation based on node start time
-      // For now, assume valid if within constraint exists
-      logger.debug('Transition has within constraint', {
-        within: transition.within,
-      });
-    }
+  private async isTransitionValid(
+    transition: any,
+    tenantId: string,
+    campaignId: string,
+    currentNodeId: string,
+    eventTime: Date = new Date(),
+    _eventRef?: string
+  ): Promise<boolean> {
+    try {
+      // Get when the current node was entered
+      const nodeStartTime = await this.getCurrentNodeStartTime(tenantId, campaignId, currentNodeId);
 
-    if (transition.after) {
-      // Event must happen after specified delay from node start
-      // TODO: Implement timing validation based on node start time
-      logger.debug('Transition has after constraint', {
-        after: transition.after,
-      });
-    }
+      if (!nodeStartTime) {
+        logger.warn('Could not determine node start time, allowing transition', {
+          tenantId,
+          campaignId,
+          currentNodeId,
+        });
+        return true; // Allow transition if we can't determine start time
+      }
 
-    return true; // Simplified validation for initial implementation
+      const timeSinceNodeStart = eventTime.getTime() - nodeStartTime.getTime();
+
+      // Check 'within' constraint - event must happen within specified timeframe
+      if (transition.within) {
+        const withinMs = this.calculateDelay(transition.within);
+        if (timeSinceNodeStart > withinMs) {
+          logger.debug('Transition rejected: outside within constraint', {
+            currentNodeId,
+            within: transition.within,
+            timeSinceNodeStart,
+            withinMs,
+            nodeStartTime: nodeStartTime.toISOString(),
+            eventTime: eventTime.toISOString(),
+          });
+          return false;
+        }
+        logger.debug('Transition within constraint satisfied', {
+          within: transition.within,
+          timeSinceNodeStart,
+          withinMs,
+        });
+      }
+
+      // Check 'after' constraint - event must happen after specified delay
+      if (transition.after) {
+        const afterMs = this.calculateDelay(transition.after);
+        if (timeSinceNodeStart < afterMs) {
+          logger.debug('Transition rejected: before after constraint', {
+            currentNodeId,
+            after: transition.after,
+            timeSinceNodeStart,
+            afterMs,
+            nodeStartTime: nodeStartTime.toISOString(),
+            eventTime: eventTime.toISOString(),
+          });
+          return false;
+        }
+        logger.debug('Transition after constraint satisfied', {
+          after: transition.after,
+          timeSinceNodeStart,
+          afterMs,
+        });
+      }
+
+      return true;
+    } catch (error) {
+      logger.error('Error validating transition timing', {
+        tenantId,
+        campaignId,
+        currentNodeId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return true; // Allow transition on validation error to prevent system lockup
+    }
   }
 
   /**
