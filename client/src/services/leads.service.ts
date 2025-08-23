@@ -548,6 +548,57 @@ class LeadsService {
     const result = await response.json()
     return result
   }
+
+  // Start campaigns for all contacts in a lead
+  async startLeadCampaigns(id: string): Promise<{
+    message: string
+    leadId: string
+    results: {
+      total: number
+      started: number
+      skipped: number
+      failed: number
+      details: Array<{
+        contactId: string
+        contactName: string
+        status: 'started' | 'skipped' | 'failed'
+        reason?: string
+        campaignId?: string
+      }>
+    }
+  }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(
+      `${this.baseUrl}/leads/${id}/start-campaigns`,
+      {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+        },
+      },
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to start campaigns')
+    }
+
+    const result = await response.json()
+
+    // Update cache after successful campaign start if queryClient is available
+    if (this.queryClient) {
+      // Invalidate lead data to refresh any campaign-related information
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(id),
+      })
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
 }
 
 // Create a singleton instance that will be initialized with QueryClient

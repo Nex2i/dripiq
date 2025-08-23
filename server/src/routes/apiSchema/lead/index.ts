@@ -11,6 +11,9 @@ export * from './lead.response.schema';
 // Lead analysis operations
 export * from './lead.analyze.schema';
 
+// Lead campaign operations
+export * from './lead.start-campaigns.schema';
+
 // Lead-Product operations
 export * from './leadProduct.attach.schema';
 export * from './leadProduct.detach.schema';

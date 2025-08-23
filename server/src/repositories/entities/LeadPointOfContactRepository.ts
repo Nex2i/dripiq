@@ -23,6 +23,19 @@ export class LeadPointOfContactRepository extends BaseRepository<
   }
 
   /**
+   * Find contacts by lead ID with tenant validation
+   */
+  async findByLeadIdForTenant(leadId: string, tenantId: string): Promise<LeadPointOfContact[]> {
+    const results = await this.db
+      .select()
+      .from(this.table)
+      .innerJoin(leads, eq(this.table.leadId, leads.id))
+      .where(and(eq(this.table.leadId, leadId), eq(leads.tenantId, tenantId)));
+    
+    return results.map((result) => result.lead_point_of_contacts);
+  }
+
+  /**
    * Find contact by ID with tenant validation (through lead)
    * @param id - The ID of the contact to find.
    * @param tenantId - The ID of the tenant to find the contact for.
