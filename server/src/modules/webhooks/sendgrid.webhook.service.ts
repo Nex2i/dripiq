@@ -10,6 +10,8 @@ import {
   SendGridWebhookError,
   EVENT_NORMALIZATION_MAP,
   SENDGRID_EVENT_TYPES,
+  KNOWN_SENDGRID_EVENTS_NOT_RECORDED,
+  ALL_KNOWN_SENDGRID_EVENTS,
 } from './sendgrid.webhook.types';
 
 /**
@@ -159,7 +161,10 @@ export class SendGridWebhookService {
       for (const [index, event] of parsed.entries()) {
         try {
           const validatedEvent = this.validateEvent(event);
-          validatedEvents.push(validatedEvent);
+          if (validatedEvent !== null) {
+            validatedEvents.push(validatedEvent);
+          }
+          // If validatedEvent is null, the event was dismissed early (known but not recorded)
         } catch (error) {
           logger.warn(`Invalid event at index ${index}`, {
             event,
@@ -170,7 +175,11 @@ export class SendGridWebhookService {
       }
 
       if (validatedEvents.length === 0) {
-        throw new SendGridWebhookError('No valid events found in payload', 'NO_VALID_EVENTS', 400);
+        throw new SendGridWebhookError(
+          'No recordable events found in payload - all events were either invalid or dismissed',
+          'NO_RECORDABLE_EVENTS',
+          400
+        );
       }
 
       return validatedEvents;
@@ -187,9 +196,9 @@ export class SendGridWebhookService {
   /**
    * Validate individual SendGrid event
    * @param event - Raw event object
-   * @returns Validated SendGrid event
+   * @returns Validated SendGrid event or null if event should be dismissed
    */
-  private validateEvent(event: any): SendGridEvent {
+  private validateEvent(event: any): SendGridEvent | null {
     if (!event || typeof event !== 'object') {
       throw new Error('Event must be an object');
     }
@@ -208,7 +217,18 @@ export class SendGridWebhookService {
       }
     }
 
+    // Check if this is a known event type that we don't record - dismiss early
+    if (KNOWN_SENDGRID_EVENTS_NOT_RECORDED.includes(event.event)) {
+      return null; // Dismiss this event without warning
+    }
+
+    // Check if this is a valid recorded event type
     if (!SENDGRID_EVENT_TYPES.includes(event.event)) {
+      // Check if it's at least a known SendGrid event type
+      if (ALL_KNOWN_SENDGRID_EVENTS.includes(event.event)) {
+        return null; // Known but not configured for recording
+      }
+      // Truly unknown event type - this might indicate a configuration issue
       throw new Error(`Invalid event type: ${event.event}`);
     }
 

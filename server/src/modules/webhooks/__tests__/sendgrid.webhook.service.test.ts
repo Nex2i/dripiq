@@ -169,7 +169,7 @@ describe('SendGridWebhookService', () => {
         SendGridWebhookError
       );
       await expect(service.processWebhook(mockHeaders, emptyPayload)).rejects.toThrow(
-        'No valid events found in payload'
+        'No recordable events found in payload'
       );
     });
 
@@ -492,10 +492,87 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      // Should throw because no valid events found
+      // Should throw because no recordable events found
       expect(service.processWebhook({}, payload)).rejects.toThrow(
-        'No valid events found in payload'
+        'No recordable events found in payload'
       );
+    });
+
+    it('should dismiss known but non-recorded events without warnings', async () => {
+      const eventsWithProcessed = [
+        {
+          email: 'test@example.com',
+          timestamp: 1234567890,
+          'smtp-id': '<test@smtp.example.com>',
+          event: 'processed', // This should be dismissed
+          sg_event_id: 'processed-event-123',
+          sg_message_id: 'msg-123',
+          tenant_id: 'tenant-123',
+          campaign_id: 'campaign-123',
+          node_id: 'node-123',
+          outbound_message_id: 'outbound-123',
+          dedupe_key: 'dedupe-123',
+        },
+        {
+          email: 'test@example.com',
+          timestamp: 1234567890,
+          'smtp-id': '<test@smtp.example.com>',
+          event: 'delivered', // This should be recorded
+          sg_event_id: 'delivered-event-123',
+          sg_message_id: 'msg-123',
+          tenant_id: 'tenant-123',
+          campaign_id: 'campaign-123',
+          node_id: 'node-123',
+          outbound_message_id: 'outbound-123',
+          dedupe_key: 'dedupe-123',
+          response: 'OK',
+        },
+      ];
+
+      const payload = JSON.stringify(eventsWithProcessed);
+
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload,
+        isValid: true,
+      });
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+        id: 'webhook-delivery-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        messageId: null,
+        receivedAt: expect.any(Date),
+        payload: JSON.parse(payload),
+        signature: 'valid-signature',
+        status: 'processed',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
+
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.createForTenant.mockResolvedValue({
+        id: 'event-123',
+        tenantId: 'tenant-123',
+        messageId: 'outbound-123',
+        type: 'delivered',
+        eventAt: expect.any(Date),
+        sgEventId: 'delivered-event-123',
+        data: expect.any(Object),
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
+
+      const result = await service.processWebhook({}, payload);
+
+      expect(result.success).toBe(true);
+      expect(result.totalEvents).toBe(1); // Only the delivered event should be processed
+      expect(result.successfulEvents).toBe(1);
+      expect(result.failedEvents).toBe(0);
+      // Verify that only the delivered event was recorded
+      expect(mockMessageEventRepo.createForTenant).toHaveBeenCalledTimes(1);
     });
   });
 
