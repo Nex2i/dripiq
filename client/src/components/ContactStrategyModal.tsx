@@ -103,13 +103,13 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
 
   const currentData = isEditMode ? editedData : data
 
-    // Handle field updates
+  // Handle field updates
   const updateField = (path: (string | number)[], value: any) => {
     if (!editedData) return
-    
+
     const newData = JSON.parse(JSON.stringify(editedData))
     let current = newData
-    
+
     // Navigate to the correct nested object
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i]
@@ -118,7 +118,7 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
       }
       current = current[key]
     }
-    
+
     current[path[path.length - 1]] = value
     setEditedData(newData)
     setHasUnsavedChanges(true)
@@ -281,8 +281,6 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
       </div>
     )
   }
-
-
 
   // Render a single node from the campaign plan
   const renderNode = (node: any, index: number) => {
