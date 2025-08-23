@@ -498,133 +498,19 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                         className="flex items-center justify-between p-3 rounded border bg-gray-50"
                       >
                         <div className="flex items-center space-x-2">
-                          {isEditMode ? (
-                            <>
-                              <div className="flex items-center space-x-2">
-                                <label className="text-xs font-medium text-gray-600">
-                                  on:
-                                </label>
-                                <select
-                                  value={t.on || ''}
-                                  onChange={(e) =>
-                                    updateField(
-                                      [
-                                        'nodes',
-                                        index,
-                                        'transitions',
-                                        tIndex,
-                                        'on',
-                                      ],
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="text-xs px-2 py-1 border border-gray-300 rounded bg-white"
-                                >
-                                  <option value="">Select event</option>
-                                  <option value="delivered">delivered</option>
-                                  <option value="opened">opened</option>
-                                  <option value="clicked">clicked</option>
-                                  <option value="no_open">no_open</option>
-                                  <option value="no_click">no_click</option>
-                                </select>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <label className="text-xs font-medium text-gray-600">
-                                  to:
-                                </label>
-                                <input
-                                  type="text"
-                                  value={t.to || ''}
-                                  onChange={(e) =>
-                                    updateField(
-                                      [
-                                        'nodes',
-                                        index,
-                                        'transitions',
-                                        tIndex,
-                                        'to',
-                                      ],
-                                      e.target.value,
-                                    )
-                                  }
-                                  placeholder="target_node"
-                                  className="text-xs px-2 py-1 border border-gray-300 rounded w-24"
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800">
-                                on: {t.on}
-                              </span>
-                              <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-purple-100 text-purple-800">
-                                to: {t.to}
-                              </span>
-                            </>
-                          )}
+                          <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-green-100 text-green-800">
+                            on: {t.on}
+                          </span>
+                          <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-purple-100 text-purple-800">
+                            to: {t.to}
+                          </span>
                         </div>
                         <div className="text-xs text-gray-600">
-                          {isEditMode ? (
-                            <div className="flex items-center space-x-2">
-                              {t.within ? (
-                                <>
-                                  <label className="text-xs font-medium text-gray-600">
-                                    within:
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={t.within || ''}
-                                    onChange={(e) =>
-                                      updateField(
-                                        [
-                                          'nodes',
-                                          index,
-                                          'transitions',
-                                          tIndex,
-                                          'within',
-                                        ],
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder="PT24H"
-                                    className="text-xs px-2 py-1 border border-gray-300 rounded w-20"
-                                  />
-                                </>
-                              ) : (
-                                <>
-                                  <label className="text-xs font-medium text-gray-600">
-                                    after:
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={t.after || ''}
-                                    onChange={(e) =>
-                                      updateField(
-                                        [
-                                          'nodes',
-                                          index,
-                                          'transitions',
-                                          tIndex,
-                                          'after',
-                                        ],
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder="PT24H"
-                                    className="text-xs px-2 py-1 border border-gray-300 rounded w-20"
-                                  />
-                                </>
-                              )}
-                            </div>
-                          ) : (
-                            <>
-                              {t.within
-                                ? `within ${t.within}`
-                                : t.after
-                                  ? `after ${t.after}`
-                                  : ''}
-                            </>
-                          )}
+                          {t.within
+                            ? `within ${t.within}`
+                            : t.after
+                              ? `after ${t.after}`
+                              : ''}
                         </div>
                       </div>
                     ),
