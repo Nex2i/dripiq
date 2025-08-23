@@ -3,8 +3,9 @@ import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
 import { createContact } from '@/modules/contact.service';
+import { createLead } from '@/modules/lead.service';
 import { ContactCampaignPlanService } from '@/modules/campaign/contactCampaignPlan.service';
-import { leadRepository } from '@/repositories';
+import { repositories } from '@/repositories';
 import { logger } from '@/libs/logger';
 import { BulkContactsCreateSchema } from './apiSchema/bulkContacts/bulkContacts.schema';
 
@@ -47,18 +48,36 @@ export default async function bulkContactsRoutes(fastify: FastifyInstance) {
           emailCount: emails.split(',').length,
         });
 
-        // Find the lead by name and tenant
-        const lead = await leadRepository.findByNameAndTenant(leadName, tenantId);
-        if (!lead) {
-          logger.warn('Lead not found for bulk contacts creation', {
-            leadName,
+        // Get the first user for the tenant to use as lead owner
+        const tenantUsers = await repositories.userTenant.findUsersWithDetailsForTenant(tenantId);
+        if (tenantUsers.length === 0) {
+          logger.warn('No users found for tenant in bulk contacts creation', {
             tenantId,
           });
-          return reply.status(404).send({
-            error: 'Not Found',
-            message: `Lead with name "${leadName}" not found`,
+          return reply.status(400).send({
+            error: 'Bad Request',
+            message: 'No users found for the specified tenant',
           });
         }
+
+        const ownerId = tenantUsers[0].userId;
+
+        // Create a new lead
+        const lead = await createLead(
+          tenantId,
+          {
+            name: leadName,
+            url: `https://example.com/${leadName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          },
+          ownerId
+        );
+
+        logger.info('Created new lead for bulk contacts', {
+          leadId: lead.id,
+          leadName,
+          tenantId,
+          ownerId,
+        });
 
         // Parse and validate emails
         const emailList = emails
