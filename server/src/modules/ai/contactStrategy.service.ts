@@ -3,12 +3,21 @@ import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repo
 import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
 import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
+import { campaignPlanOutputSchema } from './schemas/contactCampaignStrategySchema';
 
 export interface GenerateContactStrategyParams {
   leadId: string;
   contactId: string;
   tenantId: string;
   userId?: string;
+}
+
+export interface UpdateContactStrategyParams {
+  leadId: string;
+  contactId: string;
+  tenantId: string;
+  userId?: string;
+  updatedPlan: any; // CampaignPlanOutput type
 }
 
 /**
@@ -154,5 +163,70 @@ export const retrieveContactStrategyFromDatabase = async (
       error: error instanceof Error ? error.message : 'Unknown error',
     });
     return null;
+  }
+};
+
+/**
+ * Service to update an existing contact strategy with new data
+ */
+export const updateContactStrategy = async (
+  params: UpdateContactStrategyParams
+): Promise<ContactStrategyResult> => {
+  const { leadId, contactId, tenantId, userId, updatedPlan } = params;
+
+  try {
+    logger.info('Updating contact strategy', {
+      leadId,
+      contactId,
+      tenantId,
+    });
+
+    // Validate the updated plan against the schema
+    const validatedPlan = campaignPlanOutputSchema.parse(updatedPlan);
+
+    // Find existing campaign for this contact and channel (email)
+    const existingCampaign = await contactCampaignRepository.findByContactAndChannelForTenant(
+      tenantId,
+      contactId,
+      'email'
+    );
+
+    if (!existingCampaign) {
+      throw new Error('No existing campaign found to update');
+    }
+
+    // Update the campaign plan using the service
+    await contactCampaignPlanService.persistPlan({
+      tenantId,
+      leadId,
+      contactId,
+      userId,
+      plan: validatedPlan,
+      channel: 'email',
+    });
+
+    // Return the updated plan in the expected format
+    const result: ContactStrategyResult = {
+      finalResponse: 'Plan updated successfully',
+      finalResponseParsed: validatedPlan,
+      totalIterations: 1,
+      functionCalls: [],
+    };
+
+    logger.info('Successfully updated contact strategy', {
+      leadId,
+      contactId,
+      tenantId,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Contact strategy update failed', {
+      leadId,
+      contactId,
+      tenantId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw error;
   }
 };

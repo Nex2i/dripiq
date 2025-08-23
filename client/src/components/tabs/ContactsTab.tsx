@@ -785,6 +785,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
         data={contactStrategyData}
         contactName={selectedContactName}
         companyName={companyName || 'Unknown Company'}
+        leadId={leadId}
+        contactId={qualifyingContactId || undefined}
+        onDataUpdate={(updatedData) => setContactStrategyData(updatedData)}
       />
 
       {/* Create Contact Modal */}
