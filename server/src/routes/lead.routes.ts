@@ -600,31 +600,11 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         additionalProperties: true,
       },
       response: {
+        ...defaultRouteResponse(),
         200: {
           type: 'object',
           description: 'Updated campaign plan',
           additionalProperties: true,
-        },
-        400: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-          },
-        },
-        403: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-          },
-        },
-        500: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-          },
         },
       },
     },
