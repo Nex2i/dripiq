@@ -1,7 +1,15 @@
 import { logger } from '@/libs/logger';
-import { webhookDeliveryRepository, messageEventRepository } from '@/repositories';
+import {
+  webhookDeliveryRepository,
+  messageEventRepository,
+  outboundMessageRepository,
+  contactCampaignRepository,
+} from '@/repositories';
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
 import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
+import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { MessageEvent } from '@/db/schema';
 import {
   SendGridEvent,
   SendGridWebhookPayload,
@@ -93,6 +101,32 @@ export class SendGridWebhookService {
 
       // Step 6: Update webhook delivery status
       await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
+
+      // Step 7: Trigger campaign transitions for successful events
+      for (const eventResult of processedEvents) {
+        if (eventResult.success && !eventResult.skipped && eventResult.messageId) {
+          try {
+            // Fetch the created message event to trigger campaign transition
+            const messageEvent = await messageEventRepository.findByIdForTenant(
+              eventResult.messageId,
+              tenantId
+            );
+            if (messageEvent) {
+              await this.processCampaignTransition(tenantId, messageEvent);
+            }
+          } catch (error) {
+            logger.error('Failed to process campaign transition', {
+              tenantId,
+              messageEventId: eventResult.messageId,
+              eventType: eventResult.eventType,
+              webhookDeliveryId: webhookDelivery.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+            // Don't fail webhook processing if transition fails
+          }
+        }
+      }
 
       const processingTime = Date.now() - startTime;
       const result: WebhookProcessingResult = {
@@ -500,6 +534,79 @@ export class SendGridWebhookService {
     });
 
     return sanitized;
+  }
+
+  /**
+   * Process campaign transition for a message event
+   * @param tenantId - Tenant ID
+   * @param messageEvent - Message event that triggered the transition
+   */
+  private async processCampaignTransition(
+    tenantId: string,
+    messageEvent: MessageEvent
+  ): Promise<void> {
+    logger.debug('Processing campaign transition for message event', {
+      tenantId,
+      messageEventId: messageEvent.id,
+      eventType: messageEvent.type,
+    });
+
+    // Find the campaign associated with this message
+    const outboundMessage = await outboundMessageRepository.findByIdForTenant(
+      messageEvent.messageId,
+      tenantId
+    );
+    if (!outboundMessage) {
+      logger.debug('No outbound message found for event', {
+        messageEventId: messageEvent.id,
+        messageId: messageEvent.messageId,
+      });
+      return;
+    }
+
+    const campaign = await contactCampaignRepository.findByIdForTenant(
+      outboundMessage.campaignId,
+      tenantId
+    );
+    if (!campaign) {
+      logger.debug('No campaign found for message', {
+        outboundMessageId: outboundMessage.id,
+        campaignId: outboundMessage.campaignId,
+      });
+      return;
+    }
+
+    if (campaign.status !== 'active') {
+      logger.debug('Campaign not active, skipping transition', {
+        campaignId: campaign.id,
+        status: campaign.status,
+      });
+      return;
+    }
+
+    if (!campaign.currentNodeId) {
+      logger.debug('Campaign has no current node, skipping transition', {
+        campaignId: campaign.id,
+      });
+      return;
+    }
+
+    // Trigger transition processing
+    await campaignPlanExecutionService.processTransition({
+      tenantId,
+      campaignId: campaign.id,
+      eventType: messageEvent.type,
+      currentNodeId: campaign.currentNodeId,
+      plan: campaign.planJson as CampaignPlanOutput,
+      eventRef: messageEvent.id,
+    });
+
+    logger.info('Campaign transition processed successfully', {
+      tenantId,
+      campaignId: campaign.id,
+      eventType: messageEvent.type,
+      currentNodeId: campaign.currentNodeId,
+    });
   }
 
   /**
