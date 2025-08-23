@@ -9,7 +9,7 @@ import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validato
 import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
-import type { MessageEvent } from '@/db/schema';
+import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
 import {
   SendGridEvent,
   SendGridWebhookPayload,
@@ -103,29 +103,16 @@ export class SendGridWebhookService {
       await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
 
       // Step 7: Trigger campaign transitions for successful events
-      for (const eventResult of processedEvents) {
-        if (eventResult.success && !eventResult.skipped && eventResult.messageId) {
-          try {
-            // Fetch the created message event to trigger campaign transition
-            const messageEvent = await messageEventRepository.findByIdForTenant(
-              eventResult.messageId,
-              tenantId
-            );
-            if (messageEvent) {
-              await this.processCampaignTransition(tenantId, messageEvent);
-            }
-          } catch (error) {
-            logger.error('Failed to process campaign transition', {
-              tenantId,
-              messageEventId: eventResult.messageId,
-              eventType: eventResult.eventType,
-              webhookDeliveryId: webhookDelivery.id,
-              error: error instanceof Error ? error.message : 'Unknown error',
-              stack: error instanceof Error ? error.stack : undefined,
-            });
-            // Don't fail webhook processing if transition fails
-          }
-        }
+      try {
+        await this.processCampaignTransitionsBatch(tenantId, processedEvents, webhookDelivery.id);
+      } catch (error) {
+        logger.error('Failed to process campaign transitions batch', {
+          tenantId,
+          webhookDeliveryId: webhookDelivery.id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        // Don't fail webhook processing if batch transition processing fails
       }
 
       const processingTime = Date.now() - startTime;
@@ -610,9 +597,169 @@ export class SendGridWebhookService {
   }
 
   /**
-   * Create service instance from environment configuration
-   * @returns Configured service instance
+   * Process campaign transitions for a batch of successful events
+   * @param tenantId - Tenant ID
+   * @param events - Array of processed events
+   * @param webhookDeliveryId - Webhook delivery ID
    */
+     private async processCampaignTransitionsBatch(
+     tenantId: string,
+     events: ProcessedEventResult[],
+     webhookDeliveryId: string
+   ): Promise<void> {
+     const successfulEvents = events.filter((e) => e.success && !e.skipped && e.messageId);
+
+     if (successfulEvents.length === 0) {
+       logger.debug('No successful events to process campaign transitions for', {
+         webhookDeliveryId,
+       });
+       return;
+     }
+
+     logger.debug('Processing campaign transitions for successful events', {
+       webhookDeliveryId,
+       eventCount: successfulEvents.length,
+     });
+
+     // Step 1: Batch fetch all message events
+     const messageEventIds = successfulEvents.map((e) => e.messageId).filter((id): id is string => !!id);
+     const messageEvents = await messageEventRepository.findByIdsForTenant(messageEventIds, tenantId);
+
+     if (messageEvents.length === 0) {
+       logger.debug('No message events found for transition processing', {
+         webhookDeliveryId,
+         messageEventIds,
+       });
+       return;
+     }
+
+     // Step 2: Batch fetch all outbound messages
+     const outboundMessageIds = messageEvents.map((e) => e.messageId);
+     const outboundMessages = await outboundMessageRepository.findByIdsForTenant(outboundMessageIds, tenantId);
+
+     if (outboundMessages.length === 0) {
+       logger.debug('No outbound messages found for transition processing', {
+         webhookDeliveryId,
+         outboundMessageIds,
+       });
+       return;
+     }
+
+     // Step 3: Batch fetch all campaigns (deduplicated)
+     const campaignIds = [...new Set(outboundMessages.map((m) => m.campaignId))];
+     const campaigns = await contactCampaignRepository.findByIdsForTenant(campaignIds, tenantId);
+
+     // Create lookup maps for efficient O(1) access
+     const outboundMessageMap = new Map(outboundMessages.map((m) => [m.id, m]));
+     const campaignMap = new Map(campaigns.map((c) => [c.id, c]));
+
+     // Step 4: Process transitions with pre-fetched data
+     let processedCount = 0;
+     for (const messageEvent of messageEvents) {
+       try {
+         const processed = await this.processCampaignTransitionWithData(
+           tenantId,
+           messageEvent,
+           outboundMessageMap,
+           campaignMap
+         );
+         if (processed) processedCount++;
+       } catch (error) {
+         logger.error('Failed to process campaign transition for message event', {
+           tenantId,
+           messageEventId: messageEvent.id,
+           webhookDeliveryId,
+           error: error instanceof Error ? error.message : 'Unknown error',
+           stack: error instanceof Error ? error.stack : undefined,
+         });
+       }
+     }
+
+     logger.info('Campaign transitions processed successfully for batch', {
+       webhookDeliveryId,
+       totalEvents: successfulEvents.length,
+       processedTransitions: processedCount,
+     });
+   }
+
+     /**
+    * Process campaign transition using pre-fetched data (optimized for batch processing)
+    * @param tenantId - Tenant ID
+    * @param messageEvent - Message event that triggered the transition
+    * @param outboundMessageMap - Pre-fetched outbound messages map
+    * @param campaignMap - Pre-fetched campaigns map
+    * @returns Boolean indicating if transition was processed
+    */
+   private async processCampaignTransitionWithData(
+     tenantId: string,
+     messageEvent: MessageEvent,
+     outboundMessageMap: Map<string, OutboundMessage>,
+     campaignMap: Map<string, ContactCampaign>
+   ): Promise<boolean> {
+     logger.debug('Processing campaign transition for message event', {
+       tenantId,
+       messageEventId: messageEvent.id,
+       eventType: messageEvent.type,
+     });
+
+     // Find the campaign associated with this message using pre-fetched data
+     const outboundMessage = outboundMessageMap.get(messageEvent.messageId);
+     if (!outboundMessage) {
+       logger.debug('No outbound message found for event', {
+         messageEventId: messageEvent.id,
+         messageId: messageEvent.messageId,
+       });
+       return false;
+     }
+
+     const campaign = campaignMap.get(outboundMessage.campaignId);
+     if (!campaign) {
+       logger.debug('No campaign found for message', {
+         outboundMessageId: outboundMessage.id,
+         campaignId: outboundMessage.campaignId,
+       });
+       return false;
+     }
+
+     if (campaign.status !== 'active') {
+       logger.debug('Campaign not active, skipping transition', {
+         campaignId: campaign.id,
+         status: campaign.status,
+       });
+       return false;
+     }
+
+     if (!campaign.currentNodeId) {
+       logger.debug('Campaign has no current node, skipping transition', {
+         campaignId: campaign.id,
+       });
+       return false;
+     }
+
+     // Trigger transition processing
+     await campaignPlanExecutionService.processTransition({
+       tenantId,
+       campaignId: campaign.id,
+       eventType: messageEvent.type,
+       currentNodeId: campaign.currentNodeId,
+       plan: campaign.planJson as CampaignPlanOutput,
+       eventRef: messageEvent.id,
+     });
+
+     logger.info('Campaign transition processed successfully', {
+       tenantId,
+       campaignId: campaign.id,
+       eventType: messageEvent.type,
+       currentNodeId: campaign.currentNodeId,
+     });
+
+     return true;
+   }
+
+   /**
+    * Create service instance from environment configuration
+    * @returns Configured service instance
+    */
   public static fromEnvironment(): SendGridWebhookService {
     const validator = SendGridWebhookValidator.fromEnvironment();
 

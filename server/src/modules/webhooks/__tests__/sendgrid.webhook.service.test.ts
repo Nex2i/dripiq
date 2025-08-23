@@ -20,12 +20,15 @@ jest.mock('@/repositories', () => ({
     findAllForTenant: jest.fn(),
     findBySgEventIdForTenant: jest.fn(),
     findByIdForTenant: jest.fn(),
+    findByIdsForTenant: jest.fn(),
   },
   outboundMessageRepository: {
     findByIdForTenant: jest.fn(),
+    findByIdsForTenant: jest.fn(),
   },
   contactCampaignRepository: {
     findByIdForTenant: jest.fn(),
+    findByIdsForTenant: jest.fn(),
   },
 }));
 
@@ -873,9 +876,9 @@ describe('SendGridWebhookService', () => {
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
       mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
-      mockMessageEventRepo.findByIdForTenant.mockResolvedValue(mockMessageEvent);
-      mockOutboundMessageRepo.findByIdForTenant.mockResolvedValue(mockOutboundMessage);
-      mockContactCampaignRepo.findByIdForTenant.mockResolvedValue(mockCampaign);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockCampaign]);
       mockCampaignPlanExecutionService.processTransition.mockResolvedValue({
         success: true,
       });
@@ -886,6 +889,11 @@ describe('SendGridWebhookService', () => {
       // Verify webhook processing succeeded
       expect(result.success).toBe(true);
       expect(result.successfulEvents).toBe(1);
+
+      // Verify batch queries were used (key performance optimization)
+      expect(mockMessageEventRepo.findByIdsForTenant).toHaveBeenCalledWith(['message-event-123'], 'tenant-123');
+      expect(mockOutboundMessageRepo.findByIdsForTenant).toHaveBeenCalledWith(['outbound-message-123'], 'tenant-123');
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledWith(['campaign-123'], 'tenant-123');
 
       // Verify campaign transition was triggered
       expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledWith({
@@ -958,9 +966,9 @@ describe('SendGridWebhookService', () => {
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
       mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
-      mockMessageEventRepo.findByIdForTenant.mockResolvedValue(mockMessageEvent);
-      mockOutboundMessageRepo.findByIdForTenant.mockResolvedValue(mockOutboundMessage);
-      mockContactCampaignRepo.findByIdForTenant.mockResolvedValue(mockInactiveCampaign);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockInactiveCampaign]);
 
       // Execute
       const result = await service.processWebhook(mockHeaders, JSON.stringify([mockSendGridEvent]));
@@ -1033,9 +1041,9 @@ describe('SendGridWebhookService', () => {
       mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
       mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
-      mockMessageEventRepo.findByIdForTenant.mockResolvedValue(mockMessageEvent);
-      mockOutboundMessageRepo.findByIdForTenant.mockResolvedValue(mockOutboundMessage);
-      mockContactCampaignRepo.findByIdForTenant.mockResolvedValue(mockCampaign);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockCampaign]);
       
       // Mock transition service to throw an error
       mockCampaignPlanExecutionService.processTransition.mockRejectedValue(
@@ -1051,6 +1059,81 @@ describe('SendGridWebhookService', () => {
 
       // Verify campaign transition was attempted
       expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalled();
+    });
+
+    it('should efficiently batch process multiple events with campaign deduplication', async () => {
+      // Setup mocks for multiple events scenario
+      const mockEvents = [
+        { ...mockSendGridEvent, sg_event_id: 'sg1', unique_args: { messageId: 'msg1' } },
+        { ...mockSendGridEvent, sg_event_id: 'sg2', unique_args: { messageId: 'msg2' } },
+        { ...mockSendGridEvent, sg_event_id: 'sg3', unique_args: { messageId: 'msg3' } },
+      ];
+
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload: JSON.stringify(mockEvents),
+        isValid: true,
+      });
+
+      const mockWebhookDelivery = {
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockMessageEvents = [
+        { id: 'msg-event-1', tenantId: 'tenant-123', messageId: 'outbound-1', type: 'delivered' },
+        { id: 'msg-event-2', tenantId: 'tenant-123', messageId: 'outbound-2', type: 'delivered' },
+        { id: 'msg-event-3', tenantId: 'tenant-123', messageId: 'outbound-3', type: 'delivered' },
+      ] as any;
+
+      const mockOutboundMessages = [
+        { id: 'outbound-1', campaignId: 'campaign-123' },
+        { id: 'outbound-2', campaignId: 'campaign-123' }, // Same campaign
+        { id: 'outbound-3', campaignId: 'campaign-456' }, // Different campaign
+      ] as any;
+
+      const mockCampaigns = [
+        { id: 'campaign-123', status: 'active', currentNodeId: 'node-1', planJson: {} },
+        { id: 'campaign-456', status: 'active', currentNodeId: 'node-2', planJson: {} },
+      ] as any;
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockMessageEventRepo.createForTenant
+        .mockResolvedValueOnce(mockMessageEvents[0])
+        .mockResolvedValueOnce(mockMessageEvents[1])
+        .mockResolvedValueOnce(mockMessageEvents[2]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue(mockMessageEvents);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue(mockOutboundMessages);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue(mockCampaigns);
+      mockCampaignPlanExecutionService.processTransition.mockResolvedValue({ success: true });
+
+      // Execute
+      const result = await service.processWebhook(mockHeaders, JSON.stringify(mockEvents));
+
+      // Verify webhook processing succeeded
+      expect(result.success).toBe(true);
+      expect(result.successfulEvents).toBe(3);
+
+      // Verify efficient batch queries (key performance optimization)
+      expect(mockMessageEventRepo.findByIdsForTenant).toHaveBeenCalledTimes(1);
+      expect(mockOutboundMessageRepo.findByIdsForTenant).toHaveBeenCalledTimes(1);
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledTimes(1);
+
+      // Verify campaign deduplication - should fetch unique campaigns only
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledWith(
+        ['campaign-123', 'campaign-456'], // Deduplicated campaign IDs
+        'tenant-123'
+      );
+
+      // Verify all transitions were processed
+      expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledTimes(3);
     });
   });
 });
