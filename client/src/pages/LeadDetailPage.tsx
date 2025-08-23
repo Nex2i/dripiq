@@ -3,7 +3,7 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import {
   useLead,
   useResyncLead,
-  useVendorFitLead,
+  useStartLeadCampaigns,
 } from '../hooks/useLeadsQuery'
 import {
   ArrowLeft,
@@ -17,7 +17,6 @@ import {
   Package,
   AlertCircle,
 } from 'lucide-react'
-import VendorFitModal from '../components/VendorFitModal'
 import Tabs from '../components/Tabs'
 import Tooltip from '../components/Tooltip'
 import ContactsTab from '../components/tabs/ContactsTab'
@@ -33,11 +32,9 @@ const LeadDetailPage: React.FC = () => {
   const { leadId } = useParams({ from: '/protected/leads/$leadId' })
   const { data: lead, isLoading, error } = useLead(leadId)
   const resyncLead = useResyncLead()
-  const vendorFitLead = useVendorFitLead()
+  const startCampaigns = useStartLeadCampaigns()
   const [resyncMessage, setResyncMessage] = useState<string | null>(null)
-  const [vendorFitMessage, setVendorFitMessage] = useState<string | null>(null)
-  const [vendorFitModalOpen, setVendorFitModalOpen] = useState(false)
-  const [vendorFitData, setVendorFitData] = useState<any>(null)
+  const [campaignMessage, setCampaignMessage] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('contacts')
 
   const handleBack = () => {
@@ -66,25 +63,25 @@ const LeadDetailPage: React.FC = () => {
     })
   }
 
-  const handleVendorFit = () => {
+  const handleStartCampaigns = () => {
     if (!lead?.id) return
 
-    setVendorFitMessage(null)
+    setCampaignMessage(null)
 
-    vendorFitLead.mutate(lead.id, {
+    startCampaigns.mutate(lead.id, {
       onSuccess: (result) => {
-        setVendorFitMessage(result.message || 'Vendor fit completed')
-        setVendorFitData(result)
-        setVendorFitModalOpen(true)
+        const { results } = result
+        const successMessage = `Campaign start completed: ${results.started} started, ${results.skipped} skipped, ${results.failed} failed`
+        setCampaignMessage(successMessage)
         setTimeout(() => {
-          setVendorFitMessage(null)
-        }, 3000)
+          setCampaignMessage(null)
+        }, 5000) // Show message a bit longer since it has more information
       },
       onError: (error) => {
-        console.error('Error running vendor fit:', error)
-        setVendorFitMessage('Failed to run vendor fit')
+        console.error('Error starting campaigns:', error)
+        setCampaignMessage('Failed to start campaigns')
         setTimeout(() => {
-          setVendorFitMessage(null)
+          setCampaignMessage(null)
         }, 3000)
       },
     })
@@ -309,14 +306,14 @@ const LeadDetailPage: React.FC = () => {
                 {resyncLead.isPending ? 'Resyncing...' : 'Resync'}
               </button>
               <button
-                onClick={handleVendorFit}
-                disabled={vendorFitLead.isPending}
+                onClick={handleStartCampaigns}
+                disabled={startCampaigns.isPending}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Users
-                  className={`h-4 w-4 mr-2 ${vendorFitLead.isPending ? 'animate-spin' : ''}`}
+                  className={`h-4 w-4 mr-2 ${startCampaigns.isPending ? 'animate-spin' : ''}`}
                 />
-                {vendorFitLead.isPending ? 'Running...' : 'Vendor Fit'}
+                {startCampaigns.isPending ? 'Starting...' : 'Start Campaigns'}
               </button>
               <button
                 onClick={() => {
@@ -345,16 +342,16 @@ const LeadDetailPage: React.FC = () => {
           </div>
         )}
 
-        {vendorFitMessage && (
+        {campaignMessage && (
           <div
             className={`mb-6 p-4 rounded-lg border ${
-              vendorFitMessage.includes('Failed') ||
-              vendorFitMessage.includes('Error')
+              campaignMessage.includes('Failed') ||
+              campaignMessage.includes('Error')
                 ? 'bg-red-50 border-red-200 text-red-700'
                 : 'bg-green-50 border-green-200 text-green-700'
             }`}
           >
-            <p className="text-sm font-medium">{vendorFitMessage}</p>
+            <p className="text-sm font-medium">{campaignMessage}</p>
           </div>
         )}
 
@@ -362,13 +359,6 @@ const LeadDetailPage: React.FC = () => {
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab}>
           {renderTabContent()}
         </Tabs>
-
-        {/* Vendor Fit Modal */}
-        <VendorFitModal
-          isOpen={vendorFitModalOpen}
-          onClose={() => setVendorFitModalOpen(false)}
-          data={vendorFitData}
-        />
       </div>
     </div>
   )

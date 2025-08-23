@@ -444,6 +444,27 @@ export function useVendorFitLead() {
   })
 }
 
+// Hook to start campaigns for all contacts in a lead
+export function useStartLeadCampaigns() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => leadsService.startLeadCampaigns(id),
+    onSuccess: (_, id) => {
+      // Invalidate and refetch lead data
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(id),
+      })
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error) => {
+      console.error('Error starting campaigns:', error)
+    },
+  })
+}
+
 // Hook to get users for the current tenant
 export function useUsers(page = 1, limit = 25) {
   return useQuery({

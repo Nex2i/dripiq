@@ -4,6 +4,7 @@ import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy } from '@/modules/ai';
+import { leadCampaignStartService } from '@/modules/campaign/leadCampaignStart.service';
 import {
   getLeads,
   createLead,
@@ -36,6 +37,7 @@ import {
   LeadAttachProductsSchema,
   LeadDetachProductSchema,
   LeadGetProductsSchema,
+  LeadStartCampaignsSchema,
 } from './apiSchema/lead';
 
 const basePath = '/leads';
@@ -573,6 +575,64 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         reply.status(500).send({ success: false, message: 'Failed to generate contact strategy' });
+      }
+    },
+  });
+
+  // Start campaigns for all contacts in lead route
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:id/start-campaigns`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Leads'],
+      summary: 'Start Campaigns for Lead Contacts',
+      description: 'Start campaigns for all contacts in a lead that don\'t already have active campaigns (tenant-scoped)',
+      ...LeadStartCampaignsSchema,
+    },
+    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { id } = request.params;
+        const userId = authenticatedRequest.user?.id;
+
+        const results = await leadCampaignStartService.startCampaignsForLead(
+          authenticatedRequest.tenantId,
+          id,
+          userId
+        );
+
+        reply.status(200).send({
+          message: `Campaign start process completed: ${results.started} started, ${results.skipped} skipped, ${results.failed} failed`,
+          leadId: id,
+          results,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error starting campaigns for lead: ${error.message}`);
+
+        if (
+          error.message?.includes('access to tenant') ||
+          error.message?.includes('ForbiddenError')
+        ) {
+          reply.status(403).send({
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('Lead not found')) {
+          reply.status(404).send({
+            message: 'Lead not found',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          message: 'Failed to start campaigns for lead',
+          error: error.message,
+        });
       }
     },
   });
