@@ -184,6 +184,90 @@ const EditableTextarea: React.FC<{
   )
 }
 
+// Delay dropdown component with preset values
+const DelaySelector: React.FC<{
+  value: string
+  onChange: (value: string) => void
+  label: string
+  isEditing: boolean
+  className?: string
+  copiedItem?: string | null
+  onCopy?: (text: string, id: string) => void
+}> = ({
+  value,
+  onChange,
+  label,
+  isEditing,
+  className = '',
+  copiedItem,
+  onCopy,
+}) => {
+  const delayOptions = [
+    { value: 'PT0S', label: 'Immediately' },
+    { value: 'PT5M', label: '5 minutes' },
+    { value: 'PT15M', label: '15 minutes' },
+    { value: 'PT30M', label: '30 minutes' },
+    { value: 'PT1H', label: '1 hour' },
+    { value: 'PT2H', label: '2 hours' },
+    { value: 'PT4H', label: '4 hours' },
+    { value: 'PT6H', label: '6 hours' },
+    { value: 'PT12H', label: '12 hours' },
+    { value: 'PT24H', label: '1 day' },
+    { value: 'P2D', label: '2 days' },
+    { value: 'P3D', label: '3 days' },
+  ]
+
+  const getDisplayLabel = (isoValue: string) => {
+    const option = delayOptions.find((opt) => opt.value === isoValue)
+    return option ? option.label : isoValue
+  }
+
+  if (isEditing) {
+    return (
+      <div className={`border border-gray-300 rounded-lg p-3 ${className}`}>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}:
+        </label>
+        <select
+          value={value || 'PT0S'}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          {delayOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h5 className="font-medium text-gray-700">{label}:</h5>
+        {onCopy && (
+          <button
+            onClick={() => onCopy(value, `${label.toLowerCase()}-copy`)}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1.5 rounded transition-colors"
+            title={`Copy ${label.toLowerCase()}`}
+          >
+            {copiedItem === `${label.toLowerCase()}-copy` ? (
+              <Check className="h-3 w-3 text-green-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        )}
+      </div>
+      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+        {getDisplayLabel(value)} ({value})
+      </p>
+    </div>
+  )
+}
+
 const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
   isOpen,
   onClose,
@@ -322,22 +406,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
         className="border border-gray-200 rounded-lg p-4 mb-4 bg-white"
       >
         <div className="flex items-center justify-between mb-4">
-          {isEditMode ? (
-            <EditableInput
-              value={nodeFromCurrentData.id}
-              onChange={(value) => updateField(['nodes', index, 'id'], value)}
-              label="Node ID"
-              isEditing={true}
-              placeholder="e.g., email_intro"
-              className="flex-1 mr-4"
-              copiedItem={copiedItem}
-              onCopy={copyToClipboard}
-            />
-          ) : (
-            <h4 className="font-semibold text-gray-900 text-lg">
-              {nodeFromCurrentData.id}
-            </h4>
-          )}
+          <h4 className="font-semibold text-gray-900 text-lg">
+            {nodeFromCurrentData.id}
+          </h4>
           {headerRight}
         </div>
 
@@ -374,12 +445,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
               {nodeFromCurrentData.senderIdentityId !== undefined && (
                 <EditableInput
                   value={nodeFromCurrentData.senderIdentityId || ''}
-                  onChange={(value) =>
-                    updateField(['nodes', index, 'senderIdentityId'], value)
-                  }
+                  onChange={() => {}} // Read-only
                   label="Sender Identity Override"
-                  isEditing={isEditMode}
-                  placeholder="sender-identity-id"
+                  isEditing={false}
                   copiedItem={copiedItem}
                   onCopy={copyToClipboard}
                 />
@@ -387,7 +455,7 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
               {nodeFromCurrentData.schedule && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {nodeFromCurrentData.schedule.delay !== undefined && (
-                    <EditableInput
+                    <DelaySelector
                       value={nodeFromCurrentData.schedule.delay || ''}
                       onChange={(value) =>
                         updateField(
@@ -397,7 +465,6 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       }
                       label="Delay"
                       isEditing={isEditMode}
-                      placeholder="PT0S"
                       className="bg-white"
                       copiedItem={copiedItem}
                       onCopy={copyToClipboard}
@@ -406,12 +473,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   {nodeFromCurrentData.schedule.at !== undefined && (
                     <EditableInput
                       value={nodeFromCurrentData.schedule.at || ''}
-                      onChange={(value) =>
-                        updateField(['nodes', index, 'schedule', 'at'], value)
-                      }
+                      onChange={() => {}} // Read-only
                       label="Schedule At"
-                      isEditing={isEditMode}
-                      placeholder="2024-01-01T10:00:00Z"
+                      isEditing={false}
                       className="bg-white"
                       copiedItem={copiedItem}
                       onCopy={copyToClipboard}
@@ -687,10 +751,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   {currentData.timezone && (
                     <EditableInput
                       value={currentData.timezone}
-                      onChange={(value) => updateField(['timezone'], value)}
+                      onChange={() => {}} // Read-only
                       label="Timezone"
-                      isEditing={isEditMode}
-                      placeholder="e.g., America/Los_Angeles"
+                      isEditing={false}
                       className="bg-white"
                       copiedItem={copiedItem}
                       onCopy={copyToClipboard}
@@ -699,10 +762,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   {currentData.startNodeId && (
                     <EditableInput
                       value={currentData.startNodeId}
-                      onChange={(value) => updateField(['startNodeId'], value)}
+                      onChange={() => {}} // Read-only
                       label="Start Node"
-                      isEditing={isEditMode}
-                      placeholder="e.g., email_intro"
+                      isEditing={false}
                       className="bg-white"
                       copiedItem={copiedItem}
                       onCopy={copyToClipboard}
@@ -713,26 +775,18 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <EditableInput
                       value={currentData.quietHours.start}
-                      onChange={(value) =>
-                        updateField(['quietHours', 'start'], value)
-                      }
+                      onChange={() => {}} // Read-only
                       label="Quiet Hours Start"
-                      isEditing={isEditMode}
-                      type="time"
-                      placeholder="21:00"
+                      isEditing={false}
                       className="bg-white"
                       copiedItem={copiedItem}
                       onCopy={copyToClipboard}
                     />
                     <EditableInput
                       value={currentData.quietHours.end}
-                      onChange={(value) =>
-                        updateField(['quietHours', 'end'], value)
-                      }
+                      onChange={() => {}} // Read-only
                       label="Quiet Hours End"
-                      isEditing={isEditMode}
-                      type="time"
-                      placeholder="07:30"
+                      isEditing={false}
                       className="bg-white"
                       copiedItem={copiedItem}
                       onCopy={copyToClipboard}
@@ -744,15 +798,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                     {currentData.defaults.timers.no_open_after && (
                       <EditableInput
                         value={currentData.defaults.timers.no_open_after}
-                        onChange={(value) =>
-                          updateField(
-                            ['defaults', 'timers', 'no_open_after'],
-                            value,
-                          )
-                        }
+                        onChange={() => {}} // Read-only
                         label="Default No Open After"
-                        isEditing={isEditMode}
-                        placeholder="PT72H"
+                        isEditing={false}
                         className="bg-white"
                         copiedItem={copiedItem}
                         onCopy={copyToClipboard}
@@ -761,15 +809,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                     {currentData.defaults.timers.no_click_after && (
                       <EditableInput
                         value={currentData.defaults.timers.no_click_after}
-                        onChange={(value) =>
-                          updateField(
-                            ['defaults', 'timers', 'no_click_after'],
-                            value,
-                          )
-                        }
+                        onChange={() => {}} // Read-only
                         label="Default No Click After"
-                        isEditing={isEditMode}
-                        placeholder="PT24H"
+                        isEditing={false}
                         className="bg-white"
                         copiedItem={copiedItem}
                         onCopy={copyToClipboard}
@@ -780,12 +822,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                 {currentData.senderIdentityId && (
                   <EditableInput
                     value={currentData.senderIdentityId}
-                    onChange={(value) =>
-                      updateField(['senderIdentityId'], value)
-                    }
+                    onChange={() => {}} // Read-only
                     label="Default Sender Identity"
-                    isEditing={isEditMode}
-                    placeholder="sender-id"
+                    isEditing={false}
                     copiedItem={copiedItem}
                     onCopy={copyToClipboard}
                   />
