@@ -7,11 +7,17 @@ import {
 import type { ContactCampaign } from '@/db/schema';
 import { CampaignExecutionPublisher } from '@/modules/messages';
 import type { ScheduledAction } from '@/db/schema';
+import { getQueue } from '@/libs/bullmq';
+import type {
+  ProcessTransitionParams,
+  TransitionResult,
+  NextActionResult,
+} from '@/types/campaign-transition.types';
 import type {
   CampaignPlanOutput,
   CampaignPlanNode,
 } from '../ai/schemas/contactCampaignStrategySchema';
-import { calculateScheduleTime } from './scheduleUtils';
+import { calculateScheduleTime, parseIsoDuration, applyQuietHours } from './scheduleUtils';
 
 export interface CampaignExecutionContext {
   tenantId: string;
@@ -27,15 +33,6 @@ export interface ScheduleActionParams {
   actionType: 'send' | 'timeout' | 'wait';
   scheduledAt: Date;
   payload?: Record<string, any>;
-}
-
-export interface ProcessTransitionParams {
-  tenantId: string;
-  campaignId: string;
-  eventType: string;
-  currentNodeId: string;
-  plan: CampaignPlanOutput;
-  eventRef?: string;
 }
 
 /**
@@ -315,114 +312,242 @@ export class CampaignPlanExecutionService {
   /**
    * Processes an event-driven transition in the campaign plan
    */
-  async processTransition(params: ProcessTransitionParams): Promise<void> {
-    const { tenantId, campaignId, eventType, currentNodeId, plan } = params;
+  async processTransition(params: ProcessTransitionParams): Promise<TransitionResult> {
+    const { tenantId, campaignId, eventType, currentNodeId, plan, eventRef } = params;
 
-    try {
-      logger.info('Processing campaign transition', {
-        tenantId,
-        campaignId,
-        eventType,
-        currentNodeId,
-      });
+    logger.info('Processing campaign transition', {
+      tenantId,
+      campaignId,
+      eventType,
+      currentNodeId,
+    });
 
-      // Find current node and matching transition
-      const currentNode = plan.nodes.find((node) => node.id === currentNodeId);
-      if (!currentNode) {
-        logger.warn('Current node not found in plan', {
-          tenantId,
-          campaignId,
-          currentNodeId,
-        });
-        return;
-      }
-
-      // Find matching transition for this event
-      const transition = currentNode.transitions?.find((t) => t.on === eventType);
-      if (!transition) {
-        logger.debug('No transition found for event', {
-          tenantId,
-          campaignId,
-          currentNodeId,
-          eventType,
-        });
-        return;
-      }
-
-      // Find target node
-      const targetNode = plan.nodes.find((node) => node.id === transition.to);
-      if (!targetNode) {
-        logger.error('Target node not found in plan', {
-          tenantId,
-          campaignId,
-          targetNodeId: transition.to,
-        });
-        return;
-      }
-
-      // Record the transition
-      await campaignTransitionRepository.createForTenant(tenantId, {
-        campaignId,
-        fromStatus: null, // We could map node IDs to statuses if needed
-        toStatus: targetNode.action === 'stop' ? 'completed' : 'active',
-        reason: `Event: ${eventType}`,
-        occurredAt: new Date(),
-      });
-
-      // Update campaign current node
-      await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
-        currentNodeId: targetNode.id,
-        ...(targetNode.action === 'stop' && {
-          status: 'completed',
-          completedAt: new Date(),
-        }),
-      });
-
-      // Schedule next action if target node requires it
-      if (targetNode.action === 'send') {
-        const scheduledAt = calculateScheduleTime(
-          targetNode.schedule?.delay || 'PT0S',
-          plan.timezone,
-          plan.quietHours
-        );
-
-        await this.scheduleAction({
-          tenantId,
-          campaignId,
-          nodeId: targetNode.id,
-          actionType: 'send',
-          scheduledAt,
-          payload: {
-            subject: targetNode.subject,
-            body: targetNode.body,
-            channel: targetNode.channel,
-          },
-        });
-
-        // Schedule timeouts for the new node
-        await this.scheduleNodeTimeouts(tenantId, campaignId, targetNode, plan);
-      } else if (targetNode.action === 'wait') {
-        // Schedule timeouts for wait node
-        await this.scheduleNodeTimeouts(tenantId, campaignId, targetNode, plan);
-      }
-
-      logger.info('Campaign transition processed successfully', {
-        tenantId,
-        campaignId,
-        fromNode: currentNodeId,
-        toNode: targetNode.id,
-        eventType,
-      });
-    } catch (error) {
-      logger.error('Failed to process campaign transition', {
-        tenantId,
-        campaignId,
-        eventType,
-        currentNodeId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
+    // Find current node in plan
+    const currentNode = plan.nodes.find((n) => n.id === currentNodeId);
+    if (!currentNode) {
+      throw new Error(`Current node not found in plan: ${currentNodeId}`);
     }
+
+    // Find matching transitions by event type first
+    const candidateTransitions = currentNode.transitions?.filter((t) => t.on === eventType) || [];
+
+    if (candidateTransitions.length === 0) {
+      logger.debug('No transitions found for event type', {
+        currentNodeId,
+        eventType,
+        availableTransitions: currentNode.transitions?.map((t) => ({ on: t.on, to: t.to })),
+      });
+      return {
+        success: false,
+        reason: 'no_matching_transition',
+        availableTransitions: currentNode.transitions?.length || 0,
+      };
+    }
+
+    // Validate timing constraints for each candidate transition
+    let transition = null;
+    for (const candidate of candidateTransitions) {
+      const isValid = await this.isTransitionValid(
+        candidate,
+        tenantId,
+        campaignId,
+        currentNodeId,
+        new Date(),
+        eventRef
+      );
+
+      if (isValid) {
+        transition = candidate;
+        break; // Use first valid transition
+      }
+    }
+
+    if (!transition) {
+      logger.debug('No valid transitions found (timing constraints not met)', {
+        currentNodeId,
+        eventType,
+        candidateCount: candidateTransitions.length,
+        availableTransitions: currentNode.transitions?.map((t) => ({ on: t.on, to: t.to })),
+      });
+      return {
+        success: false,
+        reason: 'timing_constraints_not_met',
+        availableTransitions: candidateTransitions.length,
+      };
+    }
+
+    logger.info('Found matching transition', {
+      from: currentNodeId,
+      to: transition.to,
+      trigger: eventType,
+    });
+
+    // Update campaign state
+    await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
+      currentNodeId: transition.to,
+      updatedAt: new Date(),
+    });
+
+    // Record transition for audit
+    const transitionRecord = await campaignTransitionRepository.createForTenant(tenantId, {
+      campaignId,
+      fromStatus: null, // Node IDs are not campaign statuses
+      toStatus: 'active', // Assume active unless it's a stop action
+      reason: `Event: ${eventType} - transition from ${currentNodeId} to ${transition.to}`,
+      occurredAt: new Date(),
+    });
+
+    // Schedule next action if target node requires it
+    const nextActionResult = await this.scheduleNextAction(
+      tenantId,
+      campaignId,
+      transition.to,
+      plan
+    );
+
+    const result: TransitionResult = {
+      success: true,
+      fromNodeId: currentNodeId,
+      toNodeId: transition.to,
+      eventType,
+      transitionId: transitionRecord.id,
+      nextAction: nextActionResult,
+    };
+
+    logger.info('Campaign transition completed successfully', result);
+    return result;
+  }
+
+  /**
+   * Schedules the next action based on the target node
+   */
+  private async scheduleNextAction(
+    tenantId: string,
+    campaignId: string,
+    nodeId: string,
+    plan: CampaignPlanOutput
+  ): Promise<NextActionResult> {
+    const node = plan.nodes.find((n) => n.id === nodeId);
+    if (!node) {
+      return { scheduled: false, reason: 'node_not_found' };
+    }
+
+    logger.debug('Evaluating next action for node', {
+      nodeId,
+      action: node.action,
+      channel: node.channel,
+    });
+
+    if (node.action === 'send') {
+      return await this.scheduleSendAction(tenantId, campaignId, nodeId, node, plan);
+    } else if (node.action === 'wait') {
+      return await this.scheduleWaitAction(tenantId, campaignId, nodeId, node, plan);
+    } else if (node.action === 'stop') {
+      // Mark campaign as completed
+      await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
+        status: 'completed',
+        completedAt: new Date(),
+      });
+      return { scheduled: false, reason: 'campaign_completed' };
+    }
+
+    return { scheduled: false, reason: 'unknown_action_type' };
+  }
+
+  /**
+   * Schedules a send action
+   */
+  private async scheduleSendAction(
+    tenantId: string,
+    campaignId: string,
+    nodeId: string,
+    node: CampaignPlanNode,
+    plan: CampaignPlanOutput
+  ): Promise<NextActionResult> {
+    // Type guard to ensure this is a send node
+    if (node.action !== 'send') {
+      throw new Error(`Expected send node, got ${node.action}`);
+    }
+
+    // Calculate delay from node schedule
+    const delay = this.calculateDelay(node.schedule?.delay || 'PT0S');
+    const scheduledAt = new Date(Date.now() + delay);
+
+    // Apply quiet hours if configured
+    const adjustedTime = this.applyQuietHours(scheduledAt, plan.timezone, plan.quietHours);
+
+    // Create scheduled action
+    const scheduledAction = await scheduledActionRepository.createForTenant(tenantId, {
+      campaignId,
+      actionType: 'send',
+      scheduledAt: adjustedTime,
+      status: 'pending',
+      payload: {
+        nodeId,
+        subject: node.subject,
+        body: node.body,
+        channel: node.channel,
+      },
+    });
+
+    // Enqueue execution job
+    const executionQueue = getQueue('campaign_execution');
+    await executionQueue.add(
+      'execute',
+      {
+        tenantId,
+        campaignId,
+        nodeId,
+        actionType: 'send',
+        metadata: {
+          triggeredBy: 'transition',
+          originalScheduledAt: scheduledAt.toISOString(),
+          adjustedScheduledAt: adjustedTime.toISOString(),
+        },
+      },
+      {
+        delay: Math.max(0, adjustedTime.getTime() - Date.now()),
+        jobId: `send:${campaignId}:${nodeId}:${Date.now()}`,
+      }
+    );
+
+    logger.info('Send action scheduled', {
+      campaignId,
+      nodeId,
+      scheduledAt: adjustedTime.toISOString(),
+      delay: delay,
+    });
+
+    return {
+      scheduled: true,
+      actionType: 'send',
+      scheduledAt: adjustedTime,
+      scheduledActionId: scheduledAction.id,
+    };
+  }
+
+  /**
+   * Schedules a wait action
+   */
+  private async scheduleWaitAction(
+    tenantId: string,
+    campaignId: string,
+    nodeId: string,
+    node: CampaignPlanNode,
+    plan: CampaignPlanOutput
+  ): Promise<NextActionResult> {
+    // Wait nodes don't schedule immediate actions
+    // They rely on future events (timeouts or real events) to trigger transitions
+    logger.info('Entered wait state', { campaignId, nodeId });
+
+    // Schedule timeout actions for this node
+    await this.scheduleNodeTimeouts(tenantId, campaignId, node, plan);
+
+    return {
+      scheduled: false,
+      reason: 'wait_state',
+      nodeId,
+    };
   }
 
   /**
@@ -455,6 +580,148 @@ export class CampaignPlanExecutionService {
         });
       }
     }
+  }
+
+  /**
+   * Gets the start time of the current node by finding the most recent transition to it
+   */
+  private async getCurrentNodeStartTime(
+    tenantId: string,
+    campaignId: string,
+    nodeId: string
+  ): Promise<Date | null> {
+    try {
+      // Get the most recent transition that resulted in entering this node
+      const transitions = await campaignTransitionRepository.listByCampaignForTenant(
+        tenantId,
+        campaignId
+      );
+
+      // Find the most recent transition where the reason indicates entering this node
+      // or if this is the start node, use the campaign start time
+      const nodeEntryTransition = transitions.find((t) => t.reason?.includes(`to ${nodeId}`));
+
+      if (nodeEntryTransition) {
+        return nodeEntryTransition.occurredAt;
+      }
+
+      // If no transition found, this might be the start node
+      // Get campaign start time as fallback
+      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+      return campaign?.startedAt || null;
+    } catch (error) {
+      logger.error('Failed to get current node start time', {
+        tenantId,
+        campaignId,
+        nodeId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Validates if a transition is valid based on timing constraints
+   */
+  private async isTransitionValid(
+    transition: any,
+    tenantId: string,
+    campaignId: string,
+    currentNodeId: string,
+    eventTime: Date = new Date(),
+    _eventRef?: string
+  ): Promise<boolean> {
+    try {
+      // Get when the current node was entered
+      const nodeStartTime = await this.getCurrentNodeStartTime(tenantId, campaignId, currentNodeId);
+
+      if (!nodeStartTime) {
+        logger.warn('Could not determine node start time, allowing transition', {
+          tenantId,
+          campaignId,
+          currentNodeId,
+        });
+        return true; // Allow transition if we can't determine start time
+      }
+
+      const timeSinceNodeStart = eventTime.getTime() - nodeStartTime.getTime();
+
+      // Check 'within' constraint - event must happen within specified timeframe
+      if (transition.within) {
+        const withinMs = this.calculateDelay(transition.within);
+        if (timeSinceNodeStart > withinMs) {
+          logger.debug('Transition rejected: outside within constraint', {
+            currentNodeId,
+            within: transition.within,
+            timeSinceNodeStart,
+            withinMs,
+            nodeStartTime: nodeStartTime.toISOString(),
+            eventTime: eventTime.toISOString(),
+          });
+          return false;
+        }
+        logger.debug('Transition within constraint satisfied', {
+          within: transition.within,
+          timeSinceNodeStart,
+          withinMs,
+        });
+      }
+
+      // Check 'after' constraint - event must happen after specified delay
+      if (transition.after) {
+        const afterMs = this.calculateDelay(transition.after);
+        if (timeSinceNodeStart < afterMs) {
+          logger.debug('Transition rejected: before after constraint', {
+            currentNodeId,
+            after: transition.after,
+            timeSinceNodeStart,
+            afterMs,
+            nodeStartTime: nodeStartTime.toISOString(),
+            eventTime: eventTime.toISOString(),
+          });
+          return false;
+        }
+        logger.debug('Transition after constraint satisfied', {
+          after: transition.after,
+          timeSinceNodeStart,
+          afterMs,
+        });
+      }
+
+      return true;
+    } catch (error) {
+      logger.error('Error validating transition timing', {
+        tenantId,
+        campaignId,
+        currentNodeId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return true; // Allow transition on validation error to prevent system lockup
+    }
+  }
+
+  /**
+   * Calculates delay in milliseconds from ISO 8601 duration
+   */
+  private calculateDelay(duration: string): number {
+    // Parse ISO 8601 duration (PT0S, PT1H, PT24H, etc.)
+    return parseIsoDuration(duration);
+  }
+
+  /**
+   * Applies quiet hours to a scheduled time
+   */
+  private applyQuietHours(
+    scheduledAt: Date,
+    timezone?: string,
+    quietHours?: { start: string; end: string }
+  ): Date {
+    if (!quietHours || !timezone) {
+      return scheduledAt;
+    }
+
+    // Use the existing utility function
+    return applyQuietHours(scheduledAt, timezone, quietHours);
   }
 
   /**
