@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
 import { createContact } from '@/modules/contact.service';
@@ -7,6 +6,7 @@ import { createLead } from '@/modules/lead.service';
 import { ContactCampaignPlanService } from '@/modules/campaign/contactCampaignPlan.service';
 import { repositories } from '@/repositories';
 import { logger } from '@/libs/logger';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { BulkContactsCreateSchema } from './apiSchema/bulkContacts/bulkContacts.schema';
 
 const basePath = '/bulk-contacts';
@@ -60,7 +60,7 @@ export default async function bulkContactsRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const ownerId = tenantUsers[0].userId;
+        const ownerId = tenantUsers[0]!.userId;
 
         // Create a new lead
         const lead = await createLead(
@@ -110,34 +110,40 @@ export default async function bulkContactsRoutes(fastify: FastifyInstance) {
         for (const email of emailList) {
           try {
             // Extract name from email (text before @)
-            const name = email.split('@')[0];
+            const name = email.split('@')[0]!;
 
             // Create contact
             const contact = await createContact(tenantId, lead.id, {
               name,
               email,
-              leadId: lead.id,
             });
 
             createdContacts.push(contact);
 
             // Create a basic campaign plan
             const campaignPlan = {
-              startNodeId: createId(),
+              version: '1.0',
+              timezone: 'America/Chicago',
+              quietHours: { start: '20:00', end: '08:00' },
+              defaults: {
+                timers: {
+                  no_open_after: 'PT72H',
+                  no_click_after: 'PT24H',
+                },
+              },
+              startNodeId: 'single_email',
               nodes: [
                 {
-                  id: createId(),
-                  type: 'email' as const,
-                  subject: 'test',
-                  content: body,
-                  timing: {
-                    type: 'immediate' as const,
-                  },
-                  nextNodes: [],
+                  id: 'single_email',
+                  channel: 'email',
+                  action: 'send',
+                  subject: `Quick question about depositions at ${leadName}`,
+                  body: `Hi ${body}`,
+                  schedule: { delay: 'PT0S' },
+                  transitions: [],
                 },
               ],
-            };
-
+            } as CampaignPlanOutput;
             // Create campaign
             const campaignResult = await campaignService.persistPlan({
               tenantId,
