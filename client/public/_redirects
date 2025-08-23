@@ -1,0 +1,14 @@
+# force HTTPS
+http://dripiq.ai/* https://dripiq.ai/:splat 301!
+
+# www -> apex
+https://www.dripiq.ai/* https://dripiq.ai/:splat 301!
+http://www.dripiq.ai/*  https://dripiq.ai/:splat 301!
+
+# netlify subdomain -> apex
+https://dripiq.netlify.app/* https://dripiq.ai/:splat 301!
+https://dripiq.netlify.app/*  https://dripiq.ai/:splat 301!
+
+/?:segment  /:segment/ 301!
+
+/*  /index.html  200

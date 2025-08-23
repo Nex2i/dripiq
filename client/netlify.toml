@@ -1,31 +1,82 @@
-# Redirects all requests to index.html to support SPA routing
+# Force HTTPS and canonical apex domain
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+  from = "http://dripiq.ai/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.dripiq.ai/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.dripiq.ai/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+# Redirect Netlify subdomains to apex
+[[redirects]]
+  from = "https://dripiq.netlify.app/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://dripiq.netlify.app/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://dripiq-app.netlify.app/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://dripiq-app.netlify.app/*"
+  to = "https://dripiq.ai/:splat"
+  status = 301
+  force = true
+
+# Optional: trailing slash policy (choose one)
+# This forces trailing slash
+# [[redirects]]
+#   from = "/:path"
+#   to = "/:path/"
+#   status = 301
+#   force = true
+
+# SPA fallback must come last
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 # Default headers for all files
 [[headers]]
-for = "/*"
-[headers.values]
-  X-Frame-Options = "DENY"
-  X-Content-Type-Options = "nosniff"
-  # Ensure HTML documents are not cached to always serve the latest version
-  Cache-Control = "max-age=3600"
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Cache-Control = "max-age=3600"
 
 # Caching policy for versioned assets
 [[headers]]
-for = "/static/js/*"
-[headers.values]
-Cache-Control = "max-age=31536000, immutable"
+  for = "/static/js/*"
+  [headers.values]
+    Cache-Control = "max-age=31536000, immutable"
 
 [[headers]]
-for = "/static/css/*"
-[headers.values]
-Cache-Control = "max-age=31536000, immutable"
+  for = "/static/css/*"
+  [headers.values]
+    Cache-Control = "max-age=31536000, immutable"
 
-# Caching for images and other assets - adjust max-age as needed
+# Caching for images and other assets
 [[headers]]
-for = "/assets/*"
-[headers.values]
-Cache-Control = "max-age=86400" # 1 day; adjust based on how often these assets change
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "max-age=86400"
