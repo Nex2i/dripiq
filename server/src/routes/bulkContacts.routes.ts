@@ -17,6 +17,7 @@ interface BulkContactsRequest {
     leadName: string;
     tenantId: string;
     body: string;
+    ownerId: string;
   };
   Headers: {
     'x-api-key': string;
@@ -40,27 +41,13 @@ export default async function bulkContactsRoutes(fastify: FastifyInstance) {
     },
     handler: async (request: FastifyRequest<BulkContactsRequest>, reply: FastifyReply) => {
       try {
-        const { emails, leadName, tenantId, body } = request.body;
+        const { emails, leadName, tenantId, body, ownerId } = request.body;
 
         logger.info('Processing bulk contacts creation', {
           tenantId,
           leadName,
           emailCount: emails.split(',').length,
         });
-
-        // Get the first user for the tenant to use as lead owner
-        const tenantUsers = await repositories.userTenant.findUsersWithDetailsForTenant(tenantId);
-        if (tenantUsers.length === 0) {
-          logger.warn('No users found for tenant in bulk contacts creation', {
-            tenantId,
-          });
-          return reply.status(400).send({
-            error: 'Bad Request',
-            message: 'No users found for the specified tenant',
-          });
-        }
-
-        const ownerId = tenantUsers[0]!.userId;
 
         // Create a new lead
         const lead = await createLead(
