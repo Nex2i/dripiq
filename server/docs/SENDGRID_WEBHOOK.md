@@ -257,14 +257,14 @@ These are automatically included when sending emails through the existing SendGr
 
 ### Environment Variables
 
-| Variable                               | Default | Description                                         |
-| -------------------------------------- | ------- | --------------------------------------------------- |
+| Variable                               | Default | Description                                             |
+| -------------------------------------- | ------- | ------------------------------------------------------- |
 | `SENDGRID_WEBHOOK_PUBLIC_KEY`          | -       | **Required**: Webhook verification key (base64 encoded) |
-| `SENDGRID_WEBHOOK_ENABLED`             | `true`  | Enable/disable webhook processing                   |
-| `SENDGRID_WEBHOOK_MAX_AGE`             | `600`   | Max timestamp age in seconds (60-3600)              |
-| `SENDGRID_WEBHOOK_DUPLICATE_DETECTION` | `true`  | Enable duplicate event detection                    |
-| `SENDGRID_WEBHOOK_BATCH_PROCESSING`    | `true`  | Process events in parallel                          |
-| `SENDGRID_WEBHOOK_ALLOWED_IPS`         | -       | Comma-separated allowed IP ranges                   |
+| `SENDGRID_WEBHOOK_ENABLED`             | `true`  | Enable/disable webhook processing                       |
+| `SENDGRID_WEBHOOK_MAX_AGE`             | `600`   | Max timestamp age in seconds (60-3600)                  |
+| `SENDGRID_WEBHOOK_DUPLICATE_DETECTION` | `true`  | Enable duplicate event detection                        |
+| `SENDGRID_WEBHOOK_BATCH_PROCESSING`    | `true`  | Process events in parallel                              |
+| `SENDGRID_WEBHOOK_ALLOWED_IPS`         | -       | Comma-separated allowed IP ranges                       |
 
 ### Rate Limiting
 

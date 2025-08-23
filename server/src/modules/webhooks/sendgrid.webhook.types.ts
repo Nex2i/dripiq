@@ -218,6 +218,17 @@ export const SENDGRID_EVENT_TYPES: SendGridEventType[] = [
   'group_resubscribe',
 ];
 
+// Known SendGrid events that we don't record but should not trigger warnings
+export const KNOWN_SENDGRID_EVENTS_NOT_RECORDED: string[] = [
+  'processed', // Email received by SendGrid and queued for delivery
+];
+
+// All known SendGrid events (recorded + non-recorded) for validation
+export const ALL_KNOWN_SENDGRID_EVENTS: string[] = [
+  ...SENDGRID_EVENT_TYPES,
+  ...KNOWN_SENDGRID_EVENTS_NOT_RECORDED,
+];
+
 export const EVENT_NORMALIZATION_MAP: Record<SendGridEventType, EventNormalizationMapping> = {
   delivered: {
     sendgridType: 'delivered',
