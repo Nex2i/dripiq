@@ -1,5 +1,11 @@
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
-import { webhookDeliveryRepository, messageEventRepository } from '@/repositories';
+import { 
+  webhookDeliveryRepository, 
+  messageEventRepository,
+  outboundMessageRepository,
+  contactCampaignRepository 
+} from '@/repositories';
+import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import { SendGridWebhookService } from '../sendgrid.webhook.service';
 import { SendGridWebhookError, SendGridEvent } from '../sendgrid.webhook.types';
 
@@ -13,6 +19,16 @@ jest.mock('@/repositories', () => ({
     createForTenant: jest.fn(),
     findAllForTenant: jest.fn(),
     findBySgEventIdForTenant: jest.fn(),
+    findByIdForTenant: jest.fn(),
+    findByIdsForTenant: jest.fn(),
+  },
+  outboundMessageRepository: {
+    findByIdForTenant: jest.fn(),
+    findByIdsForTenant: jest.fn(),
+  },
+  contactCampaignRepository: {
+    findByIdForTenant: jest.fn(),
+    findByIdsForTenant: jest.fn(),
   },
 }));
 
@@ -25,6 +41,12 @@ jest.mock('@/libs/logger', () => ({
   },
 }));
 
+jest.mock('@/modules/campaign/campaignPlanExecution.service', () => ({
+  campaignPlanExecutionService: {
+    processTransition: jest.fn(),
+  },
+}));
+
 describe('SendGridWebhookService', () => {
   let service: SendGridWebhookService;
   let mockValidator: jest.Mocked<SendGridWebhookValidator>;
@@ -33,6 +55,9 @@ describe('SendGridWebhookService', () => {
     typeof webhookDeliveryRepository
   >;
   const mockMessageEventRepo = messageEventRepository as jest.Mocked<typeof messageEventRepository>;
+  const mockOutboundMessageRepo = outboundMessageRepository as jest.Mocked<typeof outboundMessageRepository>;
+  const mockContactCampaignRepo = contactCampaignRepository as jest.Mocked<typeof contactCampaignRepository>;
+  const mockCampaignPlanExecutionService = campaignPlanExecutionService as jest.Mocked<typeof campaignPlanExecutionService>;
 
   // Shared mock data accessible throughout all test blocks
   const mockHeaders = {
@@ -766,6 +791,349 @@ describe('SendGridWebhookService', () => {
       expect(loggedHeaders).not.toHaveProperty('cookie');
 
       loggerInfoSpy.mockRestore();
+    });
+  });
+
+  describe('campaign transition processing', () => {
+    beforeEach(() => {
+      // Reset all mocks before each test
+      jest.clearAllMocks();
+    });
+
+    it('should trigger campaign transition for successful message events', async () => {
+      // Setup mocks for campaign transition success scenario
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload: JSON.stringify([mockSendGridEvent]),
+        isValid: true,
+      });
+
+      const mockWebhookDelivery = {
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        status: 'received',
+        messageId: null,
+        receivedAt: new Date(),
+        payload: mockSendGridEvent,
+        signature: 'valid-signature',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockMessageEvent = {
+        id: 'message-event-123',
+        tenantId: 'tenant-123',
+        messageId: 'outbound-message-123',
+        type: 'delivered',
+        eventAt: new Date(),
+        sgEventId: 'sg-event-123',
+        data: mockSendGridEvent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockOutboundMessage = {
+        id: 'outbound-message-123',
+        tenantId: 'tenant-123',
+        campaignId: 'campaign-123',
+        contactId: 'contact-123',
+        channel: 'email' as const,
+        status: 'sent',
+        senderIdentityId: null,
+        providerMessageId: null,
+        dedupeKey: 'dedupe-123',
+        content: {},
+        sentAt: new Date(),
+        deliveredAt: null,
+        failedAt: null,
+        errorMessage: null,
+        retryCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockCampaign = {
+        id: 'campaign-123',
+        tenantId: 'tenant-123',
+        leadId: 'lead-123',
+        contactId: 'contact-123',
+        channel: 'email' as const,
+        status: 'active' as const,
+        currentNodeId: 'node-123',
+        planJson: { nodes: [], startNodeId: 'node-123' },
+        planVersion: '1.0',
+        planHash: 'hash-123',
+        senderIdentityId: null,
+        startedAt: null,
+        completedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockCampaign]);
+      mockCampaignPlanExecutionService.processTransition.mockResolvedValue({
+        success: true,
+      });
+
+      // Execute
+      const result = await service.processWebhook(mockHeaders, JSON.stringify([mockSendGridEvent]));
+
+      // Verify webhook processing succeeded
+      expect(result.success).toBe(true);
+      expect(result.successfulEvents).toBe(1);
+
+      // Verify batch queries were used (key performance optimization)
+      expect(mockMessageEventRepo.findByIdsForTenant).toHaveBeenCalledWith(['message-event-123'], 'tenant-123');
+      expect(mockOutboundMessageRepo.findByIdsForTenant).toHaveBeenCalledWith(['outbound-message-123'], 'tenant-123');
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledWith(['campaign-123'], 'tenant-123');
+
+      // Verify campaign transition was triggered
+      expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledWith({
+        tenantId: 'tenant-123',
+        campaignId: 'campaign-123',
+        eventType: 'delivered',
+        currentNodeId: 'node-123',
+        plan: { nodes: [], startNodeId: 'node-123' },
+        eventRef: 'message-event-123',
+      });
+    });
+
+    it('should skip campaign transition for inactive campaigns', async () => {
+      // Setup mocks for inactive campaign scenario
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload: JSON.stringify([mockSendGridEvent]),
+        isValid: true,
+      });
+
+      const mockWebhookDelivery = {
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockMessageEvent = {
+        id: 'message-event-123',
+        tenantId: 'tenant-123',
+        messageId: 'outbound-message-123',
+        type: 'delivered',
+        eventAt: new Date(),
+        sgEventId: 'sg-event-123',
+        data: mockSendGridEvent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockOutboundMessage = {
+        id: 'outbound-message-123',
+        tenantId: 'tenant-123',
+        campaignId: 'campaign-123',
+        contactId: 'contact-123',
+        channel: 'email',
+        status: 'sent',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockInactiveCampaign = {
+        id: 'campaign-123',
+        tenantId: 'tenant-123',
+        leadId: 'lead-123',
+        contactId: 'contact-123',
+        channel: 'email',
+        status: 'draft', // Inactive campaign
+        currentNodeId: 'node-123',
+        planJson: { nodes: [], startNodeId: 'node-123' },
+        planVersion: '1.0',
+        planHash: 'hash-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockInactiveCampaign]);
+
+      // Execute
+      const result = await service.processWebhook(mockHeaders, JSON.stringify([mockSendGridEvent]));
+
+      // Verify webhook processing succeeded
+      expect(result.success).toBe(true);
+      expect(result.successfulEvents).toBe(1);
+
+      // Verify campaign transition was NOT triggered
+      expect(mockCampaignPlanExecutionService.processTransition).not.toHaveBeenCalled();
+    });
+
+    it('should handle campaign transition errors gracefully', async () => {
+      // Setup mocks for campaign transition error scenario
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload: JSON.stringify([mockSendGridEvent]),
+        isValid: true,
+      });
+
+      const mockWebhookDelivery = {
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockMessageEvent = {
+        id: 'message-event-123',
+        tenantId: 'tenant-123',
+        messageId: 'outbound-message-123',
+        type: 'delivered',
+        eventAt: new Date(),
+        sgEventId: 'sg-event-123',
+        data: mockSendGridEvent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockOutboundMessage = {
+        id: 'outbound-message-123',
+        tenantId: 'tenant-123',
+        campaignId: 'campaign-123',
+        contactId: 'contact-123',
+        channel: 'email',
+        status: 'sent',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockCampaign = {
+        id: 'campaign-123',
+        tenantId: 'tenant-123',
+        leadId: 'lead-123',
+        contactId: 'contact-123',
+        channel: 'email',
+        status: 'active',
+        currentNodeId: 'node-123',
+        planJson: { nodes: [], startNodeId: 'node-123' },
+        planVersion: '1.0',
+        planHash: 'hash-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockCampaign]);
+      
+      // Mock transition service to throw an error
+      mockCampaignPlanExecutionService.processTransition.mockRejectedValue(
+        new Error('Transition processing failed')
+      );
+
+      // Execute
+      const result = await service.processWebhook(mockHeaders, JSON.stringify([mockSendGridEvent]));
+
+      // Verify webhook processing still succeeded despite transition error
+      expect(result.success).toBe(true);
+      expect(result.successfulEvents).toBe(1);
+
+      // Verify campaign transition was attempted
+      expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalled();
+    });
+
+    it('should efficiently batch process multiple events with campaign deduplication', async () => {
+      // Setup mocks for multiple events scenario
+      const mockEvents = [
+        { ...mockSendGridEvent, sg_event_id: 'sg1', unique_args: { messageId: 'msg1' } },
+        { ...mockSendGridEvent, sg_event_id: 'sg2', unique_args: { messageId: 'msg2' } },
+        { ...mockSendGridEvent, sg_event_id: 'sg3', unique_args: { messageId: 'msg3' } },
+      ];
+
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload: JSON.stringify(mockEvents),
+        isValid: true,
+      });
+
+      const mockWebhookDelivery = {
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'delivered',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
+
+      const mockMessageEvents = [
+        { id: 'msg-event-1', tenantId: 'tenant-123', messageId: 'outbound-1', type: 'delivered' },
+        { id: 'msg-event-2', tenantId: 'tenant-123', messageId: 'outbound-2', type: 'delivered' },
+        { id: 'msg-event-3', tenantId: 'tenant-123', messageId: 'outbound-3', type: 'delivered' },
+      ] as any;
+
+      const mockOutboundMessages = [
+        { id: 'outbound-1', campaignId: 'campaign-123' },
+        { id: 'outbound-2', campaignId: 'campaign-123' }, // Same campaign
+        { id: 'outbound-3', campaignId: 'campaign-456' }, // Different campaign
+      ] as any;
+
+      const mockCampaigns = [
+        { id: 'campaign-123', status: 'active', currentNodeId: 'node-1', planJson: {} },
+        { id: 'campaign-456', status: 'active', currentNodeId: 'node-2', planJson: {} },
+      ] as any;
+
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockMessageEventRepo.createForTenant
+        .mockResolvedValueOnce(mockMessageEvents[0])
+        .mockResolvedValueOnce(mockMessageEvents[1])
+        .mockResolvedValueOnce(mockMessageEvents[2]);
+      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue(mockMessageEvents);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue(mockOutboundMessages);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue(mockCampaigns);
+      mockCampaignPlanExecutionService.processTransition.mockResolvedValue({ success: true });
+
+      // Execute
+      const result = await service.processWebhook(mockHeaders, JSON.stringify(mockEvents));
+
+      // Verify webhook processing succeeded
+      expect(result.success).toBe(true);
+      expect(result.successfulEvents).toBe(3);
+
+      // Verify efficient batch queries (key performance optimization)
+      expect(mockMessageEventRepo.findByIdsForTenant).toHaveBeenCalledTimes(1);
+      expect(mockOutboundMessageRepo.findByIdsForTenant).toHaveBeenCalledTimes(1);
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledTimes(1);
+
+      // Verify campaign deduplication - should fetch unique campaigns only
+      expect(mockContactCampaignRepo.findByIdsForTenant).toHaveBeenCalledWith(
+        ['campaign-123', 'campaign-456'], // Deduplicated campaign IDs
+        'tenant-123'
+      );
+
+      // Verify all transitions were processed
+      expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledTimes(3);
     });
   });
 });
