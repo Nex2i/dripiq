@@ -56,6 +56,134 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   )
 }
 
+// Editable input component - defined outside to prevent re-creation on each render
+const EditableInput: React.FC<{
+  value: string
+  onChange: (value: string) => void
+  label: string
+  isEditing: boolean
+  type?: 'text' | 'time'
+  placeholder?: string
+  className?: string
+  copiedItem?: string | null
+  onCopy?: (text: string, id: string) => void
+}> = ({
+  value,
+  onChange,
+  label,
+  isEditing,
+  type = 'text',
+  placeholder,
+  className = '',
+  copiedItem,
+  onCopy,
+}) => {
+  if (isEditing) {
+    return (
+      <div className={`border border-gray-300 rounded-lg p-3 ${className}`}>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}:
+        </label>
+        <input
+          type={type}
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h5 className="font-medium text-gray-700">{label}:</h5>
+        {onCopy && (
+          <button
+            onClick={() => onCopy(value, `${label.toLowerCase()}-copy`)}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1.5 rounded transition-colors"
+            title={`Copy ${label.toLowerCase()}`}
+          >
+            {copiedItem === `${label.toLowerCase()}-copy` ? (
+              <Check className="h-3 w-3 text-green-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        )}
+      </div>
+      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+        {value}
+      </p>
+    </div>
+  )
+}
+
+// Editable textarea component - defined outside to prevent re-creation on each render
+const EditableTextarea: React.FC<{
+  value: string
+  onChange: (value: string) => void
+  label: string
+  isEditing: boolean
+  placeholder?: string
+  rows?: number
+  className?: string
+  copiedItem?: string | null
+  onCopy?: (text: string, id: string) => void
+}> = ({
+  value,
+  onChange,
+  label,
+  isEditing,
+  placeholder,
+  rows = 4,
+  className = '',
+  copiedItem,
+  onCopy,
+}) => {
+  if (isEditing) {
+    return (
+      <div className={`border border-gray-300 rounded-lg p-3 ${className}`}>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {label}:
+        </label>
+        <textarea
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={rows}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className={`border border-gray-200 rounded-lg p-3 ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h5 className="font-medium text-gray-700">{label}:</h5>
+        {onCopy && (
+          <button
+            onClick={() => onCopy(value, `${label.toLowerCase()}-copy`)}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1.5 rounded transition-colors"
+            title={`Copy ${label.toLowerCase()}`}
+          >
+            {copiedItem === `${label.toLowerCase()}-copy` ? (
+              <Check className="h-3 w-3 text-green-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        )}
+      </div>
+      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+        {value}
+      </p>
+    </div>
+  )
+}
+
 const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
   isOpen,
   onClose,
@@ -162,126 +290,6 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
     }
   }
 
-  // Editable input component
-  const EditableInput: React.FC<{
-    value: string
-    onChange: (value: string) => void
-    label: string
-    isEditing: boolean
-    type?: 'text' | 'time'
-    placeholder?: string
-    className?: string
-  }> = ({
-    value,
-    onChange,
-    label,
-    isEditing,
-    type = 'text',
-    placeholder,
-    className = '',
-  }) => {
-    if (isEditing) {
-      return (
-        <div className={`border border-gray-300 rounded-lg p-3 ${className}`}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {label}:
-          </label>
-          <input
-            type={type}
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div className={`border border-gray-200 rounded-lg p-3 ${className}`}>
-        <div className="flex items-center justify-between mb-2">
-          <h5 className="font-medium text-gray-700">{label}:</h5>
-          <button
-            onClick={() =>
-              copyToClipboard(value, `${label.toLowerCase()}-copy`)
-            }
-            className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1.5 rounded transition-colors"
-            title={`Copy ${label.toLowerCase()}`}
-          >
-            {copiedItem === `${label.toLowerCase()}-copy` ? (
-              <Check className="h-3 w-3 text-green-600" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
-          </button>
-        </div>
-        <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
-          {value}
-        </p>
-      </div>
-    )
-  }
-
-  // Editable textarea component
-  const EditableTextarea: React.FC<{
-    value: string
-    onChange: (value: string) => void
-    label: string
-    isEditing: boolean
-    placeholder?: string
-    rows?: number
-    className?: string
-  }> = ({
-    value,
-    onChange,
-    label,
-    isEditing,
-    placeholder,
-    rows = 4,
-    className = '',
-  }) => {
-    if (isEditing) {
-      return (
-        <div className={`border border-gray-300 rounded-lg p-3 ${className}`}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {label}:
-          </label>
-          <textarea
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            rows={rows}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      )
-    }
-
-    return (
-      <div className={`border border-gray-200 rounded-lg p-3 ${className}`}>
-        <div className="flex items-center justify-between mb-2">
-          <h5 className="font-medium text-gray-700">{label}:</h5>
-          <button
-            onClick={() =>
-              copyToClipboard(value, `${label.toLowerCase()}-copy`)
-            }
-            className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-1.5 rounded transition-colors"
-            title={`Copy ${label.toLowerCase()}`}
-          >
-            {copiedItem === `${label.toLowerCase()}-copy` ? (
-              <Check className="h-3 w-3 text-green-600" />
-            ) : (
-              <Copy className="h-3 w-3" />
-            )}
-          </button>
-        </div>
-        <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
-          {value}
-        </p>
-      </div>
-    )
-  }
-
   // Render a single node from the campaign plan
   const renderNode = (node: any, index: number) => {
     const nodeFromCurrentData = currentData.nodes?.[index] || node
@@ -322,6 +330,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
               isEditing={true}
               placeholder="e.g., email_intro"
               className="flex-1 mr-4"
+              copiedItem={copiedItem}
+              onCopy={copyToClipboard}
             />
           ) : (
             <h4 className="font-semibold text-gray-900 text-lg">
@@ -343,6 +353,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   label="Subject"
                   isEditing={isEditMode}
                   placeholder="Email subject line"
+                  copiedItem={copiedItem}
+                  onCopy={copyToClipboard}
                 />
               )}
               {nodeFromCurrentData.body !== undefined && (
@@ -355,6 +367,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   isEditing={isEditMode}
                   placeholder="Email message body"
                   rows={6}
+                  copiedItem={copiedItem}
+                  onCopy={copyToClipboard}
                 />
               )}
               {nodeFromCurrentData.senderIdentityId !== undefined && (
@@ -366,6 +380,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   label="Sender Identity Override"
                   isEditing={isEditMode}
                   placeholder="sender-identity-id"
+                  copiedItem={copiedItem}
+                  onCopy={copyToClipboard}
                 />
               )}
               {nodeFromCurrentData.schedule && (
@@ -383,6 +399,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       isEditing={isEditMode}
                       placeholder="PT0S"
                       className="bg-white"
+                      copiedItem={copiedItem}
+                      onCopy={copyToClipboard}
                     />
                   )}
                   {nodeFromCurrentData.schedule.at !== undefined && (
@@ -395,6 +413,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       isEditing={isEditMode}
                       placeholder="2024-01-01T10:00:00Z"
                       className="bg-white"
+                      copiedItem={copiedItem}
+                      onCopy={copyToClipboard}
                     />
                   )}
                 </div>
@@ -672,6 +692,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       isEditing={isEditMode}
                       placeholder="e.g., America/Los_Angeles"
                       className="bg-white"
+                      copiedItem={copiedItem}
+                      onCopy={copyToClipboard}
                     />
                   )}
                   {currentData.startNodeId && (
@@ -682,6 +704,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       isEditing={isEditMode}
                       placeholder="e.g., email_intro"
                       className="bg-white"
+                      copiedItem={copiedItem}
+                      onCopy={copyToClipboard}
                     />
                   )}
                 </div>
@@ -697,6 +721,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       type="time"
                       placeholder="21:00"
                       className="bg-white"
+                      copiedItem={copiedItem}
+                      onCopy={copyToClipboard}
                     />
                     <EditableInput
                       value={currentData.quietHours.end}
@@ -708,6 +734,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       type="time"
                       placeholder="07:30"
                       className="bg-white"
+                      copiedItem={copiedItem}
+                      onCopy={copyToClipboard}
                     />
                   </div>
                 )}
@@ -726,6 +754,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                         isEditing={isEditMode}
                         placeholder="PT72H"
                         className="bg-white"
+                        copiedItem={copiedItem}
+                        onCopy={copyToClipboard}
                       />
                     )}
                     {currentData.defaults.timers.no_click_after && (
@@ -741,6 +771,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                         isEditing={isEditMode}
                         placeholder="PT24H"
                         className="bg-white"
+                        copiedItem={copiedItem}
+                        onCopy={copyToClipboard}
                       />
                     )}
                   </div>
@@ -754,6 +786,8 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                     label="Default Sender Identity"
                     isEditing={isEditMode}
                     placeholder="sender-id"
+                    copiedItem={copiedItem}
+                    onCopy={copyToClipboard}
                   />
                 )}
               </div>
