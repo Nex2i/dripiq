@@ -37,7 +37,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_intro_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_followup_1', after: 'PT72H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -47,7 +46,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_value_add_1', within: 'PT24H' },
+        { on: 'clicked', to: 'stop', within: 'PT24H' },
         { on: 'no_click', to: 'email_followup_1', after: 'PT24H' },
       ],
     },
@@ -62,7 +61,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_followup_1_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_social_proof', after: 'PT96H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -72,7 +70,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_value_add_1', within: 'PT24H' },
+        { on: 'clicked', to: 'stop', within: 'PT24H' },
         { on: 'no_click', to: 'email_social_proof', after: 'PT24H' },
       ],
     },
@@ -87,7 +85,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_value_add_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_roi_focused', after: 'PT72H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -97,7 +94,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_direct_ask', within: 'PT48H' },
+        { on: 'clicked', to: 'stop', within: 'PT48H' },
         { on: 'no_click', to: 'email_roi_focused', after: 'PT48H' },
       ],
     },
@@ -112,7 +109,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_social_proof_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_problem_agitation', after: 'PT96H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -122,7 +118,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_roi_focused', within: 'PT24H' },
+        { on: 'clicked', to: 'stop', within: 'PT24H' },
         { on: 'no_click', to: 'email_problem_agitation', after: 'PT24H' },
       ],
     },
@@ -137,7 +133,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_roi_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_urgency_scarcity', after: 'PT72H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -147,7 +142,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_direct_ask', within: 'PT24H' },
+        { on: 'clicked', to: 'stop', within: 'PT24H' },
         { on: 'no_click', to: 'email_urgency_scarcity', after: 'PT24H' },
       ],
     },
@@ -162,7 +157,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_problem_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_breakup', after: 'PT96H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -172,7 +166,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_urgency_scarcity', within: 'PT24H' },
+        { on: 'clicked', to: 'stop', within: 'PT24H' },
         { on: 'no_click', to: 'email_breakup', after: 'PT24H' },
       ],
     },
@@ -187,7 +181,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_urgency_click', within: 'PT48H' },
         { on: 'no_open', to: 'email_last_chance', after: 'PT48H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -197,7 +190,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'email_direct_ask', within: 'PT24H' },
+        { on: 'clicked', to: 'stop', within: 'PT24H' },
         { on: 'no_click', to: 'email_last_chance', after: 'PT24H' },
       ],
     },
@@ -212,7 +205,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_direct_ask_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_last_chance', after: 'PT72H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -237,7 +229,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'wait_last_chance_click', within: 'PT72H' },
         { on: 'no_open', to: 'email_breakup', after: 'PT72H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
@@ -262,7 +253,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         { on: 'opened', to: 'stop', within: 'PT72H' },
         { on: 'no_open', to: 'stop', after: 'PT72H' },
-        { on: 'delivered', to: 'stop', after: 'PT0S' },
       ],
     },
 
