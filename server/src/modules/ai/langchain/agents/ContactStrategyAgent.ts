@@ -63,11 +63,12 @@ export class ContactStrategyAgent {
 
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `{system_prompt}`],
-      ['human', `{lead_details}`],
-      ['human', `{contact_details}`],
-      ['human', `{partner_details}`],
-      ['human', `{partner_products}`],
-      ['human', `{salesman}`],
+      ['system', `{lead_details}`],
+      ['system', `{contact_details}`],
+      ['system', `{partner_details}`],
+      ['system', `{partner_products}`],
+      ['system', `{salesman}`],
+      ['system', `{output_schema}`],
       ['placeholder', '{agent_scratchpad}'],
     ]);
 
@@ -93,12 +94,7 @@ export class ContactStrategyAgent {
   ): Promise<ContactStrategyResult> {
     let systemPrompt: string;
     try {
-      const basePrompt = promptHelper.getPromptAndInject('contact_strategy', {
-        output_schema: JSON.stringify(z.toJSONSchema(campaignPlanOutputSchema), null, 2),
-      });
-
-      // Add explicit JSON mode instruction
-      systemPrompt = `${basePrompt}\n\nIMPORTANT: You must respond with valid JSON only.`;
+      systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
     } catch (error) {
       logger.error('Error preparing prompt variables', error);
       throw new Error(
@@ -114,6 +110,7 @@ export class ContactStrategyAgent {
         partner_details: await this.getPartnerDetails(tenantId),
         partner_products: await this.getPartnerProducts(tenantId, leadId),
         salesman: await this.getSalesman(tenantId, leadId),
+        output_schema: `${JSON.stringify(z.toJSONSchema(campaignPlanOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
       });
 
       let finalResponse = getContentFromMessage(result.output);
