@@ -1,10 +1,48 @@
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
 /**
- * Static campaign template with 10 touchpoints and up to 15 total emails.
+ * Constants for campaign timing and events to ensure consistency
+ */
+export const CAMPAIGN_CONSTANTS = {
+  // Timing constants
+  IMMEDIATE: 'PT0S',
+  DEFAULT_EMAIL_DELAY: 'PT24H', // 24 hours default delay between emails
+  ENGAGEMENT_WINDOW: 'PT72H', // 3 days to wait for engagement (opens)
+  CLICK_WINDOW: 'PT24H', // 1 day to wait for clicks after opens
+  SHORT_ENGAGEMENT_WINDOW: 'PT48H', // 2 days for urgent emails
+
+  // Event types
+  EVENTS: {
+    OPENED: 'opened',
+    CLICKED: 'clicked',
+    NO_OPEN: 'no_open',
+    NO_CLICK: 'no_click',
+    DELIVERED: 'delivered',
+  } as const,
+
+  // Common node IDs
+  NODES: {
+    STOP: 'stop',
+  } as const,
+
+  // Default timers
+  DEFAULT_TIMERS: {
+    NO_OPEN_AFTER: 'PT72H',
+    NO_CLICK_AFTER: 'PT24H',
+  } as const,
+} as const;
+
+/**
+ * Static campaign template with 10 touchpoints and exactly 10 emails.
  * This template defines the complete campaign structure including timing,
  * transitions, and flow logic. The AI will only provide subject lines and
  * bodies for the email nodes.
+ *
+ * Key features:
+ * - 24-hour default delay between emails if no engagement
+ * - Complete path through all emails even if never opened/clicked
+ * - Consistent timing using constants
+ * - All emails have delivered -> stop transition for bounce handling
  */
 export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
   nodes: Array<
@@ -21,8 +59,8 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
   },
   defaults: {
     timers: {
-      no_open_after: 'PT72H',
-      no_click_after: 'PT24H',
+      no_open_after: CAMPAIGN_CONSTANTS.DEFAULT_TIMERS.NO_OPEN_AFTER,
+      no_click_after: CAMPAIGN_CONSTANTS.DEFAULT_TIMERS.NO_CLICK_AFTER,
     },
   },
   startNodeId: 'email_intro',
@@ -33,10 +71,23 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_intro_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_followup_1', after: 'PT72H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_intro_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_followup_1',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -46,8 +97,16 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_followup_1', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_value_add_1',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_followup_1',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
@@ -57,10 +116,23 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_followup_1_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_social_proof', after: 'PT96H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_followup_1_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_social_proof',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -70,8 +142,16 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_social_proof', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_value_add_1',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_social_proof',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
@@ -81,10 +161,23 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_value_add_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_roi_focused', after: 'PT72H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_value_add_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_roi_focused',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -94,8 +187,16 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT48H' },
-        { on: 'no_click', to: 'email_roi_focused', after: 'PT48H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_direct_ask',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_roi_focused',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
@@ -105,10 +206,23 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_social_proof_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_problem_agitation', after: 'PT96H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_social_proof_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_problem_agitation',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -118,8 +232,16 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_problem_agitation', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_roi_focused',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_problem_agitation',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
@@ -129,10 +251,23 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_roi_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_urgency_scarcity', after: 'PT72H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_roi_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_urgency_scarcity',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -142,21 +277,42 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_urgency_scarcity', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_direct_ask',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_urgency_scarcity',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
-    // Additional Email: Problem Agitation (for persistent non-engagers)
+    // Email: Problem Agitation (for persistent non-engagers)
     {
       id: 'email_problem_agitation',
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_problem_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_breakup', after: 'PT96H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_problem_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_urgency_scarcity',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -166,21 +322,42 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_breakup', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_urgency_scarcity',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_urgency_scarcity',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
-    // Additional Email: Urgency/Scarcity
+    // Email: Urgency/Scarcity
     {
       id: 'email_urgency_scarcity',
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_urgency_click', within: 'PT48H' },
-        { on: 'no_open', to: 'email_last_chance', after: 'PT48H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_urgency_click',
+          within: CAMPAIGN_CONSTANTS.SHORT_ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_last_chance',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -190,21 +367,42 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_last_chance', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_direct_ask',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_last_chance',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
-    // Additional Email: Direct Ask (for engaged prospects)
+    // Email: Direct Ask (for engaged prospects)
     {
       id: 'email_direct_ask',
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_direct_ask_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_last_chance', after: 'PT72H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_direct_ask_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_last_chance',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -214,21 +412,42 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_last_chance', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_last_chance',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
-    // Additional Email: Last Chance
+    // Email: Last Chance
     {
       id: 'email_last_chance',
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'wait_last_chance_click', within: 'PT72H' },
-        { on: 'no_open', to: 'email_breakup', after: 'PT72H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_last_chance_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_breakup',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
@@ -238,8 +457,16 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'wait',
       transitions: [
-        { on: 'clicked', to: 'stop', within: 'PT24H' },
-        { on: 'no_click', to: 'email_breakup', after: 'PT24H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_breakup',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
       ],
     },
 
@@ -249,16 +476,29 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: 'PT0S' },
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
       transitions: [
-        { on: 'opened', to: 'stop', within: 'PT72H' },
-        { on: 'no_open', to: 'stop', after: 'PT72H' },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
       ],
     },
 
     // Stop node
     {
-      id: 'stop',
+      id: CAMPAIGN_CONSTANTS.NODES.STOP,
       channel: 'email',
       action: 'stop',
       transitions: [],
@@ -286,7 +526,6 @@ export const EMAIL_NODE_DESCRIPTIONS = {
   email_roi_focused: 'ROI and business impact focused email with quantified benefits',
   email_problem_agitation: 'Problem agitation email highlighting pain points and consequences',
   email_urgency_scarcity: 'Urgency and scarcity email creating time-sensitive motivation',
-
   email_direct_ask: 'Direct ask email with clear call-to-action for engaged prospects',
   email_last_chance: 'Last chance email with final value proposition and urgency',
   email_breakup: 'Professional breakup email maintaining relationship for future opportunities',
@@ -338,5 +577,68 @@ export function validateCampaignTemplate(): {
     touchpointCount,
     emailCount,
     errors,
+  };
+}
+
+/**
+ * Analyzes the no-open email path to ensure there's always a way through the campaign
+ */
+export function analyzeNoOpenPath(): {
+  path: string[];
+  isComplete: boolean;
+  totalDelay: string;
+  issues: string[];
+} {
+  const path: string[] = [];
+  const issues: string[] = [];
+  let currentNode = 'email_intro';
+  const visitedNodes = new Set<string>();
+
+  while (
+    currentNode &&
+    currentNode !== CAMPAIGN_CONSTANTS.NODES.STOP &&
+    !visitedNodes.has(currentNode)
+  ) {
+    visitedNodes.add(currentNode);
+    const node = STATIC_CAMPAIGN_TEMPLATE.nodes.find((n) => n.id === currentNode);
+
+    if (!node) {
+      issues.push(`Node ${currentNode} not found`);
+      break;
+    }
+
+    if (node.action === 'send') {
+      path.push(currentNode);
+    }
+
+    const noOpenTransition = node.transitions?.find(
+      (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN
+    );
+    if (noOpenTransition) {
+      currentNode = noOpenTransition.to;
+
+      // Validate delay is 24H for emails
+      if (
+        node.action === 'send' &&
+        'after' in noOpenTransition &&
+        noOpenTransition.after !== CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY
+      ) {
+        issues.push(
+          `${node.id} has non-standard delay: ${noOpenTransition.after} (expected ${CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY})`
+        );
+      }
+    } else {
+      if (node.action === 'send' && currentNode !== 'email_breakup') {
+        issues.push(`${currentNode} missing no_open transition`);
+      }
+      break;
+    }
+  }
+
+  return {
+    path,
+    isComplete: currentNode === CAMPAIGN_CONSTANTS.NODES.STOP,
+    totalDelay: `${path.length * 24} hours (${path.length} emails × 24h each)`,
+    issues,
   };
 }
