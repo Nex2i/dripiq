@@ -29,6 +29,7 @@ import { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepos
 import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
 import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
+import { CalendarLinkClickRepository } from './entities/CalendarLinkClickRepository';
 
 // Base repositories
 export { BaseRepository } from './base/BaseRepository';
