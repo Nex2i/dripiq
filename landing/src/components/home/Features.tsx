@@ -1,4 +1,5 @@
 import { Brain, Zap, Target, BarChart3, Shield, Puzzle } from 'lucide-react'
+import { APP_URLS } from '@/constants/app'
 
 export default function Features() {
   const features = [
@@ -101,7 +102,7 @@ export default function Features() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href={import.meta.env.VITE_APP_URL + '/signup'}
+              href={APP_URLS.SIGNUP}
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors"
             >
               Start Free Trial

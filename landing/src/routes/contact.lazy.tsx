@@ -1,6 +1,7 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { Mail, MessageCircle, Calendar } from 'lucide-react'
 import SEOHead from '@/components/shared/SEOHead'
+import { APP_URLS } from '@/constants/app'
 
 const ContactPage = () => {
   return (
@@ -129,13 +130,13 @@ const ContactPage = () => {
             </p>
             <div className="space-y-4">
               <a
-                href={import.meta.env.VITE_APP_URL + '/signup'}
+                href={APP_URLS.SIGNUP}
                 className="block w-full text-center py-3 px-6 rounded-lg font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors"
               >
                 Start Free Trial
               </a>
               <a
-                href={import.meta.env.VITE_APP_URL + '/login'}
+                href={APP_URLS.LOGIN}
                 className="block w-full text-center py-3 px-6 rounded-lg font-medium text-primary-600 border border-primary-600 hover:bg-primary-50 transition-colors"
               >
                 Sign In

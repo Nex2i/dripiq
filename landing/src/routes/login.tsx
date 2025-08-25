@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { APP_URLS } from '@/constants/app'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: () => {
     // Redirect to the main client application
     if (typeof window !== 'undefined') {
-      window.location.href = import.meta.env.VITE_APP_URL + '/login'
+      window.location.href = APP_URLS.LOGIN
     }
   },
   component: () => (
@@ -14,7 +15,7 @@ export const Route = createFileRoute('/login')({
         <p className="text-surface-600">
           If you are not redirected automatically,{' '}
           <a
-            href={import.meta.env.VITE_APP_URL + '/login'}
+            href={APP_URLS.LOGIN}
             className="text-primary-600 hover:text-primary-700 underline"
           >
             click here

@@ -1,6 +1,7 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { Check } from 'lucide-react'
 import SEOHead from '@/components/shared/SEOHead'
+import { APP_URLS } from '@/constants/app'
 
 const PricingPage = () => {
   const plans = [
@@ -15,7 +16,7 @@ const PricingPage = () => {
         'Salesforce integration',
       ],
       cta: 'Start Free',
-      href: import.meta.env.VITE_APP_URL + '/signup',
+      href: APP_URLS.SIGNUP,
       popular: false,
     },
     {
@@ -32,7 +33,7 @@ const PricingPage = () => {
         'Analytics dashboard',
       ],
       cta: 'Start Trial',
-      href: import.meta.env.VITE_APP_URL + '/signup?plan=pro',
+      href: APP_URLS.SIGNUP_PRO,
       popular: true,
     },
     {

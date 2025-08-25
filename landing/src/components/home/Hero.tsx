@@ -1,4 +1,5 @@
 import { ArrowRight, Play } from 'lucide-react'
+import { APP_URLS } from '@/constants/app'
 
 export default function Hero() {
   return (
@@ -31,7 +32,7 @@ export default function Hero() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
               <a
-                href={import.meta.env.VITE_APP_URL + '/signup'}
+                href={APP_URLS.SIGNUP}
                 className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Start Free Trial

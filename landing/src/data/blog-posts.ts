@@ -1,3 +1,5 @@
+import { APP_URLS } from '@/constants/app'
+
 export interface BlogPost {
   slug: string
   title: string
@@ -94,7 +96,7 @@ As AI technology continues to evolve, we can expect to see even more sophisticat
 
 dripIq makes it easy to get started with AI sales automation. Our platform specializes in lead re-engagement, using AI to identify the best dormant leads and orchestrate personalized re-engagement campaigns.
 
-Ready to transform your sales process with AI? [Start your free trial today](${import.meta.env.VITE_APP_URL}/signup) and see how dripIq can help you turn lost leads into warm prospects.
+Ready to transform your sales process with AI? [Start your free trial today](${APP_URLS.SIGNUP}) and see how dripIq can help you turn lost leads into warm prospects.
     `,
     author: 'dripIq Team',
     publishedAt: '2024-01-15',
@@ -298,7 +300,7 @@ While these strategies can be implemented manually in Salesforce, AI-powered pla
 - **Optimal Timing**: AI determines the best time to reach each lead
 - **Performance Optimization**: Continuous learning and improvement
 
-Ready to transform your lead re-engagement strategy? [Try dripIq free for 14 days](${import.meta.env.VITE_APP_URL}/signup) and see how AI can help you turn dormant leads into active opportunities.
+Ready to transform your lead re-engagement strategy? [Try dripIq free for 14 days](${APP_URLS.SIGNUP}) and see how AI can help you turn dormant leads into active opportunities.
     `,
     author: 'Sarah Chen, Sales Strategy Expert',
     publishedAt: '2024-01-10',
@@ -555,7 +557,7 @@ Ready to transform your cold leads into warm opportunities? Here's your action p
 
 For even better results, consider using an AI-powered platform like dripIq to automate and optimize the entire process. Our AI analyzes your leads and automatically implements these tactics at scale.
 
-[Start your free trial](${import.meta.env.VITE_APP_URL}/signup) and see how AI can help you convert cold leads with 300% better response rates.
+[Start your free trial](${APP_URLS.SIGNUP}) and see how AI can help you convert cold leads with 300% better response rates.
     `,
     author: 'Mike Rodriguez, Conversion Specialist',
     publishedAt: '2024-01-05',
