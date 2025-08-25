@@ -52,5 +52,9 @@ export class CalendarUrlWrapper {
 }
 
 // Default instance using environment variable or localhost fallback
-const defaultBaseUrl = process.env.BASE_URL || process.env.API_BASE_URL || 'http://localhost:3000';
+const defaultBaseUrl = process.env.API_URL;
+if (!defaultBaseUrl) {
+  throw new Error('API_URL is not set');
+}
+
 export const calendarUrlWrapper = new CalendarUrlWrapper(defaultBaseUrl);
