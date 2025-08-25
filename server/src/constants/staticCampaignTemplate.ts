@@ -125,7 +125,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
         },
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
-          to: 'email_social_proof',
+          to: 'email_followup_2',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
         {
@@ -139,6 +139,51 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
     // Touchpoint 4: Wait for click on first follow-up
     {
       id: 'wait_followup_1_click',
+      channel: 'email',
+      action: 'wait',
+      transitions: [
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
+          to: 'email_value_add',
+          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
+          to: 'email_followup_2',
+          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
+        },
+      ],
+    },
+
+    // Second Follow-up Email (persistence)
+    {
+      id: 'email_followup_2',
+      channel: 'email',
+      action: 'send',
+      requiresContent: true,
+      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      transitions: [
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
+          to: 'wait_followup_2_click',
+          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          to: 'email_social_proof',
+          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
+        },
+        {
+          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
+          to: CAMPAIGN_CONSTANTS.NODES.STOP,
+          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
+        },
+      ],
+    },
+
+    // Wait for second follow-up engagement
+    {
+      id: 'wait_followup_2_click',
       channel: 'email',
       action: 'wait',
       transitions: [
