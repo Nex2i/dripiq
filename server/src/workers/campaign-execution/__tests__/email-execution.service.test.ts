@@ -1,11 +1,5 @@
 import { EmailExecutionService } from '../email-execution.service';
-import {
-  outboundMessageRepository,
-  emailSenderIdentityRepository,
-  scheduledActionRepository,
-} from '@/repositories';
-import { unsubscribeService } from '@/modules/unsubscribe';
-import { sendgridClient } from '@/libs/email/sendgrid.client';
+import { scheduledActionRepository } from '@/repositories';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
@@ -87,17 +81,9 @@ describe('EmailExecutionService', () => {
   const mockNodeId = 'node-789';
   const mockMessageId = 'message-abc';
 
-  const mockOutboundMessageRepo = outboundMessageRepository as jest.Mocked<
-    typeof outboundMessageRepository
-  >;
-  const mockEmailSenderIdentityRepo = emailSenderIdentityRepository as jest.Mocked<
-    typeof emailSenderIdentityRepository
-  >;
   const mockScheduledActionRepo = scheduledActionRepository as jest.Mocked<
     typeof scheduledActionRepository
   >;
-  const mockUnsubscribeService = unsubscribeService as jest.Mocked<typeof unsubscribeService>;
-  const mockSendgridClient = sendgridClient as jest.Mocked<typeof sendgridClient>;
   const mockParseIsoDuration = parseIsoDuration as jest.MockedFunction<typeof parseIsoDuration>;
 
   beforeEach(() => {
@@ -470,9 +456,7 @@ describe('EmailExecutionService', () => {
 
     it('should handle parseIsoDuration errors gracefully', async () => {
       // Setup: Plan with transitions that will cause parseIsoDuration to throw
-      const plan = createMockPlan([
-        { on: 'no_open', to: 'next-node', after: 'INVALID_DURATION' },
-      ]);
+      const plan = createMockPlan([{ on: 'no_open', to: 'next-node', after: 'INVALID_DURATION' }]);
 
       // Mock parseIsoDuration to throw for invalid duration
       mockParseIsoDuration.mockImplementationOnce(() => {
@@ -496,7 +480,7 @@ describe('EmailExecutionService', () => {
       // This test validates that the TIMEOUT_EVENT_TYPES constant is used correctly
       const plan = createMockPlan([
         { on: 'delivered', to: 'next-node', after: 'PT1H' }, // Not a timeout event
-        { on: 'opened', to: 'other-node', after: 'PT2H' }, // Not a timeout event  
+        { on: 'opened', to: 'other-node', after: 'PT2H' }, // Not a timeout event
         { on: 'no_open', to: 'timeout-node', after: 'PT10M' }, // IS a timeout event
       ]);
 
@@ -512,7 +496,7 @@ describe('EmailExecutionService', () => {
 
       // Verify that parseIsoDuration was called for the timeout transition
       expect(mockParseIsoDuration).toHaveBeenCalledWith('PT10M');
-      
+
       // Verify that some jobs were scheduled (validates error handling works)
       expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalled();
     });
@@ -537,7 +521,7 @@ describe('EmailExecutionService', () => {
 
       // Verify both timeouts were scheduled
       expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
-      
+
       // Should have been called with both event types
       const calls = mockScheduledActionRepo.createForTenant.mock.calls;
       const eventTypes = calls.map((call: any) => call[1].payload.eventType);

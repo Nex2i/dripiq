@@ -160,29 +160,27 @@ describe('Timeout Scheduling Integration', () => {
 
     // Extract the scheduled times from the mock calls
     const scheduledCalls = scheduledActionRepository.createForTenant.mock.calls;
-    
+
     // Find the no_open timeout call
-    const noOpenCall = scheduledCalls.find(
-      (call: any) => call[1].payload.eventType === 'no_open'
-    );
-    
+    const noOpenCall = scheduledCalls.find((call: any) => call[1].payload.eventType === 'no_open');
+
     expect(noOpenCall).toBeDefined();
-    
+
     // Verify the no_open timeout is scheduled for 10 minutes (600,000 ms) from now
     const scheduledTime = new Date(noOpenCall[1].scheduledAt).getTime();
     const expectedTime = startTime + parseIsoDuration('PT10M'); // 10 minutes
     const tolerance = 5000; // 5 second tolerance for test execution time
-    
+
     expect(scheduledTime).toBeGreaterThanOrEqual(expectedTime - tolerance);
     expect(scheduledTime).toBeLessThanOrEqual(expectedTime + tolerance);
 
-    // Test wait node - should use specific PT24H timing for no_click  
+    // Test wait node - should use specific PT24H timing for no_click
     jest.clearAllMocks();
     scheduledActionRepository.createForTenant.mockResolvedValue({ id: 'action-456' });
-    
+
     const waitNodeId = 'c0x44yz2omlxpvoef3hjid4m';
     const startTime2 = Date.now();
-    
+
     await (service as any).scheduleTimeoutJobs(
       mockCampaignId,
       waitNodeId,
@@ -191,18 +189,18 @@ describe('Timeout Scheduling Integration', () => {
     );
 
     const scheduledCalls2 = scheduledActionRepository.createForTenant.mock.calls;
-    
+
     // Find the no_click timeout call
     const noClickCall = scheduledCalls2.find(
       (call: any) => call[1].payload.eventType === 'no_click'
     );
-    
+
     expect(noClickCall).toBeDefined();
-    
+
     // Verify the no_click timeout is scheduled for 24 hours from now
     const scheduledTime2 = new Date(noClickCall[1].scheduledAt).getTime();
     const expectedTime2 = startTime2 + parseIsoDuration('PT24H'); // 24 hours
-    
+
     expect(scheduledTime2).toBeGreaterThanOrEqual(expectedTime2 - tolerance);
     expect(scheduledTime2).toBeLessThanOrEqual(expectedTime2 + tolerance);
   });

@@ -27,7 +27,7 @@ import { JOB_NAMES } from '@/constants/queues';
 
 // Timeout event types that should trigger timeout jobs
 const TIMEOUT_EVENT_TYPES = ['no_open', 'no_click'] as const;
-type TimeoutEventType = typeof TIMEOUT_EVENT_TYPES[number];
+type TimeoutEventType = (typeof TIMEOUT_EVENT_TYPES)[number];
 
 export interface EmailExecutionParams {
   tenantId: string;
@@ -441,15 +441,18 @@ export class EmailExecutionService {
             scheduledAt: new Date(Date.now() + afterDelayMs).toISOString(),
           });
         } catch (error) {
-          logger.error('[EmailExecutionService] Failed to parse transition timing, skipping timeout job', {
-            tenantId: this.tenantId,
-            campaignId,
-            nodeId,
-            messageId,
-            eventType: eventType as TimeoutEventType,
-            after: transition.after,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
+          logger.error(
+            '[EmailExecutionService] Failed to parse transition timing, skipping timeout job',
+            {
+              tenantId: this.tenantId,
+              campaignId,
+              nodeId,
+              messageId,
+              eventType: eventType as TimeoutEventType,
+              after: transition.after,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }
+          );
           // Continue to next transition instead of failing completely
         }
       }
