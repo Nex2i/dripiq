@@ -95,6 +95,50 @@ export function validateEmailContentIds(
 }
 
 /**
+ * Filter function to remove invalid email IDs and log errors
+ * This provides a safety net for non-deterministic AI behavior
+ */
+export function filterAndLogInvalidEmailIds(
+  emailContent: EmailContentOutput,
+  expectedNodeIds: string[]
+): EmailContentOutput {
+  const originalEmails = emailContent.emails;
+  const validEmails = originalEmails.filter((email) => expectedNodeIds.includes(email.id));
+  const invalidEmails = originalEmails.filter((email) => !expectedNodeIds.includes(email.id));
+
+  if (invalidEmails.length > 0) {
+    // Import logger here to avoid circular dependencies
+    const { logger } = require('@/libs/logger');
+    logger.error('AI generated invalid email IDs - filtering them out', {
+      invalidIds: invalidEmails.map((e) => e.id),
+      validIds: validEmails.map((e) => e.id),
+      expectedIds: expectedNodeIds,
+      totalOriginal: originalEmails.length,
+      totalFiltered: validEmails.length,
+      removedCount: invalidEmails.length,
+    });
+  }
+
+  // Check if we have at least some valid emails after filtering
+  if (validEmails.length === 0) {
+    const { logger } = require('@/libs/logger');
+    logger.error('All AI-generated emails were invalid - no valid content remaining', {
+      originalIds: originalEmails.map((e) => e.id),
+      expectedIds: expectedNodeIds,
+    });
+  }
+
+  return {
+    ...emailContent,
+    emails: validEmails,
+    metadata: {
+      ...emailContent.metadata,
+      totalEmails: validEmails.length,
+    },
+  };
+}
+
+/**
  * Helper to create a default email content object
  */
 export function createDefaultEmailContent(

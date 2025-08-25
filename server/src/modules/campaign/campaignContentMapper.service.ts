@@ -6,7 +6,10 @@ import {
 } from '@/constants/staticCampaignTemplate';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { EmailContentOutput, EmailContent } from '@/modules/ai/schemas/emailContentSchema';
-import { validateEmailContentIds } from '@/modules/ai/schemas/emailContentSchema';
+import {
+  validateEmailContentIds,
+  filterAndLogInvalidEmailIds,
+} from '@/modules/ai/schemas/emailContentSchema';
 
 /**
  * Service responsible for mapping AI-generated email content to the static campaign template.
@@ -35,12 +38,24 @@ export class CampaignContentMapperService {
       throw new Error(`Template validation failed: ${templateValidation.errors.join(', ')}`);
     }
 
-    // Validate email content IDs
-    const contentValidation = validateEmailContentIds(emailContent, EMAIL_CONTENT_NODE_IDS);
+    // Filter out invalid email IDs and log errors (post-processing safety net)
+    const filteredEmailContent = filterAndLogInvalidEmailIds(emailContent, EMAIL_CONTENT_NODE_IDS);
+
+    // Check if we have any valid emails after filtering
+    if (filteredEmailContent.emails.length === 0) {
+      logger.error('No valid email content remaining after filtering', {
+        originalEmails: emailContent.emails.map((e) => e.id),
+        expectedIds: EMAIL_CONTENT_NODE_IDS,
+      });
+      throw new Error('No valid email content remaining after filtering out invalid IDs');
+    }
+
+    // Validate email content IDs (should now only fail on duplicates since we filtered invalid IDs)
+    const contentValidation = validateEmailContentIds(filteredEmailContent, EMAIL_CONTENT_NODE_IDS);
     if (!contentValidation.isValid) {
-      logger.error('Email content validation failed', {
+      logger.error('Email content validation failed after filtering', {
         errors: contentValidation.errors,
-        providedEmails: emailContent.emails.map((e) => e.id),
+        providedEmails: filteredEmailContent.emails.map((e) => e.id),
         expectedIds: EMAIL_CONTENT_NODE_IDS,
       });
       throw new Error(`Email content validation failed: ${contentValidation.errors.join(', ')}`);
@@ -48,7 +63,7 @@ export class CampaignContentMapperService {
 
     // Create a map of email content by node ID for efficient lookup
     const contentMap = new Map<string, EmailContent>();
-    for (const email of emailContent.emails) {
+    for (const email of filteredEmailContent.emails) {
       contentMap.set(email.id, email);
     }
 
