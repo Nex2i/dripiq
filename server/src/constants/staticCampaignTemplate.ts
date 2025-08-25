@@ -5,7 +5,7 @@ import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStr
  */
 export const CAMPAIGN_CONSTANTS = {
   // Timing constants
-  MINIMUM_DELAY: 'PT1M', // Minimum 1 minute delay to prevent immediate execution
+  MINIMUM_DELAY: 'PT10S', // Minimum 10 seconds delay to prevent immediate execution
   DEFAULT_EMAIL_DELAY: 'PT24H', // 24 hours default delay between emails
   ENGAGEMENT_WINDOW: 'PT48H', // 2 days to wait for engagement (opens)
   CLICK_WINDOW: 'PT24H', // 1 day to wait for clicks after opens
