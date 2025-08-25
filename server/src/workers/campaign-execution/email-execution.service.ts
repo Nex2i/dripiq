@@ -23,6 +23,7 @@ import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams } from '@/types/timeout.types';
+import { JOB_NAMES } from '@/constants/queues';
 
 export interface EmailExecutionParams {
   tenantId: string;
@@ -355,7 +356,7 @@ export class EmailExecutionService {
   private generateTimeoutJobId(params: TimeoutJobParams): string {
     // Create a deterministic string from the parameters
     const components = [
-      'timeout',
+      JOB_NAMES.campaign_execution.timeout,
       params.campaignId,
       params.nodeId,
       params.eventType,
@@ -432,7 +433,7 @@ export class EmailExecutionService {
       // Create scheduled_action record within transaction with job ID already set
       const scheduledAction = await scheduledActionRepository.createForTenant(this.tenantId, {
         campaignId: params.campaignId,
-        actionType: 'timeout',
+        actionType: JOB_NAMES.campaign_execution.timeout,
         scheduledAt: params.scheduledAt,
         payload: {
           nodeId: params.nodeId,
@@ -445,7 +446,7 @@ export class EmailExecutionService {
       try {
         // Enqueue BullMQ job
         const timeoutQueue = getQueue('campaign_execution');
-        await timeoutQueue.add('timeout', params, {
+        await timeoutQueue.add(JOB_NAMES.campaign_execution.timeout, params, {
           delay: delayMs,
           jobId,
           ...TIMEOUT_JOB_OPTIONS,
