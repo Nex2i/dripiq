@@ -1,44 +1,44 @@
 # Force HTTPS and canonical apex domain
 [[redirects]]
-  from = "http://dripiq.ai/*"
-  to = "https://dripiq.ai/:splat"
+  from = "http://app.dripiq.ai/*"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "https://www.dripiq.ai/*"
-  to = "https://dripiq.ai/:splat"
+  from = "https://www.app.dripiq.ai/*"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "http://www.dripiq.ai/*"
-  to = "https://dripiq.ai/:splat"
+  from = "http://www.app.dripiq.ai/*"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
 # Redirect Netlify subdomains to apex
 [[redirects]]
   from = "https://dripiq.netlify.app/*"
-  to = "https://dripiq.ai/:splat"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
   from = "http://dripiq.netlify.app/*"
-  to = "https://dripiq.ai/:splat"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
   from = "https://dripiq-app.netlify.app/*"
-  to = "https://dripiq.ai/:splat"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
   from = "http://dripiq-app.netlify.app/*"
-  to = "https://dripiq.ai/:splat"
+  to = "https://app.dripiq.ai/:splat"
   status = 301
   force = true
 
