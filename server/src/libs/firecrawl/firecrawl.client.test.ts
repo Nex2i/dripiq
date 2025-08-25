@@ -1,4 +1,8 @@
 // Mock environment variables before importing
+import { createSignedJwt } from '../jwt';
+import firecrawlClient from './firecrawl.client';
+import '../../extensions/string.extensions';
+
 const originalEnv = process.env;
 process.env = {
   ...originalEnv,
@@ -20,10 +24,6 @@ jest.mock('@mendable/firecrawl-js', () => {
     scrapeUrl: mockScrapeUrl,
   }));
 });
-
-import { createSignedJwt } from '../jwt';
-import firecrawlClient from './firecrawl.client';
-import '../../extensions/string.extensions';
 
 // Mock JWT creation
 jest.mock('../jwt', () => ({
