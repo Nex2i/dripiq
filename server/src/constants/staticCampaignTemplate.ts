@@ -83,7 +83,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_followup_1',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -124,7 +123,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_social_proof',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -165,7 +163,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_roi_focused',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -206,7 +203,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_problem_agitation',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -247,7 +243,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_urgency_scarcity',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -288,7 +283,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_urgency_scarcity',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -329,7 +323,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_last_chance',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -370,7 +363,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_last_chance',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -411,7 +403,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: 'email_breakup',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
@@ -452,7 +443,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           to: CAMPAIGN_CONSTANTS.NODES.STOP,
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
-
       ],
     },
 
