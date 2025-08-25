@@ -22,7 +22,7 @@ import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
-import type { TimeoutJobParams } from '@/types/timeout.types';
+import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
 import { JOB_NAMES } from '@/constants/queues';
 
 // Timeout event types that should trigger timeout jobs
@@ -560,7 +560,11 @@ export class EmailExecutionService {
       try {
         // Enqueue BullMQ job
         const timeoutQueue = getQueue('campaign_execution');
-        await timeoutQueue.add(JOB_NAMES.campaign_execution.timeout, params, {
+        const timeoutJobPayload: TimeoutJobPayload = {
+          tenantId: this.tenantId,
+          ...params,
+        };
+        await timeoutQueue.add(JOB_NAMES.campaign_execution.timeout, timeoutJobPayload, {
           delay: delayMs,
           jobId,
           ...TIMEOUT_JOB_OPTIONS,
