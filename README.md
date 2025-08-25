@@ -1,6 +1,10 @@
 # 🚀 DripIQ
 [Production URL](https://dripiq.ai)
 
+## Production Deployed status
+[![Landing Page Status](https://api.netlify.com/api/v1/badges/db5a9b51-49f9-4536-8089-1f3e9aeed18f/deploy-status)](https://app.netlify.com/projects/dripiqlanding/deploys)
+ [![Main App Status](https://api.netlify.com/api/v1/badges/2a1b21a4-335d-41f6-bc97-ca2953815e63/deploy-status)](https://app.netlify.com/projects/dripiq-app/deploys)
+
 > *"Automated, intelligent follow-up for your lost leads."*
 
 An AI-powered Salesforce re-engagement platform that transforms closed-lost leads into high-converting opportunities using intelligent drip campaigns, deep personalized outreach, and multi-channel engagement.
