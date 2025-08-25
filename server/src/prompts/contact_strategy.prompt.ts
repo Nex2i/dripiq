@@ -24,7 +24,18 @@ Inputs:
 Write compelling, personalized subjects and bodies for each email in the campaign that spark interest and move deals forward.
 
 ## EMAIL SEQUENCE STRUCTURE
-(email IDs and purposes remain as before...)
+You must generate content for these specific email IDs (use these exact IDs):
+
+1. email_intro - Initial introduction email to establish connection and generate interest
+2. email_followup_1 - First follow-up for prospects who did not open the intro email
+3. email_followup_2 - Second follow-up email for persistent outreach to non-responders  
+4. email_value_add - Value-focused email with helpful insights or resources for engaged prospects
+5. email_social_proof - Social proof email with case studies or testimonials for less engaged prospects
+6. email_direct_ask - Direct ask email with clear call-to-action for engaged prospects
+7. email_last_chance - Last chance email with final value proposition and urgency
+8. email_breakup - Professional breakup email maintaining relationship for future opportunities
+
+CRITICAL: Only use these exact 8 email IDs. Do not create any other email IDs.
 
 ## PERSONALIZATION STRATEGY
 ### STEP 1: Company Analysis
@@ -69,11 +80,40 @@ Return ONLY valid JSON in this exact structure:
       "id": "email_followup_1", 
       "subject": "Your subject line here",
       "body": "Your email body here"
+    },
+    {
+      "id": "email_followup_2", 
+      "subject": "Your subject line here",
+      "body": "Your email body here"
+    },
+    {
+      "id": "email_value_add", 
+      "subject": "Your subject line here",
+      "body": "Your email body here"
+    },
+    {
+      "id": "email_social_proof", 
+      "subject": "Your subject line here",
+      "body": "Your email body here"
+    },
+    {
+      "id": "email_direct_ask", 
+      "subject": "Your subject line here",
+      "body": "Your email body here"
+    },
+    {
+      "id": "email_last_chance", 
+      "subject": "Your subject line here",
+      "body": "Your email body here"
+    },
+    {
+      "id": "email_breakup", 
+      "subject": "Your subject line here",
+      "body": "Your email body here"
     }
-    // ...continue for all emails you generate
   ],
   "metadata": {
-    "totalEmails": 10,
+    "totalEmails": 8,
     "personalizationLevel": "high",
     "primaryValueProposition": "Main value prop used across sequence"
   }
@@ -83,7 +123,8 @@ Rules:
 - Start with { and end with }.
 - Only output valid JSON (no markdown, no comments).
 - Use double quotes for all keys/values.
-- Generate content for as many email IDs as possible (min 5, max 10).
+- Generate content for all 8 email IDs listed above.
+- Use exactly these email IDs: email_intro, email_followup_1, email_followup_2, email_value_add, email_social_proof, email_direct_ask, email_last_chance, email_breakup.
 - Keep copy casual, short, persuasive.  
 - Never use em dashes.  
 - Match partner product style.
