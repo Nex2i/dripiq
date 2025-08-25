@@ -5,7 +5,7 @@ import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStr
  */
 export const CAMPAIGN_CONSTANTS = {
   // Timing constants
-  IMMEDIATE: 'PT0S',
+  MINIMUM_DELAY: 'PT10S', // Minimum 10 seconds delay to prevent immediate execution
   DEFAULT_EMAIL_DELAY: 'PT24H', // 24 hours default delay between emails
   ENGAGEMENT_WINDOW: 'PT48H', // 2 days to wait for engagement (opens)
   CLICK_WINDOW: 'PT24H', // 1 day to wait for clicks after opens
@@ -17,7 +17,6 @@ export const CAMPAIGN_CONSTANTS = {
     CLICKED: 'clicked',
     NO_OPEN: 'no_open',
     NO_CLICK: 'no_click',
-    DELIVERED: 'delivered',
   } as const,
 
   // Common node IDs
@@ -42,7 +41,8 @@ export const CAMPAIGN_CONSTANTS = {
  * - 24-hour default delay between emails if no engagement
  * - Complete path through all emails even if never opened/clicked
  * - Consistent timing using constants
- * - All emails have delivered -> stop transition for bounce handling
+ * - No immediate (PT0S) execution to prevent race conditions
+ * - No delivered transitions since no_open assumes delivery
  */
 export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
   nodes: Array<
@@ -71,7 +71,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -82,11 +82,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_followup_1',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -116,7 +111,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -127,11 +122,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_social_proof',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -161,7 +151,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -172,11 +162,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_roi_focused',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -206,7 +191,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -217,11 +202,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_problem_agitation',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -251,7 +231,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -262,11 +242,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_urgency_scarcity',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -296,7 +271,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -307,11 +282,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_urgency_scarcity',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -341,7 +311,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -352,11 +322,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_last_chance',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -386,7 +351,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -397,11 +362,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_last_chance',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -431,7 +391,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -442,11 +402,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: 'email_breakup',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
@@ -476,7 +431,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       channel: 'email',
       action: 'send',
       requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
+      schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
@@ -487,11 +442,6 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
           to: CAMPAIGN_CONSTANTS.NODES.STOP,
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
         },
       ],
     },
