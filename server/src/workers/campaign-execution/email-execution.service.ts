@@ -9,6 +9,7 @@ import {
 } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { getQueue } from '@/libs/bullmq';
+import { JOB_NAMES } from '@/constants/queues';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
 import { db } from '@/db';
 import {
@@ -394,7 +395,7 @@ export class EmailExecutionService {
       try {
         // Enqueue BullMQ job
         const timeoutQueue = getQueue('campaign_execution');
-        await timeoutQueue.add('timeout', params, {
+        await timeoutQueue.add(JOB_NAMES.campaign_execution.timeout, params, {
           delay: delayMs,
           jobId,
           ...TIMEOUT_JOB_OPTIONS,
