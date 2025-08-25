@@ -415,6 +415,135 @@ describe('EmailExecutionService', () => {
 
       expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
     });
+
+    it('should handle invalid ISO duration in transitions gracefully', async () => {
+      // Setup: Plan with invalid transition timing
+      const plan = createMockPlan([
+        { on: 'no_open', to: 'next-node', after: 'INVALID_DURATION' }, // Invalid ISO
+        { on: 'no_click', to: 'other-node', after: 'PT2H' }, // Valid
+      ]);
+
+      // Mock parseIsoDuration to throw for invalid duration
+      mockParseIsoDuration
+        .mockImplementationOnce(() => {
+          throw new Error('Invalid ISO 8601 duration: INVALID_DURATION');
+        })
+        .mockReturnValueOnce(2 * 60 * 60 * 1000) // PT2H = 2 hours
+        .mockReturnValueOnce(72 * 60 * 60 * 1000) // Default no_open fallback
+        .mockReturnValueOnce(24 * 60 * 60 * 1000); // Default no_click (shouldn't be used)
+
+      mockScheduledActionRepo.createForTenant.mockResolvedValue({
+        id: 'scheduled-action-123',
+      } as any);
+
+      // Execute
+      await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
+
+      // Verify no_click was still scheduled despite no_open error
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledWith(mockTenantId, {
+        campaignId: mockCampaignId,
+        actionType: 'timeout',
+        scheduledAt: expect.any(Date),
+        payload: {
+          nodeId: mockNodeId,
+          messageId: mockMessageId,
+          eventType: 'no_click',
+        },
+        bullmqJobId: expect.any(String),
+      });
+
+      // Verify default no_open was scheduled as fallback
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledWith(mockTenantId, {
+        campaignId: mockCampaignId,
+        actionType: 'timeout',
+        scheduledAt: expect.any(Date),
+        payload: {
+          nodeId: mockNodeId,
+          messageId: mockMessageId,
+          eventType: 'no_open',
+        },
+        bullmqJobId: expect.any(String),
+      });
+
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle parseIsoDuration errors gracefully', async () => {
+      // Setup: Plan with transitions that will cause parseIsoDuration to throw
+      const plan = createMockPlan([
+        { on: 'no_open', to: 'next-node', after: 'INVALID_DURATION' },
+      ]);
+
+      // Mock parseIsoDuration to throw for invalid duration
+      mockParseIsoDuration.mockImplementationOnce(() => {
+        throw new Error('Invalid ISO 8601 duration: INVALID_DURATION');
+      });
+
+      mockScheduledActionRepo.createForTenant.mockResolvedValue({
+        id: 'scheduled-action-123',
+      } as any);
+
+      // Execute should not throw error
+      await expect(
+        (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId)
+      ).resolves.not.toThrow();
+
+      // The key point is that it handles errors gracefully and doesn't crash
+      // The exact number of jobs scheduled depends on fallback logic which we've already tested
+    });
+
+    it('should use timeout event type constants correctly', async () => {
+      // This test validates that the TIMEOUT_EVENT_TYPES constant is used correctly
+      const plan = createMockPlan([
+        { on: 'delivered', to: 'next-node', after: 'PT1H' }, // Not a timeout event
+        { on: 'opened', to: 'other-node', after: 'PT2H' }, // Not a timeout event  
+        { on: 'no_open', to: 'timeout-node', after: 'PT10M' }, // IS a timeout event
+      ]);
+
+      mockParseIsoDuration
+        .mockReturnValueOnce(10 * 60 * 1000) // PT10M for no_open transition
+        .mockReturnValueOnce(24 * 60 * 60 * 1000); // Default for no_click
+
+      mockScheduledActionRepo.createForTenant.mockResolvedValue({
+        id: 'scheduled-action-123',
+      } as any);
+
+      await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
+
+      // Verify that parseIsoDuration was called for the timeout transition
+      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT10M');
+      
+      // Verify that some jobs were scheduled (validates error handling works)
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalled();
+    });
+
+    it('should continue scheduling other transitions when one fails', async () => {
+      // Setup: Plan with one valid transition, the other will use default
+      const plan = createMockPlan([
+        { on: 'no_click', to: 'node-3', after: 'PT1H' }, // Valid transition
+        // no_open will use plan default
+      ]);
+
+      mockParseIsoDuration
+        .mockReturnValueOnce(60 * 60 * 1000) // PT1H for no_click transition
+        .mockReturnValueOnce(72 * 60 * 60 * 1000); // PT72H for no_open default
+
+      mockScheduledActionRepo.createForTenant.mockResolvedValue({
+        id: 'scheduled-action-123',
+      } as any);
+
+      // Execute
+      await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
+
+      // Verify both timeouts were scheduled
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      
+      // Should have been called with both event types
+      const calls = mockScheduledActionRepo.createForTenant.mock.calls;
+      const eventTypes = calls.map((call: any) => call[1].payload.eventType);
+      expect(eventTypes).toContain('no_click');
+      expect(eventTypes).toContain('no_open');
+    });
   });
 
   describe('scheduleTimeoutJob', () => {

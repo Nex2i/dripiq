@@ -25,6 +25,10 @@ import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStr
 import type { TimeoutJobParams } from '@/types/timeout.types';
 import { JOB_NAMES } from '@/constants/queues';
 
+// Timeout event types that should trigger timeout jobs
+const TIMEOUT_EVENT_TYPES = ['no_open', 'no_click'] as const;
+type TimeoutEventType = typeof TIMEOUT_EVENT_TYPES[number];
+
 export interface EmailExecutionParams {
   tenantId: string;
   campaignId: string;
@@ -406,7 +410,7 @@ export class EmailExecutionService {
       if ('after' in transition) {
         // Only schedule timeout jobs for timeout event types
         const eventType = transition.on;
-        if (eventType !== 'no_open' && eventType !== 'no_click') {
+        if (!TIMEOUT_EVENT_TYPES.includes(eventType as TimeoutEventType)) {
           continue; // Skip non-timeout event types
         }
 
@@ -415,70 +419,105 @@ export class EmailExecutionService {
           continue;
         }
 
-        const afterDelayMs = parseIsoDuration(transition.after);
-        await this.scheduleTimeoutJob({
-          campaignId,
-          nodeId,
-          messageId,
-          eventType,
-          scheduledAt: new Date(Date.now() + afterDelayMs),
-        });
+        try {
+          const afterDelayMs = parseIsoDuration(transition.after);
+          await this.scheduleTimeoutJob({
+            campaignId,
+            nodeId,
+            messageId,
+            eventType: eventType as TimeoutEventType,
+            scheduledAt: new Date(Date.now() + afterDelayMs),
+          });
 
-        scheduledTimeouts.add(eventType);
+          scheduledTimeouts.add(eventType);
 
-        logger.info('[EmailExecutionService] Scheduled timeout job from node transition', {
-          tenantId: this.tenantId,
-          campaignId,
-          nodeId,
-          messageId,
-          eventType,
-          after: transition.after,
-          scheduledAt: new Date(Date.now() + afterDelayMs).toISOString(),
-        });
+          logger.info('[EmailExecutionService] Scheduled timeout job from node transition', {
+            tenantId: this.tenantId,
+            campaignId,
+            nodeId,
+            messageId,
+            eventType,
+            after: transition.after,
+            scheduledAt: new Date(Date.now() + afterDelayMs).toISOString(),
+          });
+        } catch (error) {
+          logger.error('[EmailExecutionService] Failed to parse transition timing, skipping timeout job', {
+            tenantId: this.tenantId,
+            campaignId,
+            nodeId,
+            messageId,
+            eventType: eventType as TimeoutEventType,
+            after: transition.after,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+          // Continue to next transition instead of failing completely
+        }
       }
     }
 
     // Schedule default timeout jobs for any missing event types
     if (!scheduledTimeouts.has('no_open')) {
       const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
-      const noOpenDelayMs = parseIsoDuration(noOpenDelay);
-      await this.scheduleTimeoutJob({
-        campaignId,
-        nodeId,
-        messageId,
-        eventType: 'no_open',
-        scheduledAt: new Date(Date.now() + noOpenDelayMs),
-      });
+      try {
+        const noOpenDelayMs = parseIsoDuration(noOpenDelay);
+        await this.scheduleTimeoutJob({
+          campaignId,
+          nodeId,
+          messageId,
+          eventType: 'no_open',
+          scheduledAt: new Date(Date.now() + noOpenDelayMs),
+        });
 
-      logger.info('[EmailExecutionService] Scheduled default no_open timeout', {
-        tenantId: this.tenantId,
-        campaignId,
-        nodeId,
-        messageId,
-        delay: noOpenDelay,
-        scheduledAt: new Date(Date.now() + noOpenDelayMs).toISOString(),
-      });
+        logger.info('[EmailExecutionService] Scheduled default no_open timeout', {
+          tenantId: this.tenantId,
+          campaignId,
+          nodeId,
+          messageId,
+          delay: noOpenDelay,
+          scheduledAt: new Date(Date.now() + noOpenDelayMs).toISOString(),
+        });
+      } catch (error) {
+        logger.error('[EmailExecutionService] Failed to parse default no_open timing', {
+          tenantId: this.tenantId,
+          campaignId,
+          nodeId,
+          messageId,
+          delay: noOpenDelay,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
 
     if (!scheduledTimeouts.has('no_click')) {
       const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
-      const noClickDelayMs = parseIsoDuration(noClickDelay);
-      await this.scheduleTimeoutJob({
-        campaignId,
-        nodeId,
-        messageId,
-        eventType: 'no_click',
-        scheduledAt: new Date(Date.now() + noClickDelayMs),
-      });
+      try {
+        const noClickDelayMs = parseIsoDuration(noClickDelay);
+        await this.scheduleTimeoutJob({
+          campaignId,
+          nodeId,
+          messageId,
+          eventType: 'no_click',
+          scheduledAt: new Date(Date.now() + noClickDelayMs),
+        });
 
-      logger.info('[EmailExecutionService] Scheduled default no_click timeout', {
-        tenantId: this.tenantId,
-        campaignId,
-        nodeId,
-        messageId,
-        delay: noClickDelay,
-        scheduledAt: new Date(Date.now() + noClickDelayMs).toISOString(),
-      });
+        logger.info('[EmailExecutionService] Scheduled default no_click timeout', {
+          tenantId: this.tenantId,
+          campaignId,
+          nodeId,
+          messageId,
+          delay: noClickDelay,
+          scheduledAt: new Date(Date.now() + noClickDelayMs).toISOString(),
+        });
+      } catch (error) {
+        logger.error('[EmailExecutionService] Failed to parse default no_click timing', {
+          tenantId: this.tenantId,
+          campaignId,
+          nodeId,
+          messageId,
+          delay: noClickDelay,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
   }
 
