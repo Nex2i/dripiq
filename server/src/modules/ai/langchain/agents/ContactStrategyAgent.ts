@@ -28,14 +28,11 @@ import {
   Salesman,
 } from '../../schemas/contactCampaignStrategyInputSchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
-import {
-  CampaignPlanOutput,
-  campaignPlanOutputSchema,
-} from '../../schemas/contactCampaignStrategySchema';
+import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
 
 export type ContactStrategyResult = {
   finalResponse: string;
-  finalResponseParsed: CampaignPlanOutput;
+  finalResponseParsed: EmailContentOutput;
   totalIterations: number;
   functionCalls: any[];
 };
@@ -87,7 +84,7 @@ export class ContactStrategyAgent {
     });
   }
 
-  async generateContactStrategy(
+  async generateEmailContent(
     tenantId: string,
     leadId: string,
     contactId: string
@@ -110,7 +107,7 @@ export class ContactStrategyAgent {
         partner_details: await this.getPartnerDetails(tenantId),
         partner_products: await this.getPartnerProducts(tenantId, leadId),
         salesman: await this.getSalesman(tenantId, leadId),
-        output_schema: `${JSON.stringify(z.toJSONSchema(campaignPlanOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
+        output_schema: `${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
       });
 
       let finalResponse = getContentFromMessage(result.output);
@@ -125,13 +122,13 @@ export class ContactStrategyAgent {
       const parsedResult = parseWithSchema(finalResponse);
 
       return {
-        finalResponse: result.output || finalResponse || 'Contact strategy generation completed',
+        finalResponse: result.output || finalResponse || 'Email content generation completed',
         finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
       };
     } catch (error) {
-      logger.error('Contact strategy generation failed:', error);
+      logger.error('Email content generation failed:', error);
 
       throw error;
     }
@@ -266,7 +263,7 @@ export class ContactStrategyAgent {
 }
 
 // -- Helpers --
-function parseWithSchema(content: string): CampaignPlanOutput {
+function parseWithSchema(content: string): EmailContentOutput {
   try {
     // First, try to find JSON in the content with multiple strategies
     let jsonText = content;
@@ -284,22 +281,22 @@ function parseWithSchema(content: string): CampaignPlanOutput {
     jsonText = jsonText.trim();
 
     // Log what we're trying to parse for debugging
-    logger.info('Attempting to parse contact strategy JSON', {
+    logger.info('Attempting to parse email content JSON', {
       contentLength: content.length,
       extractedLength: jsonText.length,
       preview: jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''),
     });
 
     const parsed = JSON.parse(jsonText);
-    return campaignPlanOutputSchema.parse(parsed);
+    return emailContentOutputSchema.parse(parsed);
   } catch (parseError) {
-    logger.warn('Contact strategy JSON parsing failed', {
+    logger.warn('Email content JSON parsing failed', {
       error: parseError instanceof Error ? parseError.message : 'Unknown error',
       contentPreview: content.substring(0, 500) + (content.length > 500 ? '...' : ''),
       contentLength: content.length,
     });
 
     // Try to extract individual fields if JSON parsing completely fails
-    throw new Error('Contact strategy JSON parsing failed');
+    throw new Error('Email content JSON parsing failed');
   }
 }

@@ -1,12 +1,20 @@
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
 import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
-import type { ContactStrategyResult } from './langchain/agents/ContactStrategyAgent';
+import { mapEmailContentToCampaignPlan } from '../campaign/campaignContentMapper.service';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
 import {
   CampaignPlanOutput,
   campaignPlanOutputSchema,
 } from './schemas/contactCampaignStrategySchema';
+
+// Updated result type that returns the complete campaign plan
+export type ContactStrategyServiceResult = {
+  finalResponse: string;
+  finalResponseParsed: CampaignPlanOutput;
+  totalIterations: number;
+  functionCalls: any[];
+};
 
 export interface GenerateContactStrategyParams {
   leadId: string;
@@ -28,7 +36,7 @@ export interface UpdateContactStrategyParams {
  */
 export const generateContactStrategy = async (
   params: GenerateContactStrategyParams
-): Promise<ContactStrategyResult> => {
+): Promise<ContactStrategyServiceResult> => {
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
@@ -43,19 +51,36 @@ export const generateContactStrategy = async (
       return existingStrategy;
     }
 
-    // Execute agent analysis
+    // Execute agent analysis to generate email content
     try {
       const agent = createContactStrategyAgent({ ...defaultLangChainConfig });
-      const result = await agent.generateContactStrategy(tenantId, leadId, contactId);
+      const emailContentResult = await agent.generateEmailContent(tenantId, leadId, contactId);
 
-      // Persist the parsed plan into campaign tables (idempotent)
+      // Map email content to static campaign template
+      let campaignPlan: CampaignPlanOutput;
+      try {
+        campaignPlan = mapEmailContentToCampaignPlan(emailContentResult.finalResponseParsed);
+      } catch (mappingError) {
+        logger.error('Failed to map email content to campaign template', {
+          tenantId,
+          leadId,
+          contactId,
+          error: mappingError instanceof Error ? mappingError.message : 'Unknown mapping error',
+          emailContent: emailContentResult.finalResponseParsed,
+        });
+        throw new Error(
+          `Campaign mapping failed: ${mappingError instanceof Error ? mappingError.message : 'Unknown error'}`
+        );
+      }
+
+      // Persist the mapped plan into campaign tables (idempotent)
       try {
         await contactCampaignPlanService.persistPlan({
           tenantId,
           leadId,
           contactId,
           userId,
-          plan: result.finalResponseParsed,
+          plan: campaignPlan,
           channel: 'email',
         });
       } catch (dbError) {
@@ -67,6 +92,14 @@ export const generateContactStrategy = async (
         });
         throw dbError;
       }
+
+      // Return result in the expected format (backwards compatible)
+      const result = {
+        finalResponse: emailContentResult.finalResponse,
+        finalResponseParsed: campaignPlan, // Now returns the complete campaign plan
+        totalIterations: emailContentResult.totalIterations,
+        functionCalls: emailContentResult.functionCalls,
+      };
 
       return result;
     } catch (agentError) {
@@ -97,7 +130,7 @@ export const generateContactStrategy = async (
  */
 export const retrieveContactStrategyFromDatabase = async (
   params: GenerateContactStrategyParams
-): Promise<ContactStrategyResult | null> => {
+): Promise<ContactStrategyServiceResult | null> => {
   const { leadId, contactId, tenantId } = params;
 
   try {
@@ -141,8 +174,8 @@ export const retrieveContactStrategyFromDatabase = async (
       return null;
     }
 
-    // Reconstruct ContactStrategyResult from database data
-    const result: ContactStrategyResult = {
+    // Reconstruct ContactStrategyServiceResult from database data
+    const result: ContactStrategyServiceResult = {
       finalResponse: 'Retrieved from database',
       finalResponseParsed: latestPlanVersion.planJson as CampaignPlanOutput,
       totalIterations: 1,
@@ -174,7 +207,7 @@ export const retrieveContactStrategyFromDatabase = async (
  */
 export const updateContactStrategy = async (
   params: UpdateContactStrategyParams
-): Promise<ContactStrategyResult> => {
+): Promise<ContactStrategyServiceResult> => {
   const { leadId, contactId, tenantId, userId, updatedPlan } = params;
 
   try {
@@ -209,7 +242,7 @@ export const updateContactStrategy = async (
     });
 
     // Return the updated plan in the expected format
-    const result: ContactStrategyResult = {
+    const result: ContactStrategyServiceResult = {
       finalResponse: 'Plan updated successfully',
       finalResponseParsed: validatedPlan,
       totalIterations: 1,
