@@ -4,14 +4,12 @@ import viteReact from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 
-import { resolve } from 'node:path'
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [viteReact(), TanStackRouterVite(), tailwindcss()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': './src',
     },
   },
   build: {

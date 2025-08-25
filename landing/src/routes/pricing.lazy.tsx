@@ -15,7 +15,7 @@ const PricingPage = () => {
         'Salesforce integration',
       ],
       cta: 'Start Free',
-      href: 'https://app.dripiq.ai/signup',
+      href: import.meta.env.VITE_APP_URL + '/signup',
       popular: false,
     },
     {
@@ -32,7 +32,7 @@ const PricingPage = () => {
         'Analytics dashboard',
       ],
       cta: 'Start Trial',
-      href: 'https://app.dripiq.ai/signup?plan=pro',
+      href: import.meta.env.VITE_APP_URL + '/signup?plan=pro',
       popular: true,
     },
     {

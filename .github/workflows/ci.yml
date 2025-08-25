@@ -162,7 +162,6 @@ jobs:
       - name: Check
         run: npm run check
 
-  landing-test:
     name: Landing Test
     runs-on: ubuntu-latest
     defaults:

@@ -129,13 +129,13 @@ const ContactPage = () => {
             </p>
             <div className="space-y-4">
               <a
-                href="https://app.dripiq.ai/signup"
+                href={import.meta.env.VITE_APP_URL + '/signup'}
                 className="block w-full text-center py-3 px-6 rounded-lg font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors"
               >
                 Start Free Trial
               </a>
               <a
-                href="https://app.dripiq.ai/login"
+                href={import.meta.env.VITE_APP_URL + '/login'}
                 className="block w-full text-center py-3 px-6 rounded-lg font-medium text-primary-600 border border-primary-600 hover:bg-primary-50 transition-colors"
               >
                 Sign In

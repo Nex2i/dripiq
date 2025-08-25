@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run clear:dist && vite --port 3001",
+    "dev": "npm i && npm run clear:dist && vite --port 3001",
     "clear:dist": "rm -rf dist",
     "start": "vite --port 3001",
     "build": "npm run clear:dist && vite build && tsc",
@@ -36,6 +36,7 @@
     "eslint-plugin-import": "^2.30.0",
     "eslint-plugin-react": "^7.37.1",
     "eslint-plugin-react-hooks": "^5.0.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
     "vite": "^6.1.0",

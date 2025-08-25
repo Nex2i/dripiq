@@ -4,7 +4,7 @@ export const Route = createFileRoute('/login')({
   beforeLoad: () => {
     // Redirect to the main client application
     if (typeof window !== 'undefined') {
-      window.location.href = 'https://app.dripiq.ai/login'
+      window.location.href = import.meta.env.VITE_APP_URL + '/login'
     }
   },
   component: () => (
@@ -13,8 +13,8 @@ export const Route = createFileRoute('/login')({
         <h1 className="text-xl font-semibold mb-4">Redirecting to Login...</h1>
         <p className="text-surface-600">
           If you are not redirected automatically,{' '}
-          <a 
-            href="https://app.dripiq.ai/login" 
+          <a
+            href={import.meta.env.VITE_APP_URL + '/login'}
             className="text-primary-600 hover:text-primary-700 underline"
           >
             click here

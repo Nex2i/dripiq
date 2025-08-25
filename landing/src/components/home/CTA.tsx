@@ -46,7 +46,7 @@ export default function CTA() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <a
-            href="https://app.dripiq.ai/signup"
+            href={import.meta.env.VITE_APP_URL + '/signup'}
             className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-surface-900 bg-primary-400 hover:bg-primary-300 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105"
           >
             Start Your Free Trial

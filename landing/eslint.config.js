@@ -27,6 +27,7 @@ export default [
         window: 'readonly',
         navigator: 'readonly',
         process: 'readonly',
+        __dirname: true,
       },
     },
     plugins: {
