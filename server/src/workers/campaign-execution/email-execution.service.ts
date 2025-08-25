@@ -385,29 +385,101 @@ export class EmailExecutionService {
     plan: CampaignPlanOutput,
     messageId: string
   ): Promise<void> {
+    // Find the current node in the plan
+    const currentNode = plan.nodes.find((node) => node.id === nodeId);
+    if (!currentNode || !currentNode.transitions) {
+      logger.warn('[EmailExecutionService] No node or transitions found for timeout scheduling', {
+        tenantId: this.tenantId,
+        campaignId,
+        nodeId,
+        messageId,
+      });
+      return;
+    }
+
     const defaults = plan.defaults?.timers;
+    const scheduledTimeouts = new Set<string>(); // Track which timeout types we've scheduled
 
-    // Schedule no_open timeout (default from constants)
-    const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
-    const noOpenDelayMs = parseIsoDuration(noOpenDelay);
-    await this.scheduleTimeoutJob({
-      campaignId,
-      nodeId,
-      messageId,
-      eventType: 'no_open',
-      scheduledAt: new Date(Date.now() + noOpenDelayMs),
-    });
+    // Schedule timeout jobs based on specific node transitions
+    for (const transition of currentNode.transitions) {
+      // Type guard to check if this is a TransitionAfter (has 'after' property)
+      if ('after' in transition) {
+        // Only schedule timeout jobs for timeout event types
+        const eventType = transition.on;
+        if (eventType !== 'no_open' && eventType !== 'no_click') {
+          continue; // Skip non-timeout event types
+        }
 
-    // Schedule no_click timeout (default from constants)
-    const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
-    const noClickDelayMs = parseIsoDuration(noClickDelay);
-    await this.scheduleTimeoutJob({
-      campaignId,
-      nodeId,
-      messageId,
-      eventType: 'no_click',
-      scheduledAt: new Date(Date.now() + noClickDelayMs),
-    });
+        if (scheduledTimeouts.has(eventType)) {
+          // Skip if we've already scheduled this timeout type for this node
+          continue;
+        }
+
+        const afterDelayMs = parseIsoDuration(transition.after);
+        await this.scheduleTimeoutJob({
+          campaignId,
+          nodeId,
+          messageId,
+          eventType,
+          scheduledAt: new Date(Date.now() + afterDelayMs),
+        });
+
+        scheduledTimeouts.add(eventType);
+
+        logger.info('[EmailExecutionService] Scheduled timeout job from node transition', {
+          tenantId: this.tenantId,
+          campaignId,
+          nodeId,
+          messageId,
+          eventType,
+          after: transition.after,
+          scheduledAt: new Date(Date.now() + afterDelayMs).toISOString(),
+        });
+      }
+    }
+
+    // Schedule default timeout jobs for any missing event types
+    if (!scheduledTimeouts.has('no_open')) {
+      const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
+      const noOpenDelayMs = parseIsoDuration(noOpenDelay);
+      await this.scheduleTimeoutJob({
+        campaignId,
+        nodeId,
+        messageId,
+        eventType: 'no_open',
+        scheduledAt: new Date(Date.now() + noOpenDelayMs),
+      });
+
+      logger.info('[EmailExecutionService] Scheduled default no_open timeout', {
+        tenantId: this.tenantId,
+        campaignId,
+        nodeId,
+        messageId,
+        delay: noOpenDelay,
+        scheduledAt: new Date(Date.now() + noOpenDelayMs).toISOString(),
+      });
+    }
+
+    if (!scheduledTimeouts.has('no_click')) {
+      const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
+      const noClickDelayMs = parseIsoDuration(noClickDelay);
+      await this.scheduleTimeoutJob({
+        campaignId,
+        nodeId,
+        messageId,
+        eventType: 'no_click',
+        scheduledAt: new Date(Date.now() + noClickDelayMs),
+      });
+
+      logger.info('[EmailExecutionService] Scheduled default no_click timeout', {
+        tenantId: this.tenantId,
+        campaignId,
+        nodeId,
+        messageId,
+        delay: noClickDelay,
+        scheduledAt: new Date(Date.now() + noClickDelayMs).toISOString(),
+      });
+    }
   }
 
   private async scheduleTimeoutJob(params: TimeoutJobParams): Promise<void> {
