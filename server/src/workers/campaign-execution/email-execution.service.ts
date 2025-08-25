@@ -6,6 +6,8 @@ import {
   emailSenderIdentityRepository,
   outboundMessageRepository,
   scheduledActionRepository,
+  userRepository,
+  leadRepository,
 } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { getQueue } from '@/libs/bullmq';
@@ -16,6 +18,7 @@ import {
   DEFAULT_NO_CLICK_TIMEOUT,
   TIMEOUT_JOB_OPTIONS,
 } from '@/constants/timeout-jobs';
+import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
@@ -149,6 +152,54 @@ export class EmailExecutionService {
         updatedAt: new Date(),
       });
 
+      // Prepare email body with calendar information if available
+      let emailBody = node.body;
+
+      // Append calendar information if user has calendar configured
+      try {
+        const lead = await leadRepository.findByIdForTenant(contact.leadId, tenantId);
+        if (lead?.ownerId) {
+          const user = await userRepository.findById(lead.ownerId);
+          if (user?.calendarLink && user?.calendarTieIn) {
+            const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
+              tenantId,
+              leadId: lead.id,
+              contactId,
+              campaignId,
+              nodeId,
+              outboundMessageId,
+            });
+
+            const calendarMessage = calendarUrlWrapper.createCalendarMessage(
+              user.calendarTieIn,
+              trackedCalendarUrl
+            );
+
+            // Append calendar message to email body
+            emailBody = `${emailBody}\n\n${calendarMessage}`;
+
+            logger.info('[EmailExecutionService] Calendar message appended to email', {
+              tenantId,
+              campaignId,
+              contactId,
+              nodeId,
+              userId: user.id,
+              calendarTieIn: user.calendarTieIn,
+              trackedUrl: trackedCalendarUrl,
+            });
+          }
+        }
+      } catch (calendarError) {
+        logger.error('[EmailExecutionService] Failed to append calendar information', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
+        });
+        // Continue without calendar info - don't fail the email send
+      }
+
       // Prepare SendGrid payload
       const sendPayload: SendBase = {
         tenantId,
@@ -162,7 +213,7 @@ export class EmailExecutionService {
         },
         to: contact.email,
         subject: node.subject,
-        html: node.body,
+        html: emailBody,
         categories: ['campaign', `tenant:${tenantId}`],
       };
 

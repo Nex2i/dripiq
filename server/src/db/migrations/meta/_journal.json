@@ -232,6 +232,13 @@
       "when": 1755533043016,
       "tag": "0032_calendar_tie_in",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1756089616406,
+      "tag": "0033_charming_firestar",
+      "breakpoints": true
     }
   ]
 }

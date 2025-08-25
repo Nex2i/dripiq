@@ -828,6 +828,44 @@ export const contactUnsubscribes = appSchema.table(
   ]
 );
 
+// Calendar Link Clicks - track clicks on calendar links in emails
+export const calendarLinkClicks = appSchema.table(
+  'calendar_link_clicks',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id'), // Optional - from email context
+    nodeId: text('node_id'), // Optional - from email context
+    outboundMessageId: text('outbound_message_id'), // Optional - from email context
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    referrer: text('referrer'),
+    clickedAt: timestamp('clicked_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('calendar_link_clicks_tenant_id_idx').on(table.tenantId),
+    index('calendar_link_clicks_lead_id_idx').on(table.leadId),
+    index('calendar_link_clicks_contact_id_idx').on(table.contactId),
+    index('calendar_link_clicks_user_id_idx').on(table.userId),
+    index('calendar_link_clicks_clicked_at_idx').on(table.clickedAt),
+  ]
+);
+
 // Relations for new tables
 export const emailSenderIdentitiesRelations = relations(emailSenderIdentities, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -1021,6 +1059,25 @@ export const contactUnsubscribesRelations = relations(contactUnsubscribes, ({ on
   }),
 }));
 
+export const calendarLinkClicksRelations = relations(calendarLinkClicks, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [calendarLinkClicks.tenantId],
+    references: [tenants.id],
+  }),
+  lead: one(leads, {
+    fields: [calendarLinkClicks.leadId],
+    references: [leads.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [calendarLinkClicks.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  user: one(users, {
+    fields: [calendarLinkClicks.userId],
+    references: [users.id],
+  }),
+}));
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -1076,3 +1133,5 @@ export type CampaignTransition = typeof campaignTransitions.$inferSelect;
 export type NewCampaignTransition = typeof campaignTransitions.$inferInsert;
 export type ContactUnsubscribe = typeof contactUnsubscribes.$inferSelect;
 export type NewContactUnsubscribe = typeof contactUnsubscribes.$inferInsert;
+export type CalendarLinkClick = typeof calendarLinkClicks.$inferSelect;
+export type NewCalendarLinkClick = typeof calendarLinkClicks.$inferInsert;
