@@ -8,7 +8,6 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
 // Import components and pages
-import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
@@ -81,11 +80,15 @@ const authRoute = createRoute({
   ),
 })
 
-// Home route - public (landing page)
+// Home route - public (redirect to landing page)
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <LandingPage />,
+  component: () => {
+    // Redirect to the landing page URL
+    window.location.href = import.meta.env.VITE_APP_URL
+    return null
+  },
 })
 
 // Setup password route - public (for invited users who don't have passwords yet)
