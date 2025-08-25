@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Menu, X } from 'lucide-react'
-import Logo from './Logo'
 import { APP_URLS } from '@/constants/app'
+import Logo from './Logo'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
