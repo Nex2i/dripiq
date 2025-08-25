@@ -7,7 +7,7 @@ export const CAMPAIGN_CONSTANTS = {
   // Timing constants
   IMMEDIATE: 'PT0S',
   DEFAULT_EMAIL_DELAY: 'PT24H', // 24 hours default delay between emails
-  ENGAGEMENT_WINDOW: 'PT72H', // 3 days to wait for engagement (opens)
+  ENGAGEMENT_WINDOW: 'PT24H', // 1 day to wait for engagement (opens)
   CLICK_WINDOW: 'PT24H', // 1 day to wait for clicks after opens
   SHORT_ENGAGEMENT_WINDOW: 'PT48H', // 2 days for urgent emails
 
