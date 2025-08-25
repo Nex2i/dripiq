@@ -61,13 +61,7 @@ export class SendGridWebhookService {
     const startTime = Date.now();
     const processedAtTimestamp = new Date().toISOString();
 
-    logger.info('Processing SendGrid webhook', {
-      payloadSize: rawPayload.length,
-      headers: this.sanitizeHeaders(headers),
-    });
-
-    // Debug log: Log the raw payload for debugging
-    logger.debug('SendGrid webhook raw payload', {
+    logger.info('SendGrid webhook raw payload', {
       payloadSize: rawPayload.length,
       rawPayload,
     });
