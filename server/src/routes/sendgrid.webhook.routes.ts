@@ -169,6 +169,19 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
             : 'missing',
         });
 
+        // Debug log: Log the entire payload body for debugging webhook issues
+        logger.debug('SendGrid webhook payload received', {
+          requestId,
+          payloadSize: rawBody.length,
+          payload: rawBody.toString('utf8'),
+          headers: {
+            signature: request.headers['x-twilio-email-event-webhook-signature'],
+            timestamp: request.headers['x-twilio-email-event-webhook-timestamp'],
+            contentType: request.headers['content-type'],
+            userAgent: request.headers['user-agent'],
+          },
+        });
+
         // Check if SendGrid webhook processing is enabled
         if (process.env.SENDGRID_WEBHOOK_ENABLED === 'false') {
           logger.warn('SendGrid webhook processing is disabled', { requestId });
