@@ -6,6 +6,8 @@ import {
   emailSenderIdentityRepository,
   outboundMessageRepository,
   scheduledActionRepository,
+  userRepository,
+  leadRepository,
 } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { getQueue } from '@/libs/bullmq';
@@ -16,10 +18,12 @@ import {
   DEFAULT_NO_CLICK_TIMEOUT,
   TIMEOUT_JOB_OPTIONS,
 } from '@/constants/timeout-jobs';
+import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams } from '@/types/timeout.types';
+import { JOB_NAMES } from '@/constants/queues';
 
 export interface EmailExecutionParams {
   tenantId: string;
@@ -149,6 +153,54 @@ export class EmailExecutionService {
         updatedAt: new Date(),
       });
 
+      // Prepare email body with calendar information if available
+      let emailBody = node.body;
+
+      // Append calendar information if user has calendar configured
+      try {
+        const lead = await leadRepository.findByIdForTenant(contact.leadId, tenantId);
+        if (lead?.ownerId) {
+          const user = await userRepository.findById(lead.ownerId);
+          if (user?.calendarLink && user?.calendarTieIn) {
+            const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
+              tenantId,
+              leadId: lead.id,
+              contactId,
+              campaignId,
+              nodeId,
+              outboundMessageId,
+            });
+
+            const calendarMessage = calendarUrlWrapper.createCalendarMessage(
+              user.calendarTieIn,
+              trackedCalendarUrl
+            );
+
+            // Append calendar message to email body
+            emailBody = `${emailBody}\n\n${calendarMessage}`;
+
+            logger.info('[EmailExecutionService] Calendar message appended to email', {
+              tenantId,
+              campaignId,
+              contactId,
+              nodeId,
+              userId: user.id,
+              calendarTieIn: user.calendarTieIn,
+              trackedUrl: trackedCalendarUrl,
+            });
+          }
+        }
+      } catch (calendarError) {
+        logger.error('[EmailExecutionService] Failed to append calendar information', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
+        });
+        // Continue without calendar info - don't fail the email send
+      }
+
       // Prepare SendGrid payload
       const sendPayload: SendBase = {
         tenantId,
@@ -162,7 +214,7 @@ export class EmailExecutionService {
         },
         to: contact.email,
         subject: node.subject,
-        html: node.body,
+        html: emailBody,
         categories: ['campaign', `tenant:${tenantId}`],
       };
 
@@ -304,7 +356,7 @@ export class EmailExecutionService {
   private generateTimeoutJobId(params: TimeoutJobParams): string {
     // Create a deterministic string from the parameters
     const components = [
-      'timeout',
+      JOB_NAMES.campaign_execution.timeout,
       params.campaignId,
       params.nodeId,
       params.eventType,
@@ -381,7 +433,7 @@ export class EmailExecutionService {
       // Create scheduled_action record within transaction with job ID already set
       const scheduledAction = await scheduledActionRepository.createForTenant(this.tenantId, {
         campaignId: params.campaignId,
-        actionType: 'timeout',
+        actionType: JOB_NAMES.campaign_execution.timeout,
         scheduledAt: params.scheduledAt,
         payload: {
           nodeId: params.nodeId,
@@ -394,7 +446,7 @@ export class EmailExecutionService {
       try {
         // Enqueue BullMQ job
         const timeoutQueue = getQueue('campaign_execution');
-        await timeoutQueue.add('timeout', params, {
+        await timeoutQueue.add(JOB_NAMES.campaign_execution.timeout, params, {
           delay: delayMs,
           jobId,
           ...TIMEOUT_JOB_OPTIONS,

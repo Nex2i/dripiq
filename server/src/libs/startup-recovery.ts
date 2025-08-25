@@ -4,6 +4,7 @@ import { getQueue } from '@/libs/bullmq';
 import { scheduledActionRepository } from '@/repositories';
 import type { ScheduledAction } from '@/db/schema';
 import { RECOVERY_CONFIG } from '@/config/recovery.config';
+import { JOB_NAMES } from '@/constants/queues';
 
 export interface RecoveryResult {
   total: number;
@@ -154,7 +155,7 @@ export class StartupRecovery {
     switch (actionType) {
       case 'send':
       case 'timeout':
-        return getQueue('campaign_execution');
+        return getQueue(JOB_NAMES.campaign_execution.initialize);
       default:
         throw new Error(`Unknown action type: ${actionType}`);
     }
