@@ -34,7 +34,7 @@ export type SendGridDropReason =
 export interface SendGridEventBase {
   email: string;
   timestamp: number;
-  'smtp-id': string;
+  'smtp-id'?: string; // Optional - not always present in all event types (especially opens/clicks)
   event: SendGridEventType;
   category?: string[];
   sg_event_id: string;
