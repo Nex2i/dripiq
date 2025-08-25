@@ -150,7 +150,7 @@ export const reportErrorToHighlight = (
 ) => {
   if (process.env.NODE_ENV === 'production') {
     try {
-      H.consumeError(error, message, JSON.stringify(context || {}));
+      H.consumeError(error, message, 'UNKNOWN_REQUEST_ID', context);
     } catch (highlightError) {
       console.warn('Failed to report error to Highlight.io:', highlightError);
     }

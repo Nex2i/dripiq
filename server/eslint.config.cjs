@@ -125,7 +125,13 @@ module.exports = [
 
   // Jest test files configuration
   {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
+    files: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/__tests__/**/*.{ts,tsx,js,jsx}',
+    ],
     languageOptions: {
       globals: {
         describe: 'readonly',
@@ -143,18 +149,25 @@ module.exports = [
         Request: 'readonly',
         Headers: 'readonly',
         fetch: 'readonly',
-        FormData: 'readonly',
-        URLSearchParams: 'readonly',
-        ReadableStream: 'readonly',
-        Event: 'readonly',
-        Blob: 'readonly',
       },
     },
     rules: {
-      // allow require() and dynamic require in test files
+      // import rules don't matter in tests
+      'import/first': 'off',
+      'import/newline-after-import': 'off',
+      'import/order': 'off',
+      'import/no-unresolved': 'off',
+      'import/no-extraneous-dependencies': 'off',
+      'import/no-dynamic-require': 'off',
+
+      // allow any style of importing in tests
+      'no-restricted-syntax': 'off', // permits import()
       'global-require': 'off',
       '@typescript-eslint/no-require-imports': 'off',
-      'import/no-dynamic-require': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+
+      // optional: ignore unused imports in tests
+      'unused-imports/no-unused-imports': 'off',
     },
   },
 ];
