@@ -8,6 +8,9 @@ import importPlugin from 'eslint-plugin-import'
 export default [
   js.configs.recommended,
   {
+    ignores: ['dist/**', 'build/**', '.vite/**'],
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     ignores: ['vite.config.ts', 'eslint.config.js'],
     languageOptions: {
@@ -77,6 +80,21 @@ export default [
           map: [['@', './src']],
           extensions: ['.ts', '.tsx', '.js', '.jsx'],
         },
+      },
+    },
+  },
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
       },
     },
   },

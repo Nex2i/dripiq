@@ -34,7 +34,11 @@ export default function BlogCard({ post }: BlogCardProps) {
 
         {/* Title */}
         <h3 className="text-xl font-semibold text-surface-900 mb-3 group-hover:text-primary-600 transition-colors line-clamp-2">
-          <Link to="/blog/$slug" params={{ slug: post.slug }} className="hover:underline">
+          <Link
+            to="/blog/$slug"
+            params={{ slug: post.slug }}
+            className="hover:underline"
+          >
             {post.title}
           </Link>
         </h3>
