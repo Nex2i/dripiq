@@ -33,7 +33,7 @@ export const CAMPAIGN_CONSTANTS = {
 } as const;
 
 /**
- * Static campaign template with 10 touchpoints and exactly 10 emails.
+ * Static campaign template with 6 touchpoints and exactly 6 emails.
  * This template defines the complete campaign structure including timing,
  * transitions, and flow logic. The AI will only provide subject lines and
  * bodies for the email nodes.
@@ -99,7 +99,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
-          to: 'email_value_add_1',
+          to: 'email_value_add',
           within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
         },
         {
@@ -144,7 +144,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
-          to: 'email_value_add_1',
+          to: 'email_value_add',
           within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
         },
         {
@@ -157,7 +157,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
 
     // Touchpoint 5: Value-Add Email (for engaged prospects)
     {
-      id: 'email_value_add_1',
+      id: 'email_value_add',
       channel: 'email',
       action: 'send',
       requiresContent: true,
@@ -170,7 +170,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
         },
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
-          to: 'email_roi_focused',
+          to: 'email_direct_ask',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
         {
@@ -194,7 +194,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
         },
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
-          to: 'email_roi_focused',
+          to: 'email_direct_ask',
           after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
         },
       ],
@@ -215,7 +215,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
         },
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
-          to: 'email_problem_agitation',
+          to: 'email_direct_ask',
           after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
         },
         {
@@ -234,153 +234,18 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       transitions: [
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
-          to: 'email_roi_focused',
-          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
-          to: 'email_problem_agitation',
-          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
-        },
-      ],
-    },
-
-    // Touchpoint 9: ROI-Focused Email
-    {
-      id: 'email_roi_focused',
-      channel: 'email',
-      action: 'send',
-      requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
-      transitions: [
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
-          to: 'wait_roi_click',
-          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
-          to: 'email_urgency_scarcity',
-          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
-        },
-      ],
-    },
-
-    // Touchpoint 10: Wait for ROI engagement
-    {
-      id: 'wait_roi_click',
-      channel: 'email',
-      action: 'wait',
-      transitions: [
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
           to: 'email_direct_ask',
           within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
         },
         {
           on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
-          to: 'email_urgency_scarcity',
-          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
-        },
-      ],
-    },
-
-    // Email: Problem Agitation (for persistent non-engagers)
-    {
-      id: 'email_problem_agitation',
-      channel: 'email',
-      action: 'send',
-      requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
-      transitions: [
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
-          to: 'wait_problem_click',
-          within: CAMPAIGN_CONSTANTS.ENGAGEMENT_WINDOW,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
-          to: 'email_urgency_scarcity',
-          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
-        },
-      ],
-    },
-
-    // Wait for problem agitation engagement
-    {
-      id: 'wait_problem_click',
-      channel: 'email',
-      action: 'wait',
-      transitions: [
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
-          to: 'email_urgency_scarcity',
-          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
-          to: 'email_urgency_scarcity',
-          after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
-        },
-      ],
-    },
-
-    // Email: Urgency/Scarcity
-    {
-      id: 'email_urgency_scarcity',
-      channel: 'email',
-      action: 'send',
-      requiresContent: true,
-      schedule: { delay: CAMPAIGN_CONSTANTS.IMMEDIATE },
-      transitions: [
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.OPENED,
-          to: 'wait_urgency_click',
-          within: CAMPAIGN_CONSTANTS.SHORT_ENGAGEMENT_WINDOW,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
-          to: 'email_last_chance',
-          after: CAMPAIGN_CONSTANTS.DEFAULT_EMAIL_DELAY,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.DELIVERED,
-          to: CAMPAIGN_CONSTANTS.NODES.STOP,
-          after: CAMPAIGN_CONSTANTS.IMMEDIATE,
-        },
-      ],
-    },
-
-    // Wait for urgency engagement
-    {
-      id: 'wait_urgency_click',
-      channel: 'email',
-      action: 'wait',
-      transitions: [
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.CLICKED,
           to: 'email_direct_ask',
-          within: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
-        },
-        {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
-          to: 'email_last_chance',
           after: CAMPAIGN_CONSTANTS.CLICK_WINDOW,
         },
       ],
     },
 
-    // Email: Direct Ask (for engaged prospects)
+    // Touchpoint 9: Direct Ask Email (for engaged prospects)
     {
       id: 'email_direct_ask',
       channel: 'email',
@@ -406,7 +271,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       ],
     },
 
-    // Wait for direct ask engagement
+    // Touchpoint 10: Wait for direct ask engagement
     {
       id: 'wait_direct_ask_click',
       channel: 'email',
@@ -425,7 +290,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       ],
     },
 
-    // Email: Last Chance
+    // Touchpoint 11: Last Chance Email
     {
       id: 'email_last_chance',
       channel: 'email',
@@ -451,7 +316,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       ],
     },
 
-    // Wait for last chance engagement
+    // Touchpoint 12: Wait for last chance engagement
     {
       id: 'wait_last_chance_click',
       channel: 'email',
@@ -470,7 +335,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       ],
     },
 
-    // Final Email: Breakup/Goodbye
+    // Touchpoint 13: Final Email - Breakup/Goodbye
     {
       id: 'email_breakup',
       channel: 'email',
