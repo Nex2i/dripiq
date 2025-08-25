@@ -1,3 +1,35 @@
+// Import all repository classes first
+import { UserRepository } from './entities/UserRepository';
+import { TenantRepository } from './entities/TenantRepository';
+import { RoleRepository } from './entities/RoleRepository';
+import { PermissionRepository } from './entities/PermissionRepository';
+import { RolePermissionRepository } from './entities/RolePermissionRepository';
+import { LeadRepository } from './entities/LeadRepository';
+import { ProductRepository } from './entities/ProductRepository';
+import { LeadPointOfContactRepository } from './entities/LeadPointOfContactRepository';
+import { LeadStatusRepository } from './entities/LeadStatusRepository';
+import { LeadProductRepository } from './entities/LeadProductRepository';
+import { UserTenantRepository } from './entities/UserTenantRepository';
+import { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
+import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
+import { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+import { ContactCampaignRepository } from './entities/ContactCampaignRepository';
+import { CampaignPlanVersionRepository } from './entities/CampaignPlanVersionRepository';
+import { ScheduledActionRepository } from './entities/ScheduledActionRepository';
+import { OutboundMessageRepository } from './entities/OutboundMessageRepository';
+import { MessageEventRepository } from './entities/MessageEventRepository';
+import { WebhookDeliveryRepository } from './entities/WebhookDeliveryRepository';
+import { InboundMessageRepository } from './entities/InboundMessageRepository';
+import { CommunicationSuppressionRepository } from './entities/CommunicationSuppressionRepository';
+import { SendRateLimitRepository } from './entities/SendRateLimitRepository';
+import { EmailValidationResultRepository } from './entities/EmailValidationResultRepository';
+import { ContactChannelRepository } from './entities/ContactChannelRepository';
+import { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
+import { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepository';
+import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
+import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
+import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
+
 // Base repositories
 export { BaseRepository } from './base/BaseRepository';
 export { TenantAwareRepository } from './base/TenantAwareRepository';
@@ -69,39 +101,6 @@ export type {
   TenantWithInitialSetupData,
   CompleteSetupResult,
 } from './transactions/TenantSetupTransactionRepository';
-
-// Import all repository classes first
-import { UserRepository } from './entities/UserRepository';
-import { TenantRepository } from './entities/TenantRepository';
-import { RoleRepository } from './entities/RoleRepository';
-import { PermissionRepository } from './entities/PermissionRepository';
-import { RolePermissionRepository } from './entities/RolePermissionRepository';
-import { LeadRepository } from './entities/LeadRepository';
-import { ProductRepository } from './entities/ProductRepository';
-import { LeadPointOfContactRepository } from './entities/LeadPointOfContactRepository';
-import { LeadStatusRepository } from './entities/LeadStatusRepository';
-import { LeadProductRepository } from './entities/LeadProductRepository';
-import { UserTenantRepository } from './entities/UserTenantRepository';
-import { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
-import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
-import { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
-import { ContactCampaignRepository } from './entities/ContactCampaignRepository';
-import { CampaignPlanVersionRepository } from './entities/CampaignPlanVersionRepository';
-import { ScheduledActionRepository } from './entities/ScheduledActionRepository';
-import { OutboundMessageRepository } from './entities/OutboundMessageRepository';
-import { MessageEventRepository } from './entities/MessageEventRepository';
-import { WebhookDeliveryRepository } from './entities/WebhookDeliveryRepository';
-import { InboundMessageRepository } from './entities/InboundMessageRepository';
-import { CommunicationSuppressionRepository } from './entities/CommunicationSuppressionRepository';
-import { SendRateLimitRepository } from './entities/SendRateLimitRepository';
-import { EmailValidationResultRepository } from './entities/EmailValidationResultRepository';
-import { ContactChannelRepository } from './entities/ContactChannelRepository';
-import { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
-import { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepository';
-import { CalendarLinkClickRepository } from './entities/CalendarLinkClickRepository';
-import { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
-import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
-import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
 
 // Repository instances - Singleton pattern for easy access
 const userRepository = new UserRepository();

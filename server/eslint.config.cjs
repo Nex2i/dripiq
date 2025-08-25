@@ -58,49 +58,53 @@ module.exports = [
           project: './tsconfig.json',
           alwaysTryTypes: true,
         },
+        node: {},
       },
     },
     rules: {
-      'prettier/prettier': [
-        'warn',
-        {
-          singleQuote: true,
-          tabWidth: 2,
-        },
-        {
-          usePrettierrc: true,
-        },
-      ],
+      // formatting
+      'prettier/prettier': ['warn', { singleQuote: true, tabWidth: 2 }, { usePrettierrc: true }],
       'linebreak-style': ['error', 'unix'],
-      'import/export': 'off',
+
+      // import hygiene
+      'import/first': 'error',
+      'import/newline-after-import': 'error',
       'import/order': [
         'warn',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object'],
-        },
+        { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object'] },
       ],
+      'import/export': 'off',
       'import/default': 'off',
       'import/no-named-as-default-member': 'off',
       'import/no-named-as-default': 'off',
+
+      // forbid dynamic/lazy imports in src
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.type='Import']",
+          message: 'Dynamic import() is not allowed. Use static top-level imports.',
+        },
+      ],
+      'global-require': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      'import/no-dynamic-require': 'error',
+
+      // unused
       'unused-imports/no-unused-imports': 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-        },
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
+
+      // misc TS
       '@typescript-eslint/naming-convention': [
         'error',
         {
           selector: ['parameter', 'variable'],
           leadingUnderscore: 'forbid',
-          filter: {
-            regex: '_*',
-            match: false,
-          },
+          filter: { regex: '_*', match: false },
           format: null,
         },
         {
@@ -118,9 +122,16 @@ module.exports = [
       'no-empty-pattern': 'off',
     },
   },
+
   // Jest test files configuration
   {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
+    files: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/*.test.tsx',
+      '**/*.spec.tsx',
+      '**/__tests__/**/*.{ts,tsx,js,jsx}',
+    ],
     languageOptions: {
       globals: {
         describe: 'readonly',
@@ -138,12 +149,25 @@ module.exports = [
         Request: 'readonly',
         Headers: 'readonly',
         fetch: 'readonly',
-        FormData: 'readonly',
-        URLSearchParams: 'readonly',
-        ReadableStream: 'readonly',
-        Event: 'readonly',
-        Blob: 'readonly',
       },
+    },
+    rules: {
+      // import rules don't matter in tests
+      'import/first': 'off',
+      'import/newline-after-import': 'off',
+      'import/order': 'off',
+      'import/no-unresolved': 'off',
+      'import/no-extraneous-dependencies': 'off',
+      'import/no-dynamic-require': 'off',
+
+      // allow any style of importing in tests
+      'no-restricted-syntax': 'off', // permits import()
+      'global-require': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+
+      // optional: ignore unused imports in tests
+      'unused-imports/no-unused-imports': 'off',
     },
   },
 ];

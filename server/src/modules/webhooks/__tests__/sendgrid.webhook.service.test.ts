@@ -6,6 +6,7 @@ import {
   contactCampaignRepository,
 } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
+import { logger } from '@/libs/logger';
 import { SendGridWebhookService } from '../sendgrid.webhook.service';
 import { SendGridWebhookError, SendGridEvent } from '../sendgrid.webhook.types';
 
@@ -725,7 +726,6 @@ describe('SendGridWebhookService', () => {
   describe('header sanitization', () => {
     it('should sanitize array headers in logging to prevent sensitive data exposure', async () => {
       // Mock the logger to capture what gets logged
-      const { logger } = require('@/libs/logger');
       const loggerInfoSpy = jest.spyOn(logger, 'info');
 
       // Setup headers with arrays (potential sensitive data)

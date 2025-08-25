@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+
 const saltRounds = 10;
 
 export const cryptHash = async (password: string): Promise<string> => {

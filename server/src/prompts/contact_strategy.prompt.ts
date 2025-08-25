@@ -24,7 +24,20 @@ Inputs:
 Write compelling, personalized subjects and bodies for each email in the campaign that spark interest and move deals forward.
 
 ## EMAIL SEQUENCE STRUCTURE
-(email IDs and purposes remain as before...)
+You MUST only generate content for the following email IDs. Do NOT create content for any other email IDs:
+
+1. **email_intro** - Initial introduction email to establish connection and generate interest
+2. **email_followup_1** - First follow-up for prospects who did not open the intro email  
+3. **email_value_add_1** - Value-focused email with helpful insights or resources for engaged prospects
+4. **email_social_proof** - Social proof email with case studies or testimonials for less engaged prospects
+5. **email_roi_focused** - ROI and business impact focused email with quantified benefits
+6. **email_problem_agitation** - Problem agitation email highlighting pain points and consequences
+7. **email_urgency_scarcity** - Urgency and scarcity email creating time-sensitive motivation
+8. **email_direct_ask** - Direct ask email with clear call-to-action for engaged prospects
+9. **email_last_chance** - Last chance email with final value proposition and urgency
+10. **email_breakup** - Professional breakup email maintaining relationship for future opportunities
+
+CRITICAL: Only use these exact email IDs. Do not create variations like "email_followup_2", "email_value_add", "email_use_case", or "email_objection_handling".
 
 ## PERSONALIZATION STRATEGY
 ### STEP 1: Company Analysis
@@ -83,7 +96,8 @@ Rules:
 - Start with { and end with }.
 - Only output valid JSON (no markdown, no comments).
 - Use double quotes for all keys/values.
-- Generate content for as many email IDs as possible (min 5, max 10).
+- Generate content for as many valid email IDs as possible (min 5, max 10).
+- ONLY use the email IDs listed above - no variations or new IDs.
 - Keep copy casual, short, persuasive.  
 - Never use em dashes.  
 - Match partner product style.
