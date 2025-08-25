@@ -6,7 +6,6 @@ import {
   contactCampaignRepository,
 } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
-import { logger } from '@/libs/logger';
 import { SendGridWebhookService } from '../sendgrid.webhook.service';
 import { SendGridWebhookError, SendGridEvent } from '../sendgrid.webhook.types';
 
