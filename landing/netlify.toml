@@ -19,25 +19,25 @@
 
 # Redirect Netlify subdomains to apex
 [[redirects]]
-  from = "https://dripiq.netlify.app/*"
+  from = "https://dripiq-landing.netlify.app/*"
   to = "https://dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "http://dripiq.netlify.app/*"
+  from = "http://dripiq-landing.netlify.app/*"
   to = "https://dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "https://dripiq-app.netlify.app/*"
+  from = "http://dripiq-landing.netlify.app/*"
   to = "https://dripiq.ai/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "http://dripiq-app.netlify.app/*"
+  from = "http://dripiq-landing.netlify.app/*"
   to = "https://dripiq.ai/:splat"
   status = 301
   force = true
