@@ -11,3 +11,5 @@ Before starting any work always return back first your plan before writing or co
 Before pushing a new commit run the scripts inside `ci.yml`. If any fail fix the issue, if it is a lint run the `lint --fix` command for the linter to fix for you.
 
 Avoid at all costs adding comments saying that a new code block is new or when removing dont include a comment saying code used to be there. Avoid status comments of new, updated, removed.
+
+Avoid importing/requiring anything not at the top of the file. Do not lazy load components outside of the @/landing project.
