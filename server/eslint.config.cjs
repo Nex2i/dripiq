@@ -58,49 +58,53 @@ module.exports = [
           project: './tsconfig.json',
           alwaysTryTypes: true,
         },
+        node: {},
       },
     },
     rules: {
-      'prettier/prettier': [
-        'warn',
-        {
-          singleQuote: true,
-          tabWidth: 2,
-        },
-        {
-          usePrettierrc: true,
-        },
-      ],
+      // formatting
+      'prettier/prettier': ['warn', { singleQuote: true, tabWidth: 2 }, { usePrettierrc: true }],
       'linebreak-style': ['error', 'unix'],
-      'import/export': 'off',
+
+      // import hygiene
+      'import/first': 'error',
+      'import/newline-after-import': 'error',
       'import/order': [
         'warn',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object'],
-        },
+        { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object'] },
       ],
+      'import/export': 'off',
       'import/default': 'off',
       'import/no-named-as-default-member': 'off',
       'import/no-named-as-default': 'off',
+
+      // forbid dynamic/lazy imports in src
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.type='Import']",
+          message: 'Dynamic import() is not allowed. Use static top-level imports.',
+        },
+      ],
+      'global-require': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      'import/no-dynamic-require': 'error',
+
+      // unused
       'unused-imports/no-unused-imports': 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-        },
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
+
+      // misc TS
       '@typescript-eslint/naming-convention': [
         'error',
         {
           selector: ['parameter', 'variable'],
           leadingUnderscore: 'forbid',
-          filter: {
-            regex: '_*',
-            match: false,
-          },
+          filter: { regex: '_*', match: false },
           format: null,
         },
         {
@@ -118,6 +122,7 @@ module.exports = [
       'no-empty-pattern': 'off',
     },
   },
+
   // Jest test files configuration
   {
     files: ['**/*.test.ts', '**/*.spec.ts'],
@@ -144,6 +149,12 @@ module.exports = [
         Event: 'readonly',
         Blob: 'readonly',
       },
+    },
+    rules: {
+      // allow require() and dynamic require in test files
+      'global-require': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'import/no-dynamic-require': 'off',
     },
   },
 ];

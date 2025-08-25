@@ -1,4 +1,5 @@
 import pino, { Logger, LoggerOptions } from 'pino';
+import { H } from '@highlight-run/node';
 
 // highlight.io configuration
 const highlightConfig = {
@@ -61,7 +62,6 @@ export const baseLogger = pino(loggerOptions);
 if (typeof process.env.NEXT_RUNTIME === 'undefined' || process.env.NEXT_RUNTIME === 'nodejs') {
   if (process.env.NODE_ENV === 'production' && highlightConfig.projectID) {
     try {
-      const { H } = require('@highlight-run/node');
       H.init(highlightConfig);
     } catch (error) {
       console.warn('Failed to initialize highlight.io:', error);
@@ -150,7 +150,6 @@ export const reportErrorToHighlight = (
 ) => {
   if (process.env.NODE_ENV === 'production') {
     try {
-      const { H } = require('@highlight-run/node');
       H.consumeError(error, message, context);
     } catch (highlightError) {
       console.warn('Failed to report error to Highlight.io:', highlightError);
