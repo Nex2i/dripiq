@@ -155,6 +155,8 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
       const startTime = Date.now();
 
       try {
+        const rawBody = request.rawBody;
+
         // Log incoming webhook request
         logger.info('Received SendGrid webhook', {
           requestId,
@@ -172,8 +174,8 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         // Debug log: Log the entire payload body for debugging webhook issues
         logger.debug('SendGrid webhook payload received', {
           requestId,
-          payloadSize: rawBody.length,
-          payload: rawBody.toString('utf8'),
+          payloadSize: rawBody?.length,
+          payload: rawBody?.toString('utf8'),
           headers: {
             signature: request.headers['x-twilio-email-event-webhook-signature'],
             timestamp: request.headers['x-twilio-email-event-webhook-timestamp'],
@@ -192,7 +194,6 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         }
 
         // Get raw body for signature verification
-        const rawBody = request.rawBody;
         if (!rawBody) {
           logger.error('Missing raw body for signature verification', { requestId });
           return reply.status(400).send({
