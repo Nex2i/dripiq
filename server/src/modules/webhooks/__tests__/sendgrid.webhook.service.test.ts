@@ -219,7 +219,7 @@ describe('SendGridWebhookService', () => {
       );
     });
 
-    it('should process webhook without tenant ID using system fallback', async () => {
+    it('should reject webhook without tenant ID', async () => {
       const eventWithoutTenant = { ...mockSendGridEvent };
       delete eventWithoutTenant.tenant_id;
       const payload = JSON.stringify([eventWithoutTenant]);
@@ -231,46 +231,11 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
-        id: 'webhook-delivery-123',
-        tenantId: 'system',
-        provider: 'sendgrid',
-        eventType: 'delivered',
-        messageId: 'message-789',
-        receivedAt: new Date(),
-        payload: [eventWithoutTenant],
-        signature: 'valid-signature',
-        status: 'received',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      mockMessageEventRepo.createForTenant.mockResolvedValue({
-        id: 'message-event-123',
-        tenantId: 'system',
-        messageId: 'message-789',
-        type: 'delivered',
-        eventAt: new Date(),
-        sgEventId: 'sg-event-123',
-        data: eventWithoutTenant,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
-
-      const result = await service.processWebhook(mockHeaders, payload);
-
-      expect(result.success).toBe(true);
-      expect(result.totalEvents).toBe(1);
-      expect(result.successfulEvents).toBe(1);
-      expect(mockWebhookDeliveryRepo.createForTenant).toHaveBeenCalledWith(
-        'system',
-        expect.any(Object)
+      await expect(service.processWebhook(mockHeaders, payload)).rejects.toThrow(
+        SendGridWebhookError
       );
-      expect(mockMessageEventRepo.createForTenant).toHaveBeenCalledWith(
-        'system',
-        expect.any(Object)
+      await expect(service.processWebhook(mockHeaders, payload)).rejects.toThrow(
+        'Unable to determine tenant ID from webhook events'
       );
     });
 

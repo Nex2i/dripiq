@@ -83,44 +83,30 @@ export class SendGridWebhookService {
         throw new SendGridWebhookError('No events found in webhook payload', 'EMPTY_PAYLOAD', 400);
       }
 
-      // Step 3: Determine tenant ID from events (allow fallback to default)
+      // Step 3: Determine tenant ID from events
+      // This is critical for data isolation and security - we must reject webhooks
+      // without tenant context to prevent data leakage across tenants
       const tenantId = this.extractTenantId(events);
       if (!tenantId) {
-        logger.warn('No tenant ID found in webhook events, using default processing', {
-          eventCount: events.length,
-          firstEventType: events[0]?.event,
-        });
-        // Continue processing without tenant - we'll handle this per event
+        throw new SendGridWebhookError(
+          'Unable to determine tenant ID from webhook events',
+          'MISSING_TENANT_ID',
+          400
+        );
       }
 
       // Step 4: Store raw webhook delivery
-      const webhookDelivery = await this.storeRawWebhook(
-        tenantId || 'system',
-        verification.signature,
-        events
-      );
+      const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
 
       // Step 5: Process events
-      const processedEvents = await this.processEvents(
-        tenantId || 'system',
-        events,
-        processedAtTimestamp
-      );
+      const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
 
       // Step 6: Update webhook delivery status
-      await this.updateWebhookDeliveryStatus(
-        webhookDelivery.id,
-        tenantId || 'system',
-        processedEvents
-      );
+      await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
 
       // Step 7: Trigger campaign transitions for successful events
       try {
-        await this.processCampaignTransitionsBatch(
-          tenantId || 'system',
-          processedEvents,
-          webhookDelivery.id
-        );
+        await this.processCampaignTransitionsBatch(tenantId, processedEvents, webhookDelivery.id);
       } catch (error) {
         logger.error('Failed to process campaign transitions batch', {
           tenantId,
