@@ -83,28 +83,44 @@ export class SendGridWebhookService {
         throw new SendGridWebhookError('No events found in webhook payload', 'EMPTY_PAYLOAD', 400);
       }
 
-      // Step 3: Determine tenant ID from events
+      // Step 3: Determine tenant ID from events (allow fallback to default)
       const tenantId = this.extractTenantId(events);
       if (!tenantId) {
-        throw new SendGridWebhookError(
-          'Unable to determine tenant ID from webhook events',
-          'MISSING_TENANT_ID',
-          400
-        );
+        logger.warn('No tenant ID found in webhook events, using default processing', {
+          eventCount: events.length,
+          firstEventType: events[0]?.event,
+        });
+        // Continue processing without tenant - we'll handle this per event
       }
 
       // Step 4: Store raw webhook delivery
-      const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
+      const webhookDelivery = await this.storeRawWebhook(
+        tenantId || 'system',
+        verification.signature,
+        events
+      );
 
       // Step 5: Process events
-      const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
+      const processedEvents = await this.processEvents(
+        tenantId || 'system',
+        events,
+        processedAtTimestamp
+      );
 
       // Step 6: Update webhook delivery status
-      await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
+      await this.updateWebhookDeliveryStatus(
+        webhookDelivery.id,
+        tenantId || 'system',
+        processedEvents
+      );
 
       // Step 7: Trigger campaign transitions for successful events
       try {
-        await this.processCampaignTransitionsBatch(tenantId, processedEvents, webhookDelivery.id);
+        await this.processCampaignTransitionsBatch(
+          tenantId || 'system',
+          processedEvents,
+          webhookDelivery.id
+        );
       } catch (error) {
         logger.error('Failed to process campaign transitions batch', {
           tenantId,
@@ -179,28 +195,41 @@ export class SendGridWebhookService {
 
       // Validate each event
       const validatedEvents: SendGridEvent[] = [];
-      for (const [index, event] of parsed.entries()) {
-        try {
-          const validatedEvent = this.validateEvent(event);
-          if (validatedEvent !== null) {
-            validatedEvents.push(validatedEvent);
+      let skippedCount = 0;
+      let invalidCount = 0;
+
+      for (const [_index, event] of parsed.entries()) {
+        const validatedEvent = this.validateEvent(event);
+        if (validatedEvent !== null) {
+          validatedEvents.push(validatedEvent);
+        } else {
+          skippedCount++;
+          // Check if it was invalid or just not recordable
+          if (!event?.event || !SENDGRID_EVENT_TYPES.includes(event.event)) {
+            invalidCount++;
           }
-          // If validatedEvent is null, the event was dismissed early (known but not recorded)
-        } catch (error) {
-          logger.warn(`Invalid event at index ${index}`, {
-            event,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-          // Continue processing other events instead of failing the entire webhook
         }
       }
 
+      logger.info('Webhook payload validation completed', {
+        totalEvents: parsed.length,
+        validatedEvents: validatedEvents.length,
+        skippedEvents: skippedCount,
+        invalidEvents: invalidCount,
+      });
+
       if (validatedEvents.length === 0) {
-        throw new SendGridWebhookError(
-          'No recordable events found in payload - all events were either invalid or dismissed',
-          'NO_RECORDABLE_EVENTS',
-          400
-        );
+        // Provide more detailed error message
+        const errorMessage =
+          invalidCount > 0
+            ? `No recordable events found in payload - ${invalidCount} invalid events, ${skippedCount - invalidCount} non-recordable events`
+            : 'No recordable events found in payload - all events were non-recordable types';
+
+        throw new SendGridWebhookError(errorMessage, 'NO_RECORDABLE_EVENTS', 400, {
+          totalEvents: parsed.length,
+          invalidEvents: invalidCount,
+          skippedEvents: skippedCount,
+        });
       }
 
       return validatedEvents;
@@ -221,21 +250,8 @@ export class SendGridWebhookService {
    */
   private validateEvent(event: any): SendGridEvent | null {
     if (!event || typeof event !== 'object') {
-      throw new Error('Event must be an object');
-    }
-
-    const requiredFields = [
-      'email',
-      'timestamp',
-      'smtp-id',
-      'event',
-      'sg_event_id',
-      'sg_message_id',
-    ];
-    for (const field of requiredFields) {
-      if (!event[field]) {
-        throw new Error(`Missing required field: ${field}`);
-      }
+      logger.warn('Event validation failed: not an object', { event });
+      return null; // Don't throw, just skip invalid events
     }
 
     // Check if this is a known event type that we don't record - dismiss early
@@ -243,23 +259,45 @@ export class SendGridWebhookService {
       return null; // Dismiss this event without warning
     }
 
-    // Check if this is a valid recorded event type
+    // Check if this is a valid recorded event type first
     if (!SENDGRID_EVENT_TYPES.includes(event.event)) {
       // Check if it's at least a known SendGrid event type
       if (ALL_KNOWN_SENDGRID_EVENTS.includes(event.event)) {
         return null; // Known but not configured for recording
       }
-      // Truly unknown event type - this might indicate a configuration issue
-      throw new Error(`Invalid event type: ${event.event}`);
+      // Unknown event type - log but don't fail entire webhook
+      logger.warn('Unknown SendGrid event type', { eventType: event.event, event });
+      return null;
+    }
+
+    // More lenient field validation - check core required fields
+    const coreRequiredFields = ['email', 'timestamp', 'event'];
+    for (const field of coreRequiredFields) {
+      if (!event[field]) {
+        logger.warn(`Event missing core required field: ${field}`, { event });
+        return null; // Skip this event but don't fail entire webhook
+      }
     }
 
     // Basic type validation
     if (typeof event.email !== 'string' || !event.email.includes('@')) {
-      throw new Error('Invalid email address');
+      logger.warn('Invalid email address in event', { email: event.email, event });
+      return null;
     }
 
     if (typeof event.timestamp !== 'number' || event.timestamp <= 0) {
-      throw new Error('Invalid timestamp');
+      logger.warn('Invalid timestamp in event', { timestamp: event.timestamp, event });
+      return null;
+    }
+
+    // Generate missing fields if needed
+    if (!event.sg_event_id) {
+      event.sg_event_id = `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      logger.debug('Generated missing sg_event_id for event', { event });
+    }
+
+    if (!event.sg_message_id && event['smtp-id']) {
+      event.sg_message_id = event['smtp-id'];
     }
 
     return event as SendGridEvent;
@@ -381,10 +419,21 @@ export class SendGridWebhookService {
     event: SendGridEvent,
     processedAtTimestamp: string
   ): Promise<ProcessedEventResult> {
+    logger.debug('Processing individual event', {
+      tenantId,
+      eventType: event.event,
+      eventId: event.sg_event_id,
+      hasOutboundMessageId: !!event.outbound_message_id,
+    });
+
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
 
     // Check if we should create a message event for this type
     if (!eventMapping.shouldCreateMessageEvent) {
+      logger.debug('Skipping event - does not require message event creation', {
+        eventType: event.event,
+        eventId: event.sg_event_id,
+      });
       return {
         success: true,
         eventId: event.sg_event_id,
@@ -398,6 +447,10 @@ export class SendGridWebhookService {
     if (this.enableDuplicateDetection) {
       const isDuplicate = await this.checkForDuplicate(tenantId, event);
       if (isDuplicate) {
+        logger.debug('Skipping event - duplicate detected', {
+          eventType: event.event,
+          eventId: event.sg_event_id,
+        });
         return {
           success: true,
           eventId: event.sg_event_id,
@@ -416,14 +469,41 @@ export class SendGridWebhookService {
 
     // Create normalized message event
     const messageEvent = this.normalizeEvent(event, processedAtTimestamp);
-    const created = await messageEventRepository.createForTenant(tenantId, messageEvent);
 
-    return {
-      success: true,
-      eventId: event.sg_event_id,
+    logger.debug('Creating message event', {
+      tenantId,
       eventType: event.event,
-      messageId: created.id,
-    };
+      normalizedType: eventMapping.normalizedType,
+      messageId: messageEvent.messageId,
+      eventId: event.sg_event_id,
+    });
+
+    try {
+      const created = await messageEventRepository.createForTenant(tenantId, messageEvent);
+
+      logger.info('Message event created successfully', {
+        tenantId,
+        eventType: event.event,
+        messageEventId: created.id,
+        eventId: event.sg_event_id,
+      });
+
+      return {
+        success: true,
+        eventId: event.sg_event_id,
+        eventType: event.event,
+        messageId: created.id,
+      };
+    } catch (error) {
+      logger.error('Failed to create message event', {
+        tenantId,
+        eventType: event.event,
+        eventId: event.sg_event_id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        messageEvent,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -462,8 +542,22 @@ export class SendGridWebhookService {
   ): Omit<NewMessageEvent, 'tenantId'> {
     const eventMapping = EVENT_NORMALIZATION_MAP[event.event];
 
-    return {
-      messageId: event.outbound_message_id || 'unknown',
+    // Handle missing outbound_message_id by trying to derive it from other fields
+    let messageId = event.outbound_message_id;
+    if (!messageId) {
+      // Try to extract from sg_message_id or smtp-id
+      messageId = event.sg_message_id || event['smtp-id'] || 'unknown';
+      logger.debug('Derived messageId for event', {
+        eventType: event.event,
+        derivedMessageId: messageId,
+        originalOutboundMessageId: event.outbound_message_id,
+        sgMessageId: event.sg_message_id,
+        smtpId: event['smtp-id'],
+      });
+    }
+
+    const normalizedEvent = {
+      messageId,
       type: eventMapping.normalizedType,
       eventAt: new Date(event.timestamp * 1000),
       sgEventId: event.sg_event_id || null,
@@ -476,6 +570,16 @@ export class SendGridWebhookService {
         normalizedType: eventMapping.normalizedType,
       },
     };
+
+    logger.debug('Normalized event for storage', {
+      eventType: event.event,
+      normalizedType: eventMapping.normalizedType,
+      messageId,
+      eventAt: normalizedEvent.eventAt.toISOString(),
+      sgEventId: normalizedEvent.sgEventId,
+    });
+
+    return normalizedEvent;
   }
 
   /**

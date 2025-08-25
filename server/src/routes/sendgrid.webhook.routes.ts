@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
-import fastifyRateLimit from '@fastify/rate-limit';
+
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
@@ -52,27 +52,6 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
       }
     }
   );
-
-  // Register rate limiting for webhook endpoint
-  await fastify.register(fastifyRateLimit, {
-    max: 1000, // Max 1000 requests per window
-    timeWindow: '1 minute',
-    keyGenerator: (request: FastifyRequest) => {
-      // Use IP address for rate limiting
-      return request.ip;
-    },
-    errorResponseBuilder: () => ({
-      error: 'Rate Limit Exceeded',
-      message: 'Too many webhook requests. Please try again later.',
-      retryAfter: 60,
-    }),
-    onExceeding: (request: FastifyRequest) => {
-      logger.warn('SendGrid webhook rate limit exceeded', {
-        ip: request.ip,
-        userAgent: request.headers['user-agent'],
-      });
-    },
-  });
 
   // Health check endpoint for webhook
   fastify.route({
@@ -127,11 +106,6 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
         401: WebhookErrorSchema,
         413: WebhookErrorSchema,
         422: WebhookErrorSchema,
-        429: Type.Object({
-          error: Type.String(),
-          message: Type.String(),
-          retryAfter: Type.Number(),
-        }),
         500: WebhookErrorSchema,
       },
     },
@@ -372,7 +346,7 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
           !!process.env.SENDGRID_WEBHOOK_PUBLIC_KEY &&
           process.env.SENDGRID_WEBHOOK_PUBLIC_KEY.length >= 50,
         enabled: process.env.SENDGRID_WEBHOOK_ENABLED !== 'false',
-        rateLimitConfigured: true, // Always configured in this implementation
+        rateLimitConfigured: false, // Rate limiting has been removed
         timestamp: new Date().toISOString(),
       };
 
