@@ -1,5 +1,6 @@
 import { and, eq, desc, inArray } from 'drizzle-orm';
-import { webhookDeliveries, WebhookDelivery, NewWebhookDelivery } from '@/db/schema';
+import { webhookDeliveries, WebhookDelivery, NewWebhookDelivery, tenants } from '@/db/schema';
+import { logger } from '@/libs/logger';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -21,11 +22,74 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewWebhookDelivery, 'tenantId'>
   ): Promise<WebhookDelivery> {
-    const [result] = await this.db
-      .insert(this.table)
-      .values({ ...(data as Omit<NewWebhookDelivery, 'tenantId'>), tenantId } as NewWebhookDelivery)
-      .returning();
-    return result as WebhookDelivery;
+    logger.debug('Creating webhook delivery for tenant', {
+      tenantId,
+      provider: data.provider,
+      eventType: data.eventType,
+      messageId: data.messageId,
+      status: data.status,
+    });
+
+    // Validate tenant exists to provide better error context
+    try {
+      const tenantExists = await this.db
+        .select({ id: tenants.id })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      if (!tenantExists || tenantExists.length === 0) {
+        logger.error('Tenant not found when creating webhook delivery', {
+          tenantId,
+          provider: data.provider,
+          eventType: data.eventType,
+          messageId: data.messageId,
+        });
+        throw new Error(`Tenant '${tenantId}' does not exist in the tenants table`);
+      }
+
+      logger.debug('Tenant validation passed for webhook delivery creation', {
+        tenantId,
+        tenantFound: !!tenantExists[0],
+      });
+    } catch (error) {
+      logger.error('Tenant validation failed during webhook delivery creation', {
+        tenantId,
+        provider: data.provider,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+
+    try {
+      const [result] = await this.db
+        .insert(this.table)
+        .values({
+          ...(data as Omit<NewWebhookDelivery, 'tenantId'>),
+          tenantId,
+        } as NewWebhookDelivery)
+        .returning();
+
+      logger.debug('Successfully created webhook delivery', {
+        tenantId,
+        webhookDeliveryId: result?.id,
+        provider: data.provider,
+        eventType: data.eventType,
+      });
+
+      return result as WebhookDelivery;
+    } catch (error) {
+      logger.error('Database error when creating webhook delivery', {
+        tenantId,
+        provider: data.provider,
+        eventType: data.eventType,
+        messageId: data.messageId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        dataKeys: Object.keys(data),
+      });
+      throw error;
+    }
   }
 
   async createManyForTenant(

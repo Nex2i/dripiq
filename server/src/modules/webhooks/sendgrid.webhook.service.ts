@@ -88,12 +88,30 @@ export class SendGridWebhookService {
       // without tenant context to prevent data leakage across tenants
       const tenantId = this.extractTenantId(events);
       if (!tenantId) {
+        logger.error('Unable to determine tenant ID from webhook events', {
+          eventCount: events.length,
+          events: events.map((e) => ({
+            email: e.email,
+            event: e.event,
+            tenant_id: e.tenant_id,
+            outbound_message_id: e.outbound_message_id,
+            sg_event_id: e.sg_event_id,
+          })),
+          payloadSize: rawPayload.length,
+        });
         throw new SendGridWebhookError(
           'Unable to determine tenant ID from webhook events',
           'MISSING_TENANT_ID',
           400
         );
       }
+
+      logger.info('Extracted tenant ID from webhook events', {
+        tenantId,
+        eventCount: events.length,
+        eventTypes: events.map((e) => e.event),
+        eventEmails: events.map((e) => e.email),
+      });
 
       // Step 4: Store raw webhook delivery
       const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
@@ -151,11 +169,26 @@ export class SendGridWebhookService {
           details: error.details,
         });
       } else {
+        // Extract tenant ID for error context if available
+        let contextTenantId: string | null = null;
+        try {
+          const tempEvents = this.parseWebhookPayload(rawPayload);
+          contextTenantId = this.extractTenantId(tempEvents);
+        } catch {
+          // Ignore parsing errors here, focus on original error
+        }
+
         logger.error('SendGrid webhook processing failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
           processingTimeMs: processingTime,
           payloadSize: rawPayload.length,
+          contextTenantId,
+          isForeignKeyError:
+            error instanceof Error && error.message.includes('foreign key constraint'),
+          isWebhookDeliveryError:
+            error instanceof Error && error.message.includes('webhook_deliveries'),
+          isTenantIdError: error instanceof Error && error.message.includes('tenant_id'),
         });
       }
 
@@ -429,7 +462,55 @@ export class SendGridWebhookService {
       status: 'received',
     };
 
-    return await webhookDeliveryRepository.createForTenant(tenantId, webhookData);
+    logger.info('Storing raw webhook delivery', {
+      tenantId,
+      provider: webhookData.provider,
+      eventType: webhookData.eventType,
+      messageId: webhookData.messageId,
+      eventCount: events.length,
+      status: webhookData.status,
+      hasSignature: !!signature,
+    });
+
+    try {
+      const result = await webhookDeliveryRepository.createForTenant(tenantId, webhookData);
+
+      logger.info('Successfully stored webhook delivery', {
+        tenantId,
+        webhookDeliveryId: result.id,
+        provider: webhookData.provider,
+        eventType: webhookData.eventType,
+        eventCount: events.length,
+      });
+
+      return result;
+    } catch (error) {
+      logger.error(
+        'Failed to store webhook delivery - potential tenant foreign key constraint violation',
+        {
+          tenantId,
+          provider: webhookData.provider,
+          eventType: webhookData.eventType,
+          messageId: webhookData.messageId,
+          eventCount: events.length,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          webhookData: {
+            ...webhookData,
+            payload: `[${events.length} events - omitted for brevity]`,
+          },
+          eventSummary: events.map((e) => ({
+            event: e.event,
+            email: e.email,
+            tenant_id: e.tenant_id,
+            outbound_message_id: e.outbound_message_id,
+            sg_event_id: e.sg_event_id,
+            timestamp: e.timestamp,
+          })),
+        }
+      );
+      throw error;
+    }
   }
 
   /**
