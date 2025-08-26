@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
+import { logger } from '@/libs/logger';
 import {
   getContactById,
   updateContact,
@@ -79,7 +80,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contact,
         });
       } catch (error: any) {
-        fastify.log.error(`Error getting contact: ${error.message}`);
+        logger.error(`Error getting contact: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -174,7 +175,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contactData
         );
 
-        fastify.log.info(
+        logger.info(
           `Contact updated. Contact ID: ${contactId}, Lead ID: ${leadId}, Tenant: ${authenticatedRequest.tenantId}`
         );
 
@@ -183,7 +184,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contact: updatedContact,
         });
       } catch (error: any) {
-        fastify.log.error(`Error updating contact: ${error.message}`);
+        logger.error(`Error updating contact: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -270,7 +271,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contactData
         );
 
-        fastify.log.info(
+        logger.info(
           `Contact created. Contact ID: ${createdContact.id}, Lead ID: ${leadId}, Tenant: ${authenticatedRequest.tenantId}`
         );
 
@@ -279,7 +280,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contact: createdContact,
         });
       } catch (error: any) {
-        fastify.log.error(`Error creating contact: ${error.message}`);
+        logger.error(`Error creating contact: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -361,7 +362,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
 
         await deleteContact(authenticatedRequest.tenantId, leadId, contactId);
 
-        fastify.log.info(
+        logger.info(
           `Contact deleted. Contact ID: ${contactId}, Lead ID: ${leadId}, Tenant: ${authenticatedRequest.tenantId}`
         );
 
@@ -369,7 +370,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           message: 'Contact deleted successfully',
         });
       } catch (error: any) {
-        fastify.log.error(`Error deleting contact: ${error.message}`);
+        logger.error(`Error deleting contact: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -455,7 +456,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           manuallyReviewed
         );
 
-        fastify.log.info(
+        logger.info(
           `Contact manually reviewed status updated. Contact ID: ${contactId}, Lead ID: ${leadId}, Status: ${manuallyReviewed}, Tenant: ${authenticatedRequest.tenantId}`
         );
 
@@ -464,7 +465,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contact: updatedContact,
         });
       } catch (error: any) {
-        fastify.log.error(`Error updating contact manually reviewed status: ${error.message}`);
+        logger.error(`Error updating contact manually reviewed status: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -545,7 +546,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           contactId
         );
 
-        fastify.log.info(
+        logger.info(
           `Contact unsubscribed. Contact ID: ${contactId}, Lead ID: ${leadId}, Tenant: ${authenticatedRequest.tenantId}`
         );
 
@@ -554,7 +555,7 @@ export default async function contactRoutes(fastify: FastifyInstance) {
           unsubscribed,
         });
       } catch (error: any) {
-        fastify.log.error(`Error unsubscribing contact: ${error.message}`);
+        logger.error(`Error unsubscribing contact: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
