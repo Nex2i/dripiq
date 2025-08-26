@@ -1,6 +1,5 @@
 import {
   convertTextToHtml,
-  isHtmlFormatted,
   formatEmailBodyForHtml,
   containsHtml,
   formatMixedContentForHtml,
@@ -72,25 +71,6 @@ Would you be open to a brief call to see how this could fit with your intake and
     it('should handle null/undefined', () => {
       expect(containsHtml(null as any)).toBe(false);
       expect(containsHtml(undefined as any)).toBe(false);
-    });
-  });
-
-  describe('isHtmlFormatted', () => {
-    it('should detect HTML tags', () => {
-      expect(isHtmlFormatted('<p>Hello</p>')).toBe(true);
-      expect(isHtmlFormatted('Hello <br> World')).toBe(true);
-      expect(isHtmlFormatted('<div>Content</div>')).toBe(true);
-    });
-
-    it('should return false for plain text', () => {
-      expect(isHtmlFormatted('Hello\nWorld')).toBe(false);
-      expect(isHtmlFormatted('Plain text email')).toBe(false);
-      expect(isHtmlFormatted('')).toBe(false);
-    });
-
-    it('should handle null/undefined', () => {
-      expect(isHtmlFormatted(null as any)).toBe(false);
-      expect(isHtmlFormatted(undefined as any)).toBe(false);
     });
   });
 

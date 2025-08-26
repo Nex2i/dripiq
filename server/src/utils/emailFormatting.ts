@@ -44,16 +44,6 @@ export function containsHtml(text: string): boolean {
 }
 
 /**
- * Checks if a string is already HTML formatted (legacy function for backward compatibility)
- *
- * @param text - Text to check
- * @returns true if the text appears to contain HTML tags
- */
-export function isHtmlFormatted(text: string): boolean {
-  return containsHtml(text);
-}
-
-/**
  * Formats mixed content for HTML email delivery.
  * Handles content that may contain both plain text and HTML elements.
  * Preserves existing HTML while converting plain text portions to HTML.
@@ -95,9 +85,7 @@ export function formatMixedContentForHtml(content: string): string {
 
 /**
  * Formats email body text for HTML email delivery.
- * If the text is already HTML, returns as-is.
- * If it's plain text, converts newlines to HTML breaks.
- * Now supports mixed content (plain text with HTML elements).
+ * Supports mixed content (plain text with HTML elements).
  *
  * @param bodyText - Email body text (plain text, HTML, or mixed)
  * @returns HTML-formatted email body
