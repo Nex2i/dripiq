@@ -142,10 +142,10 @@ Example CampaignPlan output:
       "no_click_after": "PT24H"
     }
   },
-  "startNodeId": "email_intro",
+  "startNodeId": "email_1",
   "nodes": [
     {
-      "id": "email_intro",
+      "id": "email_1",
       "channel": "email",
       "action": "send",
       "subject": "{subject}",

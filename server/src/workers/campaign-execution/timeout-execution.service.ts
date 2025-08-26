@@ -93,10 +93,10 @@ export class TimeoutExecutionService {
       });
 
       // Trigger campaign transition processing
-      // Get the campaign to access the plan and current node
+      // Get the campaign to access the plan
       const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
 
-      if (campaign && campaign.planJson && campaign.currentNodeId) {
+      if (campaign && campaign.planJson) {
         const campaignPlan = campaign.planJson as CampaignPlanOutput;
 
         await campaignPlanExecutionService.processTransition({
@@ -105,7 +105,7 @@ export class TimeoutExecutionService {
           contactId: campaign.contactId,
           leadId: campaign.leadId,
           eventType,
-          currentNodeId: campaign.currentNodeId,
+          currentNodeId: nodeId, // Use the nodeId from timeout payload, not campaign state
           plan: campaignPlan,
           eventRef: syntheticEvent.id,
         });
@@ -114,9 +114,7 @@ export class TimeoutExecutionService {
           tenantId,
           campaignId,
           eventType,
-          currentNodeId: campaign.currentNodeId,
-          messageEventId: syntheticEvent.id,
-          jobId: job.id,
+          currentNodeId: nodeId, // Log the actual node used for transition
         });
       } else {
         logger.warn(
@@ -126,7 +124,7 @@ export class TimeoutExecutionService {
             campaignId,
             campaignExists: !!campaign,
             hasPlan: !!campaign?.planJson,
-            hasCurrentNode: !!campaign?.currentNodeId,
+            nodeId, // Log the nodeId from payload
             jobId: job.id,
           }
         );
