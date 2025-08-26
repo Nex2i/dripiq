@@ -6,7 +6,7 @@ import {
   contactCampaignRepository,
 } from '@/repositories';
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
-import { NewWebhookDelivery, NewMessageEvent, WebhookDelivery } from '@/db/schema';
+import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
@@ -83,7 +83,33 @@ export class SendGridWebhookService {
         throw new SendGridWebhookError('No events found in webhook payload', 'EMPTY_PAYLOAD', 400);
       }
 
-      // Step 3: Determine tenant ID from events
+      // Step 3: Validate environment before processing
+      const currentEnvironment = process.env.NODE_ENV || 'development';
+      const isValidEnvironment = this.validateEnvironment(events, currentEnvironment);
+      if (!isValidEnvironment) {
+        logger.info('Webhook events from different environment - ignoring', {
+          currentEnvironment,
+          eventCount: events.length,
+          eventCategories: events.map((e) => e.category),
+          payloadSize: rawPayload.length,
+        });
+        
+        // Return success to prevent SendGrid retries
+        const result: WebhookProcessingResult = {
+          success: true,
+          webhookDeliveryId: 'env-skipped',
+          processedEvents: [],
+          totalEvents: events.length,
+          successfulEvents: 0,
+          failedEvents: 0,
+          skippedEvents: events.length,
+          errors: [],
+        };
+
+        return result;
+      }
+
+      // Step 4: Determine tenant ID from events
       // This is critical for data isolation and security - we must reject webhooks
       // without tenant context to prevent data leakage across tenants
       const tenantId = this.extractTenantId(events);
@@ -113,38 +139,8 @@ export class SendGridWebhookService {
         eventEmails: events.map((e) => e.email),
       });
 
-      // Step 4: Store raw webhook delivery
+      // Step 5: Store raw webhook delivery
       const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
-
-      // Step 5: Check if webhook delivery was created (tenant exists)
-      if (!webhookDelivery) {
-        logger.warn('Webhook processing skipped due to missing tenant', {
-          tenantId,
-          eventCount: events.length,
-          eventTypes: events.map((e) => e.event),
-          reason: 'Tenant does not exist in database',
-        });
-        
-        // Return early success response to avoid webhook retries
-        const result: WebhookProcessingResult = {
-          success: true,
-          webhookDeliveryId: null,
-          processedEvents: [],
-          totalEvents: events.length,
-          successfulEvents: 0,
-          failedEvents: 0,
-          skippedEvents: events.length,
-          errors: [],
-        };
-
-        logger.info('SendGrid webhook processed with tenant skip', {
-          ...result,
-          processingTimeMs: Date.now() - startTime,
-          tenantId,
-        });
-
-        return result;
-      }
 
       // Step 6: Process events
       const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
@@ -461,6 +457,41 @@ export class SendGridWebhookService {
   }
 
   /**
+   * Validate environment from events
+   * @param events - Array of validated events
+   * @param currentEnvironment - Current environment (development, production, etc.)
+   * @returns True if events are from the current environment
+   */
+  private validateEnvironment(events: SendGridEvent[], currentEnvironment: string): boolean {
+    for (const event of events) {
+      if (event.category) {
+        const envCategory = event.category.find(cat => cat.startsWith('env:'));
+        if (envCategory) {
+          const eventEnvironment = envCategory.replace('env:', '');
+          if (eventEnvironment !== currentEnvironment) {
+            logger.debug('Environment mismatch detected', {
+              currentEnvironment,
+              eventEnvironment,
+              eventCategories: event.category,
+              eventId: event.sg_event_id,
+            });
+            return false;
+          }
+        } else {
+          // If no environment category is found, this might be from an older version
+          // or a different system. We'll be permissive for backward compatibility
+          logger.debug('No environment category found in event - allowing through', {
+            currentEnvironment,
+            eventCategories: event.category,
+            eventId: event.sg_event_id,
+          });
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
    * Extract tenant ID from events
    * @param events - Array of validated events
    * @returns Tenant ID or null
@@ -482,7 +513,7 @@ export class SendGridWebhookService {
    * @param events - Parsed events
    * @returns Stored webhook delivery
    */
-  private async storeRawWebhook(tenantId: string, signature: string, events: SendGridEvent[]): Promise<WebhookDelivery | null> {
+  private async storeRawWebhook(tenantId: string, signature: string, events: SendGridEvent[]) {
     const webhookData: Omit<NewWebhookDelivery, 'tenantId'> = {
       provider: 'sendgrid',
       eventType: events.length === 1 && events[0] ? events[0].event : 'batch',
@@ -503,25 +534,15 @@ export class SendGridWebhookService {
     });
 
     try {
-      const result = await webhookDeliveryRepository.createForTenantSafe(tenantId, webhookData);
+      const result = await webhookDeliveryRepository.createForTenant(tenantId, webhookData);
 
-      if (result) {
-        logger.info('Successfully stored webhook delivery', {
-          tenantId,
-          webhookDeliveryId: result.id,
-          provider: webhookData.provider,
-          eventType: webhookData.eventType,
-          eventCount: events.length,
-        });
-      } else {
-        logger.warn('Webhook delivery not stored due to missing tenant', {
-          tenantId,
-          provider: webhookData.provider,
-          eventType: webhookData.eventType,
-          eventCount: events.length,
-          reason: 'Tenant does not exist in database',
-        });
-      }
+      logger.info('Successfully stored webhook delivery', {
+        tenantId,
+        webhookDeliveryId: result.id,
+        provider: webhookData.provider,
+        eventType: webhookData.eventType,
+        eventCount: events.length,
+      });
 
       return result;
     } catch (error) {

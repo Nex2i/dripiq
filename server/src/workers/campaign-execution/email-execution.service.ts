@@ -220,7 +220,7 @@ export class EmailExecutionService {
         to: contact.email,
         subject: node.subject,
         html: formatEmailBodyForHtml(emailBody),
-        categories: ['campaign', `tenant:${tenantId}`],
+        categories: ['campaign', `tenant:${tenantId}`, `env:${process.env.NODE_ENV || 'development'}`],
       };
 
       // Send email via SendGrid

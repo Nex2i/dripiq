@@ -17,11 +17,11 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
     super(webhookDeliveries);
   }
 
-  // Tenant-aware CRUD with graceful tenant handling
-  async createForTenantSafe(
+  // Tenant-aware CRUD
+  async createForTenant(
     tenantId: string,
     data: Omit<NewWebhookDelivery, 'tenantId'>
-  ): Promise<WebhookDelivery | null> {
+  ): Promise<WebhookDelivery> {
     logger.debug('Creating webhook delivery for tenant', {
       tenantId,
       provider: data.provider,
@@ -39,15 +39,13 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
         .limit(1);
 
       if (!tenantExists || tenantExists.length === 0) {
-        logger.warn('Tenant not found when creating webhook delivery - skipping webhook storage', {
+        logger.error('Tenant not found when creating webhook delivery', {
           tenantId,
           provider: data.provider,
           eventType: data.eventType,
           messageId: data.messageId,
-          reason: 'Tenant does not exist in database',
-          action: 'Webhook processing will be skipped for this tenant',
         });
-        return null; // Return null instead of throwing error
+        throw new Error(`Tenant '${tenantId}' does not exist in the tenants table`);
       }
 
       logger.debug('Tenant validation passed for webhook delivery creation', {
