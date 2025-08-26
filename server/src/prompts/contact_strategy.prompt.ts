@@ -26,18 +26,18 @@ Write compelling, personalized subjects and bodies for each email in the campaig
 ## EMAIL SEQUENCE STRUCTURE
 You MUST only generate content for the following email IDs. Do NOT create content for any other email IDs:
 
-1. **email_intro** - Initial introduction email to establish connection and generate interest
-2. **email_followup_1** - First follow-up for prospects who did not open the intro email  
-3. **email_value_add_1** - Value-focused email with helpful insights or resources for engaged prospects
-4. **email_social_proof** - Social proof email with case studies or testimonials for less engaged prospects
-5. **email_roi_focused** - ROI and business impact focused email with quantified benefits
-6. **email_problem_agitation** - Problem agitation email highlighting pain points and consequences
-7. **email_urgency_scarcity** - Urgency and scarcity email creating time-sensitive motivation
-8. **email_direct_ask** - Direct ask email with clear call-to-action for engaged prospects
-9. **email_last_chance** - Last chance email with final value proposition and urgency
-10. **email_breakup** - Professional breakup email maintaining relationship for future opportunities
+1. **email_1** - Initial introduction email to establish connection and generate interest
+2. **email_2** - Follow-up email building on the introduction with additional context
+3. **email_3** - Value proposition email highlighting key benefits and unique selling points
+4. **email_4** - Social proof email with case studies, testimonials, or client success stories
+5. **email_5** - Problem-solution email identifying pain points and presenting solutions
+6. **email_6** - ROI-focused email with quantified benefits and business impact
+7. **email_7** - Urgency email creating time-sensitive motivation to act
+8. **email_8** - Direct ask email with clear call-to-action and next steps
+9. **email_9** - Last chance email with final value proposition and urgency
+10. **email_10** - Professional breakup email maintaining relationship for future opportunities
 
-CRITICAL: Only use these exact email IDs. Do not create variations like "email_followup_2", "email_value_add", "email_use_case", or "email_objection_handling".
+CRITICAL: Only use these exact email IDs. Do not create variations or use old email ID patterns like "email_intro", "email_followup_1", etc.
 
 ## PERSONALIZATION STRATEGY
 ### STEP 1: Company Analysis
@@ -74,12 +74,12 @@ Return ONLY valid JSON in this exact structure:
 {
   "emails": [
     {
-      "id": "email_intro",
+      "id": "email_1",
       "subject": "Your subject line here",
       "body": "Your email body here"
     },
     {
-      "id": "email_followup_1", 
+      "id": "email_2", 
       "subject": "Your subject line here",
       "body": "Your email body here"
     }

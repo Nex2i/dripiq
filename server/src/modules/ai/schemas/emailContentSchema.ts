@@ -157,17 +157,17 @@ export function createDefaultEmailContent(
 export const EXAMPLE_EMAIL_CONTENT_OUTPUT: EmailContentOutput = {
   emails: [
     {
-      id: 'email_intro',
+      id: 'email_1',
       subject: 'Quick question about [Company] growth initiatives',
       body: "Hi [Name],\n\nI noticed [Company] recently expanded into [market/vertical]. Given your role as [Title], I imagine you're focused on scaling operations efficiently.\n\nWe've helped similar companies in [industry] reduce operational costs by 30% while accelerating growth. Would you be open to a brief conversation about how this might apply to [Company]?\n\nBest regards,\n[Sender Name]",
     },
     {
-      id: 'email_followup_1',
+      id: 'email_2',
       subject: 'Re: Growth initiatives at [Company]',
       body: "Hi [Name],\n\nI know your inbox is probably flooded, so I'll keep this brief.\n\nLast week I reached out about helping [Company] optimize operations during your expansion. Since then, I came across [specific company insight/news] and thought this might be even more relevant now.\n\nWorth a 15-minute conversation?\n\nBest,\n[Sender Name]",
     },
     {
-      id: 'email_value_add_1',
+      id: 'email_3',
       subject: '[Resource] Scaling operations in [Industry]',
       body: "Hi [Name],\n\nSince you're leading growth at [Company], I thought you might find this relevant: [specific insight/resource related to their industry].\n\nThis is the exact framework that helped [similar company] achieve [specific result] in just [timeframe].\n\nNo agenda here - just thought it might be useful for your current initiatives.\n\nCheers,\n[Sender Name]",
     },
