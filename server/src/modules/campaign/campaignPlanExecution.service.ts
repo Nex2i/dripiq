@@ -18,6 +18,7 @@ import type {
   CampaignPlanNode,
 } from '../ai/schemas/contactCampaignStrategySchema';
 import { calculateScheduleTime, parseIsoDuration, applyQuietHours } from './scheduleUtils';
+import { JOB_NAMES, QUEUE_NAMES } from '@/constants/queues';
 
 export interface CampaignExecutionContext {
   tenantId: string;
@@ -491,9 +492,9 @@ export class CampaignPlanExecutionService {
     });
 
     // Enqueue execution job
-    const executionQueue = getQueue('campaign_execution');
+    const executionQueue = getQueue(QUEUE_NAMES.campaign_execution);
     await executionQueue.add(
-      'execute',
+      JOB_NAMES.campaign_execution.timeout,
       {
         tenantId,
         campaignId,
