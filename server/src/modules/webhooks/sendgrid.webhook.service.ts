@@ -67,7 +67,7 @@ export class SendGridWebhookService {
     });
 
     try {
-      // Step 1: Verify webhook signature
+      // Ste1: Verify webhook signature
       const verification = this.validator.verifyWebhookRequest(headers, rawPayload);
       if (!verification.isValid) {
         throw new SendGridWebhookError(
@@ -77,13 +77,32 @@ export class SendGridWebhookService {
         );
       }
 
-      // Step 2: Parse webhook payload
+      // Parse webhook payload
       const events = this.parseWebhookPayload(rawPayload);
       if (!events || events.length === 0) {
         throw new SendGridWebhookError('No events found in webhook payload', 'EMPTY_PAYLOAD', 400);
       }
 
-      // Step 3: Determine tenant ID from events
+      // Validate environment before processing
+      const currentEnvironment = process.env.NODE_ENV || 'development';
+      const isValidEnvironment = this.validateEnvironment(events, currentEnvironment);
+      if (!isValidEnvironment) {
+        // Return success to prevent SendGrid retries
+        const result: WebhookProcessingResult = {
+          success: true,
+          webhookDeliveryId: 'env-skipped',
+          processedEvents: [],
+          totalEvents: events.length,
+          successfulEvents: 0,
+          failedEvents: 0,
+          skippedEvents: events.length,
+          errors: [],
+        };
+
+        return result;
+      }
+
+      // Determine tenant ID from events
       // This is critical for data isolation and security - we must reject webhooks
       // without tenant context to prevent data leakage across tenants
       const tenantId = this.extractTenantId(events);
@@ -113,16 +132,16 @@ export class SendGridWebhookService {
         eventEmails: events.map((e) => e.email),
       });
 
-      // Step 4: Store raw webhook delivery
+      // Store raw webhook delivery
       const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
 
-      // Step 5: Process events
+      // Process events
       const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
 
-      // Step 6: Update webhook delivery status
+      // Update webhook delivery status
       await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
 
-      // Step 7: Trigger campaign transitions for successful events
+      // Trigger campaign transitions for successful events
       try {
         await this.processCampaignTransitionsBatch(tenantId, processedEvents, webhookDelivery.id);
       } catch (error) {
@@ -428,6 +447,23 @@ export class SendGridWebhookService {
     });
 
     return event as SendGridEvent;
+  }
+
+  /**
+   * Validate environment from events
+   * @param events - Array of validated events
+   * @param currentEnvironment - Current environment (development, production, etc.)
+   * @returns True if events are from the current environment
+   */
+  private validateEnvironment(events: SendGridEvent[], currentEnvironment: string): boolean {
+    for (const event of events) {
+      if (event.environment) {
+        if (event.environment !== currentEnvironment) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   /**
@@ -799,7 +835,7 @@ export class SendGridWebhookService {
       eventCount: successfulEvents.length,
     });
 
-    // Step 1: Batch fetch all message events
+    // Batch fetch all message events
     const messageEventIds = successfulEvents
       .map((e) => e.messageId)
       .filter((id): id is string => !!id);
@@ -816,7 +852,7 @@ export class SendGridWebhookService {
       return;
     }
 
-    // Step 2: Batch fetch all outbound messages
+    // Batch fetch all outbound messages
     const outboundMessageIds = messageEvents.map((e) => e.messageId);
     const outboundMessages = await outboundMessageRepository.findByIdsForTenant(
       outboundMessageIds,
@@ -831,7 +867,7 @@ export class SendGridWebhookService {
       return;
     }
 
-    // Step 3: Batch fetch all campaigns (deduplicated)
+    // Batch fetch all campaigns (deduplicated)
     const campaignIds = [...new Set(outboundMessages.map((m) => m.campaignId))];
     const campaigns = await contactCampaignRepository.findByIdsForTenant(campaignIds, tenantId);
 
@@ -839,7 +875,7 @@ export class SendGridWebhookService {
     const outboundMessageMap = new Map(outboundMessages.map((m) => [m.id, m]));
     const campaignMap = new Map(campaigns.map((c) => [c.id, c]));
 
-    // Step 4: Process transitions with pre-fetched data
+    // Process transitions with pre-fetched data
     let processedCount = 0;
     for (const messageEvent of messageEvents) {
       try {

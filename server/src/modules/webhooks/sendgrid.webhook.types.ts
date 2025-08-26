@@ -48,6 +48,7 @@ export interface SendGridEventBase {
   node_id?: string;
   outbound_message_id?: string;
   dedupe_key?: string;
+  environment?: string;
 }
 
 // Delivery Event
