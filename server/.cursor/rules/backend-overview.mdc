@@ -160,3 +160,5 @@ when implementing a default route response schema make sure that is the first sp
 
 Whenever comitting code run `npm run lint:fix` to have consistent formatting. 
 Run `npm run build` to validate the server builds properly.
+
+Dont use fastify log, import and use the custom logger
