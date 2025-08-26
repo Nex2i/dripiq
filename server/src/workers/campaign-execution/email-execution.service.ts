@@ -19,7 +19,7 @@ import {
   TIMEOUT_JOB_OPTIONS,
 } from '@/constants/timeout-jobs';
 import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
-import { formatEmailBodyForHtml } from '@/utils/emailFormatting';
+import { formatEmailBodyForHtml, formatEmailBodyForText } from '@/utils/emailFormatting';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
@@ -206,7 +206,10 @@ export class EmailExecutionService {
         // Continue without calendar info - don't fail the email send
       }
 
-      // Prepare SendGrid payload
+      // Prepare SendGrid payload with both HTML and plain text versions
+      const htmlBody = formatEmailBodyForHtml(emailBody);
+      const textBody = formatEmailBodyForText(emailBody);
+
       const sendPayload: SendBase = {
         tenantId,
         campaignId,
@@ -219,7 +222,8 @@ export class EmailExecutionService {
         },
         to: contact.email,
         subject: node.subject,
-        html: formatEmailBodyForHtml(emailBody),
+        html: htmlBody,
+        text: textBody,
         categories: ['campaign', `tenant:${tenantId}`],
       };
 

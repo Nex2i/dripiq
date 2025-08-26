@@ -11,21 +11,29 @@ class SendgridClient {
   }
 
   async sendEmail(input: SendBase): Promise<ProviderIds> {
-    const body = input.html ?? input.text;
-    if (!body) {
+    const hasHtml = !!input.html;
+    const hasText = !!input.text;
+
+    if (!hasHtml && !hasText) {
       throw new Error('Email body is required: provide html or text');
     }
 
-    // Inject unsubscribe link if HTML content
-    const finalHtml = input.html
-      ? this.appendUnsubscribeLink(input.html, input.tenantId, input.to, input.campaignId)
-      : body;
+    // Prepare HTML content with unsubscribe link if HTML is provided
+    const finalHtml = hasHtml
+      ? this.appendUnsubscribeLink(input.html!, input.tenantId, input.to, input.campaignId)
+      : undefined;
+
+    // Prepare plain text content with unsubscribe link if text is provided
+    const finalText = hasText
+      ? this.appendUnsubscribeLinkToText(input.text!, input.tenantId, input.to, input.campaignId)
+      : undefined;
 
     const msg: MailDataRequired = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      html: finalHtml,
+      ...(finalHtml ? { html: finalHtml } : {}),
+      ...(finalText ? { text: finalText } : {}),
       headers: input.headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
@@ -175,6 +183,23 @@ class SendgridClient {
     } else {
       return html + unsubscribeLink;
     }
+  }
+
+  private appendUnsubscribeLinkToText(
+    text: string,
+    tenantId: string,
+    toEmail: string,
+    campaignId?: string
+  ): string {
+    const unsubscribeUrl = this.buildUnsubscribeUrl(tenantId, toEmail, campaignId);
+
+    const unsubscribeText = `
+
+---
+
+If you no longer wish to receive these emails, you can unsubscribe here: ${unsubscribeUrl}`;
+
+    return text + unsubscribeText;
   }
 
   private buildUnsubscribeUrl(tenantId: string, email: string, campaignId?: string): string {
