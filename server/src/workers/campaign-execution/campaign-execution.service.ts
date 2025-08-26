@@ -119,6 +119,39 @@ export class CampaignExecutionService {
               outboundMessageId: emailResult.outboundMessageId,
               providerMessageId: emailResult.providerMessageId,
             });
+
+            // CRITICAL FIX: Update campaign currentNodeId and process transitions after successful send
+            try {
+              // Update campaign to indicate we're now waiting for responses on this node
+              await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
+                currentNodeId: nodeId,
+                updatedAt: new Date(),
+              });
+
+              logger.info('[CampaignExecutionWorker] Updated campaign currentNodeId after send', {
+                jobId: job.id,
+                campaignId,
+                nodeId,
+                tenantId,
+              });
+
+              logger.info('[CampaignExecutionWorker] Campaign currentNodeId updated, ready for event-based transitions', {
+                jobId: job.id,
+                campaignId,
+                nodeId,
+                hasEventTransitions: node.transitions?.length || 0,
+              });
+            } catch (transitionError) {
+              logger.error('[CampaignExecutionWorker] Failed to process post-send transitions', {
+                jobId: job.id,
+                campaignId,
+                nodeId,
+                error: transitionError instanceof Error ? transitionError.message : 'Unknown error',
+                stack: transitionError instanceof Error ? transitionError.stack : undefined,
+              });
+              // Don't fail the entire send operation for transition errors
+            }
+
           } else {
             logger.info('[CampaignExecutionWorker] Would send message (non-email channel)', {
               jobId: job.id,
@@ -194,4 +227,6 @@ export class CampaignExecutionService {
       };
     }
   }
+
+
 }
