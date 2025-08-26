@@ -13,12 +13,12 @@ import type {
   TransitionResult,
   NextActionResult,
 } from '@/types/campaign-transition.types';
+import { JOB_NAMES, QUEUE_NAMES } from '@/constants/queues';
 import type {
   CampaignPlanOutput,
   CampaignPlanNode,
 } from '../ai/schemas/contactCampaignStrategySchema';
 import { calculateScheduleTime, parseIsoDuration, applyQuietHours } from './scheduleUtils';
-import { JOB_NAMES, QUEUE_NAMES } from '@/constants/queues';
 
 export interface CampaignExecutionContext {
   tenantId: string;
