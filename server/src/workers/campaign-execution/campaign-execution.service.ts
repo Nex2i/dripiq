@@ -119,9 +119,6 @@ export class CampaignExecutionService {
               outboundMessageId: emailResult.outboundMessageId,
               providerMessageId: emailResult.providerMessageId,
             });
-
-
-
           } else {
             logger.info('[CampaignExecutionWorker] Would send message (non-email channel)', {
               jobId: job.id,
@@ -197,6 +194,4 @@ export class CampaignExecutionService {
       };
     }
   }
-
-
 }
