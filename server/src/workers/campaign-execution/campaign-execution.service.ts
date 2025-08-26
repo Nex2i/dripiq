@@ -21,7 +21,7 @@ export class CampaignExecutionService {
   async processCampaignExecution(
     job: Job<CampaignExecutionJobPayload>
   ): Promise<CampaignExecutionJobResult> {
-    const { tenantId, campaignId, contactId, nodeId, actionType, metadata } = job.data;
+    const { tenantId, campaignId, contactId, leadId, nodeId, actionType, metadata } = job.data;
 
     try {
       // Initialize email execution service with tenantId
@@ -31,6 +31,7 @@ export class CampaignExecutionService {
         tenantId,
         campaignId,
         contactId,
+        leadId,
         nodeId,
         actionType,
         triggeredBy: metadata?.triggeredBy,

@@ -113,11 +113,11 @@ export class CampaignPlanExecutionService {
           tenantId,
           campaignId: existingCampaign.id,
           contactId,
+          leadId,
           nodeId: startNode.id,
           actionType: 'send',
           metadata: {
             triggeredBy: 'manual_review',
-            leadId,
           },
         });
 
@@ -524,11 +524,11 @@ export class CampaignPlanExecutionService {
         tenantId,
         campaignId,
         contactId,
+        leadId,
         nodeId,
         actionType: 'send',
         metadata: {
           triggeredBy: 'transition',
-          leadId,
           originalScheduledAt: scheduledAt.toISOString(),
           adjustedScheduledAt: adjustedTime.toISOString(),
         },
