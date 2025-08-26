@@ -1,4 +1,10 @@
-import { convertTextToHtml, isHtmlFormatted, formatEmailBodyForHtml } from '../emailFormatting';
+import {
+  convertTextToHtml,
+  isHtmlFormatted,
+  formatEmailBodyForHtml,
+  containsHtml,
+  formatMixedContentForHtml,
+} from '../emailFormatting';
 
 describe('emailFormatting', () => {
   describe('convertTextToHtml', () => {
@@ -49,6 +55,26 @@ Would you be open to a brief call to see how this could fit with your intake and
     });
   });
 
+  describe('containsHtml', () => {
+    it('should detect HTML tags', () => {
+      expect(containsHtml('<p>Hello</p>')).toBe(true);
+      expect(containsHtml('Hello <br> World')).toBe(true);
+      expect(containsHtml('<div>Content</div>')).toBe(true);
+      expect(containsHtml('<a href="https://example.com">Link</a>')).toBe(true);
+    });
+
+    it('should return false for plain text', () => {
+      expect(containsHtml('Hello\nWorld')).toBe(false);
+      expect(containsHtml('Plain text email')).toBe(false);
+      expect(containsHtml('')).toBe(false);
+    });
+
+    it('should handle null/undefined', () => {
+      expect(containsHtml(null as any)).toBe(false);
+      expect(containsHtml(undefined as any)).toBe(false);
+    });
+  });
+
   describe('isHtmlFormatted', () => {
     it('should detect HTML tags', () => {
       expect(isHtmlFormatted('<p>Hello</p>')).toBe(true);
@@ -68,6 +94,49 @@ Would you be open to a brief call to see how this could fit with your intake and
     });
   });
 
+  describe('formatMixedContentForHtml', () => {
+    it('should convert pure plain text to HTML', () => {
+      const input = 'Line 1\nLine 2';
+      const expected = 'Line 1<br>Line 2';
+      expect(formatMixedContentForHtml(input)).toBe(expected);
+    });
+
+    it('should preserve existing HTML content', () => {
+      const input = '<p>Already <br> formatted</p>';
+      expect(formatMixedContentForHtml(input)).toBe(input);
+    });
+
+    it('should handle mixed plain text and HTML', () => {
+      const input = 'Hello world\n\nPlease <a href="https://example.com">click here</a>';
+      const result = formatMixedContentForHtml(input);
+      expect(result).toContain('Hello world<br><br>Please ');
+      expect(result).toContain('<a href="https://example.com">click here</a>');
+    });
+
+    it('should handle email with calendar link', () => {
+      const emailBody = 'Hi John,\n\nThanks for your interest.';
+      const calendarLink = '<a href="https://tracking-url">Book a meeting</a>';
+      const input = `${emailBody}\n\n${calendarLink}`;
+
+      const result = formatMixedContentForHtml(input);
+      expect(result).toContain('Hi John,<br><br>Thanks for your interest.<br><br>');
+      expect(result).toContain('<a href="https://tracking-url">Book a meeting</a>');
+    });
+
+    it('should handle empty string', () => {
+      expect(formatMixedContentForHtml('')).toBe('');
+    });
+
+    it('should handle content with multiple HTML elements', () => {
+      const input = 'Start\n\n<a href="#">Link 1</a> and <strong>bold</strong>\n\nEnd';
+      const result = formatMixedContentForHtml(input);
+      expect(result).toContain('Start<br><br>');
+      expect(result).toContain('<a href="#">Link 1</a>');
+      expect(result).toContain('<strong>bold</strong>');
+      expect(result).toContain('<br><br>End');
+    });
+  });
+
   describe('formatEmailBodyForHtml', () => {
     it('should convert plain text to HTML', () => {
       const input = 'Line 1\nLine 2';
@@ -78,6 +147,13 @@ Would you be open to a brief call to see how this could fit with your intake and
     it('should leave HTML content unchanged', () => {
       const input = '<p>Already <br> formatted</p>';
       expect(formatEmailBodyForHtml(input)).toBe(input);
+    });
+
+    it('should handle mixed plain text and HTML content', () => {
+      const input = 'Plain text\n\n<a href="https://example.com">Link</a>';
+      const result = formatEmailBodyForHtml(input);
+      expect(result).toContain('Plain text<br><br>');
+      expect(result).toContain('<a href="https://example.com">Link</a>');
     });
 
     it('should handle empty string', () => {
@@ -99,6 +175,29 @@ Would you be open to a brief call to see how this could fit with your intake and
       expect(result).toContain('Hi Ryan,<br><br>Valiente Mott');
       expect(result).toContain('admin work and slow down expert prep.<br><br>I work with Filevine');
       expect(result).toContain('time on strategy.<br><br>Would you be open');
+
+      // Should not contain raw newlines
+      expect(result).not.toContain('\n');
+    });
+
+    it('should handle email with calendar link appended', () => {
+      const emailBody = `Hi John,
+
+Thanks for your interest in our services.
+
+Best regards,
+Team`;
+      const calendarLink = '<a href="https://tracking-url">Schedule a call</a>';
+      const fullEmail = `${emailBody}\n\n${calendarLink}`;
+
+      const result = formatEmailBodyForHtml(fullEmail);
+
+      // Should convert plain text portions
+      expect(result).toContain('Hi John,<br><br>Thanks for your interest');
+      expect(result).toContain('Best regards,<br>Team<br><br>');
+
+      // Should preserve HTML calendar link
+      expect(result).toContain('<a href="https://tracking-url">Schedule a call</a>');
 
       // Should not contain raw newlines
       expect(result).not.toContain('\n');

@@ -44,10 +44,18 @@ export class CalendarUrlWrapper {
   }
 
   /**
-   * Create a calendar introduction message with the tracked link
+   * Create a calendar message with HTML hyperlink
    */
   createCalendarMessage(calendarTieIn: string, trackedUrl: string): string {
-    return `${calendarTieIn}: ${trackedUrl}`;
+    // Escape the calendar tie-in text to prevent XSS while preserving it as link text
+    const escapedTieIn = calendarTieIn
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    return `<a href="${trackedUrl}">${escapedTieIn}</a>`;
   }
 }
 
