@@ -32,7 +32,6 @@ export class CampaignContentMapperService {
     if (!templateValidation.isValid) {
       logger.error('Static campaign template validation failed', {
         errors: templateValidation.errors,
-        touchpointCount: templateValidation.touchpointCount,
         emailCount: templateValidation.emailCount,
       });
       throw new Error(`Template validation failed: ${templateValidation.errors.join(', ')}`);

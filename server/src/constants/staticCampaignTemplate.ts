@@ -7,7 +7,7 @@ export const CAMPAIGN_CONSTANTS = {
   // Timing constants
   MINIMUM_DELAY: 'PT10S', // Minimum 10 seconds delay to prevent immediate execution
   DAILY_EMAIL_DELAY: 'PT24H', // 24 hours between emails
-  
+
   // Event types (only no_open used in MVP)
   EVENTS: {
     OPENED: 'opened',
@@ -27,10 +27,10 @@ export const CAMPAIGN_CONSTANTS = {
 
 /**
  * Simplified static campaign template - Daily email sequence with no_open only.
- * 
+ *
  * Each email sends the next email after 24 hours if not opened.
  * Opens are tracked but don't affect the campaign flow (MVP approach).
- * 
+ *
  * Features:
  * - 10 emails total, sent daily if no engagement
  * - Simple linear progression: Email 1 → Email 2 → ... → Email 10 → Stop
@@ -282,10 +282,13 @@ export function validateCampaignTemplate(): {
     const noOpenTransition = emailNode.transitions?.find(
       (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN
     );
-    
+
     if (!noOpenTransition) {
       errors.push(`${emailNode.id} missing no_open transition`);
-    } else if ('after' in noOpenTransition && noOpenTransition.after !== CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY) {
+    } else if (
+      'after' in noOpenTransition &&
+      noOpenTransition.after !== CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY
+    ) {
       errors.push(
         `${emailNode.id} has incorrect delay: ${noOpenTransition.after} (expected ${CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY})`
       );
@@ -333,7 +336,7 @@ export function analyzeEmailSequence(): {
     const noOpenTransition = node.transitions?.find(
       (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN
     );
-    
+
     if (noOpenTransition) {
       currentNode = noOpenTransition.to;
     } else {
