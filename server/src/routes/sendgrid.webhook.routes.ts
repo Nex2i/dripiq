@@ -47,7 +47,14 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
       try {
         // Parse the JSON for normal usage
         return JSON.parse(payload.toString('utf8'));
-      } catch (_error) {
+      } catch (error) {
+        logger.warn('SendGrid webhook JSON parsing failed', {
+          requestId: (request as any).id,
+          payloadSize: payload.length,
+          payloadPreview: payload.toString('utf8').substring(0, 200),
+          error: error instanceof Error ? error.message : 'Unknown parsing error',
+          contentType: (request as any).headers['content-type'],
+        });
         throw new Error('Invalid JSON payload');
       }
     }
@@ -184,6 +191,17 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
           },
         });
 
+        // Enhanced debug logging for troubleshooting
+        logger.info('SendGrid webhook processing attempt', {
+          requestId,
+          payloadSize: rawBody?.length,
+          contentType: request.headers['content-type'],
+          hasSignature: !!request.headers['x-twilio-email-event-webhook-signature'],
+          hasTimestamp: !!request.headers['x-twilio-email-event-webhook-timestamp'],
+          // Only log first 500 chars of payload for debugging
+          payloadPreview: rawBody?.toString('utf8').substring(0, 500),
+        });
+
         // Check if SendGrid webhook processing is enabled
         if (process.env.SENDGRID_WEBHOOK_ENABLED === 'false') {
           logger.warn('SendGrid webhook processing is disabled', { requestId });
@@ -195,7 +213,12 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
 
         // Get raw body for signature verification
         if (!rawBody) {
-          logger.error('Missing raw body for signature verification', { requestId });
+          logger.error('Missing raw body for signature verification', { 
+            requestId,
+            contentLength: request.headers['content-length'],
+            contentType: request.headers['content-type'],
+            hasBody: !!request.body,
+          });
           return reply.status(400).send({
             error: 'Bad Request',
             message: 'Request body is required for signature verification',
@@ -241,6 +264,14 @@ export default async function SendGridWebhookRoutes(fastify: FastifyInstance, _o
             code: error.code,
             statusCode: error.statusCode,
             processingTimeMs: processingTime,
+            payloadSize: rawBody?.length,
+            payloadPreview: rawBody?.toString('utf8').substring(0, 200),
+            headers: {
+              contentType: request.headers['content-type'],
+              signature: request.headers['x-twilio-email-event-webhook-signature'] ? 'present' : 'missing',
+              timestamp: request.headers['x-twilio-email-event-webhook-timestamp'] ? 'present' : 'missing',
+            },
+            ...(error.details && { errorDetails: error.details }),
           });
 
           return reply.status(error.statusCode).send({
