@@ -54,8 +54,8 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
   version: '1.0',
   timezone: 'America/Los_Angeles',
   quietHours: {
-    start: '18:00',
-    end: '08:00',
+    start: '23:00',
+    end: '02:00',
   },
   defaults: {
     timers: {
