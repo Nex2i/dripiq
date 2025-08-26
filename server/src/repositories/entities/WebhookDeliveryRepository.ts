@@ -21,11 +21,8 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
     tenantId: string,
     data: Omit<NewWebhookDelivery, 'tenantId'>
   ): Promise<WebhookDelivery> {
-    const [result] = await this.db
-      .insert(this.table)
-      .values({ ...(data as Omit<NewWebhookDelivery, 'tenantId'>), tenantId } as NewWebhookDelivery)
-      .returning();
-    return result as WebhookDelivery;
+    const dataWithTenant = { ...data, tenantId } as NewWebhookDelivery;
+    return await this.create(dataWithTenant);
   }
 
   async createManyForTenant(
