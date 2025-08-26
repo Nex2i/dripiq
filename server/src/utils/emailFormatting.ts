@@ -3,6 +3,65 @@
  */
 
 /**
+ * Converts HTML content to plain text by removing HTML tags and entities.
+ * Preserves line breaks and basic text formatting for readability.
+ *
+ * @param html - HTML content to convert
+ * @returns Plain text version
+ */
+export function convertHtmlToText(html: string): string {
+  if (!html) {
+    return '';
+  }
+
+  let text = html;
+
+  // Convert common HTML elements to plain text equivalents
+  text = text
+    // Convert line breaks and paragraphs to newlines
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<p[^>]*>/gi, '')
+    // Convert headers to plain text with spacing
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<h[1-6][^>]*>/gi, '')
+    // Convert lists
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<\/(ul|ol)>/gi, '\n')
+    .replace(/<(ul|ol)[^>]*>/gi, '')
+    // Convert divs to line breaks
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<div[^>]*>/gi, '')
+    // Remove all other HTML tags
+    .replace(/<[^>]+>/g, '');
+
+  // Decode HTML entities
+  text = text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+
+  // Clean up extra whitespace and newlines
+  text = text
+    // Replace multiple consecutive spaces with single space
+    .replace(/[ \t]+/g, ' ')
+    // Replace multiple consecutive newlines with double newline
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    // Trim whitespace from each line
+    .split('\n')
+    .map((line) => line.trim())
+    .join('\n')
+    // Trim overall string
+    .trim();
+
+  return text;
+}
+
+/**
  * Converts plain text to HTML-formatted text for email display.
  * This preserves line breaks and paragraphs while keeping the text safe for HTML.
  *
@@ -96,4 +155,26 @@ export function formatEmailBodyForHtml(bodyText: string): string {
   }
 
   return formatMixedContentForHtml(bodyText);
+}
+
+/**
+ * Formats email body text for plain text email delivery.
+ * If the content contains HTML, it will be converted to plain text.
+ * If it's already plain text, it will be returned as-is.
+ *
+ * @param bodyText - Email body text (plain text, HTML, or mixed)
+ * @returns Plain text email body
+ */
+export function formatEmailBodyForText(bodyText: string): string {
+  if (!bodyText) {
+    return '';
+  }
+
+  // If the content contains HTML, convert it to plain text
+  if (containsHtml(bodyText)) {
+    return convertHtmlToText(bodyText);
+  }
+
+  // Already plain text, return as-is
+  return bodyText;
 }

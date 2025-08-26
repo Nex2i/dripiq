@@ -3,6 +3,8 @@ import {
   formatEmailBodyForHtml,
   containsHtml,
   formatMixedContentForHtml,
+  convertHtmlToText,
+  formatEmailBodyForText,
 } from '../emailFormatting';
 
 describe('emailFormatting', () => {
@@ -181,6 +183,143 @@ Team`;
 
       // Should not contain raw newlines
       expect(result).not.toContain('\n');
+    });
+  });
+
+  describe('convertHtmlToText', () => {
+    it('should convert basic HTML to plain text', () => {
+      const input = '<p>Hello</p><p>World</p>';
+      const expected = 'Hello\n\nWorld';
+      expect(convertHtmlToText(input)).toBe(expected);
+    });
+
+    it('should convert line breaks to newlines', () => {
+      const input = 'Line 1<br>Line 2<br/>Line 3';
+      const expected = 'Line 1\nLine 2\nLine 3';
+      expect(convertHtmlToText(input)).toBe(expected);
+    });
+
+    it('should convert headers with proper spacing', () => {
+      const input = '<h1>Title</h1><p>Content</p>';
+      const expected = 'Title\n\nContent';
+      expect(convertHtmlToText(input)).toBe(expected);
+    });
+
+    it('should convert lists to bulleted text', () => {
+      const input = '<ul><li>Item 1</li><li>Item 2</li></ul>';
+      const expected = '• Item 1\n• Item 2';
+      expect(convertHtmlToText(input)).toBe(expected);
+    });
+
+    it('should decode HTML entities', () => {
+      const input = 'Price: &lt;$100 &amp; &quot;free&quot; shipping&#39;s great&gt;';
+      const expected = 'Price: <$100 & "free" shipping\'s great>';
+      expect(convertHtmlToText(input)).toBe(expected);
+    });
+
+    it('should handle divs as line breaks', () => {
+      const input = '<div>Block 1</div><div>Block 2</div>';
+      const expected = 'Block 1\nBlock 2';
+      expect(convertHtmlToText(input)).toBe(expected);
+    });
+
+    it('should handle complex HTML structure', () => {
+      const input = `
+        <div>
+          <h2>Welcome</h2>
+          <p>Hello <strong>John</strong>,</p>
+          <p>Thanks for your interest.</p>
+          <ul>
+            <li>Feature 1</li>
+            <li>Feature 2</li>
+          </ul>
+        </div>
+      `;
+      const result = convertHtmlToText(input);
+      expect(result).toContain('Welcome');
+      expect(result).toContain('Hello John,');
+      expect(result).toContain('Thanks for your interest.');
+      expect(result).toContain('• Feature 1');
+      expect(result).toContain('• Feature 2');
+    });
+
+    it('should handle empty string', () => {
+      expect(convertHtmlToText('')).toBe('');
+    });
+
+    it('should handle null/undefined', () => {
+      expect(convertHtmlToText(null as any)).toBe('');
+      expect(convertHtmlToText(undefined as any)).toBe('');
+    });
+
+    it('should clean up excessive whitespace', () => {
+      const input = '<p>   Multiple   spaces   </p><br><br><br><p>Next paragraph</p>';
+      const result = convertHtmlToText(input);
+      expect(result).not.toMatch(/ {3}/); // No triple spaces
+      expect(result).not.toMatch(/\n\n\n/); // No triple newlines
+      expect(result).toBe('Multiple spaces\n\nNext paragraph');
+    });
+  });
+
+  describe('formatEmailBodyForText', () => {
+    it('should return plain text as-is', () => {
+      const input = 'Plain text email\nwith newlines';
+      expect(formatEmailBodyForText(input)).toBe(input);
+    });
+
+    it('should convert HTML to plain text', () => {
+      const input = '<p>Hello <strong>John</strong>,</p><p>Welcome!</p>';
+      const expected = 'Hello John,\n\nWelcome!';
+      expect(formatEmailBodyForText(input)).toBe(expected);
+    });
+
+    it('should handle mixed content by converting HTML parts', () => {
+      const input = 'Plain text\n\n<p>HTML content</p>';
+      const result = formatEmailBodyForText(input);
+      expect(result).toContain('Plain text');
+      expect(result).toContain('HTML content');
+      expect(result).not.toContain('<p>');
+    });
+
+    it('should handle empty string', () => {
+      expect(formatEmailBodyForText('')).toBe('');
+    });
+
+    it('should handle campaign email with HTML elements', () => {
+      const input = `<p>Hi Ryan,</p>
+
+<p>Valiente Mott handles high stakes, trial ready injury cases. Depositions often make or break those files, but they also create a lot of admin work and slow down expert prep.</p>
+
+<p>I work with Filevine on <strong>Depositions by Filevine</strong>. It gives same day rough drafts, AI summaries, and transcript audio and video synced directly into the case file, so your team spends less time chasing vendors and more time on strategy.</p>
+
+<p>Would you be open to a brief call to see how this could fit with your intake and trial workflow?</p>`;
+
+      const result = formatEmailBodyForText(input);
+
+      // Should convert to clean plain text
+      expect(result).toContain('Hi Ryan,');
+      expect(result).toContain('Valiente Mott handles high stakes');
+      expect(result).toContain('Depositions by Filevine');
+      expect(result).toContain('Would you be open');
+
+      // Should not contain HTML tags
+      expect(result).not.toContain('<p>');
+      expect(result).not.toContain('<strong>');
+      expect(result).not.toContain('</p>');
+    });
+
+    it('should handle email with calendar link', () => {
+      const emailBody = 'Hi John,\n\nThanks for your interest.';
+      const calendarLink = '<a href="https://tracking-url">Book a meeting</a>';
+      const input = `${emailBody}\n\n${calendarLink}`;
+
+      const result = formatEmailBodyForText(input);
+
+      // Should convert to plain text with readable link
+      expect(result).toContain('Hi John,');
+      expect(result).toContain('Thanks for your interest.');
+      expect(result).toContain('Book a meeting');
+      expect(result).not.toContain('<a href=');
     });
   });
 });

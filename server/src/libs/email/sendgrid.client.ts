@@ -11,28 +11,44 @@ class SendgridClient {
   }
 
   async sendEmail(input: SendBase): Promise<ProviderIds> {
-    const body = input.html ?? input.text;
-    if (!body) {
+    const hasHtml = !!input.html;
+    const hasText = !!input.text;
+
+    if (!hasHtml && !hasText) {
       throw new Error('Email body is required: provide html or text');
     }
 
-    // Inject unsubscribe link if HTML content
-    const finalHtml = input.html
-      ? this.appendUnsubscribeLink(input.html, input.tenantId, input.to, input.campaignId)
-      : body;
+    // Build unsubscribe URL for headers
+    const unsubscribeUrl = this.buildUnsubscribeUrl(input.tenantId, input.to, input.campaignId);
 
-    const msg: MailDataRequired = {
+    // Prepare headers with List-Unsubscribe
+    const headers = {
+      ...input.headers,
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    };
+
+    // Prepare plain text with simple unsubscribe format
+    const finalText = hasText ? `${input.text}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined;
+
+    const msg: Partial<MailDataRequired> = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      html: finalHtml,
-      headers: input.headers,
+      headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
       ...(input.asmGroupId ? { asm: { groupId: input.asmGroupId } } : {}),
     };
 
-    const [resp] = await sgMail.send(msg, false); // no built-in retry; you handle backoff in worker
+    if (hasHtml) {
+      msg.html = input.html;
+    }
+    if (finalText) {
+      msg.text = finalText;
+    }
+
+    const [resp] = await sgMail.send(msg as MailDataRequired, false); // no built-in retry; you handle backoff in worker
     return this.extractProviderIds(resp);
   }
 
@@ -151,31 +167,6 @@ class SendgridClient {
       ...(input.outboundMessageId ? { outbound_message_id: input.outboundMessageId } : {}),
       ...(input.dedupeKey ? { dedupe_key: input.dedupeKey } : {}),
     } as Record<string, string>;
-  }
-
-  private appendUnsubscribeLink(
-    html: string,
-    tenantId: string,
-    toEmail: string,
-    campaignId?: string
-  ): string {
-    const unsubscribeUrl = this.buildUnsubscribeUrl(tenantId, toEmail, campaignId);
-
-    const unsubscribeLink = `
-      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
-        <p style="margin: 0;">
-          If you no longer wish to receive these emails, you can 
-          <a href="${unsubscribeUrl}" target="_blank" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
-        </p>
-      </div>
-    `;
-
-    // Try to insert before closing body tag, otherwise append
-    if (html.includes('</body>')) {
-      return html.replace('</body>', `${unsubscribeLink}</body>`);
-    } else {
-      return html + unsubscribeLink;
-    }
   }
 
   private buildUnsubscribeUrl(tenantId: string, email: string, campaignId?: string): string {
