@@ -31,19 +31,24 @@ class SendgridClient {
     // Prepare plain text with simple unsubscribe format
     const finalText = hasText ? `${input.text}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined;
 
-    const msg: MailDataRequired = {
+    const msg: Partial<MailDataRequired> = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      ...(hasHtml ? { html: input.html } : {}),
-      ...(finalText ? { text: finalText } : {}),
       headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
       ...(input.asmGroupId ? { asm: { groupId: input.asmGroupId } } : {}),
     };
 
-    const [resp] = await sgMail.send(msg, false); // no built-in retry; you handle backoff in worker
+    if (hasHtml) {
+      msg.html = input.html;
+    }
+    if (finalText) {
+      msg.text = finalText;
+    }
+
+    const [resp] = await sgMail.send(msg as MailDataRequired, false); // no built-in retry; you handle backoff in worker
     return this.extractProviderIds(resp);
   }
 
