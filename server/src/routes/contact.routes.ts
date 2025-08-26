@@ -7,6 +7,7 @@ import {
   createContact,
   deleteContact,
   toggleContactManuallyReviewed,
+  unsubscribeContact,
 } from '../modules/contact.service';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 import {
@@ -15,6 +16,7 @@ import {
   ContactUpdateSchema,
   ContactDeleteSchema,
   ContactManualReviewSchema,
+  ContactUnsubscribeSchema,
 } from './apiSchema/contact';
 
 const basePath = '/leads/:leadId/contacts';
@@ -488,6 +490,104 @@ export default async function contactRoutes(fastify: FastifyInstance) {
 
         reply.status(500).send({
           message: 'Failed to update contact manually reviewed status',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Unsubscribe a contact
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/:contactId/unsubscribe`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      description: 'Unsubscribe a contact from email communications',
+      tags: ['Contacts'],
+      ...ContactUnsubscribeSchema,
+      response: {
+        ...defaultRouteResponse,
+        ...ContactUnsubscribeSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: {
+          leadId: string;
+          contactId: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { leadId, contactId } = request.params;
+
+        if (!leadId || !leadId.trim()) {
+          reply.status(400).send({
+            message: 'Lead ID is required',
+            error: 'Invalid lead ID',
+          });
+          return;
+        }
+
+        if (!contactId || !contactId.trim()) {
+          reply.status(400).send({
+            message: 'Contact ID is required',
+            error: 'Invalid contact ID',
+          });
+          return;
+        }
+
+        const unsubscribed = await unsubscribeContact(
+          authenticatedRequest.tenantId,
+          leadId,
+          contactId
+        );
+
+        fastify.log.info(
+          `Contact unsubscribed. Contact ID: ${contactId}, Lead ID: ${leadId}, Tenant: ${authenticatedRequest.tenantId}`
+        );
+
+        reply.status(200).send({
+          message: 'Contact unsubscribed successfully',
+          unsubscribed,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error unsubscribing contact: ${error.message}`);
+
+        if (
+          error.message?.includes('access to tenant') ||
+          error.message?.includes('ForbiddenError')
+        ) {
+          reply.status(403).send({
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (
+          error.message?.includes('Lead not found') ||
+          error.message?.includes('Contact not found')
+        ) {
+          reply.status(404).send({
+            message: 'Lead or contact not found',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (error.message?.includes('must have an email')) {
+          reply.status(400).send({
+            message: 'Contact cannot be unsubscribed',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          message: 'Failed to unsubscribe contact',
           error: error.message,
         });
       }

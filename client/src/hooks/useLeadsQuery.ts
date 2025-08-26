@@ -456,5 +456,47 @@ export function useUsers(page = 1, limit = 25) {
   })
 }
 
+// Hook to unsubscribe a contact
+export function useUnsubscribeContact(
+  onSuccess?: () => void,
+  onError?: (error: any) => void,
+) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      contactId,
+    }: {
+      leadId: string
+      contactId: string
+    }) => leadsService.unsubscribeContact(leadId, contactId),
+    onSuccess: (_, { leadId }) => {
+      // Invalidate the lead detail to refresh the contact data
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(leadId),
+      })
+
+      // Invalidate leads list to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+
+      // Call the custom success callback if provided
+      if (onSuccess) {
+        onSuccess()
+      }
+    },
+    onError: (error) => {
+      console.error('Error unsubscribing contact:', error)
+
+      // Call the custom error callback if provided
+      if (onError) {
+        onError(error)
+      }
+    },
+  })
+}
+
 // Re-export the query keys for use in other components
 export { leadQueryKeys }
