@@ -502,6 +502,187 @@ describe('SendGridWebhookService', () => {
       expect(result.totalEvents).toBe(1); // Only valid events are processed
       expect(result.successfulEvents).toBe(1);
     });
+
+    it('should skip webhook events from different environment', async () => {
+      // Setup webhook validator
+      const mockValidator = {
+        verifyWebhookRequest: jest.fn().mockReturnValue({
+          isValid: true,
+          signature: 'valid-signature',
+        }),
+      } as unknown as SendGridWebhookValidator;
+
+      const service = new SendGridWebhookService(mockValidator);
+
+      // Create event from different environment
+      const mockSendGridEvent: SendGridEvent = {
+        email: 'test@example.com',
+        timestamp: 1640995200,
+        event: 'open',
+        sg_event_id: 'event-123',
+        tenant_id: 'tenant-123',
+        outbound_message_id: 'message-789',
+        useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        ip: '192.168.1.1',
+        sg_message_id: 'sg-message-123',
+        environment: 'production', // Different from current test environment
+      };
+
+      const payload = JSON.stringify([mockSendGridEvent]);
+      const headers = { 'x-twilio-email-event-webhook-signature': 'valid-signature' };
+
+      const result = await service.processWebhook(headers, payload);
+
+      expect(result).toEqual({
+        success: true,
+        webhookDeliveryId: 'env-skipped',
+        processedEvents: [],
+        totalEvents: 1,
+        successfulEvents: 0,
+        failedEvents: 0,
+        skippedEvents: 1,
+        errors: [],
+      });
+
+      // Verify that no repository methods were called
+      expect(mockWebhookDeliveryRepo.createForTenant).not.toHaveBeenCalled();
+      expect(mockMessageEventRepo.createForTenant).not.toHaveBeenCalled();
+    });
+
+    it('should process webhook events from same environment', async () => {
+      // Setup webhook validator
+      const mockValidator = {
+        verifyWebhookRequest: jest.fn().mockReturnValue({
+          isValid: true,
+          signature: 'valid-signature',
+        }),
+      } as unknown as SendGridWebhookValidator;
+
+      const service = new SendGridWebhookService(mockValidator);
+
+      // Mock successful responses
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+        id: 'webhook-delivery-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'open',
+        messageId: 'message-789',
+        receivedAt: new Date(),
+        payload: [],
+        signature: 'valid-signature',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      mockMessageEventRepo.createForTenant.mockResolvedValue({
+        id: 'message-event-123',
+        tenantId: 'tenant-123',
+        messageId: 'message-789',
+        type: 'open',
+        eventAt: new Date(),
+        sgEventId: 'event-123',
+        data: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Create event from same environment (test)
+      const mockSendGridEvent: SendGridEvent = {
+        email: 'test@example.com',
+        timestamp: 1640995200,
+        event: 'open',
+        sg_event_id: 'event-123',
+        tenant_id: 'tenant-123',
+        outbound_message_id: 'message-789',
+        useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        ip: '192.168.1.1',
+        sg_message_id: 'sg-message-123',
+        environment: 'test', // Same as current test environment
+      };
+
+      const payload = JSON.stringify([mockSendGridEvent]);
+      const headers = { 'x-twilio-email-event-webhook-signature': 'valid-signature' };
+
+      const result = await service.processWebhook(headers, payload);
+
+      expect(result.success).toBe(true);
+      expect(result.webhookDeliveryId).toBe('webhook-delivery-123');
+      expect(result.totalEvents).toBe(1);
+      expect(result.successfulEvents).toBe(1);
+      expect(result.skippedEvents).toBe(0);
+
+      // Verify that repository methods were called
+      expect(mockWebhookDeliveryRepo.createForTenant).toHaveBeenCalled();
+      expect(mockMessageEventRepo.createForTenant).toHaveBeenCalled();
+    });
+
+    it('should allow events without environment field for backward compatibility', async () => {
+      // Setup webhook validator
+      const mockValidator = {
+        verifyWebhookRequest: jest.fn().mockReturnValue({
+          isValid: true,
+          signature: 'valid-signature',
+        }),
+      } as unknown as SendGridWebhookValidator;
+
+      const service = new SendGridWebhookService(mockValidator);
+
+      // Mock successful responses
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+        id: 'webhook-delivery-123',
+        tenantId: 'tenant-123',
+        provider: 'sendgrid',
+        eventType: 'open',
+        messageId: 'message-789',
+        receivedAt: new Date(),
+        payload: [],
+        signature: 'valid-signature',
+        status: 'received',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      mockMessageEventRepo.createForTenant.mockResolvedValue({
+        id: 'message-event-123',
+        tenantId: 'tenant-123',
+        messageId: 'message-789',
+        type: 'open',
+        eventAt: new Date(),
+        sgEventId: 'event-123',
+        data: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // Create event without environment field (backward compatibility)
+      const mockSendGridEvent: SendGridEvent = {
+        email: 'test@example.com',
+        timestamp: 1640995200,
+        event: 'open',
+        sg_event_id: 'event-123',
+        tenant_id: 'tenant-123',
+        outbound_message_id: 'message-789',
+        useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        ip: '192.168.1.1',
+        sg_message_id: 'sg-message-123',
+        // No environment field
+      };
+
+      const payload = JSON.stringify([mockSendGridEvent]);
+      const headers = { 'x-twilio-email-event-webhook-signature': 'valid-signature' };
+
+      const result = await service.processWebhook(headers, payload);
+
+      expect(result.success).toBe(true);
+      expect(result.webhookDeliveryId).toBe('webhook-delivery-123');
+      expect(result.totalEvents).toBe(1);
+      expect(result.successfulEvents).toBe(1);
+
+      // Verify that repository methods were called (backward compatibility)
+      expect(mockWebhookDeliveryRepo.createForTenant).toHaveBeenCalled();
+      expect(mockMessageEventRepo.createForTenant).toHaveBeenCalled();
+    });
   });
 
   describe('event validation', () => {
