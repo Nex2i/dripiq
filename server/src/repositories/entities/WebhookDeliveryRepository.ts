@@ -72,7 +72,7 @@ export class WebhookDeliveryRepository extends TenantAwareRepository<
 
       logger.debug('Successfully created webhook delivery', {
         tenantId,
-        webhookDeliveryId: result.id,
+        webhookDeliveryId: result?.id,
         provider: data.provider,
         eventType: data.eventType,
       });
