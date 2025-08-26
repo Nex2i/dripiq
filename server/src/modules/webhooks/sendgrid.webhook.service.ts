@@ -90,7 +90,7 @@ export class SendGridWebhookService {
         logger.info('Webhook events from different environment - ignoring', {
           currentEnvironment,
           eventCount: events.length,
-          eventCategories: events.map((e) => e.category),
+          eventEnvironments: events.map((e) => e.environment),
           payloadSize: rawPayload.length,
         });
         
@@ -464,28 +464,24 @@ export class SendGridWebhookService {
    */
   private validateEnvironment(events: SendGridEvent[], currentEnvironment: string): boolean {
     for (const event of events) {
-      if (event.category) {
-        const envCategory = event.category.find(cat => cat.startsWith('env:'));
-        if (envCategory) {
-          const eventEnvironment = envCategory.replace('env:', '');
-          if (eventEnvironment !== currentEnvironment) {
-            logger.debug('Environment mismatch detected', {
-              currentEnvironment,
-              eventEnvironment,
-              eventCategories: event.category,
-              eventId: event.sg_event_id,
-            });
-            return false;
-          }
-        } else {
-          // If no environment category is found, this might be from an older version
-          // or a different system. We'll be permissive for backward compatibility
-          logger.debug('No environment category found in event - allowing through', {
+      if (event.environment) {
+        if (event.environment !== currentEnvironment) {
+          logger.debug('Environment mismatch detected', {
             currentEnvironment,
-            eventCategories: event.category,
+            eventEnvironment: event.environment,
             eventId: event.sg_event_id,
+            tenantId: event.tenant_id,
           });
+          return false;
         }
+      } else {
+        // If no environment field is found, this might be from an older version
+        // or a different system. We'll be permissive for backward compatibility
+        logger.debug('No environment field found in event - allowing through for backward compatibility', {
+          currentEnvironment,
+          eventId: event.sg_event_id,
+          tenantId: event.tenant_id,
+        });
       }
     }
     return true;

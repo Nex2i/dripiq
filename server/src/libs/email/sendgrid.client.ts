@@ -147,6 +147,7 @@ class SendgridClient {
       tenant_id: input.tenantId,
       campaign_id: input.campaignId,
       node_id: input.nodeId,
+      environment: process.env.NODE_ENV || 'development',
       ...(input.outboundMessageId ? { outbound_message_id: input.outboundMessageId } : {}),
       ...(input.dedupeKey ? { dedupe_key: input.dedupeKey } : {}),
     } as Record<string, string>;
