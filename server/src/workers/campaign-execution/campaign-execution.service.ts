@@ -120,34 +120,7 @@ export class CampaignExecutionService {
               providerMessageId: emailResult.providerMessageId,
             });
 
-            try {
-              await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
-                currentNodeId: nodeId,
-                updatedAt: new Date(),
-              });
 
-              logger.info('[CampaignExecutionWorker] Updated campaign currentNodeId after send', {
-                jobId: job.id,
-                campaignId,
-                nodeId,
-                tenantId,
-              });
-
-              logger.info('[CampaignExecutionWorker] Campaign currentNodeId updated, ready for event-based transitions', {
-                jobId: job.id,
-                campaignId,
-                nodeId,
-                hasEventTransitions: node.transitions?.length || 0,
-              });
-            } catch (transitionError) {
-              logger.error('[CampaignExecutionWorker] Failed to process post-send transitions', {
-                jobId: job.id,
-                campaignId,
-                nodeId,
-                error: transitionError instanceof Error ? transitionError.message : 'Unknown error',
-                stack: transitionError instanceof Error ? transitionError.stack : undefined,
-              });
-            }
 
           } else {
             logger.info('[CampaignExecutionWorker] Would send message (non-email channel)', {
