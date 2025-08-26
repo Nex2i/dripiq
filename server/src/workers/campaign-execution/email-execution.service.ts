@@ -404,6 +404,17 @@ export class EmailExecutionService {
     const defaults = plan.defaults?.timers;
     const scheduledTimeouts = new Set<string>(); // Track which timeout types we've scheduled
 
+    // Find which timeout event types are actually used in this node's transitions
+    const timeoutEventTypesInTransitions = new Set<string>();
+    for (const transition of currentNode.transitions) {
+      if (
+        'after' in transition &&
+        TIMEOUT_EVENT_TYPES.includes(transition.on as TimeoutEventType)
+      ) {
+        timeoutEventTypesInTransitions.add(transition.on);
+      }
+    }
+
     // Schedule timeout jobs based on specific node transitions
     for (const transition of currentNode.transitions) {
       // Type guard to check if this is a TransitionAfter (has 'after' property)
@@ -458,8 +469,9 @@ export class EmailExecutionService {
       }
     }
 
-    // Schedule default timeout jobs for any missing event types
-    if (!scheduledTimeouts.has('no_open')) {
+    // Only schedule default timeout jobs for event types that actually have transitions in the plan
+    // This prevents scheduling no_click timeouts when the plan only has no_open transitions
+    if (!scheduledTimeouts.has('no_open') && timeoutEventTypesInTransitions.has('no_open')) {
       const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
       try {
         const noOpenDelayMs = parseIsoDuration(noOpenDelay);
@@ -491,7 +503,7 @@ export class EmailExecutionService {
       }
     }
 
-    if (!scheduledTimeouts.has('no_click')) {
+    if (!scheduledTimeouts.has('no_click') && timeoutEventTypesInTransitions.has('no_click')) {
       const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
       try {
         const noClickDelayMs = parseIsoDuration(noClickDelay);
