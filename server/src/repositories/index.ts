@@ -13,6 +13,7 @@ import { UserTenantRepository } from './entities/UserTenantRepository';
 import { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 import { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
 import { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+import { DomainValidationRepository } from './entities/DomainValidationRepository';
 import { ContactCampaignRepository } from './entities/ContactCampaignRepository';
 import { CampaignPlanVersionRepository } from './entities/CampaignPlanVersionRepository';
 import { ScheduledActionRepository } from './entities/ScheduledActionRepository';
@@ -50,6 +51,7 @@ export { UserTenantRepository } from './entities/UserTenantRepository';
 export { SiteEmbeddingDomainRepository } from './entities/SiteEmbeddingDomainRepository';
 export { SiteEmbeddingRepository } from './entities/SiteEmbeddingRepository';
 export { EmailSenderIdentityRepository } from './entities/EmailSenderIdentityRepository';
+export { DomainValidationRepository } from './entities/DomainValidationRepository';
 export { ContactCampaignRepository } from './entities/ContactCampaignRepository';
 export { CampaignPlanVersionRepository } from './entities/CampaignPlanVersionRepository';
 export { ScheduledActionRepository } from './entities/ScheduledActionRepository';
@@ -118,6 +120,7 @@ const userTenantRepository = new UserTenantRepository();
 const siteEmbeddingDomainRepository = new SiteEmbeddingDomainRepository();
 const siteEmbeddingRepository = new SiteEmbeddingRepository();
 const emailSenderIdentityRepository = new EmailSenderIdentityRepository();
+const domainValidationRepository = new DomainValidationRepository();
 const contactCampaignRepository = new ContactCampaignRepository();
 const campaignPlanVersionRepository = new CampaignPlanVersionRepository();
 const scheduledActionRepository = new ScheduledActionRepository();
@@ -155,6 +158,7 @@ export const repositories = {
   siteEmbeddingDomain: siteEmbeddingDomainRepository,
   siteEmbedding: siteEmbeddingRepository,
   emailSenderIdentity: emailSenderIdentityRepository,
+  domainValidation: domainValidationRepository,
   contactCampaign: contactCampaignRepository,
   campaignPlanVersion: campaignPlanVersionRepository,
   scheduledAction: scheduledActionRepository,
@@ -192,6 +196,7 @@ export {
   siteEmbeddingDomainRepository,
   siteEmbeddingRepository,
   emailSenderIdentityRepository,
+  domainValidationRepository,
   contactCampaignRepository,
   campaignPlanVersionRepository,
   scheduledActionRepository,
