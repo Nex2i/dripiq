@@ -13,6 +13,7 @@ import {
   Save,
   X,
   Plus,
+  UserX,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
@@ -25,6 +26,7 @@ import {
   useUpdateContact,
   useToggleContactManuallyReviewed,
   useCreateContact,
+  useUnsubscribeContact,
 } from '../../hooks/useLeadsQuery'
 
 interface ContactsTabProps {
@@ -59,6 +61,9 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string
   }>({})
+  const [unsubscribeModalOpen, setUnsubscribeModalOpen] = useState(false)
+  const [contactToUnsubscribe, setContactToUnsubscribe] =
+    useState<LeadPointOfContact | null>(null)
   const leadsService = getLeadsService()
 
   useEffect(() => {
@@ -92,6 +97,20 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     // onError callback
     (error) => {
       console.error('Failed to create contact:', error)
+      // You might want to show a toast notification here
+    },
+  )
+
+  const unsubscribeContactMutation = useUnsubscribeContact(
+    // onSuccess callback
+    () => {
+      setUnsubscribeModalOpen(false)
+      setContactToUnsubscribe(null)
+      console.log('Contact unsubscribed successfully')
+    },
+    // onError callback
+    (error) => {
+      console.error('Failed to unsubscribe contact:', error)
       // You might want to show a toast notification here
     },
   )
@@ -147,6 +166,25 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       leadId,
       contactData,
     })
+  }
+
+  const handleUnsubscribeContact = (contact: LeadPointOfContact) => {
+    setContactToUnsubscribe(contact)
+    setUnsubscribeModalOpen(true)
+  }
+
+  const handleConfirmUnsubscribe = () => {
+    if (contactToUnsubscribe) {
+      unsubscribeContactMutation.mutate({
+        leadId,
+        contactId: contactToUnsubscribe.id,
+      })
+    }
+  }
+
+  const handleCancelUnsubscribe = () => {
+    setUnsubscribeModalOpen(false)
+    setContactToUnsubscribe(null)
   }
 
   const handleEditContact = (contact: LeadPointOfContact) => {
@@ -530,6 +568,26 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                               : 'Generate Strategy'}
                           </span>
                         </button>
+                        <button
+                          onClick={() => handleUnsubscribeContact(contact)}
+                          disabled={
+                            editingContactId !== null ||
+                            qualifyingContactId === contact.id ||
+                            unsubscribeContactMutation.isPending ||
+                            !contact.email
+                          }
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            !contact.email
+                              ? 'Contact must have an email to unsubscribe'
+                              : 'Unsubscribe this contact from email communications'
+                          }
+                        >
+                          <UserX className="h-4 w-4" />
+                          <span className="text-sm font-medium">
+                            Unsubscribe
+                          </span>
+                        </button>
                         <AnimatedCheckbox
                           checked={contact.manuallyReviewed}
                           onChange={() => handleToggleManuallyReviewed(contact)}
@@ -801,6 +859,57 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
         onSubmit={handleCreateContact}
         isSubmitting={createContactMutation.isPending}
       />
+
+      {/* Unsubscribe Confirmation Modal */}
+      {unsubscribeModalOpen && contactToUnsubscribe && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <UserX className="h-6 w-6 text-red-600 mr-3" />
+              <h3 className="text-lg font-medium text-gray-900">
+                Unsubscribe Contact
+              </h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to unsubscribe{' '}
+              <span className="font-medium text-gray-900">
+                {contactToUnsubscribe.name}
+              </span>{' '}
+              ({contactToUnsubscribe.email}) from email communications?
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              This action will prevent them from receiving future campaign
+              emails.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelUnsubscribe}
+                disabled={unsubscribeContactMutation.isPending}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmUnsubscribe}
+                disabled={unsubscribeContactMutation.isPending}
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {unsubscribeContactMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Unsubscribing...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserX className="h-4 w-4" />
+                    <span>Unsubscribe</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
