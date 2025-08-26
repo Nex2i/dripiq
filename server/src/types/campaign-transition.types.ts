@@ -3,6 +3,8 @@ import type { CampaignPlanOutput } from '../modules/ai/schemas/contactCampaignSt
 export interface ProcessTransitionParams {
   tenantId: string;
   campaignId: string;
+  contactId: string;
+  leadId: string;
   eventType: string;
   currentNodeId: string;
   plan: CampaignPlanOutput;

@@ -28,6 +28,15 @@ const campaignExecutionWorker = getWorker<
 >(
   QUEUE_NAMES.campaign_execution,
   async (job: Job<CampaignExecutionJobPayload | TimeoutJobPayload>) => {
+    logger.info('[CampaignExecutionWorker] Processing job', {
+      jobId: job.id,
+      jobName: job.name,
+      expectedNames: [
+        JOB_NAMES.campaign_execution.initialize,
+        JOB_NAMES.campaign_execution.timeout,
+      ],
+    });
+
     if (job.name === JOB_NAMES.campaign_execution.initialize) {
       return processCampaignExecution(job as Job<CampaignExecutionJobPayload>);
     } else if (job.name === JOB_NAMES.campaign_execution.timeout) {
@@ -40,6 +49,7 @@ const campaignExecutionWorker = getWorker<
           JOB_NAMES.campaign_execution.initialize,
           JOB_NAMES.campaign_execution.timeout,
         ],
+        jobData: JSON.stringify(job.data),
       });
       return {
         success: false,

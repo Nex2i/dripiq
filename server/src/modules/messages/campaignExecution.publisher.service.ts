@@ -6,11 +6,11 @@ export type CampaignExecutionJobPayload = {
   tenantId: string;
   campaignId: string;
   contactId: string;
+  leadId: string;
   nodeId: string;
   actionType: 'send' | 'wait' | 'timeout';
   metadata?: {
     triggeredBy?: string;
-    leadId?: string;
     [key: string]: unknown;
   };
 };

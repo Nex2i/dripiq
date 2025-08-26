@@ -834,6 +834,8 @@ export class SendGridWebhookService {
     await campaignPlanExecutionService.processTransition({
       tenantId,
       campaignId: campaign.id,
+      contactId: campaign.contactId,
+      leadId: campaign.leadId,
       eventType: messageEvent.type,
       currentNodeId: campaign.currentNodeId,
       plan: campaign.planJson as CampaignPlanOutput,

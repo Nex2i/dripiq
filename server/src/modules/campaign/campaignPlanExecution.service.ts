@@ -113,11 +113,11 @@ export class CampaignPlanExecutionService {
           tenantId,
           campaignId: existingCampaign.id,
           contactId,
+          leadId,
           nodeId: startNode.id,
           actionType: 'send',
           metadata: {
             triggeredBy: 'manual_review',
-            leadId,
           },
         });
 
@@ -314,11 +314,14 @@ export class CampaignPlanExecutionService {
    * Processes an event-driven transition in the campaign plan
    */
   async processTransition(params: ProcessTransitionParams): Promise<TransitionResult> {
-    const { tenantId, campaignId, eventType, currentNodeId, plan, eventRef } = params;
+    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan, eventRef } =
+      params;
 
     logger.info('Processing campaign transition', {
       tenantId,
       campaignId,
+      contactId,
+      leadId,
       eventType,
       currentNodeId,
     });
@@ -402,6 +405,8 @@ export class CampaignPlanExecutionService {
     const nextActionResult = await this.scheduleNextAction(
       tenantId,
       campaignId,
+      contactId,
+      leadId,
       transition.to,
       plan
     );
@@ -425,6 +430,8 @@ export class CampaignPlanExecutionService {
   private async scheduleNextAction(
     tenantId: string,
     campaignId: string,
+    contactId: string,
+    leadId: string,
     nodeId: string,
     plan: CampaignPlanOutput
   ): Promise<NextActionResult> {
@@ -440,9 +447,25 @@ export class CampaignPlanExecutionService {
     });
 
     if (node.action === 'send') {
-      return await this.scheduleSendAction(tenantId, campaignId, nodeId, node, plan);
+      return await this.scheduleSendAction(
+        tenantId,
+        campaignId,
+        contactId,
+        leadId,
+        nodeId,
+        node,
+        plan
+      );
     } else if (node.action === 'wait') {
-      return await this.scheduleWaitAction(tenantId, campaignId, nodeId, node, plan);
+      return await this.scheduleWaitAction(
+        tenantId,
+        campaignId,
+        contactId,
+        leadId,
+        nodeId,
+        node,
+        plan
+      );
     } else if (node.action === 'stop') {
       // Mark campaign as completed
       await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
@@ -461,6 +484,8 @@ export class CampaignPlanExecutionService {
   private async scheduleSendAction(
     tenantId: string,
     campaignId: string,
+    contactId: string,
+    leadId: string,
     nodeId: string,
     node: CampaignPlanNode,
     plan: CampaignPlanOutput
@@ -494,10 +519,12 @@ export class CampaignPlanExecutionService {
     // Enqueue execution job
     const executionQueue = getQueue(QUEUE_NAMES.campaign_execution);
     await executionQueue.add(
-      JOB_NAMES.campaign_execution.timeout,
+      JOB_NAMES.campaign_execution.initialize,
       {
         tenantId,
         campaignId,
+        contactId,
+        leadId,
         nodeId,
         actionType: 'send',
         metadata: {
@@ -533,6 +560,8 @@ export class CampaignPlanExecutionService {
   private async scheduleWaitAction(
     tenantId: string,
     campaignId: string,
+    _contactId: string,
+    _leadId: string,
     nodeId: string,
     node: CampaignPlanNode,
     plan: CampaignPlanOutput
