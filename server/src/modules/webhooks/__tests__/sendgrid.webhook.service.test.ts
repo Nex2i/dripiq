@@ -13,6 +13,7 @@ import { SendGridWebhookError, SendGridEvent } from '../sendgrid.webhook.types';
 jest.mock('@/repositories', () => ({
   webhookDeliveryRepository: {
     createForTenant: jest.fn(),
+    createForTenantSafe: jest.fn(),
     updateByIdForTenant: jest.fn(),
   },
   messageEventRepository: {
@@ -113,7 +114,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -153,7 +154,7 @@ describe('SendGridWebhookService', () => {
       expect(result.webhookDeliveryId).toBe('webhook-delivery-123');
 
       expect(mockValidator.verifyWebhookRequest).toHaveBeenCalledWith(mockHeaders, mockPayload);
-      expect(mockWebhookDeliveryRepo.createForTenant).toHaveBeenCalledWith(
+      expect(mockWebhookDeliveryRepo.createForTenantSafe).toHaveBeenCalledWith(
         'tenant-123',
         expect.objectContaining({
           provider: 'sendgrid',
@@ -183,7 +184,7 @@ describe('SendGridWebhookService', () => {
         SendGridWebhookError
       );
 
-      expect(mockWebhookDeliveryRepo.createForTenant).not.toHaveBeenCalled();
+      expect(mockWebhookDeliveryRepo.createForTenantSafe).not.toHaveBeenCalled();
       expect(mockMessageEventRepo.createForTenant).not.toHaveBeenCalled();
     });
 
@@ -256,7 +257,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -321,7 +322,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -352,7 +353,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -404,7 +405,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -469,7 +470,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -501,6 +502,64 @@ describe('SendGridWebhookService', () => {
       expect(result.success).toBe(true);
       expect(result.totalEvents).toBe(1); // Only valid events are processed
       expect(result.successfulEvents).toBe(1);
+    });
+
+    it('should handle missing tenant gracefully and return success', async () => {
+      // Setup webhook validator
+      const mockValidator = {
+        verifyWebhookRequest: jest.fn().mockReturnValue({
+          isValid: true,
+          signature: 'valid-signature',
+        }),
+      } as unknown as SendGridWebhookValidator;
+
+      const service = new SendGridWebhookService(mockValidator);
+
+      // Mock the webhook delivery repository to return null (tenant not found)
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue(null);
+
+      const mockSendGridEvent: SendGridEvent = {
+        email: 'test@example.com',
+        timestamp: 1640995200,
+        event: 'open',
+        sg_event_id: 'event-123',
+        tenant_id: 'nonexistent-tenant-id',
+        outbound_message_id: 'message-789',
+        useragent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        ip: '192.168.1.1',
+        sg_message_id: 'sg-message-123',
+      };
+
+      const payload = JSON.stringify([mockSendGridEvent]);
+      const headers = { 'x-twilio-email-event-webhook-signature': 'valid-signature' };
+
+      const result = await service.processWebhook(headers, payload);
+
+      expect(result).toEqual({
+        success: true,
+        webhookDeliveryId: null,
+        processedEvents: [],
+        totalEvents: 1,
+        successfulEvents: 0,
+        failedEvents: 0,
+        skippedEvents: 1,
+        errors: [],
+      });
+
+      expect(mockWebhookDeliveryRepo.createForTenantSafe).toHaveBeenCalledWith(
+        'nonexistent-tenant-id',
+        expect.objectContaining({
+          provider: 'sendgrid',
+          eventType: 'open',
+          messageId: 'message-789',
+          payload: [mockSendGridEvent],
+          signature: 'valid-signature',
+          status: 'received',
+        })
+      );
+
+      // Verify that message event processing was skipped
+      expect(mockMessageEventRepo.createForTenant).not.toHaveBeenCalled();
     });
   });
 
@@ -569,7 +628,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -621,7 +680,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -675,7 +734,7 @@ describe('SendGridWebhookService', () => {
         isValid: true,
       });
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue({
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue({
         id: 'webhook-delivery-123',
         tenantId: 'tenant-123',
         provider: 'sendgrid',
@@ -801,7 +860,7 @@ describe('SendGridWebhookService', () => {
         updatedAt: new Date(),
       } as any;
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
       mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
       mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
@@ -902,7 +961,7 @@ describe('SendGridWebhookService', () => {
         updatedAt: new Date(),
       } as any;
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
       mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
       mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
@@ -977,7 +1036,7 @@ describe('SendGridWebhookService', () => {
         updatedAt: new Date(),
       } as any;
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent);
       mockMessageEventRepo.findBySgEventIdForTenant.mockResolvedValue(undefined);
       mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
@@ -1042,7 +1101,7 @@ describe('SendGridWebhookService', () => {
         { id: 'campaign-456', status: 'active', currentNodeId: 'node-2', planJson: {} },
       ] as any;
 
-      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockWebhookDeliveryRepo.createForTenantSafe.mockResolvedValue(mockWebhookDelivery);
       mockMessageEventRepo.createForTenant
         .mockResolvedValueOnce(mockMessageEvents[0])
         .mockResolvedValueOnce(mockMessageEvents[1])

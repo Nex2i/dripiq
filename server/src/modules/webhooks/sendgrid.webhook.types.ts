@@ -161,7 +161,7 @@ export interface ProcessedEventResult {
 // Webhook Processing Result
 export interface WebhookProcessingResult {
   success: boolean;
-  webhookDeliveryId: string;
+  webhookDeliveryId: string | null;
   processedEvents: ProcessedEventResult[];
   totalEvents: number;
   successfulEvents: number;

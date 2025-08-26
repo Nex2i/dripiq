@@ -6,7 +6,7 @@ import {
   contactCampaignRepository,
 } from '@/repositories';
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
-import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
+import { NewWebhookDelivery, NewMessageEvent, WebhookDelivery } from '@/db/schema';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
@@ -116,13 +116,43 @@ export class SendGridWebhookService {
       // Step 4: Store raw webhook delivery
       const webhookDelivery = await this.storeRawWebhook(tenantId, verification.signature, events);
 
-      // Step 5: Process events
+      // Step 5: Check if webhook delivery was created (tenant exists)
+      if (!webhookDelivery) {
+        logger.warn('Webhook processing skipped due to missing tenant', {
+          tenantId,
+          eventCount: events.length,
+          eventTypes: events.map((e) => e.event),
+          reason: 'Tenant does not exist in database',
+        });
+        
+        // Return early success response to avoid webhook retries
+        const result: WebhookProcessingResult = {
+          success: true,
+          webhookDeliveryId: null,
+          processedEvents: [],
+          totalEvents: events.length,
+          successfulEvents: 0,
+          failedEvents: 0,
+          skippedEvents: events.length,
+          errors: [],
+        };
+
+        logger.info('SendGrid webhook processed with tenant skip', {
+          ...result,
+          processingTimeMs: Date.now() - startTime,
+          tenantId,
+        });
+
+        return result;
+      }
+
+      // Step 6: Process events
       const processedEvents = await this.processEvents(tenantId, events, processedAtTimestamp);
 
-      // Step 6: Update webhook delivery status
+      // Step 7: Update webhook delivery status
       await this.updateWebhookDeliveryStatus(webhookDelivery.id, tenantId, processedEvents);
 
-      // Step 7: Trigger campaign transitions for successful events
+      // Step 8: Trigger campaign transitions for successful events
       try {
         await this.processCampaignTransitionsBatch(tenantId, processedEvents, webhookDelivery.id);
       } catch (error) {
@@ -452,7 +482,7 @@ export class SendGridWebhookService {
    * @param events - Parsed events
    * @returns Stored webhook delivery
    */
-  private async storeRawWebhook(tenantId: string, signature: string, events: SendGridEvent[]) {
+  private async storeRawWebhook(tenantId: string, signature: string, events: SendGridEvent[]): Promise<WebhookDelivery | null> {
     const webhookData: Omit<NewWebhookDelivery, 'tenantId'> = {
       provider: 'sendgrid',
       eventType: events.length === 1 && events[0] ? events[0].event : 'batch',
@@ -473,15 +503,25 @@ export class SendGridWebhookService {
     });
 
     try {
-      const result = await webhookDeliveryRepository.createForTenant(tenantId, webhookData);
+      const result = await webhookDeliveryRepository.createForTenantSafe(tenantId, webhookData);
 
-      logger.info('Successfully stored webhook delivery', {
-        tenantId,
-        webhookDeliveryId: result.id,
-        provider: webhookData.provider,
-        eventType: webhookData.eventType,
-        eventCount: events.length,
-      });
+      if (result) {
+        logger.info('Successfully stored webhook delivery', {
+          tenantId,
+          webhookDeliveryId: result.id,
+          provider: webhookData.provider,
+          eventType: webhookData.eventType,
+          eventCount: events.length,
+        });
+      } else {
+        logger.warn('Webhook delivery not stored due to missing tenant', {
+          tenantId,
+          provider: webhookData.provider,
+          eventType: webhookData.eventType,
+          eventCount: events.length,
+          reason: 'Tenant does not exist in database',
+        });
+      }
 
       return result;
     } catch (error) {
