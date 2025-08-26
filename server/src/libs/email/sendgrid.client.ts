@@ -18,24 +18,11 @@ class SendgridClient {
       throw new Error('Email body is required: provide html or text');
     }
 
-    // Build unsubscribe URL for headers
-    const unsubscribeUrl = this.buildUnsubscribeUrl(input.tenantId, input.to, input.campaignId);
-
-    // Prepare headers with List-Unsubscribe
-    const headers = {
-      ...input.headers,
-      'List-Unsubscribe': `<${unsubscribeUrl}>`,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-    };
-
-    // Prepare plain text with simple unsubscribe format
-    const finalText = hasText ? `${input.text}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined;
-
     const msg: Partial<MailDataRequired> = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      headers,
+      headers: input.headers,
       categories: input.categories,
       ipPoolName: 'primary_pool',
       customArgs: this.buildCustomArgs(input),
@@ -45,8 +32,8 @@ class SendgridClient {
     if (hasHtml) {
       msg.html = input.html;
     }
-    if (finalText) {
-      msg.text = finalText;
+    if (hasText) {
+      msg.text = input.text;
     }
 
     const [resp] = await sgMail.send(msg as MailDataRequired, false); // no built-in retry; you handle backoff in worker
@@ -168,23 +155,6 @@ class SendgridClient {
       ...(input.outboundMessageId ? { outbound_message_id: input.outboundMessageId } : {}),
       ...(input.dedupeKey ? { dedupe_key: input.dedupeKey } : {}),
     } as Record<string, string>;
-  }
-
-  private buildUnsubscribeUrl(tenantId: string, email: string, campaignId?: string): string {
-    const baseUrl = process.env.API_URL;
-    if (!baseUrl) {
-      throw new Error('API_URL is not set');
-    }
-    const params = new URLSearchParams({
-      email: email.toLowerCase(),
-      tenant: tenantId,
-    });
-
-    if (campaignId) {
-      params.append('campaign', campaignId);
-    }
-
-    return `${baseUrl}/api/unsubscribe?${params.toString()}`;
   }
 
   private normalizeSendgridError(err: any, fallbackMessage: string) {
