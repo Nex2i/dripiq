@@ -18,23 +18,26 @@ class SendgridClient {
       throw new Error('Email body is required: provide html or text');
     }
 
-    // Prepare HTML content with unsubscribe link if HTML is provided
-    const finalHtml = hasHtml
-      ? this.appendUnsubscribeLink(input.html!, input.tenantId, input.to, input.campaignId)
-      : undefined;
+    // Build unsubscribe URL for headers
+    const unsubscribeUrl = this.buildUnsubscribeUrl(input.tenantId, input.to, input.campaignId);
 
-    // Prepare plain text content with unsubscribe link if text is provided
-    const finalText = hasText
-      ? this.appendUnsubscribeLinkToText(input.text!, input.tenantId, input.to, input.campaignId)
-      : undefined;
+    // Prepare headers with List-Unsubscribe
+    const headers = {
+      ...input.headers,
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    };
+
+    // Prepare plain text with simple unsubscribe format
+    const finalText = hasText ? `${input.text}\n\nUnsubscribe: ${unsubscribeUrl}` : undefined;
 
     const msg: MailDataRequired = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      ...(finalHtml ? { html: finalHtml } : {}),
+      ...(hasHtml ? { html: input.html } : {}),
       ...(finalText ? { text: finalText } : {}),
-      headers: input.headers,
+      headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
       ...(input.asmGroupId ? { asm: { groupId: input.asmGroupId } } : {}),
@@ -159,48 +162,6 @@ class SendgridClient {
       ...(input.outboundMessageId ? { outbound_message_id: input.outboundMessageId } : {}),
       ...(input.dedupeKey ? { dedupe_key: input.dedupeKey } : {}),
     } as Record<string, string>;
-  }
-
-  private appendUnsubscribeLink(
-    html: string,
-    tenantId: string,
-    toEmail: string,
-    campaignId?: string
-  ): string {
-    const unsubscribeUrl = this.buildUnsubscribeUrl(tenantId, toEmail, campaignId);
-
-    const unsubscribeLink = `
-      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; text-align: center;">
-        <p style="margin: 0;">
-          If you no longer wish to receive these emails, you can 
-          <a href="${unsubscribeUrl}" target="_blank" style="color: #666; text-decoration: underline;">unsubscribe here</a>.
-        </p>
-      </div>
-    `;
-
-    // Try to insert before closing body tag, otherwise append
-    if (html.includes('</body>')) {
-      return html.replace('</body>', `${unsubscribeLink}</body>`);
-    } else {
-      return html + unsubscribeLink;
-    }
-  }
-
-  private appendUnsubscribeLinkToText(
-    text: string,
-    tenantId: string,
-    toEmail: string,
-    campaignId?: string
-  ): string {
-    const unsubscribeUrl = this.buildUnsubscribeUrl(tenantId, toEmail, campaignId);
-
-    const unsubscribeText = `
-
----
-
-If you no longer wish to receive these emails, you can unsubscribe here: ${unsubscribeUrl}`;
-
-    return text + unsubscribeText;
   }
 
   private buildUnsubscribeUrl(tenantId: string, email: string, campaignId?: string): string {
