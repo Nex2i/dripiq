@@ -120,9 +120,7 @@ export class CampaignExecutionService {
               providerMessageId: emailResult.providerMessageId,
             });
 
-            // CRITICAL FIX: Update campaign currentNodeId and process transitions after successful send
             try {
-              // Update campaign to indicate we're now waiting for responses on this node
               await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
                 currentNodeId: nodeId,
                 updatedAt: new Date(),
@@ -149,7 +147,6 @@ export class CampaignExecutionService {
                 error: transitionError instanceof Error ? transitionError.message : 'Unknown error',
                 stack: transitionError instanceof Error ? transitionError.stack : undefined,
               });
-              // Don't fail the entire send operation for transition errors
             }
 
           } else {
