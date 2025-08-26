@@ -324,6 +324,8 @@ describe('CampaignPlanExecutionService - Timing Validation', () => {
       const result = await service.processTransition({
         tenantId: mockTenantId,
         campaignId: mockCampaignId,
+        contactId: 'mock-contact-id',
+        leadId: 'mock-lead-id',
         eventType: 'no_open', // This requires 'after: PT24H'
         currentNodeId: 'node-1',
         plan,
@@ -348,6 +350,8 @@ describe('CampaignPlanExecutionService - Timing Validation', () => {
       const result = await service.processTransition({
         tenantId: mockTenantId,
         campaignId: mockCampaignId,
+        contactId: 'mock-contact-id',
+        leadId: 'mock-lead-id',
         eventType: 'no_open', // This requires 'after: PT24H'
         currentNodeId: 'node-1',
         plan,
@@ -391,6 +395,8 @@ describe('CampaignPlanExecutionService - Timing Validation', () => {
       const result = await service.processTransition({
         tenantId: mockTenantId,
         campaignId: mockCampaignId,
+        contactId: 'mock-contact-id',
+        leadId: 'mock-lead-id',
         eventType: 'opened',
         currentNodeId: 'node-1',
         plan,
@@ -411,6 +417,8 @@ describe('CampaignPlanExecutionService - Timing Validation', () => {
       const result = await service.processTransition({
         tenantId: mockTenantId,
         campaignId: mockCampaignId,
+        contactId: 'mock-contact-id',
+        leadId: 'mock-lead-id',
         eventType: 'opened',
         currentNodeId: 'node-1',
         plan,

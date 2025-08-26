@@ -836,6 +836,8 @@ describe('SendGridWebhookService', () => {
       expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledWith({
         tenantId: 'tenant-123',
         campaignId: 'campaign-123',
+        contactId: 'contact-123',
+        leadId: 'lead-123',
         eventType: 'delivered',
         currentNodeId: 'node-123',
         plan: { nodes: [], startNodeId: 'node-123' },

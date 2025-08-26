@@ -36,7 +36,7 @@ const campaignExecutionWorker = getWorker<
         JOB_NAMES.campaign_execution.timeout,
       ],
     });
-    
+
     if (job.name === JOB_NAMES.campaign_execution.initialize) {
       return processCampaignExecution(job as Job<CampaignExecutionJobPayload>);
     } else if (job.name === JOB_NAMES.campaign_execution.timeout) {

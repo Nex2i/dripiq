@@ -15,24 +15,27 @@ export interface TimeoutJobResult {
 export class TimeoutExecutionService {
   async processTimeout(job: Job<TimeoutJobPayload>): Promise<TimeoutJobResult> {
     const jobData = job.data;
-    
+
     // Validate that this is actually a timeout job payload
     if (!jobData.eventType || !jobData.messageId) {
-      logger.error('[CampaignExecutionWorker] Invalid timeout job payload - missing required fields', {
-        jobId: job.id,
-        jobName: job.name,
-        hasEventType: !!jobData.eventType,
-        hasMessageId: !!jobData.messageId,
-        actualFields: Object.keys(jobData),
-        jobData: JSON.stringify(jobData),
-      });
-      
+      logger.error(
+        '[CampaignExecutionWorker] Invalid timeout job payload - missing required fields',
+        {
+          jobId: job.id,
+          jobName: job.name,
+          hasEventType: !!jobData.eventType,
+          hasMessageId: !!jobData.messageId,
+          actualFields: Object.keys(jobData),
+          jobData: JSON.stringify(jobData),
+        }
+      );
+
       return {
         success: false,
         reason: `Invalid timeout job payload: missing ${!jobData.eventType ? 'eventType' : 'messageId'}`,
       };
     }
-    
+
     const { campaignId, nodeId, messageId, eventType, tenantId } = jobData;
 
     logger.info('[CampaignExecutionWorker] Processing timeout job', {
@@ -99,6 +102,8 @@ export class TimeoutExecutionService {
         await campaignPlanExecutionService.processTransition({
           tenantId,
           campaignId,
+          contactId: campaign.contactId,
+          leadId: campaign.leadId,
           eventType,
           currentNodeId: campaign.currentNodeId,
           plan: campaignPlan,
