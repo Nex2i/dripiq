@@ -141,12 +141,23 @@ export class SendGridWebhookService {
       return result;
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      logger.error('SendGrid webhook processing failed', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        processingTimeMs: processingTime,
-        payloadSize: rawPayload.length,
-      });
+
+      // Handle NO_RECORDABLE_EVENTS as info rather than error since it's a normal occurrence
+      if (error instanceof SendGridWebhookError && error.code === 'NO_RECORDABLE_EVENTS') {
+        logger.info('SendGrid webhook - no recordable events in payload', {
+          message: error.message,
+          processingTimeMs: processingTime,
+          payloadSize: rawPayload.length,
+          details: error.details,
+        });
+      } else {
+        logger.error('SendGrid webhook processing failed', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          processingTimeMs: processingTime,
+          payloadSize: rawPayload.length,
+        });
+      }
 
       if (error instanceof SendGridWebhookError) {
         throw error;
