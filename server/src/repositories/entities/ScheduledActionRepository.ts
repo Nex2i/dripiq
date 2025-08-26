@@ -5,6 +5,8 @@ import {
   NewScheduledAction,
   scheduledActionStatusEnum,
 } from '@/db/schema';
+import { getQueue } from '@/libs/bullmq';
+import { logger } from '@/libs/logger';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -63,10 +65,34 @@ export class ScheduledActionRepository extends TenantAwareRepository<
   }
 
   async findAllForTenant(tenantId: string): Promise<ScheduledAction[]> {
-    return (await this.db
+    return await this.db
       .select()
       .from(this.table)
-      .where(eq(this.table.tenantId, tenantId))) as ScheduledAction[];
+      .where(eq(this.table.tenantId, tenantId))
+      .orderBy(this.table.scheduledAt);
+  }
+
+  // Find pending actions by campaign and action type
+  async findPendingByCampaignAndType(
+    tenantId: string,
+    campaignId: string,
+    actionType: string
+  ): Promise<ScheduledAction[]> {
+    return await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.campaignId, campaignId),
+          eq(this.table.actionType, actionType),
+          eq(
+            this.table.status,
+            'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number]
+          )
+        )
+      )
+      .orderBy(this.table.scheduledAt);
   }
 
   async updateByIdForTenant(
@@ -144,10 +170,75 @@ export class ScheduledActionRepository extends TenantAwareRepository<
     tenantId: string,
     campaignId: string
   ): Promise<ScheduledAction[]> {
-    return await this.db
+    // First, find all pending actions for this campaign to get their job IDs
+    const pendingActions = await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.campaignId, campaignId),
+          eq(
+            this.table.status,
+            'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number]
+          )
+        )
+      );
+
+    // Cancel the actual BullMQ jobs
+    const campaignExecutionQueue = getQueue('campaign_execution');
+    for (const action of pendingActions) {
+      if (action.bullmqJobId) {
+        try {
+          const job = await campaignExecutionQueue.getJob(action.bullmqJobId);
+          if (job) {
+            await job.remove();
+            logger.info('[ScheduledActionRepository] Canceled BullMQ job', {
+              tenantId,
+              campaignId,
+              actionId: action.id,
+              jobId: action.bullmqJobId,
+            });
+          }
+        } catch (error) {
+          logger.warn('[ScheduledActionRepository] Failed to cancel BullMQ job', {
+            tenantId,
+            campaignId,
+            actionId: action.id,
+            jobId: action.bullmqJobId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+          // Don't fail the entire operation if one job fails to cancel
+        }
+      }
+    }
+
+    // Update the database status
+    const canceledActions = await this.db
       .update(this.table)
-      .set({ status: 'canceled' as (typeof scheduledActionStatusEnum)['enumValues'][number] })
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)));
+      .set({
+        status: 'canceled' as (typeof scheduledActionStatusEnum)['enumValues'][number],
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.campaignId, campaignId),
+          eq(
+            this.table.status,
+            'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number]
+          )
+        )
+      )
+      .returning();
+
+    logger.info('[ScheduledActionRepository] Canceled campaign actions', {
+      tenantId,
+      campaignId,
+      canceledCount: canceledActions.length,
+    });
+
+    return canceledActions;
   }
 
   // Recovery methods for startup recovery

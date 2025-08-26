@@ -169,15 +169,10 @@ describe('EmailExecutionService', () => {
     });
 
     it('should fall back to default timeout values when no specific transitions', async () => {
-      // Setup: Plan with no timeout transitions
+      // Setup: Plan with no timeout transitions - should not schedule any timeout jobs
       const plan = createMockPlan([
         { on: 'opened', to: 'next-node', within: 'PT24H' }, // Not a timeout transition
       ]);
-
-      // Mock parseIsoDuration for default values
-      mockParseIsoDuration
-        .mockReturnValueOnce(72 * 60 * 60 * 1000) // PT72H = 72 hours (no_open default)
-        .mockReturnValueOnce(24 * 60 * 60 * 1000); // PT24H = 24 hours (no_click default)
 
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
@@ -186,25 +181,19 @@ describe('EmailExecutionService', () => {
       // Execute
       await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
 
-      // Verify parseIsoDuration was called with default values
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT72H'); // Default no_open
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT24H'); // Default no_click
-
-      // Verify both default timeout jobs were scheduled
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      // Verify no default timeout jobs were scheduled since no timeout transitions exist
+      expect(mockParseIsoDuration).not.toHaveBeenCalled();
+      expect(mockScheduledActionRepo.createForTenant).not.toHaveBeenCalled();
     });
 
     it('should schedule specific transitions and fall back for missing ones', async () => {
       // Setup: Plan with only no_open transition, missing no_click
       const plan = createMockPlan([
         { on: 'no_open', to: 'next-node', after: 'PT5M' }, // 5 minutes
-        { on: 'opened', to: 'other-node', within: 'PT1H' }, // Not a timeout
       ]);
 
-      // Mock parseIsoDuration
-      mockParseIsoDuration
-        .mockReturnValueOnce(5 * 60 * 1000) // PT5M = 5 minutes (specific)
-        .mockReturnValueOnce(24 * 60 * 60 * 1000); // PT24H = 24 hours (default for no_click)
+      // Mock parseIsoDuration - only for the specific transition since no_click isn't in transitions
+      mockParseIsoDuration.mockReturnValueOnce(5 * 60 * 1000); // PT5M for no_open transition
 
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
@@ -215,10 +204,10 @@ describe('EmailExecutionService', () => {
 
       // Verify specific transition timing was used for no_open
       expect(mockParseIsoDuration).toHaveBeenCalledWith('PT5M');
-      // Verify default was used for missing no_click
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT24H');
+      // Verify no default was used for missing no_click since it's not in any transitions
+      expect(mockParseIsoDuration).not.toHaveBeenCalledWith('PT24H');
 
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(1);
     });
 
     it('should skip non-timeout event types in transitions', async () => {
@@ -228,11 +217,6 @@ describe('EmailExecutionService', () => {
         { on: 'opened', to: 'other-node', after: 'PT1H' }, // Not a timeout event
       ]);
 
-      // Mock parseIsoDuration for defaults only
-      mockParseIsoDuration
-        .mockReturnValueOnce(72 * 60 * 60 * 1000) // Default no_open
-        .mockReturnValueOnce(24 * 60 * 60 * 1000); // Default no_click
-
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
       } as any);
@@ -240,13 +224,9 @@ describe('EmailExecutionService', () => {
       // Execute
       await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
 
-      // Verify only default values were used (non-timeout events ignored)
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT72H');
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT24H');
-      expect(mockParseIsoDuration).not.toHaveBeenCalledWith('PT0S');
-      expect(mockParseIsoDuration).not.toHaveBeenCalledWith('PT1H');
-
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      // Verify no timeout jobs were scheduled since no timeout event types exist
+      expect(mockParseIsoDuration).not.toHaveBeenCalled();
+      expect(mockScheduledActionRepo.createForTenant).not.toHaveBeenCalled();
     });
 
     it('should handle multiple transitions of the same timeout type', async () => {
@@ -280,10 +260,6 @@ describe('EmailExecutionService', () => {
       // Setup: Plan with no transitions at all
       const plan = createMockPlan([]); // Empty transitions
 
-      mockParseIsoDuration
-        .mockReturnValueOnce(72 * 60 * 60 * 1000) // Default no_open
-        .mockReturnValueOnce(24 * 60 * 60 * 1000); // Default no_click
-
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
       } as any);
@@ -291,11 +267,9 @@ describe('EmailExecutionService', () => {
       // Execute
       await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
 
-      // Verify default values were used
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT72H');
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT24H');
-
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      // Verify no timeout jobs were scheduled since no transitions exist
+      expect(mockParseIsoDuration).not.toHaveBeenCalled();
+      expect(mockScheduledActionRepo.createForTenant).not.toHaveBeenCalled();
     });
 
     it('should handle missing node in plan', async () => {
@@ -338,10 +312,6 @@ describe('EmailExecutionService', () => {
         { on: 'clicked', to: 'other-node', within: 'PT72H' },
       ]);
 
-      mockParseIsoDuration
-        .mockReturnValueOnce(72 * 60 * 60 * 1000) // Default no_open
-        .mockReturnValueOnce(24 * 60 * 60 * 1000); // Default no_click
-
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
       } as any);
@@ -349,11 +319,9 @@ describe('EmailExecutionService', () => {
       // Execute
       await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
 
-      // Verify only defaults were used (no 'after' transitions found)
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT72H');
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT24H');
-
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      // Verify no timeout jobs were scheduled since no 'after' transitions exist
+      expect(mockParseIsoDuration).not.toHaveBeenCalled();
+      expect(mockScheduledActionRepo.createForTenant).not.toHaveBeenCalled();
     });
 
     it('should use plan defaults when no defaults.timers is provided', async () => {
@@ -378,11 +346,6 @@ describe('EmailExecutionService', () => {
         ],
       };
 
-      // Mock constants from timeout-jobs.ts
-      mockParseIsoDuration
-        .mockReturnValueOnce(72 * 60 * 60 * 1000) // DEFAULT_NO_OPEN_TIMEOUT = PT72H
-        .mockReturnValueOnce(24 * 60 * 60 * 1000); // DEFAULT_NO_CLICK_TIMEOUT = PT24H
-
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
       } as any);
@@ -395,11 +358,9 @@ describe('EmailExecutionService', () => {
         mockMessageId
       );
 
-      // Verify hardcoded constants were used
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT72H');
-      expect(mockParseIsoDuration).toHaveBeenCalledWith('PT24H');
-
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      // Verify no timeout jobs were scheduled since no timeout transitions exist
+      expect(mockParseIsoDuration).not.toHaveBeenCalled();
+      expect(mockScheduledActionRepo.createForTenant).not.toHaveBeenCalled();
     });
 
     it('should handle invalid ISO duration in transitions gracefully', async () => {
@@ -502,15 +463,12 @@ describe('EmailExecutionService', () => {
     });
 
     it('should continue scheduling other transitions when one fails', async () => {
-      // Setup: Plan with one valid transition, the other will use default
+      // Setup: Plan with only no_click transition
       const plan = createMockPlan([
         { on: 'no_click', to: 'node-3', after: 'PT1H' }, // Valid transition
-        // no_open will use plan default
       ]);
 
-      mockParseIsoDuration
-        .mockReturnValueOnce(60 * 60 * 1000) // PT1H for no_click transition
-        .mockReturnValueOnce(72 * 60 * 60 * 1000); // PT72H for no_open default
+      mockParseIsoDuration.mockReturnValueOnce(60 * 60 * 1000); // PT1H for no_click transition
 
       mockScheduledActionRepo.createForTenant.mockResolvedValue({
         id: 'scheduled-action-123',
@@ -519,14 +477,14 @@ describe('EmailExecutionService', () => {
       // Execute
       await (service as any).scheduleTimeoutJobs(mockCampaignId, mockNodeId, plan, mockMessageId);
 
-      // Verify both timeouts were scheduled
-      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(2);
+      // Verify only the no_click timeout was scheduled (no_open not in transitions)
+      expect(mockScheduledActionRepo.createForTenant).toHaveBeenCalledTimes(1);
 
-      // Should have been called with both event types
+      // Should have been called with only no_click event type
       const calls = mockScheduledActionRepo.createForTenant.mock.calls;
       const eventTypes = calls.map((call: any) => call[1].payload.eventType);
       expect(eventTypes).toContain('no_click');
-      expect(eventTypes).toContain('no_open');
+      expect(eventTypes).not.toContain('no_open');
     });
   });
 
