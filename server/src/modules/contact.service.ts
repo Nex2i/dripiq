@@ -3,6 +3,7 @@ import { logger } from '@/libs/logger';
 import { formatPhoneForStorage } from '@/libs/phoneFormatter';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
+import { unsubscribeService } from '@/modules/unsubscribe';
 
 /**
  * Gets a contact by ID, ensuring it belongs to the specified tenant and lead.
@@ -228,6 +229,49 @@ export const toggleContactManuallyReviewed = async (
     return updatedContact;
   } catch (error) {
     logger.error('Error toggling contact manually reviewed status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Unsubscribes a contact from email communications.
+ * @param tenantId - The ID of the tenant.
+ * @param leadId - The ID of the lead the contact belongs to.
+ * @param contactId - The ID of the contact to unsubscribe.
+ * @returns A promise that resolves to a success indicator.
+ */
+export const unsubscribeContact = async (
+  tenantId: string,
+  leadId: string,
+  contactId: string
+): Promise<boolean> => {
+  try {
+    // Verify the contact exists and belongs to the tenant/lead
+    const existingContact = await getContactById(tenantId, leadId, contactId);
+    if (!existingContact) {
+      throw new Error(`Contact not found with ID: ${contactId} for lead: ${leadId}`);
+    }
+
+    // Validate that the contact has an email
+    if (!existingContact.email) {
+      throw new Error('Contact must have an email address to unsubscribe');
+    }
+
+    // Unsubscribe the contact using the unsubscribe service
+    await unsubscribeService.unsubscribeByChannel(
+      tenantId,
+      'email',
+      existingContact.email,
+      'manual_admin',
+      {
+        contactId: contactId,
+      }
+    );
+
+    logger.info(`Unsubscribed contact ${contactId} (${existingContact.email}) for lead ${leadId}`);
+    return true;
+  } catch (error) {
+    logger.error('Error unsubscribing contact:', error);
     throw error;
   }
 };

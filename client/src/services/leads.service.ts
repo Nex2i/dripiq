@@ -577,6 +577,46 @@ class LeadsService {
     const result = await response.json()
     return result
   }
+
+  // Unsubscribe a contact from email communications
+  async unsubscribeContact(
+    leadId: string,
+    contactId: string,
+  ): Promise<{ message: string; unsubscribed: boolean }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/unsubscribe`,
+      {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+        },
+      },
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to unsubscribe contact')
+    }
+
+    const result = await response.json()
+
+    // Update cache after successful unsubscribe if queryClient is available
+    if (this.queryClient) {
+      // Invalidate the lead detail to refresh the contact data
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.detail(leadId),
+      })
+
+      // Invalidate leads list to ensure consistency
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
 }
 
 // Create a singleton instance that will be initialized with QueryClient

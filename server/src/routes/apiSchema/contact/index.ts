@@ -6,3 +6,4 @@ export * from './contact.delete.schema';
 
 // Contact special operations
 export * from './contact.manualReview.schema';
+export * from './contact.unsubscribe.schema';
