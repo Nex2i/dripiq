@@ -1,4 +1,4 @@
-import { emailSenderIdentityRepository } from '@/repositories';
+import { emailSenderIdentityRepository, domainValidationRepository } from '@/repositories';
 import { EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { SendgridTokenHelper } from '@/libs/email/sendgridToken.helper';
@@ -32,6 +32,28 @@ export class SenderIdentityService {
     const { tenantId, userId, fromEmail, fromName } = params;
     const domain = normalizeDomainFromEmail(fromEmail).toLowerCase();
 
+    // Check if domain is pre-approved for automatic verification
+    const isDomainApproved = await domainValidationRepository.domainExists(domain);
+
+    if (isDomainApproved) {
+      // Skip SendGrid validation and create as verified
+      const created = await emailSenderIdentityRepository.createForTenant(tenantId, {
+        userId,
+        fromEmail,
+        fromName,
+        domain,
+        sendgridSenderId: null, // No SendGrid ID needed for pre-approved domains
+        validationStatus: 'verified',
+        lastValidatedAt: new Date(),
+        isDefault: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as unknown as Omit<NewEmailSenderIdentity, 'tenantId'>);
+
+      return created;
+    }
+
+    // Domain not pre-approved, continue with existing SendGrid flow
     if (!params.address || !params.city) {
       const error: any = new Error('Validation error');
       error.statusCode = 422;
@@ -81,8 +103,26 @@ export class SenderIdentityService {
   ) {
     const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (existing) {
+      // Check if this existing identity's domain is now pre-approved
+      const domain = normalizeDomainFromEmail(existing.fromEmail).toLowerCase();
+      const isDomainApproved = await domainValidationRepository.domainExists(domain);
+
+      if (isDomainApproved && existing.validationStatus !== 'verified') {
+        // Auto-verify existing identity for pre-approved domain
+        const updated = await emailSenderIdentityRepository.updateByIdForTenant(
+          existing.id,
+          tenantId,
+          {
+            validationStatus: 'verified',
+            lastValidatedAt: new Date(),
+            updatedAt: new Date(),
+          } as Partial<NewEmailSenderIdentity>
+        );
+        return updated || existing;
+      }
+
       // If an identity exists but is missing provider id, and caller supplies address/city, attempt validation now
-      if (!existing.sendgridSenderId && address && city) {
+      if (!existing.sendgridSenderId && address && city && !isDomainApproved) {
         const [_resp, body] = await sendgridClient.validateSender({
           email: existing.fromEmail,
           name: existing.fromName,
@@ -149,7 +189,26 @@ export class SenderIdentityService {
         country,
       });
     }
-    if (!identity.sendgridSenderId) {
+
+    // Check if domain is pre-approved for automatic verification
+    const domain = normalizeDomainFromEmail(identity.fromEmail).toLowerCase();
+    const isDomainApproved = await domainValidationRepository.domainExists(domain);
+
+    if (isDomainApproved && identity.validationStatus !== 'verified') {
+      // Auto-verify for pre-approved domain
+      const updated = await emailSenderIdentityRepository.updateByIdForTenant(
+        identity.id,
+        tenantId,
+        {
+          validationStatus: 'verified',
+          lastValidatedAt: new Date(),
+          updatedAt: new Date(),
+        } as Partial<NewEmailSenderIdentity>
+      );
+      return updated || identity;
+    }
+
+    if (!identity.sendgridSenderId && !isDomainApproved) {
       if (!address || !city) {
         const error: any = new Error('Validation error');
         error.statusCode = 422;
@@ -178,7 +237,11 @@ export class SenderIdentityService {
       );
       return updated || identity;
     }
-    await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
+
+    if (identity.sendgridSenderId && !isDomainApproved) {
+      await sendgridClient.resendSenderVerification(identity.sendgridSenderId);
+    }
+
     return identity;
   }
 

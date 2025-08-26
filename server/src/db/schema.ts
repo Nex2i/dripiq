@@ -828,6 +828,20 @@ export const contactUnsubscribes = appSchema.table(
   ]
 );
 
+// Domain Validation - pre-approved domains for automatic sender verification
+export const domainValidation = appSchema.table(
+  'domain_validation',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    domain: text('domain').notNull().unique(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [index('domain_validation_domain_idx').on(table.domain)]
+);
+
 // Calendar Link Clicks - track clicks on calendar links in emails
 export const calendarLinkClicks = appSchema.table(
   'calendar_link_clicks',
@@ -1059,6 +1073,8 @@ export const contactUnsubscribesRelations = relations(contactUnsubscribes, ({ on
   }),
 }));
 
+export const domainValidationRelations = relations(domainValidation, ({}) => ({}));
+
 export const calendarLinkClicksRelations = relations(calendarLinkClicks, ({ one }) => ({
   tenant: one(tenants, {
     fields: [calendarLinkClicks.tenantId],
@@ -1133,5 +1149,7 @@ export type CampaignTransition = typeof campaignTransitions.$inferSelect;
 export type NewCampaignTransition = typeof campaignTransitions.$inferInsert;
 export type ContactUnsubscribe = typeof contactUnsubscribes.$inferSelect;
 export type NewContactUnsubscribe = typeof contactUnsubscribes.$inferInsert;
+export type DomainValidation = typeof domainValidation.$inferSelect;
+export type NewDomainValidation = typeof domainValidation.$inferInsert;
 export type CalendarLinkClick = typeof calendarLinkClicks.$inferSelect;
 export type NewCalendarLinkClick = typeof calendarLinkClicks.$inferInsert;
