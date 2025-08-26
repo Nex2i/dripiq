@@ -470,6 +470,15 @@ export class CampaignPlanExecutionService {
       throw new Error(`Expected send node, got ${node.action}`);
     }
 
+    // Get the campaign to extract contactId
+    const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+    if (!campaign) {
+      throw new Error(`Campaign not found: ${campaignId}`);
+    }
+    if (!campaign.contactId) {
+      throw new Error(`Campaign ${campaignId} has no associated contact`);
+    }
+
     // Calculate delay from node schedule
     const delay = this.calculateDelay(node.schedule?.delay || 'PT0S');
     const scheduledAt = new Date(Date.now() + delay);
@@ -494,10 +503,11 @@ export class CampaignPlanExecutionService {
     // Enqueue execution job
     const executionQueue = getQueue(QUEUE_NAMES.campaign_execution);
     await executionQueue.add(
-      JOB_NAMES.campaign_execution.timeout,
+      JOB_NAMES.campaign_execution.initialize,
       {
         tenantId,
         campaignId,
+        contactId: campaign.contactId,
         nodeId,
         actionType: 'send',
         metadata: {
