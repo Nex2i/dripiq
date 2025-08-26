@@ -386,6 +386,9 @@ export class CampaignPlanExecutionService {
       trigger: eventType,
     });
 
+    // Cancel any remaining timeout jobs for the current node since we're transitioning away
+    await this.cancelNodeTimeoutJobs(tenantId, campaignId, currentNodeId);
+
     // Update campaign state
     await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
       currentNodeId: transition.to,
@@ -771,6 +774,95 @@ export class CampaignPlanExecutionService {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
+    }
+  }
+
+  /**
+   * Cancels timeout jobs for a specific node when transitioning away from it
+   */
+  private async cancelNodeTimeoutJobs(
+    tenantId: string,
+    campaignId: string,
+    nodeId: string
+  ): Promise<void> {
+    try {
+      // Find pending timeout actions for this specific node
+      const pendingTimeoutActions = await scheduledActionRepository.findPendingByCampaignAndType(
+        tenantId,
+        campaignId,
+        JOB_NAMES.campaign_execution.timeout
+      );
+
+      // Filter to only timeout actions for the current node
+      const nodeTimeoutActions = pendingTimeoutActions.filter(
+        (action) => action.payload && (action.payload as any).nodeId === nodeId
+      );
+
+      if (nodeTimeoutActions.length === 0) {
+        logger.debug('[CampaignPlanExecutionService] No timeout jobs to cancel for node', {
+          tenantId,
+          campaignId,
+          nodeId,
+        });
+        return;
+      }
+
+      // Cancel the BullMQ jobs
+      const campaignExecutionQueue = getQueue('campaign_execution');
+      let canceledCount = 0;
+
+      for (const action of nodeTimeoutActions) {
+        if (action.bullmqJobId) {
+          try {
+            const job = await campaignExecutionQueue.getJob(action.bullmqJobId);
+            if (job) {
+              await job.remove();
+
+              // Update the database status
+              await scheduledActionRepository.updateById(action.id, {
+                status: 'canceled',
+                updatedAt: new Date(),
+              });
+
+              canceledCount++;
+
+              logger.debug('[CampaignPlanExecutionService] Canceled timeout job for node', {
+                tenantId,
+                campaignId,
+                nodeId,
+                actionId: action.id,
+                jobId: action.bullmqJobId,
+                eventType: (action.payload as any)?.eventType,
+              });
+            }
+          } catch (error) {
+            logger.warn('[CampaignPlanExecutionService] Failed to cancel timeout job', {
+              tenantId,
+              campaignId,
+              nodeId,
+              actionId: action.id,
+              jobId: action.bullmqJobId,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
+      }
+
+      logger.info('[CampaignPlanExecutionService] Canceled timeout jobs for node', {
+        tenantId,
+        campaignId,
+        nodeId,
+        totalFound: nodeTimeoutActions.length,
+        canceledCount,
+      });
+    } catch (error) {
+      logger.error('[CampaignPlanExecutionService] Failed to cancel node timeout jobs', {
+        tenantId,
+        campaignId,
+        nodeId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      // Don't fail the transition if job cleanup fails
     }
   }
 
