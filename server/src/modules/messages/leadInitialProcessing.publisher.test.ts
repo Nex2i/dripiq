@@ -1,8 +1,7 @@
-import { LeadInitialProcessingPublisher } from './leadInitialProcessing.publisher.service';
 import type { LeadInitialProcessingJobPayload } from '@/workers/lead-initial-processing/lead-initial-processing.types';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 
-// Mock the queue
+// Create mock queue object
 const mockQueue = {
   add: jest.fn(),
   addBulk: jest.fn(),
@@ -23,6 +22,9 @@ jest.mock('@/libs/logger', () => ({
     error: jest.fn(),
   },
 }));
+
+// Import the service AFTER setting up mocks
+import { LeadInitialProcessingPublisher } from './leadInitialProcessing.publisher.service';
 
 describe('LeadInitialProcessingPublisher', () => {
   const mockPayload: LeadInitialProcessingJobPayload = {
