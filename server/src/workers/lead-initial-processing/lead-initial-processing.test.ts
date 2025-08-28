@@ -1,4 +1,3 @@
-import type { Job } from 'bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { LEAD_STATUS } from '@/constants/leadStatus.constants';
 import type {
