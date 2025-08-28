@@ -7,6 +7,7 @@ import {
   userRepository,
   leadRepository,
 } from '@/repositories';
+import { SenderIdentityResolverService } from '@/modules/email/senderIdentityResolver.service';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { getQueue } from '@/libs/bullmq';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
@@ -105,6 +106,40 @@ export class EmailExecutionService {
       const senderIdentity =
         params.senderIdentity || (await this.getSenderIdentityByLeadId(tenantId, contact.leadId));
 
+      // Resolve sender configuration using domain validation fallback
+      let senderConfig;
+      try {
+        senderConfig = await SenderIdentityResolverService.resolveSenderConfig(
+          tenantId,
+          senderIdentity.fromEmail,
+          senderIdentity.fromName
+        );
+
+        logger.info('[EmailExecutionService] Resolved sender configuration', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          originalFrom: senderIdentity.fromEmail,
+          resolvedFrom: senderConfig.fromEmail,
+          replyTo: senderConfig.replyTo,
+        });
+      } catch (resolverError) {
+        logger.error(
+          '[EmailExecutionService] Failed to resolve sender config, using original identity',
+          {
+            tenantId,
+            campaignId,
+            contactId,
+            nodeId,
+            error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
+            fallbackFrom: senderIdentity.fromEmail,
+          }
+        );
+        // Continue with original sender identity if resolver fails
+        senderConfig = undefined;
+      }
+
       // Generate dedupe key
       const dedupeKey = this.buildDedupeKey(params);
 
@@ -171,6 +206,7 @@ export class EmailExecutionService {
         recipientEmail: contact.email,
         recipientName: contact.name,
         senderIdentity,
+        senderConfig,
         calendarInfo,
         dedupeKey,
         categories: ['campaign'],

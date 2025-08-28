@@ -6,6 +6,7 @@ import { emailSenderIdentityRepository, userTenantRepository } from '@/repositor
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { EmailProcessor, type CampaignEmailData } from '@/services/email';
+import { SenderIdentityResolverService } from '@/modules/email/senderIdentityResolver.service';
 import type { IUser } from '@/plugins/authentication.plugin';
 import {
   UpdateProfileRequestSchema,
@@ -219,6 +220,33 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        // Resolve sender configuration using domain validation fallback
+        let senderConfig;
+        try {
+          senderConfig = await SenderIdentityResolverService.resolveSenderConfig(
+            tenantId,
+            senderIdentity.fromEmail,
+            senderIdentity.fromName
+          );
+
+          fastify.log.info('Test email sender configuration resolved', {
+            tenantId,
+            userId,
+            originalFrom: senderIdentity.fromEmail,
+            resolvedFrom: senderConfig.fromEmail,
+            replyTo: senderConfig.replyTo,
+          } as any);
+        } catch (resolverError) {
+          fastify.log.error('Failed to resolve test email sender config, using original identity', {
+            tenantId,
+            userId,
+            error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
+            fallbackFrom: senderIdentity.fromEmail,
+          } as any);
+          // Continue with original sender identity if resolver fails
+          senderConfig = undefined;
+        }
+
         // Generate test IDs
         const testCampaignId = createId();
         const testContactId = createId();
@@ -255,6 +283,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           recipientEmail,
           recipientName: 'Test Contact',
           senderIdentity,
+          senderConfig,
           calendarInfo,
           categories: ['test-email'],
           skipMessageRecord: true,

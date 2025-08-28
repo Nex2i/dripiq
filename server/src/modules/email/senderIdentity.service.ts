@@ -5,9 +5,9 @@ import { SendgridTokenHelper } from '@/libs/email/sendgridToken.helper';
 import { validateEmailSignature } from '@/utils/htmlSanitization';
 
 function normalizeDomainFromEmail(email: string): string {
-  const parts = email.split('@');
-  if (parts.length !== 2) throw new Error('Invalid email address');
-  return parts[1]!.toLowerCase();
+  const domain = email.getEmailDomain();
+  if (!domain) throw new Error('Invalid email address');
+  return domain;
 }
 
 // Extractor moved to SendgridTokenHelper

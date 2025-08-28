@@ -21,4 +21,5 @@ export type SendBase = {
   headers?: Record<string, string>;
   categories?: string[]; // e.g. ["outreach","tenant:<id>"]
   asmGroupId?: number; // per-tenant unsubscribe group
+  reply_to?: string; // reply-to email address
 };

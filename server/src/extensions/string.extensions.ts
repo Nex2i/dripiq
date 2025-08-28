@@ -25,6 +25,14 @@ interface String {
    * Clean a website URL by adding https:// if missing, adding www. if missing, and removing trailing slash
    */
   cleanWebsiteUrl(): string;
+  /**
+   * Extract the domain from an email address
+   */
+  getEmailDomain(): string;
+  /**
+   * Clean a tenant name for use in domain generation (replace special chars and spaces with underscore)
+   */
+  cleanForDomain(): string;
 }
 
 String.prototype.isValidEmail = function (): boolean {
@@ -111,4 +119,23 @@ String.prototype.cleanWebsiteUrl = function (): string {
   }
 
   return (protocol + host)?.toLowerCase() || '';
+};
+
+String.prototype.getEmailDomain = function (): string {
+  const email = this.toString().trim();
+  if (!email || !email.includes('@')) return '';
+
+  const parts = email.split('@');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return '';
+
+  return parts[1]?.toLowerCase() || '';
+};
+
+String.prototype.cleanForDomain = function (): string {
+  return this.toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
 };
