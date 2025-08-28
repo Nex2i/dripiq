@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fas
 import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
-import { userTenantRepository } from '@/repositories';
+import { emailSenderIdentityRepository, userTenantRepository } from '@/repositories';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { EmailExecutionService } from '@/workers/campaign-execution/email-execution.service';
 import type { IUser } from '@/plugins/authentication.plugin';
@@ -189,6 +189,11 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        const userSenderIdentity = await emailSenderIdentityRepository.findByUserIdForTenant(
+          userId,
+          tenantId
+        );
+
         // Create mock objects for the email execution service
         // This allows us to use the same email flow as real campaigns (calendar links, unsubscribe, etc.)
         const testCampaignId = createId();
@@ -272,6 +277,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           contact: mockContact,
           campaign: mockCampaign,
           planJson: mockCampaign.planJson,
+          senderIdentity: userSenderIdentity,
         });
 
         if (!result.success) {

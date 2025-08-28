@@ -21,7 +21,7 @@ import {
 import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
 import { formatEmailBodyForHtml, formatEmailBodyForText } from '@/utils/emailFormatting';
 import type { SendBase } from '@/libs/email/sendgrid.types';
-import type { ContactCampaign, LeadPointOfContact } from '@/db/schema';
+import type { ContactCampaign, EmailSenderIdentity, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
 import { JOB_NAMES } from '@/constants/queues';
@@ -44,6 +44,7 @@ export interface EmailExecutionParams {
   contact: LeadPointOfContact;
   campaign: ContactCampaign;
   planJson?: CampaignPlanOutput;
+  senderIdentity?: EmailSenderIdentity;
 }
 
 export interface EmailExecutionResult {
@@ -105,7 +106,8 @@ export class EmailExecutionService {
       }
 
       // Fetch and validate sender identity
-      const senderIdentity = await this.getSenderIdentityByLeadId(tenantId, contact.leadId);
+      const senderIdentity =
+        params.senderIdentity || (await this.getSenderIdentityByLeadId(tenantId, contact.leadId));
 
       // Generate dedupe key
       const dedupeKey = this.buildDedupeKey(params);
