@@ -108,7 +108,9 @@ const LeadStatusBadges: React.FC<LeadStatusBadgesProps> = ({
                     <span>{getStatusIcon(status.status)}</span>
                     <span>{status.status}</span>
                     {index === 0 && (
-                      <span className="text-[var(--color-text-muted)] text-xs opacity-70">(primary)</span>
+                      <span className="text-[var(--color-text-muted)] text-xs opacity-70">
+                        (primary)
+                      </span>
                     )}
                   </div>
                 ))}

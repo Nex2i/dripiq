@@ -77,7 +77,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
     <div
       className={`rounded-lg border p-4 ${
         isProcessing
-          ? 'bg-[var(--color-bg-secondary)] border-[var(--color-border-default)]'
+          ? 'bg-[var(--color-surface-50)] border-[var(--color-surface-200)]'
           : 'bg-[var(--color-success-50)] border-[var(--color-success-200)]'
       } ${className}`}
     >
@@ -97,7 +97,9 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
           <div className="flex items-center justify-between">
             <h3
               className={`text-sm font-medium ${
-                isProcessing ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-success-900)]'
+                isProcessing
+                  ? 'text-[var(--color-text-primary)]'
+                  : 'text-[var(--color-success-900)]'
               }`}
             >
               {title}
@@ -112,7 +114,9 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
 
           <p
             className={`mt-1 text-sm ${
-              isProcessing ? 'text-[var(--color-text-secondary)]' : 'text-[var(--color-success-700)]'
+              isProcessing
+                ? 'text-[var(--color-text-secondary)]'
+                : 'text-[var(--color-success-700)]'
             }`}
           >
             {description}
@@ -178,7 +182,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
                   className="mt-2 text-xs text-[var(--color-text-secondary)] space-y-2"
                   style={{ display: 'none' }}
                 >
-                  <div className="bg-[var(--color-bg-muted)] border-l-2 border-[var(--color-border-default)] pl-3 py-2 space-y-1">
+                  <div className="bg-[var(--color-surface-100)] border-l-2 border-[var(--color-surface-200)] pl-3 py-2 space-y-1">
                     <div>
                       <strong>🔄 Initial Processing:</strong> Getting the
                       website's sitemap and filtering relevant pages
