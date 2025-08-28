@@ -65,7 +65,7 @@ export class SenderIdentityResolverService {
       });
 
       const fallbackDomain = await this.generateFallbackDomain(tenantId);
-      
+
       return {
         fromEmail: `${NOREPLY_PREFIX}${fallbackDomain}${DRIPIQ_DOMAIN_SUFFIX}`,
         fromName: userName,
@@ -73,7 +73,7 @@ export class SenderIdentityResolverService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+
       logger.error('[SenderIdentityResolver] Failed to resolve sender config', {
         tenantId,
         userEmail,
@@ -130,11 +130,11 @@ export class SenderIdentityResolverService {
         tenantName: tenant.name,
         website: tenant.website,
       });
-      
+
       return tenantId.cleanForDomain();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+
       logger.error('[SenderIdentityResolver] Failed to generate fallback domain', {
         tenantId,
         error: errorMessage,
@@ -144,7 +144,7 @@ export class SenderIdentityResolverService {
       logger.warn('[SenderIdentityResolver] Using tenant ID as ultimate fallback', {
         tenantId,
       });
-      
+
       return tenantId.cleanForDomain();
     }
   }

@@ -228,7 +228,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
             senderIdentity.fromEmail,
             senderIdentity.fromName
           );
-          
+
           fastify.log.info('Test email sender configuration resolved', {
             tenantId,
             userId,

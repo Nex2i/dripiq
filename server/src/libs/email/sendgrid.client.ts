@@ -1,6 +1,7 @@
 import sgMail, { ClientResponse, MailDataRequired } from '@sendgrid/mail';
 import sgClient from '@sendgrid/client';
 import { ClientRequest } from '@sendgrid/client/src/request';
+import { logger } from '../logger';
 import { ProviderIds, SenderValidationVerdict } from './sendgrid.types';
 import { SendBase } from './sendgrid.types';
 
@@ -19,9 +20,8 @@ class SendgridClient {
     }
 
     // Handle reply-to: default to from email if reply_to is null or whitespace
-    const replyToEmail = input.reply_to && input.reply_to.trim() 
-      ? input.reply_to.trim() 
-      : input.from.email;
+    const replyToEmail =
+      input.reply_to && input.reply_to.trim() ? input.reply_to.trim() : input.from.email;
 
     const msg: Partial<MailDataRequired> = {
       from: input.from,
@@ -41,8 +41,13 @@ class SendgridClient {
       msg.text = input.text;
     }
 
-    const [resp] = await sgMail.send(msg as MailDataRequired, false); // no built-in retry; you handle backoff in worker
-    return this.extractProviderIds(resp);
+    try {
+      const [resp] = await sgMail.send(msg as MailDataRequired, false); // no built-in retry; you handle backoff in worker
+      return this.extractProviderIds(resp);
+    } catch (error) {
+      logger.error('Error sending email:', error);
+      throw error;
+    }
   }
 
   async validateEmail(

@@ -114,7 +114,7 @@ export class EmailExecutionService {
           senderIdentity.fromEmail,
           senderIdentity.fromName
         );
-        
+
         logger.info('[EmailExecutionService] Resolved sender configuration', {
           tenantId,
           campaignId,
@@ -125,14 +125,17 @@ export class EmailExecutionService {
           replyTo: senderConfig.replyTo,
         });
       } catch (resolverError) {
-        logger.error('[EmailExecutionService] Failed to resolve sender config, using original identity', {
-          tenantId,
-          campaignId,
-          contactId,
-          nodeId,
-          error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
-          fallbackFrom: senderIdentity.fromEmail,
-        });
+        logger.error(
+          '[EmailExecutionService] Failed to resolve sender config, using original identity',
+          {
+            tenantId,
+            campaignId,
+            contactId,
+            nodeId,
+            error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
+            fallbackFrom: senderIdentity.fromEmail,
+          }
+        );
         // Continue with original sender identity if resolver fails
         senderConfig = undefined;
       }
