@@ -1,9 +1,9 @@
 import type { Job } from 'bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { LEAD_STATUS } from '@/constants/leadStatus.constants';
-import type { 
-  LeadInitialProcessingJobPayload, 
-  LeadInitialProcessingJobResult 
+import type {
+  LeadInitialProcessingJobPayload,
+  LeadInitialProcessingJobResult,
 } from './lead-initial-processing.types';
 
 // Mock dependencies
@@ -107,10 +107,16 @@ describe('Lead Initial Processing Worker', () => {
   });
 
   it('should have all required error codes defined', () => {
-    const errorCodes = ['INVALID_URL', 'SITEMAP_FETCH_FAILED', 'SMART_FILTER_FAILED', 'BATCH_SCRAPE_FAILED', 'UNKNOWN'];
-    
+    const errorCodes = [
+      'INVALID_URL',
+      'SITEMAP_FETCH_FAILED',
+      'SMART_FILTER_FAILED',
+      'BATCH_SCRAPE_FAILED',
+      'UNKNOWN',
+    ];
+
     // This test ensures we have defined all the error codes we might use
-    errorCodes.forEach(code => {
+    errorCodes.forEach((code) => {
       const result: LeadInitialProcessingJobResult = {
         success: false,
         leadId: 'test-id',
@@ -123,15 +129,15 @@ describe('Lead Initial Processing Worker', () => {
 
   it('should validate required payload fields', () => {
     const requiredFields = ['tenantId', 'leadId', 'leadUrl'];
-    
-    requiredFields.forEach(field => {
+
+    requiredFields.forEach((field) => {
       const incompletePayload = { ...mockJobPayload };
       delete (incompletePayload as any)[field];
-      
+
       const isValidPayload = (payload: any): payload is LeadInitialProcessingJobPayload => {
-        return requiredFields.every(f => typeof payload[f] === 'string');
+        return requiredFields.every((f) => typeof payload[f] === 'string');
       };
-      
+
       expect(isValidPayload(incompletePayload)).toBe(false);
     });
   });

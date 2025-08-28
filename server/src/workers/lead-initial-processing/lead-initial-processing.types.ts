@@ -12,5 +12,10 @@ export interface LeadInitialProcessingJobResult {
   filteredUrls?: string[];
   batchScrapeJobId?: string;
   error?: string;
-  errorCode?: 'INVALID_URL' | 'SITEMAP_FETCH_FAILED' | 'SMART_FILTER_FAILED' | 'BATCH_SCRAPE_FAILED' | 'UNKNOWN';
+  errorCode?:
+    | 'INVALID_URL'
+    | 'SITEMAP_FETCH_FAILED'
+    | 'SMART_FILTER_FAILED'
+    | 'BATCH_SCRAPE_FAILED'
+    | 'UNKNOWN';
 }

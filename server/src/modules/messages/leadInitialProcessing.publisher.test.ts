@@ -78,7 +78,9 @@ describe('LeadInitialProcessingPublisher', () => {
       const error = new Error('Queue error');
       mockQueue.add.mockRejectedValue(error);
 
-      await expect(LeadInitialProcessingPublisher.publish(mockPayload)).rejects.toThrow('Queue error');
+      await expect(LeadInitialProcessingPublisher.publish(mockPayload)).rejects.toThrow(
+        'Queue error'
+      );
     });
   });
 
@@ -142,7 +144,9 @@ describe('LeadInitialProcessingPublisher', () => {
       const error = new Error('Queue stats error');
       mockQueue.getWaiting.mockRejectedValue(error);
 
-      await expect(LeadInitialProcessingPublisher.getQueueStats()).rejects.toThrow('Queue stats error');
+      await expect(LeadInitialProcessingPublisher.getQueueStats()).rejects.toThrow(
+        'Queue stats error'
+      );
     });
   });
 

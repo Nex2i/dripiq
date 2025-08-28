@@ -13,11 +13,21 @@
 
 import { logger } from '@/libs/logger';
 import { createRedisConnection } from '@/libs/bullmq';
-import { leadInitialProcessingWorker, leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker } from './index';
+import {
+  leadInitialProcessingWorker,
+  leadAnalysisWorker,
+  campaignCreationWorker,
+  campaignExecutionWorker,
+} from './index';
 
 // Track active workers for graceful shutdown
 // Note: timeout processing is handled within campaignExecutionWorker
-const activeWorkers = [leadInitialProcessingWorker, leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker];
+const activeWorkers = [
+  leadInitialProcessingWorker,
+  leadAnalysisWorker,
+  campaignCreationWorker,
+  campaignExecutionWorker,
+];
 
 async function startWorkers() {
   try {
@@ -65,7 +75,12 @@ async function gracefulShutdown(signal: string) {
     // Close all workers
     await Promise.all(
       activeWorkers.map(async (worker, index) => {
-        const workerNames = ['lead-initial-processing', 'lead-analysis', 'campaign-creation', 'campaign-execution'];
+        const workerNames = [
+          'lead-initial-processing',
+          'lead-analysis',
+          'campaign-creation',
+          'campaign-execution',
+        ];
         logger.info(`🛑 Closing ${workerNames[index]} worker...`);
         await worker.close();
         logger.info(`✅ ${workerNames[index]} worker closed`);

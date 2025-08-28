@@ -7,9 +7,9 @@ import { updateLeadStatuses } from '@/modules/lead.service';
 import { SiteScrapeService } from '@/modules/ai/siteScrape.service';
 import { firecrawlTypes } from '@/libs/firecrawl/firecrawl.metadata';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import type { 
-  LeadInitialProcessingJobPayload, 
-  LeadInitialProcessingJobResult 
+import type {
+  LeadInitialProcessingJobPayload,
+  LeadInitialProcessingJobResult,
 } from './lead-initial-processing.types';
 
 async function processLeadInitialProcessing(
@@ -48,7 +48,9 @@ async function processLeadInitialProcessing(
         leadId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      throw new Error(`Failed to retrieve sitemap: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to retrieve sitemap: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     // Step 2: Filter URLs (basic filtering)
@@ -109,7 +111,9 @@ async function processLeadInitialProcessing(
         leadId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      throw new Error(`Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     logger.info('[LeadInitialProcessingWorker] Initial processing completed successfully', {
@@ -200,7 +204,10 @@ function filterUrls(urls: string[]): string[] {
   });
 }
 
-const leadInitialProcessingWorker = getWorker<LeadInitialProcessingJobPayload, LeadInitialProcessingJobResult>(
+const leadInitialProcessingWorker = getWorker<
+  LeadInitialProcessingJobPayload,
+  LeadInitialProcessingJobResult
+>(
   QUEUE_NAMES.lead_initial_processing,
   async (job: Job<LeadInitialProcessingJobPayload>) => {
     if (job.name !== JOB_NAMES.lead_initial_processing.process) {

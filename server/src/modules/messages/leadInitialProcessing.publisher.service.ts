@@ -13,19 +13,15 @@ export class LeadInitialProcessingPublisher {
    */
   static async publish(payload: LeadInitialProcessingJobPayload): Promise<string> {
     try {
-      const job = await this.queue.add(
-        JOB_NAMES.lead_initial_processing.process,
-        payload,
-        {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 2000,
-          },
-          removeOnComplete: 10, // Keep last 10 completed jobs for monitoring
-          removeOnFail: 5, // Keep last 5 failed jobs for debugging
-        }
-      );
+      const job = await this.queue.add(JOB_NAMES.lead_initial_processing.process, payload, {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+        removeOnComplete: 10, // Keep last 10 completed jobs for monitoring
+        removeOnFail: 5, // Keep last 5 failed jobs for debugging
+      });
 
       logger.info('[LeadInitialProcessingPublisher] Job published', {
         jobId: job.id,
@@ -67,19 +63,19 @@ export class LeadInitialProcessingPublisher {
         }))
       );
 
-      const jobIds = jobs.map(job => job.id || 'unknown');
+      const jobIds = jobs.map((job) => job.id || 'unknown');
 
       logger.info('[LeadInitialProcessingPublisher] Batch jobs published', {
         jobCount: jobs.length,
         jobIds,
-        leadIds: payloads.map(p => p.leadId),
+        leadIds: payloads.map((p) => p.leadId),
       });
 
       return jobIds;
     } catch (error) {
       logger.error('[LeadInitialProcessingPublisher] Failed to publish batch jobs', {
         jobCount: payloads.length,
-        leadIds: payloads.map(p => p.leadId),
+        leadIds: payloads.map((p) => p.leadId),
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
