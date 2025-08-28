@@ -403,40 +403,42 @@ export default function UserEditPage() {
                     <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
                       {senderError}
                     </div>
-                                )}
-            </div>
-          )}
-
-          {/* Email Signature Section */}
-          {myIdentity && myIdentity.validationStatus === 'verified' && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-base font-medium text-gray-900 mb-4">
-                Email Signature
-              </h3>
-              <div className="space-y-4">
-                <EmailSignatureEditor
-                  value={emailSignature}
-                  onChange={setEmailSignature}
-                  placeholder="Enter your email signature (plain text or HTML)..."
-                />
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleUpdateSignature}
-                    disabled={updateSignature.isPending}
-                    className="px-4 py-2 text-sm rounded-lg bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] disabled:opacity-50 shadow-sm"
-                  >
-                    {updateSignature.isPending ? 'Saving...' : 'Save Signature'}
-                  </button>
-                  {emailSignature !== (myIdentity.emailSignature || '') && (
-                    <span className="text-xs text-amber-600">
-                      Unsaved changes
-                    </span>
                   )}
                 </div>
-              </div>
+              )}
+
+              {/* Email Signature Section */}
+              {myIdentity && myIdentity.validationStatus === 'verified' && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-base font-medium text-gray-900 mb-4">
+                    Email Signature
+                  </h3>
+                  <div className="space-y-4">
+                    <EmailSignatureEditor
+                      value={emailSignature}
+                      onChange={setEmailSignature}
+                      placeholder="Enter your email signature (plain text or HTML)..."
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleUpdateSignature}
+                        disabled={updateSignature.isPending}
+                        className="px-4 py-2 text-sm rounded-lg bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] disabled:opacity-50 shadow-sm"
+                      >
+                        {updateSignature.isPending
+                          ? 'Saving...'
+                          : 'Save Signature'}
+                      </button>
+                      {emailSignature !== (myIdentity.emailSignature || '') && (
+                        <span className="text-xs text-amber-600">
+                          Unsaved changes
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
           ) : (
             <div className="space-y-4">
               {senderError && (

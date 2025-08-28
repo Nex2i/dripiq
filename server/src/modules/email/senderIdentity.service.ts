@@ -2,6 +2,7 @@ import { emailSenderIdentityRepository, domainValidationRepository } from '@/rep
 import { EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { SendgridTokenHelper } from '@/libs/email/sendgridToken.helper';
+import { validateEmailSignature } from '@/utils/htmlSanitization';
 
 function normalizeDomainFromEmail(email: string): string {
   const parts = email.split('@');
@@ -19,6 +20,22 @@ function extractSendgridIdFromBody(body: unknown): string | undefined {
   return undefined;
 }
 
+function validateAndSanitizeSignature(emailSignature?: string | null): string | null {
+  if (emailSignature === undefined || emailSignature === null) {
+    return null;
+  }
+
+  const validation = validateEmailSignature(emailSignature);
+  if (!validation.isValid) {
+    const error: any = new Error('Validation error');
+    error.statusCode = 422;
+    error.details = [{ field: 'emailSignature', message: validation.error }];
+    throw error;
+  }
+
+  return validation.sanitized || null;
+}
+
 export class SenderIdentityService {
   static async createSenderIdentity(params: {
     tenantId: string;
@@ -33,6 +50,9 @@ export class SenderIdentityService {
     const { tenantId, userId, fromEmail, fromName } = params;
     const domain = normalizeDomainFromEmail(fromEmail).toLowerCase();
 
+    // Validate and sanitize email signature
+    const sanitizedSignature = validateAndSanitizeSignature(params.emailSignature);
+
     // Check if domain is pre-approved for automatic verification
     const isDomainApproved = await domainValidationRepository.domainExists(domain);
 
@@ -46,7 +66,7 @@ export class SenderIdentityService {
         sendgridSenderId: null, // No SendGrid ID needed for pre-approved domains
         validationStatus: 'verified',
         lastValidatedAt: new Date(),
-        emailSignature: params.emailSignature || null,
+        emailSignature: sanitizedSignature,
         isDefault: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -85,7 +105,7 @@ export class SenderIdentityService {
       domain,
       sendgridSenderId: sendgridId,
       validationStatus: 'pending',
-      emailSignature: params.emailSignature || null,
+      emailSignature: sanitizedSignature,
       isDefault: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -298,14 +318,13 @@ export class SenderIdentityService {
       throw new Error('No sender identity found for the specified user and tenant');
     }
 
-    const updated = await emailSenderIdentityRepository.updateByIdForTenant(
-      identity.id,
-      tenantId,
-      {
-        emailSignature,
-        updatedAt: new Date(),
-      } as Partial<NewEmailSenderIdentity>
-    );
+    // Validate and sanitize email signature
+    const sanitizedSignature = validateAndSanitizeSignature(emailSignature);
+
+    const updated = await emailSenderIdentityRepository.updateByIdForTenant(identity.id, tenantId, {
+      emailSignature: sanitizedSignature,
+      updatedAt: new Date(),
+    } as Partial<NewEmailSenderIdentity>);
 
     return updated ?? identity;
   }

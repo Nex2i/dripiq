@@ -249,16 +249,12 @@ export default async function SenderIdentitiesRoutes(
       reply: FastifyReply
     ) => {
       const { tenantId, user } = request as AuthenticatedRequest;
-      try {
-        const updated = await SenderIdentityService.updateEmailSignature(
-          tenantId,
-          user.id,
-          request.body.emailSignature
-        );
-        return reply.status(200).send(updated);
-      } catch (e: any) {
-        throw e;
-      }
+      const updated = await SenderIdentityService.updateEmailSignature(
+        tenantId,
+        user.id,
+        request.body.emailSignature
+      );
+      return reply.status(200).send(updated);
     },
   });
 }

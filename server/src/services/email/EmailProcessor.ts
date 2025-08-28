@@ -2,7 +2,11 @@ import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
-import { formatEmailBodyForHtml, formatEmailBodyForText } from '@/utils/emailFormatting';
+import {
+  formatEmailBodyForHtml,
+  formatEmailBodyForText,
+  containsHtml,
+} from '@/utils/emailFormatting';
 import { outboundMessageRepository } from '@/repositories';
 import type { SendBase } from '@/libs/email/sendgrid.types';
 
@@ -110,15 +114,31 @@ export class EmailProcessor {
 
       // Append email signature if available
       if (senderIdentity.emailSignature?.trim()) {
-        emailBody = `${emailBody}\n\n${senderIdentity.emailSignature.trim()}`;
-        
+        const signature = senderIdentity.emailSignature.trim();
+
+        // Check if either the body or signature contains HTML
+        const bodyHasHtml = containsHtml(emailBody);
+        const signatureHasHtml = containsHtml(signature);
+
+        if (bodyHasHtml || signatureHasHtml) {
+          // HTML mode: convert plain text parts to HTML for consistency
+          const htmlBody = bodyHasHtml ? emailBody : emailBody.replace(/\n/g, '<br>');
+          const htmlSignature = signatureHasHtml ? signature : signature.replace(/\n/g, '<br>');
+          emailBody = `${htmlBody}<br><br>${htmlSignature}`;
+        } else {
+          // Plain text mode: use simple newlines
+          emailBody = `${emailBody}\n\n${signature}`;
+        }
+
         logger.info('[EmailProcessor] Email signature appended', {
           tenantId,
           campaignId,
           contactId,
           nodeId,
           senderIdentityId: senderIdentity.id,
-          signatureLength: senderIdentity.emailSignature.trim().length,
+          signatureLength: signature.length,
+          signatureIsHtml: signatureHasHtml,
+          bodyIsHtml: bodyHasHtml,
         });
       }
       if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
@@ -138,7 +158,17 @@ export class EmailProcessor {
           );
 
           // Append calendar message to email body
-          emailBody = `${emailBody}\n\n${calendarMessage}`;
+          // Check if the current email body contains HTML to determine formatting
+          if (containsHtml(emailBody)) {
+            // HTML mode: convert calendar message newlines to <br> if needed
+            const htmlCalendarMessage = containsHtml(calendarMessage)
+              ? calendarMessage
+              : calendarMessage.replace(/\n/g, '<br>');
+            emailBody = `${emailBody}<br><br>${htmlCalendarMessage}`;
+          } else {
+            // Plain text mode: use simple newlines
+            emailBody = `${emailBody}\n\n${calendarMessage}`;
+          }
 
           logger.info('[EmailProcessor] Calendar message appended to email', {
             tenantId,

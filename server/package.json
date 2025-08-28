@@ -72,6 +72,7 @@
     "fastify-plugin": "^5.0.1",
     "humanloop": "^0.8.20",
     "ioredis": "^5.7.0",
+    "isomorphic-dompurify": "^2.26.0",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.3.31",
     "pino": "^9.7.0",
