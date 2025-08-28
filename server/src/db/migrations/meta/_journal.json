@@ -253,6 +253,13 @@
       "when": 1756352661891,
       "tag": "0035_email_signature",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1756424898151,
+      "tag": "0036_contact_campaign_status",
+      "breakpoints": true
     }
   ]
 }

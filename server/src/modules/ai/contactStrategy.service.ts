@@ -2,6 +2,7 @@ import { logger } from '@/libs/logger';
 import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
 import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
 import { mapEmailContentToCampaignPlan } from '../campaign/campaignContentMapper.service';
+import { updateContactStrategyStatus } from '../contact.service';
 import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
 import {
   CampaignPlanOutput,
@@ -40,9 +41,14 @@ export const generateContactStrategy = async (
   const { leadId, contactId, tenantId, userId } = params;
 
   try {
+    // Set status to 'generating' at the start
+    await updateContactStrategyStatus(tenantId, leadId, contactId, 'generating');
+
     // Check if contact strategy exists in database
     const existingStrategy = await retrieveContactStrategyFromDatabase(params);
     if (existingStrategy) {
+      // Update status to 'completed' since strategy exists
+      await updateContactStrategyStatus(tenantId, leadId, contactId, 'completed');
       logger.info('Found existing contact strategy in database, returning live data', {
         leadId,
         contactId,
@@ -61,6 +67,8 @@ export const generateContactStrategy = async (
       try {
         campaignPlan = mapEmailContentToCampaignPlan(emailContentResult.finalResponseParsed);
       } catch (mappingError) {
+        // Update status to 'failed' on mapping error
+        await updateContactStrategyStatus(tenantId, leadId, contactId, 'failed');
         logger.error('Failed to map email content to campaign template', {
           tenantId,
           leadId,
@@ -84,6 +92,8 @@ export const generateContactStrategy = async (
           channel: 'email',
         });
       } catch (dbError) {
+        // Update status to 'failed' on persistence error
+        await updateContactStrategyStatus(tenantId, leadId, contactId, 'failed');
         logger.error('Failed to persist campaign plan to database', {
           tenantId,
           leadId,
@@ -92,6 +102,9 @@ export const generateContactStrategy = async (
         });
         throw dbError;
       }
+
+      // Update status to 'completed' on successful generation
+      await updateContactStrategyStatus(tenantId, leadId, contactId, 'completed');
 
       // Return result in the expected format (backwards compatible)
       const result = {
@@ -103,6 +116,8 @@ export const generateContactStrategy = async (
 
       return result;
     } catch (agentError) {
+      // Update status to 'failed' on agent error
+      await updateContactStrategyStatus(tenantId, leadId, contactId, 'failed');
       logger.error('Agent execution failed', {
         leadId,
         contactId,
@@ -115,6 +130,18 @@ export const generateContactStrategy = async (
       );
     }
   } catch (error) {
+    // Update status to 'failed' on any other error
+    try {
+      await updateContactStrategyStatus(tenantId, leadId, contactId, 'failed');
+    } catch (statusError) {
+      logger.error('Failed to update contact strategy status to failed', {
+        leadId,
+        contactId,
+        tenantId,
+        error: statusError instanceof Error ? statusError.message : 'Unknown status error',
+      });
+    }
+    
     logger.error('Contact strategy generation failed', {
       leadId,
       contactId,

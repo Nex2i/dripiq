@@ -4,6 +4,7 @@ import {
   leadPointOfContactRepository,
   leadStatusRepository,
   leadTransactionRepository,
+  contactCampaignRepository,
   repositories,
 } from '../repositories';
 import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
@@ -162,6 +163,41 @@ export const getLeadById = async (
     // Get point of contacts for this lead
     const contacts = await leadPointOfContactRepository.findByLeadId(id);
 
+    // Update strategy status for contacts based on existing campaigns
+    const contactsWithStrategyStatus = await Promise.all(
+      contacts.map(async (contact) => {
+        // Skip if strategyStatus is already set correctly (not 'none')
+        if (contact.strategyStatus && contact.strategyStatus !== 'none') {
+          return contact;
+        }
+
+        try {
+          // Check if contact has an existing campaign
+          const existingCampaign = await contactCampaignRepository.findByContactAndChannelForTenant(
+            tenantId,
+            contact.id,
+            'email'
+          );
+
+          // Update strategy status based on campaign existence
+          const newStatus = existingCampaign ? 'completed' : 'none';
+          
+          // Only update if status needs to change
+          if (contact.strategyStatus !== newStatus) {
+            const updatedContact = await leadPointOfContactRepository.updateById(contact.id, {
+              strategyStatus: newStatus,
+            });
+            return updatedContact || contact;
+          }
+          
+          return contact;
+        } catch (error) {
+          logger.warn(`Failed to check campaign status for contact ${contact.id}:`, error);
+          return contact;
+        }
+      })
+    );
+
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
     try {
@@ -180,7 +216,7 @@ export const getLeadById = async (
 
     return {
       ...transformedLead,
-      pointOfContacts: contacts,
+      pointOfContacts: contactsWithStrategyStatus,
       statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
   } catch (error) {
