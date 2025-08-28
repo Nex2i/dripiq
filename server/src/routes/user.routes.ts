@@ -206,16 +206,18 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // Fetch sender identity
-        const senderIdentities =
-          await emailSenderIdentityRepository.findVerifiedForTenant(tenantId);
-        if (!senderIdentities || senderIdentities.length === 0) {
+        const senderIdentity = await emailSenderIdentityRepository.findByUserIdForTenant(
+          userId,
+          tenantId
+        );
+
+        if (!senderIdentity) {
           reply.status(400).send({
             success: false,
             message: 'No verified sender identity found for this tenant',
           });
           return;
         }
-        const senderIdentity = senderIdentities[0]; // Use the first verified identity
 
         // Generate test IDs
         const testCampaignId = createId();
@@ -254,8 +256,8 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           recipientName: 'Test Contact',
           senderIdentity: {
             id: senderIdentity!.id,
-            fromEmail: senderIdentity!.fromEmail,
-            fromName: senderIdentity!.fromName,
+            fromEmail: senderIdentity.fromEmail,
+            fromName: senderIdentity.fromName,
           },
           calendarInfo,
           categories: ['test-email'],
