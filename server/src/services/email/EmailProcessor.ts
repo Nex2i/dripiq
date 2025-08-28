@@ -241,7 +241,7 @@ export class EmailProcessor {
         html: htmlBody,
         text: textBody,
         categories: [...categories, `tenant:${tenantId}`],
-        ...(replyTo && { reply_to: replyTo }),
+        reply_to: replyTo,
       };
 
       // Send email via SendGrid

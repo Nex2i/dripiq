@@ -18,10 +18,16 @@ class SendgridClient {
       throw new Error('Email body is required: provide html or text');
     }
 
+    // Handle reply-to: default to from email if reply_to is null or whitespace
+    const replyToEmail = input.reply_to && input.reply_to.trim() 
+      ? input.reply_to.trim() 
+      : input.from.email;
+
     const msg: Partial<MailDataRequired> = {
       from: input.from,
       to: input.to,
       subject: input.subject,
+      replyTo: replyToEmail,
       headers: input.headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
