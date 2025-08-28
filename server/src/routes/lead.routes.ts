@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
+import { LeadInitialProcessingPublisher } from '@/modules/messages/leadInitialProcessing.publisher.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy, updateContactStrategy } from '@/modules/ai';
@@ -175,13 +176,39 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Index the lead's site after creation
-        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, newLead.id);
+        // Queue initial processing instead of synchronous processing
+        try {
+          await LeadInitialProcessingPublisher.publish({
+            tenantId: authenticatedRequest.tenantId,
+            leadId: newLead.id,
+            leadUrl: newLead.url,
+            metadata: {
+              createdBy: authenticatedRequest.user?.id,
+              createdAt: new Date().toISOString(),
+            },
+          });
 
-        reply.status(201).send({
-          message: 'Lead created successfully',
-          lead: newLead,
-        });
+          reply.status(201).send({
+            message: 'Lead created successfully and processing started',
+            lead: newLead,
+            processing: {
+              status: 'queued',
+              message: 'Initial processing has been queued. The system will analyze the website and extract contacts automatically.',
+            },
+          });
+        } catch (queueError) {
+          // If queue fails, log it but don't fail the lead creation
+          fastify.log.error(`Failed to queue initial processing for lead ${newLead.id}:`, queueError);
+          
+          reply.status(201).send({
+            message: 'Lead created successfully',
+            lead: newLead,
+            processing: {
+              status: 'queue_failed',
+              message: 'Lead created but automatic processing could not be started. You can manually resync the lead later.',
+            },
+          });
+        }
       } catch (error: any) {
         fastify.log.error(`Error creating lead: ${error.message}`);
 

@@ -14,8 +14,10 @@ const getStatusColor = (status: LeadStatus['status']) => {
   switch (status) {
     case LEAD_STATUS.UNPROCESSED:
       return 'bg-gray-100 text-gray-800 border-gray-200'
-    case LEAD_STATUS.SYNCING_SITE:
+    case LEAD_STATUS.INITIAL_PROCESSING:
       return 'bg-blue-100 text-blue-800 border-blue-200'
+    case LEAD_STATUS.SYNCING_SITE:
+      return 'bg-indigo-100 text-indigo-800 border-indigo-200'
     case LEAD_STATUS.SCRAPING_SITE:
       return 'bg-yellow-100 text-yellow-800 border-yellow-200'
     case LEAD_STATUS.ANALYZING_SITE:
@@ -33,8 +35,10 @@ const getStatusIcon = (status: LeadStatus['status']) => {
   switch (status) {
     case LEAD_STATUS.UNPROCESSED:
       return '⏳'
-    case LEAD_STATUS.SYNCING_SITE:
+    case LEAD_STATUS.INITIAL_PROCESSING:
       return '🔄'
+    case LEAD_STATUS.SYNCING_SITE:
+      return '🌐'
     case LEAD_STATUS.SCRAPING_SITE:
       return '🔍'
     case LEAD_STATUS.ANALYZING_SITE:
