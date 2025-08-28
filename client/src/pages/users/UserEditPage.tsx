@@ -387,19 +387,11 @@ export default function UserEditPage() {
                 </div>
               )}
 
-              {/* Email Signature Section */}
-              {myIdentity && myIdentity.validationStatus === 'verified' && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-base font-medium text-gray-900 mb-4">
-                    Email Signature
-                  </h3>
-                  <EmailSignatureEditor
-                    initialValue={myIdentity.emailSignature}
-                    placeholder="Enter your email signature (plain text or HTML)..."
-                    onSaveError={(error) => setSenderError(error)}
-                  />
-                </div>
-              )}
+              <EmailSignatureEditor
+                senderIdentity={myIdentity}
+                placeholder="Enter your email signature (plain text or HTML)..."
+                onSaveError={(error) => setSenderError(error)}
+              />
             </div>
           ) : (
             <div className="space-y-4">
