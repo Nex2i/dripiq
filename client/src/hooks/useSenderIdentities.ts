@@ -54,3 +54,14 @@ export function useVerifyMySenderIdentity() {
     },
   })
 }
+
+export function useUpdateMyEmailSignature() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (emailSignature: string | null) =>
+      senderIdentitiesService.updateMyEmailSignature(emailSignature),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: senderIdentityQueryKeys.mine })
+    },
+  })
+}

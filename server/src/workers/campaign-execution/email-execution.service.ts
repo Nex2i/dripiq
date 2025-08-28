@@ -170,11 +170,7 @@ export class EmailExecutionService {
         body: node.body,
         recipientEmail: contact.email,
         recipientName: contact.name,
-        senderIdentity: {
-          id: senderIdentity.id,
-          fromEmail: senderIdentity.fromEmail,
-          fromName: senderIdentity.fromName,
-        },
+        senderIdentity,
         calendarInfo,
         dedupeKey,
         categories: ['campaign'],

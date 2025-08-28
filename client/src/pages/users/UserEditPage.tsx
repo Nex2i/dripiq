@@ -11,6 +11,7 @@ import {
 } from '../../hooks/useSenderIdentities'
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 import TestEmailComponent from '../../components/TestEmailComponent'
+import EmailSignatureEditor from '../../components/EmailSignatureEditor'
 
 export default function UserEditPage() {
   const params = useParams({ strict: false }) as { userId?: string }
@@ -385,6 +386,12 @@ export default function UserEditPage() {
                   )}
                 </div>
               )}
+
+              <EmailSignatureEditor
+                senderIdentity={myIdentity}
+                placeholder="Enter your email signature (plain text or HTML)..."
+                onSaveError={(error) => setSenderError(error)}
+              />
             </div>
           ) : (
             <div className="space-y-4">

@@ -414,6 +414,7 @@ export const emailSenderIdentities = appSchema.table(
     validationStatus: text('validation_status').notNull().default('pending'), // pending|verified|failed
     lastValidatedAt: timestamp('last_validated_at'),
     dedicatedIpPool: text('dedicated_ip_pool'),
+    emailSignature: text('email_signature'), // HTML email signature
     isDefault: boolean('is_default').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),

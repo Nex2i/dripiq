@@ -2,9 +2,14 @@ import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
-import { formatEmailBodyForHtml, formatEmailBodyForText } from '@/utils/emailFormatting';
+import {
+  formatEmailBodyForHtml,
+  formatEmailBodyForText,
+  containsHtml,
+} from '@/utils/emailFormatting';
 import { outboundMessageRepository } from '@/repositories';
 import type { SendBase } from '@/libs/email/sendgrid.types';
+import { EmailSenderIdentity } from '@/db';
 
 export interface CampaignEmailData {
   // Core email data
@@ -20,11 +25,7 @@ export interface CampaignEmailData {
   recipientName: string;
 
   // Sender info (pre-fetched, pre-validated)
-  senderIdentity: {
-    id: string;
-    fromEmail: string;
-    fromName: string;
-  };
+  senderIdentity: EmailSenderIdentity;
 
   // Calendar info (optional, pre-fetched)
   calendarInfo?: {
@@ -104,8 +105,9 @@ export class EmailProcessor {
       // Create outbound message ID (used for tracking even if not recording)
       const outboundMessageId = createId();
 
-      // Prepare email body with calendar information if available
+      // Prepare email body with signature and calendar information
       let emailBody = body;
+
       if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
         try {
           const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
@@ -123,7 +125,17 @@ export class EmailProcessor {
           );
 
           // Append calendar message to email body
-          emailBody = `${emailBody}\n\n${calendarMessage}`;
+          // Check if the current email body contains HTML to determine formatting
+          if (containsHtml(emailBody)) {
+            // HTML mode: convert calendar message newlines to <br> if needed
+            const htmlCalendarMessage = containsHtml(calendarMessage)
+              ? calendarMessage
+              : calendarMessage.replace(/\n/g, '<br>');
+            emailBody = `${emailBody}<br><br>${htmlCalendarMessage}`;
+          } else {
+            // Plain text mode: use simple newlines
+            emailBody = `${emailBody}\n\n${calendarMessage}`;
+          }
 
           logger.info('[EmailProcessor] Calendar message appended to email', {
             tenantId,
@@ -164,6 +176,36 @@ export class EmailProcessor {
           scheduledAt: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
+        });
+      }
+
+      // Append email signature if available
+      if (senderIdentity.emailSignature?.trim()) {
+        const signature = senderIdentity.emailSignature.trim();
+
+        // Check if either the body or signature contains HTML
+        const bodyHasHtml = containsHtml(emailBody);
+        const signatureHasHtml = containsHtml(signature);
+
+        if (bodyHasHtml || signatureHasHtml) {
+          // HTML mode: convert plain text parts to HTML for consistency
+          const htmlBody = bodyHasHtml ? emailBody : emailBody.replace(/\n/g, '<br>');
+          const htmlSignature = signatureHasHtml ? signature : signature.replace(/\n/g, '<br>');
+          emailBody = `${htmlBody}<br><br>${htmlSignature}`;
+        } else {
+          // Plain text mode: use simple newlines
+          emailBody = `${emailBody}\n\n${signature}`;
+        }
+
+        logger.info('[EmailProcessor] Email signature appended', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          senderIdentityId: senderIdentity.id,
+          signatureLength: signature.length,
+          signatureIsHtml: signatureHasHtml,
+          bodyIsHtml: bodyHasHtml,
         });
       }
 
