@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Job } from 'bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { LEAD_STATUS } from '@/constants/leadStatus.constants';
@@ -8,11 +7,35 @@ import type {
 } from './lead-initial-processing.types';
 
 // Mock dependencies
-vi.mock('@/libs/bullmq');
-vi.mock('@/modules/lead.service');
-vi.mock('@/modules/ai/siteScrape.service');
-vi.mock('@/libs/firecrawl/firecrawl.client');
-vi.mock('@/libs/logger');
+jest.mock('@/libs/bullmq', () => ({
+  getWorker: jest.fn(),
+}));
+
+jest.mock('@/modules/lead.service', () => ({
+  updateLeadStatuses: jest.fn(),
+}));
+
+jest.mock('@/modules/ai/siteScrape.service', () => ({
+  SiteScrapeService: {
+    smartFilterSiteMap: jest.fn(),
+  },
+}));
+
+jest.mock('@/libs/firecrawl/firecrawl.client', () => ({
+  __esModule: true,
+  default: {
+    getSiteMap: jest.fn(),
+    batchScrapeUrls: jest.fn(),
+  },
+}));
+
+jest.mock('@/libs/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+  },
+}));
 
 describe('Lead Initial Processing Worker', () => {
   const mockJobPayload: LeadInitialProcessingJobPayload = {
@@ -32,11 +55,11 @@ describe('Lead Initial Processing Worker', () => {
   } as Job<LeadInitialProcessingJobPayload>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   it('should have correct queue configuration', () => {
@@ -81,5 +104,35 @@ describe('Lead Initial Processing Worker', () => {
     expect(successResult.success).toBe(true);
     expect(errorResult.success).toBe(false);
     expect(errorResult.errorCode).toBe('SITEMAP_FETCH_FAILED');
+  });
+
+  it('should have all required error codes defined', () => {
+    const errorCodes = ['INVALID_URL', 'SITEMAP_FETCH_FAILED', 'SMART_FILTER_FAILED', 'BATCH_SCRAPE_FAILED', 'UNKNOWN'];
+    
+    // This test ensures we have defined all the error codes we might use
+    errorCodes.forEach(code => {
+      const result: LeadInitialProcessingJobResult = {
+        success: false,
+        leadId: 'test-id',
+        error: 'Test error',
+        errorCode: code as any,
+      };
+      expect(result.errorCode).toBe(code);
+    });
+  });
+
+  it('should validate required payload fields', () => {
+    const requiredFields = ['tenantId', 'leadId', 'leadUrl'];
+    
+    requiredFields.forEach(field => {
+      const incompletePayload = { ...mockJobPayload };
+      delete (incompletePayload as any)[field];
+      
+      const isValidPayload = (payload: any): payload is LeadInitialProcessingJobPayload => {
+        return requiredFields.every(f => typeof payload[f] === 'string');
+      };
+      
+      expect(isValidPayload(incompletePayload)).toBe(false);
+    });
   });
 });

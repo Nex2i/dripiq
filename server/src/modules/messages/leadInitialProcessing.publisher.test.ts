@@ -1,27 +1,26 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { LeadInitialProcessingPublisher } from './leadInitialProcessing.publisher.service';
 import type { LeadInitialProcessingJobPayload } from '@/workers/lead-initial-processing/lead-initial-processing.types';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 
 // Mock the queue
 const mockQueue = {
-  add: vi.fn(),
-  addBulk: vi.fn(),
-  getWaiting: vi.fn(),
-  getActive: vi.fn(),
-  getCompleted: vi.fn(),
-  getFailed: vi.fn(),
-  getDelayed: vi.fn(),
+  add: jest.fn(),
+  addBulk: jest.fn(),
+  getWaiting: jest.fn(),
+  getActive: jest.fn(),
+  getCompleted: jest.fn(),
+  getFailed: jest.fn(),
+  getDelayed: jest.fn(),
 };
 
-vi.mock('@/libs/bullmq', () => ({
-  getQueue: vi.fn(() => mockQueue),
+jest.mock('@/libs/bullmq', () => ({
+  getQueue: jest.fn(() => mockQueue),
 }));
 
-vi.mock('@/libs/logger', () => ({
+jest.mock('@/libs/logger', () => ({
   logger: {
-    info: vi.fn(),
-    error: vi.fn(),
+    info: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -37,11 +36,11 @@ describe('LeadInitialProcessingPublisher', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('publish', () => {
@@ -137,6 +136,41 @@ describe('LeadInitialProcessingPublisher', () => {
         failed: 0,
         delayed: 1,
       });
+    });
+
+    it('should handle errors when getting queue stats', async () => {
+      const error = new Error('Queue stats error');
+      mockQueue.getWaiting.mockRejectedValue(error);
+
+      await expect(LeadInitialProcessingPublisher.getQueueStats()).rejects.toThrow('Queue stats error');
+    });
+  });
+
+  describe('Queue Configuration', () => {
+    it('should use correct queue name and job name', () => {
+      expect(QUEUE_NAMES.lead_initial_processing).toBe('lead_initial_processing');
+      expect(JOB_NAMES.lead_initial_processing.process).toBe('lead_initial_processing.process');
+    });
+
+    it('should publish with correct job options', async () => {
+      const mockJobId = 'test-job-id';
+      mockQueue.add.mockResolvedValue({ id: mockJobId });
+
+      await LeadInitialProcessingPublisher.publish(mockPayload);
+
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        JOB_NAMES.lead_initial_processing.process,
+        mockPayload,
+        expect.objectContaining({
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+          removeOnComplete: 10,
+          removeOnFail: 5,
+        })
+      );
     });
   });
 });
