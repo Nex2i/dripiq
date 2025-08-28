@@ -13,6 +13,7 @@ export interface SenderIdentity {
   validationStatus: SenderValidationStatus
   lastValidatedAt?: string | null
   dedicatedIpPool?: string | null
+  emailSignature?: string | null
   isDefault: boolean
   createdAt: string
   updatedAt: string
@@ -24,6 +25,7 @@ export interface CreateSenderIdentityData {
   address: string
   city: string
   country?: string
+  emailSignature?: string
 }
 
 class SenderIdentitiesService {
@@ -137,6 +139,21 @@ class SenderIdentitiesService {
       return this.throwDetailedError(
         response,
         'Failed to verify sender identity',
+      )
+    return response.json()
+  }
+
+  async updateMyEmailSignature(emailSignature: string | null): Promise<SenderIdentity> {
+    const authHeaders = await authService.getAuthHeaders()
+    const response = await fetch(`${this.baseUrl}/sender-identities/me/signature`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
+      body: JSON.stringify({ emailSignature }),
+    })
+    if (!response.ok)
+      return this.throwDetailedError(
+        response,
+        'Failed to update email signature',
       )
     return response.json()
   }

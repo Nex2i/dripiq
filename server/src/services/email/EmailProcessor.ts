@@ -24,6 +24,7 @@ export interface CampaignEmailData {
     id: string;
     fromEmail: string;
     fromName: string;
+    emailSignature?: string | null;
   };
 
   // Calendar info (optional, pre-fetched)
@@ -104,8 +105,22 @@ export class EmailProcessor {
       // Create outbound message ID (used for tracking even if not recording)
       const outboundMessageId = createId();
 
-      // Prepare email body with calendar information if available
+      // Prepare email body with signature and calendar information
       let emailBody = body;
+
+      // Append email signature if available
+      if (senderIdentity.emailSignature?.trim()) {
+        emailBody = `${emailBody}\n\n${senderIdentity.emailSignature.trim()}`;
+        
+        logger.info('[EmailProcessor] Email signature appended', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          senderIdentityId: senderIdentity.id,
+          signatureLength: senderIdentity.emailSignature.trim().length,
+        });
+      }
       if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
         try {
           const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({

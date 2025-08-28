@@ -8,9 +8,11 @@ import {
   useCreateMySenderIdentity,
   useResendMySenderVerification,
   useVerifyMySenderIdentity,
+  useUpdateMyEmailSignature,
 } from '../../hooks/useSenderIdentities'
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 import TestEmailComponent from '../../components/TestEmailComponent'
+import EmailSignatureEditor from '../../components/EmailSignatureEditor'
 
 export default function UserEditPage() {
   const params = useParams({ strict: false }) as { userId?: string }
@@ -35,6 +37,7 @@ export default function UserEditPage() {
   const createSender = useCreateMySenderIdentity()
   const resendSender = useResendMySenderVerification()
   const verifySender = useVerifyMySenderIdentity()
+  const updateSignature = useUpdateMyEmailSignature()
   const [fromName, setFromName] = useState('')
   const [fromEmail, setFromEmail] = useState('')
   const [address, setAddress] = useState('')
@@ -42,6 +45,7 @@ export default function UserEditPage() {
   const [country, setCountry] = useState('USA')
   const [senderError, setSenderError] = useState<string | null>(null)
   const [pasteValue, setPasteValue] = useState('')
+  const [emailSignature, setEmailSignature] = useState('')
 
   // Validate calendar link using utility
   const validateCalendarLink = (url: string): string => {
@@ -58,6 +62,13 @@ export default function UserEditPage() {
       setFromEmail(selfUser.email)
     }
   }, [isAdminMode, selfUser?.id])
+
+  // Initialize signature from identity data
+  useEffect(() => {
+    if (myIdentity?.emailSignature) {
+      setEmailSignature(myIdentity.emailSignature)
+    }
+  }, [myIdentity?.emailSignature])
 
   // Load target user if admin mode; otherwise hydrate from auth context
   useEffect(() => {
@@ -162,6 +173,7 @@ export default function UserEditPage() {
         address,
         city,
         country,
+        emailSignature: emailSignature || undefined,
       })
     } catch (e: any) {
       const msg = e?.message || 'Failed to create sender identity'
@@ -180,6 +192,15 @@ export default function UserEditPage() {
       setPasteValue('')
     } catch (e: any) {
       setSenderError(e?.message || 'Failed to verify')
+    }
+  }
+
+  const handleUpdateSignature = async () => {
+    setSenderError(null)
+    try {
+      await updateSignature.mutateAsync(emailSignature || null)
+    } catch (e: any) {
+      setSenderError(e?.message || 'Failed to update signature')
     }
   }
 
@@ -382,10 +403,40 @@ export default function UserEditPage() {
                     <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
                       {senderError}
                     </div>
+                                )}
+            </div>
+          )}
+
+          {/* Email Signature Section */}
+          {myIdentity && myIdentity.validationStatus === 'verified' && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-base font-medium text-gray-900 mb-4">
+                Email Signature
+              </h3>
+              <div className="space-y-4">
+                <EmailSignatureEditor
+                  value={emailSignature}
+                  onChange={setEmailSignature}
+                  placeholder="Enter your email signature (plain text or HTML)..."
+                />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleUpdateSignature}
+                    disabled={updateSignature.isPending}
+                    className="px-4 py-2 text-sm rounded-lg bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] disabled:opacity-50 shadow-sm"
+                  >
+                    {updateSignature.isPending ? 'Saving...' : 'Save Signature'}
+                  </button>
+                  {emailSignature !== (myIdentity.emailSignature || '') && (
+                    <span className="text-xs text-amber-600">
+                      Unsaved changes
+                    </span>
                   )}
                 </div>
-              )}
+              </div>
             </div>
+          )}
+        </div>
           ) : (
             <div className="space-y-4">
               {senderError && (

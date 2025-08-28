@@ -28,6 +28,7 @@ export class SenderIdentityService {
     address?: string;
     city?: string;
     country?: string;
+    emailSignature?: string;
   }): Promise<EmailSenderIdentity> {
     const { tenantId, userId, fromEmail, fromName } = params;
     const domain = normalizeDomainFromEmail(fromEmail).toLowerCase();
@@ -45,6 +46,7 @@ export class SenderIdentityService {
         sendgridSenderId: null, // No SendGrid ID needed for pre-approved domains
         validationStatus: 'verified',
         lastValidatedAt: new Date(),
+        emailSignature: params.emailSignature || null,
         isDefault: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -83,6 +85,7 @@ export class SenderIdentityService {
       domain,
       sendgridSenderId: sendgridId,
       validationStatus: 'pending',
+      emailSignature: params.emailSignature || null,
       isDefault: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -99,7 +102,8 @@ export class SenderIdentityService {
     fromEmail: string,
     address?: string,
     city?: string,
-    country?: string
+    country?: string,
+    emailSignature?: string
   ) {
     const existing = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (existing) {
@@ -152,6 +156,7 @@ export class SenderIdentityService {
       address,
       city,
       country,
+      emailSignature,
     });
   }
 
@@ -175,7 +180,8 @@ export class SenderIdentityService {
     fromEmail: string,
     address?: string,
     city?: string,
-    country?: string
+    country?: string,
+    emailSignature?: string
   ) {
     const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
     if (!identity) {
@@ -187,6 +193,7 @@ export class SenderIdentityService {
         address,
         city,
         country,
+        emailSignature,
       });
     }
 
@@ -279,5 +286,27 @@ export class SenderIdentityService {
     );
     error.statusCode = statusCode ?? 400;
     throw error;
+  }
+
+  static async updateEmailSignature(
+    tenantId: string,
+    userId: string,
+    emailSignature: string | null
+  ): Promise<EmailSenderIdentity> {
+    const identity = await emailSenderIdentityRepository.findByUserIdForTenant(userId, tenantId);
+    if (!identity) {
+      throw new Error('No sender identity found for the specified user and tenant');
+    }
+
+    const updated = await emailSenderIdentityRepository.updateByIdForTenant(
+      identity.id,
+      tenantId,
+      {
+        emailSignature,
+        updatedAt: new Date(),
+      } as Partial<NewEmailSenderIdentity>
+    );
+
+    return updated ?? identity;
   }
 }

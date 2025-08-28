@@ -14,6 +14,7 @@ const SenderIdentityBodySchema = Type.Object({
   address: Type.String(),
   city: Type.String(),
   country: Type.Optional(Type.String()),
+  emailSignature: Type.Optional(Type.String()),
 });
 
 const SenderValidationStatus = Type.Union([
@@ -34,6 +35,7 @@ const SenderIdentitySchema = Type.Object({
   validationStatus: SenderValidationStatus,
   lastValidatedAt: Type.Optional(Type.Union([Type.String({ format: 'date-time' }), Type.Null()])),
   dedicatedIpPool: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  emailSignature: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   isDefault: Type.Boolean(),
   createdAt: Type.String({ format: 'date-time' }),
   updatedAt: Type.String({ format: 'date-time' }),
@@ -91,7 +93,7 @@ export default async function SenderIdentitiesRoutes(
       reply: FastifyReply
     ) => {
       const { tenantId, user } = request as AuthenticatedRequest;
-      const { fromEmail, fromName, address, city, country } = request.body;
+      const { fromEmail, fromName, address, city, country, emailSignature } = request.body;
       try {
         const created = await SenderIdentityService.getOrCreateForUser(
           tenantId,
@@ -100,7 +102,8 @@ export default async function SenderIdentitiesRoutes(
           fromEmail,
           address,
           city,
-          country || 'USA'
+          country || 'USA',
+          emailSignature
         );
         return reply.status(201).send(created);
       } catch (e: any) {
@@ -178,7 +181,8 @@ export default async function SenderIdentitiesRoutes(
           fromEmail,
           request.body.address,
           request.body.city,
-          request.body.country || 'USA'
+          request.body.country || 'USA',
+          request.body.emailSignature
         );
         return reply.status(200).send(result);
       } catch (e: any) {
@@ -221,6 +225,38 @@ export default async function SenderIdentitiesRoutes(
         if (e?.statusCode === 422) {
           return reply.status(422).send({ message: 'Validation error', errors: e.details || [] });
         }
+        throw e;
+      }
+    },
+  });
+
+  // Self-scoped: Update email signature
+  fastify.route({
+    method: HttpMethods.PATCH,
+    preHandler: [fastify.authPrehandler],
+    url: `${basePath}/me/signature`,
+    schema: {
+      tags: ['Sender Identities'],
+      summary: 'Update my email signature',
+      body: Type.Object({ emailSignature: Type.Union([Type.String(), Type.Null()]) }),
+      response: {
+        ...defaultRouteResponse(),
+        200: SenderIdentitySchema,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: { emailSignature: string | null } }>,
+      reply: FastifyReply
+    ) => {
+      const { tenantId, user } = request as AuthenticatedRequest;
+      try {
+        const updated = await SenderIdentityService.updateEmailSignature(
+          tenantId,
+          user.id,
+          request.body.emailSignature
+        );
+        return reply.status(200).send(updated);
+      } catch (e: any) {
         throw e;
       }
     },

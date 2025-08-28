@@ -174,6 +174,7 @@ export class EmailExecutionService {
           id: senderIdentity.id,
           fromEmail: senderIdentity.fromEmail,
           fromName: senderIdentity.fromName,
+          emailSignature: senderIdentity.emailSignature,
         },
         calendarInfo,
         dedupeKey,
