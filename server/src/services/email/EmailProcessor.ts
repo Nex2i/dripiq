@@ -9,6 +9,7 @@ import {
 } from '@/utils/emailFormatting';
 import { outboundMessageRepository } from '@/repositories';
 import type { SendBase } from '@/libs/email/sendgrid.types';
+import { EmailSenderIdentity } from '@/db';
 
 export interface CampaignEmailData {
   // Core email data
@@ -24,12 +25,7 @@ export interface CampaignEmailData {
   recipientName: string;
 
   // Sender info (pre-fetched, pre-validated)
-  senderIdentity: {
-    id: string;
-    fromEmail: string;
-    fromName: string;
-    emailSignature?: string | null;
-  };
+  senderIdentity: EmailSenderIdentity;
 
   // Calendar info (optional, pre-fetched)
   calendarInfo?: {
@@ -112,35 +108,6 @@ export class EmailProcessor {
       // Prepare email body with signature and calendar information
       let emailBody = body;
 
-      // Append email signature if available
-      if (senderIdentity.emailSignature?.trim()) {
-        const signature = senderIdentity.emailSignature.trim();
-
-        // Check if either the body or signature contains HTML
-        const bodyHasHtml = containsHtml(emailBody);
-        const signatureHasHtml = containsHtml(signature);
-
-        if (bodyHasHtml || signatureHasHtml) {
-          // HTML mode: convert plain text parts to HTML for consistency
-          const htmlBody = bodyHasHtml ? emailBody : emailBody.replace(/\n/g, '<br>');
-          const htmlSignature = signatureHasHtml ? signature : signature.replace(/\n/g, '<br>');
-          emailBody = `${htmlBody}<br><br>${htmlSignature}`;
-        } else {
-          // Plain text mode: use simple newlines
-          emailBody = `${emailBody}\n\n${signature}`;
-        }
-
-        logger.info('[EmailProcessor] Email signature appended', {
-          tenantId,
-          campaignId,
-          contactId,
-          nodeId,
-          senderIdentityId: senderIdentity.id,
-          signatureLength: signature.length,
-          signatureIsHtml: signatureHasHtml,
-          bodyIsHtml: bodyHasHtml,
-        });
-      }
       if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
         try {
           const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
@@ -209,6 +176,36 @@ export class EmailProcessor {
           scheduledAt: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
+        });
+      }
+
+      // Append email signature if available
+      if (senderIdentity.emailSignature?.trim()) {
+        const signature = senderIdentity.emailSignature.trim();
+
+        // Check if either the body or signature contains HTML
+        const bodyHasHtml = containsHtml(emailBody);
+        const signatureHasHtml = containsHtml(signature);
+
+        if (bodyHasHtml || signatureHasHtml) {
+          // HTML mode: convert plain text parts to HTML for consistency
+          const htmlBody = bodyHasHtml ? emailBody : emailBody.replace(/\n/g, '<br>');
+          const htmlSignature = signatureHasHtml ? signature : signature.replace(/\n/g, '<br>');
+          emailBody = `${htmlBody}<br><br>${htmlSignature}`;
+        } else {
+          // Plain text mode: use simple newlines
+          emailBody = `${emailBody}\n\n${signature}`;
+        }
+
+        logger.info('[EmailProcessor] Email signature appended', {
+          tenantId,
+          campaignId,
+          contactId,
+          nodeId,
+          senderIdentityId: senderIdentity.id,
+          signatureLength: signature.length,
+          signatureIsHtml: signatureHasHtml,
+          bodyIsHtml: bodyHasHtml,
         });
       }
 

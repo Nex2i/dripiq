@@ -254,11 +254,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           body,
           recipientEmail,
           recipientName: 'Test Contact',
-          senderIdentity: {
-            id: senderIdentity!.id,
-            fromEmail: senderIdentity.fromEmail,
-            fromName: senderIdentity.fromName,
-          },
+          senderIdentity,
           calendarInfo,
           categories: ['test-email'],
           skipMessageRecord: true,
