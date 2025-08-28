@@ -6,6 +6,7 @@ import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy, updateContactStrategy } from '@/modules/ai';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { logger } from '@/libs/logger';
 import {
   getLeads,
   createLead,
@@ -39,7 +40,6 @@ import {
   LeadDetachProductSchema,
   LeadGetProductsSchema,
 } from './apiSchema/lead';
-import { logger } from '@/libs/logger';
 
 const basePath = '/leads';
 

@@ -48,12 +48,6 @@ describe('Lead Initial Processing Worker', () => {
     },
   };
 
-  const mockJob = {
-    id: 'test-job-id',
-    name: JOB_NAMES.lead_initial_processing.process,
-    data: mockJobPayload,
-  } as Job<LeadInitialProcessingJobPayload>;
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
