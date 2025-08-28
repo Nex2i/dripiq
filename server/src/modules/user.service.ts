@@ -1,4 +1,4 @@
-import { User, NewUser } from '@/db';
+import { User, NewUser, EmailSenderIdentity } from '@/db';
 import { userRepository } from '@/repositories';
 
 export interface CreateUserData {
@@ -58,6 +58,16 @@ export class UserService {
    */
   static async getUserById(id: string): Promise<User> {
     return await userRepository.findById(id);
+  }
+
+  /**
+   * Retrieves a user and thier sender identity
+   */
+  static async getUserWithSenderIdentity(
+    id: string
+  ): Promise<User & { senderIdentity: EmailSenderIdentity }> {
+    const userAndSenderIdentity = await userRepository.findByIdWithSenderIdentity(id);
+    return userAndSenderIdentity;
   }
 
   /**

@@ -10,6 +10,7 @@ import {
   TestEmailRequestSchema,
   TestEmailResponseSchema,
 } from './apiSchema/users';
+import { IUser } from '@/plugins/authentication.plugin';
 
 const basePath = '';
 
@@ -177,11 +178,11 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
     ) => {
       try {
         const { recipientEmail, subject, body } = request.body;
-        const userId = (request as any).userId as string;
+        const userId = ((request as any).user as IUser).id as string;
         const tenantId = (request as any).tenantId as string;
 
         // Get user info to use as sender
-        const user = await UserService.getUserById(userId);
+        const user = await UserService.getUserWithSenderIdentity(userId);
         if (!user) {
           reply.status(404).send({ success: false, message: 'User not found' });
           return;
@@ -195,8 +196,8 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           outboundMessageId: `test-${Date.now()}`,
           dedupeKey: `${tenantId}:test-email:${Date.now()}`,
           from: {
-            email: user.email,
-            name: user.name || 'Test User'
+            email: user.senderIdentity.fromEmail,
+            name: user.senderIdentity.fromName,
           },
           to: recipientEmail,
           subject: subject,
