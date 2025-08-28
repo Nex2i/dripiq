@@ -18,13 +18,24 @@ describe('leadStatusMessages', () => {
       expect(getStatusMessage(null as any)).toBeNull()
     })
 
+    it('should return correct message for UNPROCESSED', () => {
+      const statuses = [createMockStatus(LEAD_STATUS.UNPROCESSED)]
+      const message = getStatusMessage(statuses)
+
+      expect(message).toEqual({
+        title: 'Lead Not Processed',
+        description: 'This lead has not been processed yet. Click "Resync" to start analysis.',
+        isProcessing: false,
+      })
+    })
+
     it('should return correct message for INITIAL_PROCESSING', () => {
       const statuses = [createMockStatus(LEAD_STATUS.INITIAL_PROCESSING)]
       const message = getStatusMessage(statuses)
 
       expect(message).toEqual({
-        title: 'Processing Website...',
-        description: 'We\'re getting the sitemap and preparing for analysis. This usually takes 1-2 minutes.',
+        title: '🔄 Initial Processing',
+        description: 'Getting the website\'s sitemap and intelligently filtering the most relevant pages to analyze. This step ensures we focus on the most important content.',
         estimatedTime: '1-2 minutes',
         isProcessing: true,
       })
@@ -35,8 +46,8 @@ describe('leadStatusMessages', () => {
       const message = getStatusMessage(statuses)
 
       expect(message).toEqual({
-        title: 'Syncing Website...',
-        description: 'We\'re collecting and organizing the website content for analysis.',
+        title: '🌐 Syncing Website',
+        description: 'Collecting and organizing website content for analysis. We\'re gathering the filtered pages and preparing them for AI processing.',
         estimatedTime: '2-5 minutes',
         isProcessing: true,
       })
@@ -47,8 +58,8 @@ describe('leadStatusMessages', () => {
       const message = getStatusMessage(statuses)
 
       expect(message).toEqual({
-        title: 'Analysis Complete!',
-        description: 'The website has been fully analyzed. Check the tabs below for AI summaries and extracted contacts.',
+        title: '✅ Analysis Complete!',
+        description: 'The website has been fully analyzed! Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for your outreach campaigns.',
         isProcessing: false,
       })
     })
@@ -63,7 +74,7 @@ describe('leadStatusMessages', () => {
       ]
       const message = getStatusMessage(statuses)
 
-      expect(message?.title).toBe('Syncing Website...')
+      expect(message?.title).toBe('🌐 Syncing Website')
     })
   })
 

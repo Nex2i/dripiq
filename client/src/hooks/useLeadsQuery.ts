@@ -22,7 +22,10 @@ export function useLead(id: string) {
     queryKey: leadQueryKeys.detail(id),
     queryFn: () => leadsService.getLead(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 30, // Reduced stale time to 30 seconds for processing leads
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }
 

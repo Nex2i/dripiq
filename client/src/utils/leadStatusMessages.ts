@@ -27,48 +27,48 @@ export function getStatusMessage(statuses: LeadStatus[]): StatusMessage | null {
 
     case LEAD_STATUS.INITIAL_PROCESSING:
       return {
-        title: 'Processing Website...',
-        description: 'We\'re getting the sitemap and preparing for analysis. This usually takes 1-2 minutes.',
+        title: '🔄 Initial Processing',
+        description: 'Getting the website\'s sitemap and intelligently filtering the most relevant pages to analyze. This step ensures we focus on the most important content.',
         estimatedTime: '1-2 minutes',
         isProcessing: true,
       }
 
     case LEAD_STATUS.SYNCING_SITE:
       return {
-        title: 'Syncing Website...',
-        description: 'We\'re collecting and organizing the website content for analysis.',
+        title: '🌐 Syncing Website',
+        description: 'Collecting and organizing website content for analysis. We\'re gathering the filtered pages and preparing them for AI processing.',
         estimatedTime: '2-5 minutes',
         isProcessing: true,
       }
 
     case LEAD_STATUS.SCRAPING_SITE:
       return {
-        title: 'Analyzing Website Content...',
-        description: 'We\'re gathering detailed information from the website pages.',
+        title: '🔍 Scraping Website Content',
+        description: 'Gathering detailed information from website pages including text content, structure, and metadata for comprehensive analysis.',
         estimatedTime: '3-8 minutes',
         isProcessing: true,
       }
 
     case LEAD_STATUS.ANALYZING_SITE:
       return {
-        title: 'Generating AI Summary...',
-        description: 'Our AI is analyzing the website content to create a comprehensive summary.',
+        title: '🧠 AI Analysis in Progress',
+        description: 'Our AI is analyzing the website content to create a comprehensive business summary, identifying products, services, and key differentiators.',
         estimatedTime: '1-3 minutes',
         isProcessing: true,
       }
 
     case LEAD_STATUS.EXTRACTING_CONTACTS:
       return {
-        title: 'Extracting Contacts...',
-        description: 'We\'re finding and organizing contact information from the website.',
+        title: '📞 Extracting Contact Information',
+        description: 'Finding and organizing contact information from the website, including key decision makers and their details for outreach.',
         estimatedTime: '1-2 minutes',
         isProcessing: true,
       }
 
     case LEAD_STATUS.PROCESSED:
       return {
-        title: 'Analysis Complete!',
-        description: 'The website has been fully analyzed. Check the tabs below for AI summaries and extracted contacts.',
+        title: '✅ Analysis Complete!',
+        description: 'The website has been fully analyzed! Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for your outreach campaigns.',
         isProcessing: false,
       }
 
