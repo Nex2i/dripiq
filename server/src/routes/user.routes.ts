@@ -3,8 +3,9 @@ import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
 import { emailSenderIdentityRepository, userTenantRepository } from '@/repositories';
+import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
-import { EmailExecutionService } from '@/workers/campaign-execution/email-execution.service';
+import { EmailProcessor, type CampaignEmailData } from '@/services/email';
 import type { IUser } from '@/plugins/authentication.plugin';
 import {
   UpdateProfileRequestSchema,
@@ -189,104 +190,89 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        const userSenderIdentity = await emailSenderIdentityRepository.findByUserIdForTenant(
-          userId,
-          tenantId
+        // CHECK UNSUBSCRIBE STATUS FIRST (early exit)
+        const isUnsubscribed = await unsubscribeService.isChannelUnsubscribed(
+          tenantId,
+          'email',
+          recipientEmail.toLowerCase()
         );
 
-        // Create mock objects for the email execution service
-        // This allows us to use the same email flow as real campaigns (calendar links, unsubscribe, etc.)
+        if (isUnsubscribed) {
+          reply.send({
+            success: false,
+            message: 'Recipient has unsubscribed from emails',
+          });
+          return;
+        }
+
+        // Fetch sender identity
+        const senderIdentities =
+          await emailSenderIdentityRepository.findVerifiedForTenant(tenantId);
+        if (!senderIdentities || senderIdentities.length === 0) {
+          reply.status(400).send({
+            success: false,
+            message: 'No verified sender identity found for this tenant',
+          });
+          return;
+        }
+        const senderIdentity = senderIdentities[0]; // Use the first verified identity
+
+        // Generate test IDs
         const testCampaignId = createId();
         const testContactId = createId();
         const testNodeId = 'test-email-node';
+        const testLeadId = createId();
 
-        // Create mock contact object
-        const mockContact = {
-          id: testContactId,
-          leadId: createId(),
-          name: 'Test Contact',
-          email: recipientEmail,
-          phone: null,
-          title: null,
-          company: null,
-          sourceUrl: null,
-          manuallyReviewed: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
+        // Fetch calendar information if available (same as campaigns)
+        let calendarInfo: CampaignEmailData['calendarInfo'];
+        try {
+          if (user.calendarLink && user.calendarTieIn) {
+            calendarInfo = {
+              calendarLink: user.calendarLink,
+              calendarTieIn: user.calendarTieIn,
+              leadId: testLeadId,
+            };
+          }
+        } catch (calendarError) {
+          fastify.log.error('Failed to fetch calendar information for test email', {
+            userId,
+            tenantId,
+            error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
+          } as any);
+          // Continue without calendar info
+        }
 
-        // Create mock campaign object
-        const mockCampaign = {
-          id: testCampaignId,
-          tenantId,
-          leadId: mockContact.leadId,
-          contactId: testContactId,
-          channel: 'email' as const,
-          status: 'active' as const,
-          currentNodeId: testNodeId,
-          planJson: {
-            version: '1.0',
-            timezone: 'America/Los_Angeles',
-            defaults: {
-              timers: {
-                no_open_after: 'PT72H',
-                no_click_after: 'PT24H',
-              },
-            },
-            startNodeId: testNodeId,
-            nodes: [
-              {
-                id: testNodeId,
-                channel: 'email' as const,
-                action: 'send' as const,
-                subject: subject,
-                body: body,
-                schedule: { delay: 'PT0S' },
-                transitions: [],
-              },
-            ],
-          },
-          planVersion: '1.0',
-          planHash: 'test-hash',
-          senderIdentityId: null,
-          startedAt: null,
-          completedAt: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        // Create mock node object
-        const mockNode = {
-          id: testNodeId,
-          channel: 'email' as const,
-          action: 'send' as const,
-          subject: subject,
-          body: body,
-          schedule: { delay: 'PT0S' },
-          transitions: [],
-        };
-
-        // Use the EmailExecutionService directly to get all campaign features
-        const emailExecutionService = new EmailExecutionService(tenantId);
-        const result = await emailExecutionService.executeEmailSend({
+        // Prepare data for EmailProcessor
+        const emailData: CampaignEmailData = {
           tenantId,
           campaignId: testCampaignId,
           contactId: testContactId,
           nodeId: testNodeId,
-          node: mockNode,
-          contact: mockContact,
-          campaign: mockCampaign,
-          planJson: mockCampaign.planJson,
-          senderIdentity: userSenderIdentity,
-        });
+          subject,
+          body,
+          recipientEmail,
+          recipientName: 'Test Contact',
+          senderIdentity: {
+            id: senderIdentity!.id,
+            fromEmail: senderIdentity!.fromEmail,
+            fromName: senderIdentity!.fromName,
+          },
+          calendarInfo,
+          categories: ['test-email'],
+          skipMessageRecord: true,
+          skipTimeoutScheduling: true,
+        };
+
+        // Send email using EmailProcessor
+        const result = await EmailProcessor.sendCampaignEmail(emailData);
 
         if (!result.success) {
-          throw new Error(result.error || 'Email execution failed');
+          throw new Error(result.error || 'Email sending failed');
         }
 
         reply.send({
           success: true,
-          message: 'Test email sent successfully via campaign execution flow',
+          message: 'Test email sent successfully via EmailProcessor',
           messageId: result.providerMessageId,
         });
       } catch (error: any) {

@@ -1,7 +1,5 @@
 import { createHash } from 'crypto';
-import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
-import { sendgridClient } from '@/libs/email/sendgrid.client';
 import {
   emailSenderIdentityRepository,
   outboundMessageRepository,
@@ -18,9 +16,7 @@ import {
   DEFAULT_NO_CLICK_TIMEOUT,
   TIMEOUT_JOB_OPTIONS,
 } from '@/constants/timeout-jobs';
-import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
-import { formatEmailBodyForHtml, formatEmailBodyForText } from '@/utils/emailFormatting';
-import type { SendBase } from '@/libs/email/sendgrid.types';
+import { EmailProcessor, type CampaignEmailData } from '@/services/email';
 import type { ContactCampaign, EmailSenderIdentity, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
@@ -139,144 +135,93 @@ export class EmailExecutionService {
         };
       }
 
-      // Create outbound message record
-      const outboundMessageId = createId();
-      await outboundMessageRepository.createForTenant(tenantId, {
-        id: outboundMessageId,
-        campaignId,
-        contactId,
-        channel: 'email',
-        senderIdentityId: senderIdentity.id,
-        dedupeKey,
-        content: {
-          subject: node.subject,
-          body: node.body,
-          to: contact.email,
-          toName: contact.name,
-        },
-        state: 'queued',
-        scheduledAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      // Prepare email body with calendar information if available
-      let emailBody = node.body;
-
-      // Append calendar information if user has calendar configured
+      // Fetch calendar information if available
+      let calendarInfo: CampaignEmailData['calendarInfo'];
       try {
         const lead = await leadRepository.findByIdForTenant(contact.leadId, tenantId);
         if (lead?.ownerId) {
           const user = await userRepository.findById(lead.ownerId);
           if (user?.calendarLink && user?.calendarTieIn) {
-            const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
-              tenantId,
-              leadId: lead.id,
-              contactId,
-              campaignId,
-              nodeId,
-              outboundMessageId,
-            });
-
-            const calendarMessage = calendarUrlWrapper.createCalendarMessage(
-              user.calendarTieIn,
-              trackedCalendarUrl
-            );
-
-            // Append calendar message to email body
-            emailBody = `${emailBody}\n\n${calendarMessage}`;
-
-            logger.info('[EmailExecutionService] Calendar message appended to email', {
-              tenantId,
-              campaignId,
-              contactId,
-              nodeId,
-              userId: user.id,
+            calendarInfo = {
+              calendarLink: user.calendarLink,
               calendarTieIn: user.calendarTieIn,
-              trackedUrl: trackedCalendarUrl,
-            });
+              leadId: lead.id,
+            };
           }
         }
       } catch (calendarError) {
-        logger.error('[EmailExecutionService] Failed to append calendar information', {
+        logger.error('[EmailExecutionService] Failed to fetch calendar information', {
           tenantId,
           campaignId,
           contactId,
           nodeId,
           error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
         });
-        // Continue without calendar info - don't fail the email send
+        // Continue without calendar info
       }
 
-      // Prepare SendGrid payload with both HTML and plain text versions
-      const htmlBody = formatEmailBodyForHtml(emailBody);
-      const textBody = formatEmailBodyForText(emailBody);
-
-      const sendPayload: SendBase = {
+      // Prepare data for EmailProcessor
+      const emailData: CampaignEmailData = {
         tenantId,
         campaignId,
+        contactId,
         nodeId,
-        outboundMessageId,
-        dedupeKey,
-        from: {
-          email: senderIdentity.fromEmail,
-          name: senderIdentity.fromName,
-        },
-        to: contact.email,
         subject: node.subject,
-        html: htmlBody,
-        text: textBody,
-        categories: ['campaign', `tenant:${tenantId}`],
+        body: node.body,
+        recipientEmail: contact.email,
+        recipientName: contact.name,
+        senderIdentity: {
+          id: senderIdentity.id,
+          fromEmail: senderIdentity.fromEmail,
+          fromName: senderIdentity.fromName,
+        },
+        calendarInfo,
+        dedupeKey,
+        categories: ['campaign'],
+        skipMessageRecord: false,
+        skipTimeoutScheduling: false,
       };
 
-      // Send email via SendGrid
-      logger.info('[EmailExecutionService] Sending email via SendGrid', {
+      // Send email using EmailProcessor
+      const result = await EmailProcessor.sendCampaignEmail(emailData);
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error,
+        };
+      }
+
+      logger.info('[EmailExecutionService] Email sent successfully via EmailProcessor', {
         tenantId,
         campaignId,
         contactId,
         nodeId,
-        outboundMessageId,
-        subject: node.subject,
-        to: contact.email,
-        from: senderIdentity.fromEmail,
-      });
-
-      const providerIds = await sendgridClient.sendEmail(sendPayload);
-
-      // Update outbound message with success
-      await outboundMessageRepository.updateByIdForTenant(outboundMessageId, tenantId, {
-        state: 'sent',
-        providerMessageId: providerIds.providerMessageId,
-        sentAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      logger.info('[EmailExecutionService] Email sent successfully', {
-        tenantId,
-        campaignId,
-        contactId,
-        nodeId,
-        outboundMessageId,
-        providerMessageId: providerIds.providerMessageId,
-        responseStatus: providerIds.responseStatus,
+        outboundMessageId: result.outboundMessageId,
+        providerMessageId: result.providerMessageId,
       });
 
       // Schedule timeout jobs after successful send
-      if (params.planJson) {
+      if (params.planJson && result.outboundMessageId) {
         try {
-          await this.scheduleTimeoutJobs(campaignId, nodeId, params.planJson, outboundMessageId);
+          await this.scheduleTimeoutJobs(
+            campaignId,
+            nodeId,
+            params.planJson,
+            result.outboundMessageId
+          );
           logger.info('[EmailExecutionService] Timeout jobs scheduled successfully', {
             tenantId,
             campaignId,
             nodeId,
-            outboundMessageId,
+            outboundMessageId: result.outboundMessageId,
           });
         } catch (timeoutError) {
           logger.error('[EmailExecutionService] Failed to schedule timeout jobs', {
             tenantId,
             campaignId,
             nodeId,
-            outboundMessageId,
+            outboundMessageId: result.outboundMessageId,
             error: timeoutError instanceof Error ? timeoutError.message : 'Unknown error',
           });
           // Don't fail the email send if timeout scheduling fails
@@ -285,8 +230,8 @@ export class EmailExecutionService {
 
       return {
         success: true,
-        outboundMessageId,
-        providerMessageId: providerIds.providerMessageId,
+        outboundMessageId: result.outboundMessageId,
+        providerMessageId: result.providerMessageId,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
