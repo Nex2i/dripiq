@@ -1,23 +1,45 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useUpdateMyEmailSignature } from '../hooks/useSenderIdentities'
 
 export interface EmailSignatureEditorProps {
-  value: string
-  onChange: (value: string) => void
+  initialValue?: string | null
   placeholder?: string
   maxLength?: number
+  onSaveSuccess?: () => void
+  onSaveError?: (error: string) => void
 }
 
 export default function EmailSignatureEditor({
-  value,
-  onChange,
+  initialValue,
   placeholder = 'Enter your email signature...',
   maxLength = 5000,
+  onSaveSuccess,
+  onSaveError,
 }: EmailSignatureEditorProps) {
+  const [value, setValue] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  const updateSignature = useUpdateMyEmailSignature()
+
+  // Initialize value from prop
+  useEffect(() => {
+    setValue(initialValue || '')
+  }, [initialValue])
+
+  const hasUnsavedChanges = value !== (initialValue || '')
+
+  const handleSave = async () => {
+    try {
+      await updateSignature.mutateAsync(value || null)
+      onSaveSuccess?.()
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to update signature'
+      onSaveError?.(errorMessage)
+    }
+  }
 
   const handleChange = (newValue: string) => {
     if (newValue.length <= maxLength) {
-      onChange(newValue)
+      setValue(newValue)
     }
   }
 
@@ -111,6 +133,20 @@ export default function EmailSignatureEditor({
           signature.
         </div>
       )}
+
+      {/* Save Actions */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={updateSignature.isPending || !hasUnsavedChanges}
+          className="px-4 py-2 text-sm rounded-lg bg-[var(--color-primary-600)] text-white hover:bg-[var(--color-primary-700)] disabled:opacity-50 shadow-sm"
+        >
+          {updateSignature.isPending ? 'Saving...' : 'Save Signature'}
+        </button>
+        {hasUnsavedChanges && (
+          <span className="text-xs text-amber-600">Unsaved changes</span>
+        )}
+      </div>
     </div>
   )
 }
