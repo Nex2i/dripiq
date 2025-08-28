@@ -1,18 +1,17 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify';
+import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
 import { userTenantRepository } from '@/repositories';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
-import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { EmailExecutionService } from '@/workers/campaign-execution/email-execution.service';
-import { createId } from '@paralleldrive/cuid2';
+import type { IUser } from '@/plugins/authentication.plugin';
 import {
   UpdateProfileRequestSchema,
   UserIdParamsSchema,
   TestEmailRequestSchema,
   TestEmailResponseSchema,
 } from './apiSchema/users';
-import type { IUser } from '@/plugins/authentication.plugin';
 
 const basePath = '';
 
@@ -226,19 +225,21 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
             defaults: {
               timers: {
                 no_open_after: 'PT72H',
-                no_click_after: 'PT24H'
-              }
+                no_click_after: 'PT24H',
+              },
             },
             startNodeId: testNodeId,
-            nodes: [{
-              id: testNodeId,
-              channel: 'email' as const,
-              action: 'send' as const,
-              subject: subject,
-              body: body,
-              schedule: { delay: 'PT0S' },
-              transitions: [],
-            }]
+            nodes: [
+              {
+                id: testNodeId,
+                channel: 'email' as const,
+                action: 'send' as const,
+                subject: subject,
+                body: body,
+                schedule: { delay: 'PT0S' },
+                transitions: [],
+              },
+            ],
           },
           planVersion: '1.0',
           planHash: 'test-hash',

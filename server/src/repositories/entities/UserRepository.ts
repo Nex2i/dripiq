@@ -1,13 +1,5 @@
 import { eq, and } from 'drizzle-orm';
-import {
-  users,
-  User,
-  NewUser,
-  tenants,
-  userTenants,
-  EmailSenderIdentity,
-  emailSenderIdentities,
-} from '@/db/schema';
+import { users, User, NewUser, tenants, userTenants } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
 
@@ -65,35 +57,6 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
     return {
       user,
       userTenants: Array.from(tenantMap.values()),
-    };
-  }
-
-  /**
-   * Retrieves a user and their sender identity
-   */
-  async findByIdWithSenderIdentity(
-    id: string
-  ): Promise<User & { senderIdentity: EmailSenderIdentity }> {
-    const result = await this.db
-      .select()
-      .from(users)
-      .leftJoin(emailSenderIdentities, eq(users.id, emailSenderIdentities.userId))
-      .where(eq(users.id, id))
-      .limit(1);
-
-    if (!result[0]) {
-      throw new NotFoundError(`User not found with id: ${id}`);
-    }
-
-    const userRow = result[0];
-
-    if (!userRow.email_sender_identities) {
-      throw new NotFoundError(`No sender identity found for user with id: ${id}`);
-    }
-
-    return {
-      ...userRow.users,
-      senderIdentity: userRow.email_sender_identities,
     };
   }
 
