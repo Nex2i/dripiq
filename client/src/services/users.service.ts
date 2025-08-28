@@ -106,6 +106,27 @@ class UsersService {
 
     return result
   }
+
+  async sendTestEmail(emailData: {
+    recipientEmail: string
+    subject: string
+    body: string
+  }): Promise<{ success: boolean; message: string; messageId?: string }> {
+    const authHeaders = await authService.getAuthHeaders()
+    const res = await fetch(`${this.baseUrl}/users/test-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(emailData),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.message || 'Failed to send test email')
+    }
+    return res.json()
+  }
 }
 
 let usersServiceInstance: UsersService | null = null

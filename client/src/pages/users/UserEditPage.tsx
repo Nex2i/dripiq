@@ -10,6 +10,7 @@ import {
   useVerifyMySenderIdentity,
 } from '../../hooks/useSenderIdentities'
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
+import TestEmailComponent from '../../components/TestEmailComponent'
 
 export default function UserEditPage() {
   const params = useParams({ strict: false }) as { userId?: string }
@@ -467,6 +468,13 @@ export default function UserEditPage() {
             </div>
           )}
         </div>
+
+        {/* Test Email Card - only show for non-admin mode */}
+        {!isAdminMode && (
+          <TestEmailComponent
+            tenantName={authUser?.tenants[0]?.name || 'Your Organization'}
+          />
+        )}
       </div>
     </div>
   )

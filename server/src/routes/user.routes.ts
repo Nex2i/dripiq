@@ -3,7 +3,13 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
 import { userTenantRepository } from '@/repositories';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
-import { UpdateProfileRequestSchema, UserIdParamsSchema } from './apiSchema/users';
+import { sendgridClient } from '@/libs/email/sendgrid.client';
+import {
+  UpdateProfileRequestSchema,
+  UserIdParamsSchema,
+  TestEmailRequestSchema,
+  TestEmailResponseSchema,
+} from './apiSchema/users';
 
 const basePath = '';
 
@@ -147,6 +153,68 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       } catch (error: any) {
         fastify.log.error(`Error updating user profile: ${error.message}`);
         reply.status(500).send({ message: 'Failed to update user profile', error: error.message });
+      }
+    },
+  });
+
+  // Send test email
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/users/test-email`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      body: TestEmailRequestSchema,
+      response: {
+        200: TestEmailResponseSchema,
+      },
+      tags: ['Users'],
+      summary: 'Send test email',
+      description: 'Send a test email with custom subject and body content.',
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: typeof TestEmailRequestSchema.static }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { recipientEmail, subject, body } = request.body;
+        const userId = (request as any).userId as string;
+        const tenantId = (request as any).tenantId as string;
+
+        // Get user info to use as sender
+        const user = await UserService.getUserById(userId);
+        if (!user) {
+          reply.status(404).send({ success: false, message: 'User not found' });
+          return;
+        }
+
+        // Send email using SendGrid
+        const result = await sendgridClient.sendEmail({
+          tenantId,
+          campaignId: 'test-email',
+          nodeId: 'test-node',
+          outboundMessageId: `test-${Date.now()}`,
+          dedupeKey: `${tenantId}:test-email:${Date.now()}`,
+          from: {
+            email: user.email,
+            name: user.name || 'Test User'
+          },
+          to: recipientEmail,
+          subject: subject,
+          html: body,
+          categories: ['test-email'],
+        });
+
+        reply.send({
+          success: true,
+          message: 'Test email sent successfully',
+          messageId: result.providerMessageId,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error sending test email: ${error.message}`);
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to send test email',
+        });
       }
     },
   });
