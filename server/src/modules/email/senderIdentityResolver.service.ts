@@ -1,4 +1,3 @@
-import '@/extensions'; // Import string extensions
 import { logger } from '@/libs/logger';
 import { domainValidationRepository, tenantRepository } from '@/repositories';
 import { DRIPIQ_DOMAIN_SUFFIX, NOREPLY_PREFIX } from '@/constants/email';
