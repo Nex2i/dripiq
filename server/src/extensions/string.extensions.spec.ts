@@ -139,4 +139,50 @@ describe('String Extensions', () => {
       expect(url.cleanWebsiteUrl()).toBe(expected);
     });
   });
+
+  describe('getEmailDomain', () => {
+    it('should extract domain from valid email addresses', () => {
+      expect('ryan@dribble.ai'.getEmailDomain()).toBe('dribble.ai');
+      expect('user@filevine.com'.getEmailDomain()).toBe('filevine.com');
+      expect('test@subdomain.example.org'.getEmailDomain()).toBe('subdomain.example.org');
+      expect('admin@company-name.co.uk'.getEmailDomain()).toBe('company-name.co.uk');
+    });
+
+    it('should handle invalid email formats', () => {
+      expect('invalid-email'.getEmailDomain()).toBe('');
+      expect('@example.com'.getEmailDomain()).toBe('');
+      expect('user@'.getEmailDomain()).toBe('');
+      expect('user@@example.com'.getEmailDomain()).toBe('');
+      expect(''.getEmailDomain()).toBe('');
+      expect(' '.getEmailDomain()).toBe('');
+    });
+
+    it('should normalize domain to lowercase', () => {
+      expect('User@EXAMPLE.COM'.getEmailDomain()).toBe('example.com');
+      expect('test@MixedCase.Org'.getEmailDomain()).toBe('mixedcase.org');
+    });
+  });
+
+  describe('cleanForDomain', () => {
+    it('should clean tenant names for domain usage', () => {
+      expect('Acme Corp'.cleanForDomain()).toBe('acme_corp');
+      expect('Law Firm & Associates'.cleanForDomain()).toBe('law_firm_associates');
+      expect('Tech-Company'.cleanForDomain()).toBe('tech_company');
+      expect('Company   With   Spaces'.cleanForDomain()).toBe('company_with_spaces');
+      expect('Special!@#$%Characters'.cleanForDomain()).toBe('special_characters');
+    });
+
+    it('should handle edge cases', () => {
+      expect(''.cleanForDomain()).toBe('');
+      expect('   '.cleanForDomain()).toBe('');
+      expect('123Numbers456'.cleanForDomain()).toBe('123numbers456');
+      expect('___Multiple___Underscores___'.cleanForDomain()).toBe('multiple_underscores');
+    });
+
+    it('should remove leading and trailing underscores', () => {
+      expect('_StartUnderscore'.cleanForDomain()).toBe('startunderscore');
+      expect('EndUnderscore_'.cleanForDomain()).toBe('endunderscore');
+      expect('_Both_'.cleanForDomain()).toBe('both');
+    });
+  });
 });
