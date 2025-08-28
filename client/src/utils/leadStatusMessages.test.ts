@@ -4,7 +4,10 @@ import { LEAD_STATUS } from '../constants/leadStatus.constants'
 import type { LeadStatus } from '../types/lead.types'
 
 describe('leadStatusMessages', () => {
-  const createMockStatus = (status: string, createdAt = new Date()): LeadStatus => ({
+  const createMockStatus = (
+    status: string,
+    createdAt = new Date(),
+  ): LeadStatus => ({
     id: 'mock-id',
     leadId: 'mock-lead-id',
     status,
@@ -24,7 +27,8 @@ describe('leadStatusMessages', () => {
 
       expect(message).toEqual({
         title: 'Lead Not Processed',
-        description: 'This lead has not been processed yet. Click "Resync" to start analysis.',
+        description:
+          'This lead has not been processed yet. Click "Resync" to start analysis.',
         isProcessing: false,
       })
     })
@@ -35,7 +39,8 @@ describe('leadStatusMessages', () => {
 
       expect(message).toEqual({
         title: '🔄 Initial Processing',
-        description: 'Getting the website\'s sitemap and intelligently filtering the most relevant pages to analyze. This step ensures we focus on the most important content.',
+        description:
+          "Getting the website's sitemap and intelligently filtering the most relevant pages to analyze. This step ensures we focus on the most important content.",
         estimatedTime: '1-2 minutes',
         isProcessing: true,
       })
@@ -47,7 +52,8 @@ describe('leadStatusMessages', () => {
 
       expect(message).toEqual({
         title: '🌐 Syncing Website',
-        description: 'Collecting and organizing website content for analysis. We\'re gathering the filtered pages and preparing them for AI processing.',
+        description:
+          "Collecting and organizing website content for analysis. We're gathering the filtered pages and preparing them for AI processing.",
         estimatedTime: '2-5 minutes',
         isProcessing: true,
       })
@@ -59,7 +65,8 @@ describe('leadStatusMessages', () => {
 
       expect(message).toEqual({
         title: '✅ Analysis Complete!',
-        description: 'The website has been fully analyzed! Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for your outreach campaigns.',
+        description:
+          'The website has been fully analyzed! Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for your outreach campaigns.',
         isProcessing: false,
       })
     })
@@ -67,7 +74,7 @@ describe('leadStatusMessages', () => {
     it('should use most recent status when multiple statuses exist', () => {
       const olderDate = new Date('2024-01-01')
       const newerDate = new Date('2024-01-02')
-      
+
       const statuses = [
         createMockStatus(LEAD_STATUS.INITIAL_PROCESSING, olderDate),
         createMockStatus(LEAD_STATUS.SYNCING_SITE, newerDate),
@@ -113,7 +120,7 @@ describe('leadStatusMessages', () => {
     it('should use most recent status for progress calculation', () => {
       const olderDate = new Date('2024-01-01')
       const newerDate = new Date('2024-01-02')
-      
+
       const statuses = [
         createMockStatus(LEAD_STATUS.INITIAL_PROCESSING, olderDate),
         createMockStatus(LEAD_STATUS.ANALYZING_SITE, newerDate),

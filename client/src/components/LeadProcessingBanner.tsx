@@ -2,7 +2,10 @@ import React, { useEffect } from 'react'
 import { Clock, CheckCircle, Loader, Info } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { LeadStatus } from '../types/lead.types'
-import { getStatusMessage, getProcessingProgress } from '../utils/leadStatusMessages'
+import {
+  getStatusMessage,
+  getProcessingProgress,
+} from '../utils/leadStatusMessages'
 import { leadQueryKeys } from '../hooks/useLeadsQuery'
 
 interface LeadProcessingBannerProps {
@@ -32,7 +35,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
       queryClient.invalidateQueries({
         queryKey: leadQueryKeys.detail(leadId),
       })
-    }, 10000) // 10 seconds
+    }, 30 * 1000) // 30 seconds
 
     return () => clearInterval(interval)
   }, [leadId, statusMessage?.isProcessing, queryClient])
@@ -48,12 +51,15 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
       queryClient.invalidateQueries({
         queryKey: leadQueryKeys.detail(leadId),
       })
-    }, 3000) // 3 seconds
+    }, 5 * 1000) // 5 seconds
 
     // Stop quick polling after 1 minute
-    const timeout = setTimeout(() => {
-      clearInterval(quickInterval)
-    }, 60000) // 1 minute
+    const timeout = setTimeout(
+      () => {
+        clearInterval(quickInterval)
+      },
+      1 * 60 * 1000,
+    ) // 1 minute
 
     return () => {
       clearInterval(quickInterval)
@@ -125,7 +131,9 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
                 />
               </div>
               <div className="flex justify-between text-xs text-blue-500 mt-1">
-                <span>Step {progress.current} of {progress.total}</span>
+                <span>
+                  Step {progress.current} of {progress.total}
+                </span>
                 <span className="flex items-center">
                   {progress.current === progress.total ? (
                     '✅ Complete'
@@ -143,32 +151,58 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
           {isProcessing && (
             <div className="mt-3 space-y-2">
               <div className="text-xs text-blue-600">
-                💡 <strong>Tip:</strong> Check back in a few minutes to see the AI analysis results and extracted contacts.
+                💡 <strong>Tip:</strong> Check back in a few minutes to see the
+                AI analysis results and extracted contacts.
               </div>
-              
+
               {/* Step Details */}
               <div className="mt-4">
                 <button
                   type="button"
                   className="flex items-center text-xs text-blue-600 hover:text-blue-700 font-medium"
                   onClick={() => {
-                    const details = document.getElementById(`step-details-${leadId}`)
+                    const details = document.getElementById(
+                      `step-details-${leadId}`,
+                    )
                     if (details) {
-                      details.style.display = details.style.display === 'none' ? 'block' : 'none'
+                      details.style.display =
+                        details.style.display === 'none' ? 'block' : 'none'
                     }
                   }}
                 >
                   <Info className="h-3 w-3 mr-1" />
                   What's happening in each step?
                 </button>
-                <div id={`step-details-${leadId}`} className="mt-2 text-xs text-blue-600 space-y-2" style={{ display: 'none' }}>
+                <div
+                  id={`step-details-${leadId}`}
+                  className="mt-2 text-xs text-blue-600 space-y-2"
+                  style={{ display: 'none' }}
+                >
                   <div className="bg-blue-50 border-l-2 border-blue-200 pl-3 py-2 space-y-1">
-                    <div><strong>🔄 Initial Processing:</strong> Getting the website's sitemap and filtering relevant pages</div>
-                    <div><strong>🌐 Syncing Site:</strong> Collecting and organizing website content for analysis</div>
-                    <div><strong>🔍 Scraping Site:</strong> Gathering detailed information from website pages</div>
-                    <div><strong>🧠 Analyzing Site:</strong> AI is creating a comprehensive business summary</div>
-                    <div><strong>📞 Extracting Contacts:</strong> Finding and organizing contact information</div>
-                    <div><strong>✅ Processed:</strong> Analysis complete! Ready for outreach campaigns</div>
+                    <div>
+                      <strong>🔄 Initial Processing:</strong> Getting the
+                      website's sitemap and filtering relevant pages
+                    </div>
+                    <div>
+                      <strong>🌐 Syncing Site:</strong> Collecting and
+                      organizing website content for analysis
+                    </div>
+                    <div>
+                      <strong>🔍 Scraping Site:</strong> Gathering detailed
+                      information from website pages
+                    </div>
+                    <div>
+                      <strong>🧠 Analyzing Site:</strong> AI is creating a
+                      comprehensive business summary
+                    </div>
+                    <div>
+                      <strong>📞 Extracting Contacts:</strong> Finding and
+                      organizing contact information
+                    </div>
+                    <div>
+                      <strong>✅ Processed:</strong> Analysis complete! Ready
+                      for outreach campaigns
+                    </div>
                   </div>
                 </div>
               </div>

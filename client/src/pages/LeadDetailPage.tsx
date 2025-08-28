@@ -333,7 +333,11 @@ const LeadDetailPage: React.FC = () => {
         </div>
 
         {/* Processing Status Banner */}
-        <LeadProcessingBanner leadId={leadId} statuses={lead.statuses || []} className="mb-6" />
+        <LeadProcessingBanner
+          leadId={leadId}
+          statuses={lead.statuses || []}
+          className="mb-6"
+        />
 
         {/* Messages */}
         {resyncMessage && (
