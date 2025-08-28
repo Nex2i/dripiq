@@ -26,6 +26,7 @@ import BrandingTab from '../components/tabs/BrandingTab'
 import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
 import ProductsTab from '../components/tabs/ProductsTab'
 import LeadStatusBadges from '../components/LeadStatusBadges'
+import LeadProcessingBanner from '../components/LeadProcessingBanner'
 import { HOME_URL } from '../constants/navigation'
 
 const LeadDetailPage: React.FC = () => {
@@ -330,6 +331,13 @@ const LeadDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Processing Status Banner */}
+        <LeadProcessingBanner
+          leadId={leadId}
+          statuses={lead.statuses || []}
+          className="mb-6"
+        />
 
         {/* Messages */}
         {resyncMessage && (

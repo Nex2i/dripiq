@@ -1,10 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
+import { LeadInitialProcessingPublisher } from '@/modules/messages/leadInitialProcessing.publisher.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import { generateContactStrategy, updateContactStrategy } from '@/modules/ai';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { logger } from '@/libs/logger';
 import {
   getLeads,
   createLead,
@@ -73,7 +75,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.send(leads);
       } catch (error: any) {
-        fastify.log.error(`Error fetching leads: ${error.message}`);
+        logger.error(`Error fetching leads: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -167,7 +169,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         );
 
         if (!newLead) {
-          fastify.log.error('Lead creation failed - no lead returned from database');
+          logger.error('Lead creation failed - no lead returned from database');
           reply.status(500).send({
             message: 'Failed to create lead',
             error: 'Database operation failed',
@@ -175,15 +177,43 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Index the lead's site after creation
-        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, newLead.id);
+        // Queue initial processing instead of synchronous processing
+        try {
+          await LeadInitialProcessingPublisher.publish({
+            tenantId: authenticatedRequest.tenantId,
+            leadId: newLead.id,
+            leadUrl: newLead.url,
+            metadata: {
+              createdBy: authenticatedRequest.user?.id,
+              createdAt: new Date().toISOString(),
+            },
+          });
 
-        reply.status(201).send({
-          message: 'Lead created successfully',
-          lead: newLead,
-        });
+          reply.status(201).send({
+            message: 'Lead created successfully and processing started',
+            lead: newLead,
+            processing: {
+              status: 'queued',
+              message:
+                'Initial processing has been queued. The system will analyze the website and extract contacts automatically.',
+            },
+          });
+        } catch (queueError) {
+          // If queue fails, log it but don't fail the lead creation
+          logger.error(`Failed to queue initial processing for lead ${newLead.id}:`, queueError);
+
+          reply.status(201).send({
+            message: 'Lead created successfully',
+            lead: newLead,
+            processing: {
+              status: 'queue_failed',
+              message:
+                'Lead created but automatic processing could not be started. You can manually resync the lead later.',
+            },
+          });
+        }
       } catch (error: any) {
-        fastify.log.error(`Error creating lead: ${error.message}`);
+        logger.error(`Error creating lead: ${error.message}`);
 
         // Check for tenant access errors
         if (
@@ -245,7 +275,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const lead = await getLeadById(authenticatedRequest.tenantId, id);
         reply.send(lead);
       } catch (error: any) {
-        fastify.log.error(`Error fetching lead: ${error.message}`);
+        logger.error(`Error fetching lead: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to fetch lead',
           error: error.message,
@@ -287,7 +317,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.send(updatedLead);
       } catch (error: any) {
-        fastify.log.error(`Error updating lead: ${error.message}`);
+        logger.error(`Error updating lead: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to update lead',
           error: error.message,
@@ -318,7 +348,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const deleted = await deleteLead(authenticatedRequest.tenantId, id);
         reply.send({ message: 'Lead deleted successfully', lead: deleted });
       } catch (error: any) {
-        fastify.log.error(`Error deleting lead: ${error.message}`);
+        logger.error(`Error deleting lead: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to delete lead',
           error: error.message,
@@ -349,7 +379,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const results = await bulkDeleteLeads(authenticatedRequest.tenantId, ids);
         reply.send({ deletedCount: results.length, deletedLeads: results });
       } catch (error: any) {
-        fastify.log.error(`Error bulk deleting leads: ${error.message}`);
+        logger.error(`Error bulk deleting leads: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to bulk delete leads',
           error: error.message,
@@ -387,7 +417,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           vendorFitReport,
         });
       } catch (error: any) {
-        fastify.log.error(`Error generating vendor fit report: ${error.message}`);
+        logger.error(`Error generating vendor fit report: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to generate vendor fit report',
           error: error.message,
@@ -420,7 +450,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.send({ message: 'Lead resync initiated', leadId: id });
       } catch (error: any) {
-        fastify.log.error(`Error resyncing lead: ${error.message}`);
+        logger.error(`Error resyncing lead: ${error.message}`);
 
         reply.status(500).send({
           message: 'Failed to resync lead',
@@ -480,7 +510,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         // Assign the owner to the lead
         const updatedLead = await assignLeadOwner(authenticatedRequest.tenantId, id, userId);
 
-        fastify.log.info(
+        logger.info(
           `Lead owner assigned successfully. Lead ID: ${id}, User ID: ${userId}, Tenant: ${authenticatedRequest.tenantId}`
         );
 
@@ -489,7 +519,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           lead: updatedLead,
         });
       } catch (error: any) {
-        fastify.log.error(`Error assigning lead owner: ${error.message}`);
+        logger.error(`Error assigning lead owner: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||
@@ -563,7 +593,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         // Return the campaign plan JSON directly per new schema
         reply.status(200).send(result.finalResponseParsed);
       } catch (error: any) {
-        fastify.log.error(`Error qualifying lead contact: ${error.message}`);
+        logger.error(`Error qualifying lead contact: ${error.message}`);
 
         if (error.message?.includes('Access denied')) {
           reply.status(403).send({
@@ -626,7 +656,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         // Return the updated campaign plan JSON
         reply.status(200).send(result.finalResponseParsed);
       } catch (error: any) {
-        fastify.log.error(`Error updating contact strategy: ${error.message}`);
+        logger.error(`Error updating contact strategy: ${error.message}`);
 
         if (error.message?.includes('Access denied')) {
           reply.status(403).send({
@@ -680,17 +710,17 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const authenticatedRequest = request as AuthenticatedRequest;
         const { leadId } = request.params;
 
-        fastify.log.info(
+        logger.info(
           `Getting products for lead: ${leadId} for tenant: ${authenticatedRequest.tenantId}`
         );
 
         const leadProducts = await getLeadProducts(leadId, authenticatedRequest.tenantId);
 
-        fastify.log.info(`Retrieved ${leadProducts.length} products for lead: ${leadId}`);
+        logger.info(`Retrieved ${leadProducts.length} products for lead: ${leadId}`);
 
         reply.send(leadProducts);
       } catch (error: any) {
-        fastify.log.error(`Error getting lead products: ${error.message}`);
+        logger.error(`Error getting lead products: ${error.message}`);
 
         if (error.message?.includes('not found') || error.message?.includes('access denied')) {
           reply.status(404).send({
@@ -754,7 +784,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           attachments,
         });
       } catch (error: any) {
-        fastify.log.error(`Error attaching products to lead: ${error.message}`);
+        logger.error(`Error attaching products to lead: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to attach products to lead',
           error: error.message,
@@ -808,7 +838,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.send({ success: true, message: 'Product successfully detached from lead' });
       } catch (error: any) {
-        fastify.log.error(`Error detaching product from lead: ${error.message}`);
+        logger.error(`Error detaching product from lead: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to detach product from lead',
           error: error.message,

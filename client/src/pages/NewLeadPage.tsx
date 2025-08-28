@@ -93,8 +93,6 @@ const NewLeadPage: React.FC = () => {
 
     createLeadMutation.mutate(submitData, {
       onSuccess: (newLead) => {
-        console.log(newLead)
-        // Redirect to the new lead detail page
         navigate({ to: `/leads/${newLead.id}` })
       },
       onError: (err) => {

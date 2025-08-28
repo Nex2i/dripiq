@@ -68,7 +68,7 @@ export default function Header() {
 
   return (
     <>
-      <div className="bg-[var(--color-surface-100)]/90 backdrop-blur-sm shadow-lg border-b border-[var(--color-border-light)]/50 sticky top-0 z-50">
+      <div className="bg-[var(--color-bg-secondary)]/90 backdrop-blur-sm shadow-lg border-b border-[var(--color-border-light)]/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-8">

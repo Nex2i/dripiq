@@ -114,7 +114,7 @@ export const createLead = async (
   const result = await leadTransactionRepository.createLeadWithContacts(tenantId, {
     lead: leadWithOwner,
     contacts: pointOfContacts || [],
-    statuses: [LEAD_STATUS.UNPROCESSED],
+    statuses: [LEAD_STATUS.INITIAL_PROCESSING],
   });
 
   // Transform lead with signed URLs

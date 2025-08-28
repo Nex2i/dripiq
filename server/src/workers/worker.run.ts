@@ -13,11 +13,21 @@
 
 import { logger } from '@/libs/logger';
 import { createRedisConnection } from '@/libs/bullmq';
-import { leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker } from './index';
+import {
+  leadInitialProcessingWorker,
+  leadAnalysisWorker,
+  campaignCreationWorker,
+  campaignExecutionWorker,
+} from './index';
 
 // Track active workers for graceful shutdown
 // Note: timeout processing is handled within campaignExecutionWorker
-const activeWorkers = [leadAnalysisWorker, campaignCreationWorker, campaignExecutionWorker];
+const activeWorkers = [
+  leadInitialProcessingWorker,
+  leadAnalysisWorker,
+  campaignCreationWorker,
+  campaignExecutionWorker,
+];
 
 async function startWorkers() {
   try {
@@ -29,6 +39,7 @@ async function startWorkers() {
     // Log worker startup
     logger.info('🚀 Starting BullMQ workers...', {
       workers: [
+        'lead-initial-processing',
         'lead-analysis',
         'campaign-creation',
         'campaign-execution (includes timeout processing)',
@@ -39,6 +50,7 @@ async function startWorkers() {
     // Workers are automatically started when imported
     // Just log their status
     logger.info('✅ All workers started successfully', {
+      leadInitialProcessingWorker: leadInitialProcessingWorker.isRunning(),
       leadAnalysisWorker: leadAnalysisWorker.isRunning(),
       campaignCreationWorker: campaignCreationWorker.isRunning(),
       campaignExecutionWorker: campaignExecutionWorker.isRunning(),
@@ -63,7 +75,12 @@ async function gracefulShutdown(signal: string) {
     // Close all workers
     await Promise.all(
       activeWorkers.map(async (worker, index) => {
-        const workerNames = ['lead-analysis', 'campaign-creation', 'campaign-execution'];
+        const workerNames = [
+          'lead-initial-processing',
+          'lead-analysis',
+          'campaign-creation',
+          'campaign-execution',
+        ];
         logger.info(`🛑 Closing ${workerNames[index]} worker...`);
         await worker.close();
         logger.info(`✅ ${workerNames[index]} worker closed`);
