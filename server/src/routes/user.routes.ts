@@ -4,13 +4,15 @@ import { UserService } from '@/modules/user.service';
 import { userTenantRepository } from '@/repositories';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { sendgridClient } from '@/libs/email/sendgrid.client';
+import { EmailExecutionService } from '@/workers/campaign-execution/email-execution.service';
+import { createId } from '@paralleldrive/cuid2';
 import {
   UpdateProfileRequestSchema,
   UserIdParamsSchema,
   TestEmailRequestSchema,
   TestEmailResponseSchema,
 } from './apiSchema/users';
-import { IUser } from '@/plugins/authentication.plugin';
+import type { IUser } from '@/plugins/authentication.plugin';
 
 const basePath = '';
 
@@ -181,33 +183,103 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         const userId = ((request as any).user as IUser).id as string;
         const tenantId = (request as any).tenantId as string;
 
-        // Get user info to use as sender
-        const user = await UserService.getUserWithSenderIdentity(userId);
+        // Get user info to validate access
+        const user = await UserService.getUserById(userId);
         if (!user) {
           reply.status(404).send({ success: false, message: 'User not found' });
           return;
         }
 
-        // Send email using SendGrid
-        const result = await sendgridClient.sendEmail({
+        // Create mock objects for the email execution service
+        // This allows us to use the same email flow as real campaigns (calendar links, unsubscribe, etc.)
+        const testCampaignId = createId();
+        const testContactId = createId();
+        const testNodeId = 'test-email-node';
+
+        // Create mock contact object
+        const mockContact = {
+          id: testContactId,
+          leadId: createId(),
+          name: 'Test Contact',
+          email: recipientEmail,
+          phone: null,
+          title: null,
+          company: null,
+          sourceUrl: null,
+          manuallyReviewed: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // Create mock campaign object
+        const mockCampaign = {
+          id: testCampaignId,
           tenantId,
-          campaignId: 'test-email',
-          nodeId: 'test-node',
-          outboundMessageId: `test-${Date.now()}`,
-          dedupeKey: `${tenantId}:test-email:${Date.now()}`,
-          from: {
-            email: user.senderIdentity.fromEmail,
-            name: user.senderIdentity.fromName,
+          leadId: mockContact.leadId,
+          contactId: testContactId,
+          channel: 'email' as const,
+          status: 'active' as const,
+          currentNodeId: testNodeId,
+          planJson: {
+            version: '1.0',
+            timezone: 'America/Los_Angeles',
+            defaults: {
+              timers: {
+                no_open_after: 'PT72H',
+                no_click_after: 'PT24H'
+              }
+            },
+            startNodeId: testNodeId,
+            nodes: [{
+              id: testNodeId,
+              channel: 'email' as const,
+              action: 'send' as const,
+              subject: subject,
+              body: body,
+              schedule: { delay: 'PT0S' },
+              transitions: [],
+            }]
           },
-          to: recipientEmail,
+          planVersion: '1.0',
+          planHash: 'test-hash',
+          senderIdentityId: null,
+          startedAt: null,
+          completedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        // Create mock node object
+        const mockNode = {
+          id: testNodeId,
+          channel: 'email' as const,
+          action: 'send' as const,
           subject: subject,
-          html: body,
-          categories: ['test-email'],
+          body: body,
+          schedule: { delay: 'PT0S' },
+          transitions: [],
+        };
+
+        // Use the EmailExecutionService directly to get all campaign features
+        const emailExecutionService = new EmailExecutionService(tenantId);
+        const result = await emailExecutionService.executeEmailSend({
+          tenantId,
+          campaignId: testCampaignId,
+          contactId: testContactId,
+          nodeId: testNodeId,
+          node: mockNode,
+          contact: mockContact,
+          campaign: mockCampaign,
+          planJson: mockCampaign.planJson,
         });
+
+        if (!result.success) {
+          throw new Error(result.error || 'Email execution failed');
+        }
 
         reply.send({
           success: true,
-          message: 'Test email sent successfully',
+          message: 'Test email sent successfully via campaign execution flow',
           messageId: result.providerMessageId,
         });
       } catch (error: any) {
