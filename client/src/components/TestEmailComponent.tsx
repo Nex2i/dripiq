@@ -6,30 +6,40 @@ interface TestEmailComponentProps {
   tenantName?: string
 }
 
-const DEFAULT_LOREM_IPSUM = `
-<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-  <h2 style="color: #2563eb;">Test Email</h2>
-  
-  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-  
-  <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-  
-  <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-    <h3 style="margin-top: 0; color: #1f2937;">Sample Content Block</h3>
-    <p style="margin-bottom: 0;">This is a test email sent from your organization's email system. You can customize this content as needed for your testing purposes.</p>
-  </div>
-  
-  <p>Best regards,<br>
-  <strong>Your Organization Team</strong></p>
-</div>
-`.trim()
+const generateDefaultEmailContent = (tenantName: string) => `Hi [First Name],
+
+I noticed your company has been growing rapidly and thought you might be interested in how we've helped similar businesses streamline their operations.
+
+We recently worked with a company in your industry to reduce their processing time by 40% while improving accuracy. The results were impressive - they saw ROI within the first quarter.
+
+If you're interested, feel free to grab some time on my calendar: [CALENDAR_LINK]
+
+Best regards,
+[Your Name]
+
+P.S. - This is a test email from ${tenantName}. In a real campaign, this would be personalized with actual contact and sender information.`
+
+// Function to process email content for display/sending
+const processEmailContent = (content: string): string => {
+  // Convert plain text to HTML
+  const htmlContent = content
+    .replace(/\n/g, '<br>')
+    .replace(
+      /\[CALENDAR_LINK\]/g,
+      '<a href="https://example.com/calendar/track/tenant123/lead456/contact789?campaignId=test-campaign&nodeId=email-1" style="color: #2563eb; text-decoration: underline;">grab some time on my calendar</a>',
+    )
+    .replace(/\[First Name\]/g, 'John')
+    .replace(/\[Your Name\]/g, 'Jane Smith')
+
+  return htmlContent
+}
 
 export default function TestEmailComponent({
   tenantName = 'Your Organization',
 }: TestEmailComponentProps) {
   const [recipientEmail, setRecipientEmail] = useState('')
   const [subject, setSubject] = useState(`Test Email from ${tenantName}`)
-  const [body, setBody] = useState(DEFAULT_LOREM_IPSUM)
+  const [body, setBody] = useState(generateDefaultEmailContent(tenantName))
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState<{
     type: 'success' | 'error'
@@ -57,7 +67,7 @@ export default function TestEmailComponent({
       const result = await usersService.sendTestEmail({
         recipientEmail: recipientEmail.trim(),
         subject: subject.trim(),
-        body: body.trim(),
+        body: processEmailContent(body.trim()),
       })
 
       if (result.success) {
@@ -136,14 +146,18 @@ export default function TestEmailComponent({
             Email Body
           </label>
           <div className="space-y-2">
-                        {/* Styled Preview */}
+            {/* Styled Preview */}
             <div className="border border-gray-300 rounded-lg overflow-hidden">
               <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
-                <span className="text-xs font-medium text-gray-600">Email Preview</span>
+                <span className="text-xs font-medium text-gray-600">
+                  Email Preview
+                </span>
               </div>
               <div className="p-4 bg-white min-h-[200px] max-h-[300px] overflow-y-auto">
-                <div 
-                  dangerouslySetInnerHTML={{ __html: body }}
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: processEmailContent(body),
+                  }}
                   className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
                 />
               </div>
@@ -152,9 +166,9 @@ export default function TestEmailComponent({
             {/* HTML Source Editor */}
             <details className="group">
               <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 select-none">
-                <span className="group-open:hidden">▶ Edit HTML Source</span>
+                <span className="group-open:hidden">▶ Edit Email Content</span>
                 <span className="hidden group-open:inline">
-                  ▼ Hide HTML Source
+                  ▼ Hide Email Content
                 </span>
               </summary>
               <textarea
@@ -162,13 +176,15 @@ export default function TestEmailComponent({
                 onChange={(e) => setBody(e.target.value)}
                 className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)] font-mono text-sm"
                 rows={8}
-                placeholder="Enter your email HTML content here..."
+                placeholder="Enter your email content here (plain text with placeholders)..."
               />
             </details>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            The preview above shows how your email will appear to recipients.
-            Click "Edit HTML Source" to modify the HTML directly.
+            The preview shows how your email will appear with campaign-style
+            formatting and tracking links. Use placeholders like
+            [CALENDAR_LINK], [First Name], and [Your Name] which will be
+            processed automatically.
           </p>
         </div>
 
