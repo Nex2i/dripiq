@@ -133,17 +133,42 @@ export default function TestEmailComponent({
         {/* Email Body */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email Body (HTML)
+            Email Body
           </label>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-            rows={12}
-            placeholder="Enter your email content here..."
-          />
+          <div className="space-y-2">
+                        {/* Styled Preview */}
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                <span className="text-xs font-medium text-gray-600">Email Preview</span>
+              </div>
+              <div className="p-4 bg-white min-h-[200px] max-h-[300px] overflow-y-auto">
+                <div 
+                  dangerouslySetInnerHTML={{ __html: body }}
+                  className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                />
+              </div>
+            </div>
+
+            {/* HTML Source Editor */}
+            <details className="group">
+              <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 select-none">
+                <span className="group-open:hidden">▶ Edit HTML Source</span>
+                <span className="hidden group-open:inline">
+                  ▼ Hide HTML Source
+                </span>
+              </summary>
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)] font-mono text-sm"
+                rows={8}
+                placeholder="Enter your email HTML content here..."
+              />
+            </details>
+          </div>
           <p className="text-xs text-gray-500 mt-1">
-            You can use HTML formatting for styling your test email content.
+            The preview above shows how your email will appear to recipients.
+            Click "Edit HTML Source" to modify the HTML directly.
           </p>
         </div>
 
