@@ -1,9 +1,18 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify';
+import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { UserService } from '@/modules/user.service';
-import { userTenantRepository } from '@/repositories';
+import { emailSenderIdentityRepository, userTenantRepository } from '@/repositories';
+import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
-import { UpdateProfileRequestSchema, UserIdParamsSchema } from './apiSchema/users';
+import { EmailProcessor, type CampaignEmailData } from '@/services/email';
+import type { IUser } from '@/plugins/authentication.plugin';
+import {
+  UpdateProfileRequestSchema,
+  UserIdParamsSchema,
+  TestEmailRequestSchema,
+  TestEmailResponseSchema,
+} from './apiSchema/users';
 
 const basePath = '';
 
@@ -147,6 +156,131 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       } catch (error: any) {
         fastify.log.error(`Error updating user profile: ${error.message}`);
         reply.status(500).send({ message: 'Failed to update user profile', error: error.message });
+      }
+    },
+  });
+
+  // Send test email
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/users/test-email`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      body: TestEmailRequestSchema,
+      response: {
+        200: TestEmailResponseSchema,
+      },
+      tags: ['Users'],
+      summary: 'Send test email',
+      description: 'Send a test email with custom subject and body content.',
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: typeof TestEmailRequestSchema.static }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { recipientEmail, subject, body } = request.body;
+        const userId = ((request as any).user as IUser).id as string;
+        const tenantId = (request as any).tenantId as string;
+
+        // Get user info to validate access
+        const user = await UserService.getUserById(userId);
+        if (!user) {
+          reply.status(404).send({ success: false, message: 'User not found' });
+          return;
+        }
+
+        // CHECK UNSUBSCRIBE STATUS FIRST (early exit)
+        const isUnsubscribed = await unsubscribeService.isChannelUnsubscribed(
+          tenantId,
+          'email',
+          recipientEmail.toLowerCase()
+        );
+
+        if (isUnsubscribed) {
+          reply.send({
+            success: false,
+            message: 'Recipient has unsubscribed from emails',
+          });
+          return;
+        }
+
+        // Fetch sender identity
+        const senderIdentities =
+          await emailSenderIdentityRepository.findVerifiedForTenant(tenantId);
+        if (!senderIdentities || senderIdentities.length === 0) {
+          reply.status(400).send({
+            success: false,
+            message: 'No verified sender identity found for this tenant',
+          });
+          return;
+        }
+        const senderIdentity = senderIdentities[0]; // Use the first verified identity
+
+        // Generate test IDs
+        const testCampaignId = createId();
+        const testContactId = createId();
+        const testNodeId = 'test-email-node';
+        const testLeadId = createId();
+
+        // Fetch calendar information if available (same as campaigns)
+        let calendarInfo: CampaignEmailData['calendarInfo'];
+        try {
+          if (user.calendarLink && user.calendarTieIn) {
+            calendarInfo = {
+              calendarLink: user.calendarLink,
+              calendarTieIn: user.calendarTieIn,
+              leadId: testLeadId,
+            };
+          }
+        } catch (calendarError) {
+          fastify.log.error('Failed to fetch calendar information for test email', {
+            userId,
+            tenantId,
+            error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
+          } as any);
+          // Continue without calendar info
+        }
+
+        // Prepare data for EmailProcessor
+        const emailData: CampaignEmailData = {
+          tenantId,
+          campaignId: testCampaignId,
+          contactId: testContactId,
+          nodeId: testNodeId,
+          subject,
+          body,
+          recipientEmail,
+          recipientName: 'Test Contact',
+          senderIdentity: {
+            id: senderIdentity!.id,
+            fromEmail: senderIdentity!.fromEmail,
+            fromName: senderIdentity!.fromName,
+          },
+          calendarInfo,
+          categories: ['test-email'],
+          skipMessageRecord: true,
+          skipTimeoutScheduling: true,
+        };
+
+        // Send email using EmailProcessor
+        const result = await EmailProcessor.sendCampaignEmail(emailData);
+
+        if (!result.success) {
+          throw new Error(result.error || 'Email sending failed');
+        }
+
+        reply.send({
+          success: true,
+          message: 'Test email sent successfully via EmailProcessor',
+          messageId: result.providerMessageId,
+        });
+      } catch (error: any) {
+        fastify.log.error(`Error sending test email: ${error.message}`);
+        reply.status(500).send({
+          success: false,
+          message: 'Failed to send test email',
+        });
       }
     },
   });
