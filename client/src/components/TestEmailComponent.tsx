@@ -8,31 +8,9 @@ interface TestEmailComponentProps {
 
 const generateDefaultEmailContent = (tenantName: string) => `Hi [First Name],
 
-I noticed your company has been growing rapidly and thought you might be interested in how we've helped similar businesses streamline their operations.
-
-We recently worked with a company in your industry to reduce their processing time by 40% while improving accuracy. The results were impressive - they saw ROI within the first quarter.
-
-If you're interested, feel free to grab some time on my calendar: [CALENDAR_LINK]
-
-Best regards,
-[Your Name]
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 
 P.S. - This is a test email from ${tenantName}. In a real campaign, this would be personalized with actual contact and sender information.`
-
-// Function to process email content for display/sending
-const processEmailContent = (content: string): string => {
-  // Convert plain text to HTML
-  const htmlContent = content
-    .replace(/\n/g, '<br>')
-    .replace(
-      /\[CALENDAR_LINK\]/g,
-      '<a href="https://example.com/calendar/track/tenant123/lead456/contact789?campaignId=test-campaign&nodeId=email-1" style="color: #2563eb; text-decoration: underline;">grab some time on my calendar</a>',
-    )
-    .replace(/\[First Name\]/g, 'John')
-    .replace(/\[Your Name\]/g, 'Jane Smith')
-
-  return htmlContent
-}
 
 export default function TestEmailComponent({
   tenantName = 'Your Organization',
@@ -67,7 +45,7 @@ export default function TestEmailComponent({
       const result = await usersService.sendTestEmail({
         recipientEmail: recipientEmail.trim(),
         subject: subject.trim(),
-        body: processEmailContent(body.trim()),
+        body: body.trim(),
       })
 
       if (result.success) {
@@ -154,38 +132,16 @@ export default function TestEmailComponent({
                 </span>
               </div>
               <div className="p-4 bg-white min-h-[200px] max-h-[300px] overflow-y-auto">
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: processEmailContent(body),
-                  }}
-                  className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)] font-mono text-sm"
+                  rows={8}
+                  placeholder="Enter your email content here (plain text with placeholders)..."
                 />
               </div>
             </div>
-
-            {/* HTML Source Editor */}
-            <details className="group">
-              <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800 select-none">
-                <span className="group-open:hidden">▶ Edit Email Content</span>
-                <span className="hidden group-open:inline">
-                  ▼ Hide Email Content
-                </span>
-              </summary>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)] font-mono text-sm"
-                rows={8}
-                placeholder="Enter your email content here (plain text with placeholders)..."
-              />
-            </details>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            The preview shows how your email will appear with campaign-style
-            formatting and tracking links. Use placeholders like
-            [CALENDAR_LINK], [First Name], and [Your Name] which will be
-            processed automatically.
-          </p>
         </div>
 
         {/* Send Button */}
