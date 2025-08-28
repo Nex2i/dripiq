@@ -77,19 +77,19 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
     <div
       className={`rounded-lg border p-4 ${
         isProcessing
-          ? 'bg-blue-50 border-blue-200'
-          : 'bg-green-50 border-green-200'
+          ? 'bg-[var(--color-primary-50)] border-[var(--color-primary-200)]'
+          : 'bg-[var(--color-success-50)] border-[var(--color-success-200)]'
       } ${className}`}
     >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0 mt-0.5">
           {isProcessing ? (
             <div className="relative">
-              <Loader className="h-5 w-5 text-blue-600 animate-spin" />
-              <div className="absolute inset-0 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin"></div>
+              <Loader className="h-5 w-5 text-[var(--color-primary-600)] animate-spin" />
+              <div className="absolute inset-0 rounded-full border-2 border-[var(--color-primary-200)] border-t-[var(--color-primary-600)] animate-spin"></div>
             </div>
           ) : (
-            <CheckCircle className="h-5 w-5 text-green-600 animate-bounce" />
+            <CheckCircle className="h-5 w-5 text-[var(--color-success-600)] animate-bounce" />
           )}
         </div>
 
@@ -97,13 +97,13 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
           <div className="flex items-center justify-between">
             <h3
               className={`text-sm font-medium ${
-                isProcessing ? 'text-blue-900' : 'text-green-900'
+                isProcessing ? 'text-[var(--color-primary-900)]' : 'text-[var(--color-success-900)]'
               }`}
             >
               {title}
             </h3>
             {isProcessing && estimatedTime && (
-              <div className="flex items-center text-xs text-blue-600">
+              <div className="flex items-center text-xs text-[var(--color-primary-600)]">
                 <Clock className="h-3 w-3 mr-1" />
                 <span>{estimatedTime}</span>
               </div>
@@ -112,7 +112,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
 
           <p
             className={`mt-1 text-sm ${
-              isProcessing ? 'text-blue-700' : 'text-green-700'
+              isProcessing ? 'text-[var(--color-primary-700)]' : 'text-[var(--color-success-700)]'
             }`}
           >
             {description}
@@ -120,17 +120,17 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
 
           {isProcessing && (
             <div className="mt-3">
-              <div className="flex items-center justify-between text-xs text-blue-600 mb-1">
+              <div className="flex items-center justify-between text-xs text-[var(--color-primary-600)] mb-1">
                 <span>Processing Progress</span>
                 <span className="font-medium">{progress.percentage}%</span>
               </div>
-              <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-[var(--color-primary-200)] rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000 ease-out"
+                  className="bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] h-2 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${progress.percentage}%` }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-blue-500 mt-1">
+              <div className="flex justify-between text-xs text-[var(--color-primary-500)] mt-1">
                 <span>
                   Step {progress.current} of {progress.total}
                 </span>
@@ -139,7 +139,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
                     '✅ Complete'
                   ) : (
                     <>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-1"></div>
+                      <div className="w-2 h-2 bg-[var(--color-primary-500)] rounded-full animate-pulse mr-1"></div>
                       Processing...
                     </>
                   )}
@@ -150,7 +150,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
 
           {isProcessing && (
             <div className="mt-3 space-y-2">
-              <div className="text-xs text-blue-600">
+              <div className="text-xs text-[var(--color-primary-600)]">
                 💡 <strong>Tip:</strong> Check back in a few minutes to see the
                 AI analysis results and extracted contacts.
               </div>
@@ -159,7 +159,7 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
               <div className="mt-4">
                 <button
                   type="button"
-                  className="flex items-center text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="flex items-center text-xs text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] font-medium"
                   onClick={() => {
                     const details = document.getElementById(
                       `step-details-${leadId}`,
@@ -175,10 +175,10 @@ const LeadProcessingBanner: React.FC<LeadProcessingBannerProps> = ({
                 </button>
                 <div
                   id={`step-details-${leadId}`}
-                  className="mt-2 text-xs text-blue-600 space-y-2"
+                  className="mt-2 text-xs text-[var(--color-primary-600)] space-y-2"
                   style={{ display: 'none' }}
                 >
-                  <div className="bg-blue-50 border-l-2 border-blue-200 pl-3 py-2 space-y-1">
+                  <div className="bg-[var(--color-primary-50)] border-l-2 border-[var(--color-primary-200)] pl-3 py-2 space-y-1">
                     <div>
                       <strong>🔄 Initial Processing:</strong> Getting the
                       website's sitemap and filtering relevant pages
