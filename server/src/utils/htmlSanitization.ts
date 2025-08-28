@@ -84,15 +84,18 @@ export function sanitizeEmailSignatureHtml(html: string): string {
     result = result.replace(/on\w+\s*=/gi, '');
 
     // Ensure external links open in new tab and have safe rel attributes
-    result = result.replace(/<a\s+([^>]*href\s*=\s*["'][^"']*["'][^>]*)>/gi, (_match, attrs) => {
-      if (!attrs.includes('target=')) {
-        attrs += ' target="_blank"';
+    result = result.replace(
+      /<a\s+([^>]*href\s*=\s*["'][^"']*["'][^>]*)>/gi,
+      (_match: string, attrs: string) => {
+        if (!attrs.includes('target=')) {
+          attrs += ' target="_blank"';
+        }
+        if (!attrs.includes('rel=')) {
+          attrs += ' rel="noopener noreferrer"';
+        }
+        return `<a ${attrs}>`;
       }
-      if (!attrs.includes('rel=')) {
-        attrs += ' rel="noopener noreferrer"';
-      }
-      return `<a ${attrs}>`;
-    });
+    );
 
     return result;
   } catch (_error) {
@@ -116,7 +119,7 @@ export function validateEmailSignature(
 ): { isValid: boolean; sanitized?: string; error?: string } {
   // Allow null/undefined (no signature)
   if (signature === null || signature === undefined) {
-    return { isValid: true, sanitized: null };
+    return { isValid: true, sanitized: undefined };
   }
 
   // Must be a string

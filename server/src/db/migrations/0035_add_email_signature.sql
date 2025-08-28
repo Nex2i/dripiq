@@ -1,1 +1,0 @@
-ALTER TABLE dripiq.email_sender_identities ADD COLUMN email_signature TEXT;
