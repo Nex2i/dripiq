@@ -24,7 +24,6 @@ class SendgridClient {
       subject: input.subject,
       headers: input.headers,
       categories: input.categories,
-      ipPoolName: 'primary_pool',
       customArgs: this.buildCustomArgs(input),
       ...(input.asmGroupId ? { asm: { groupId: input.asmGroupId } } : {}),
     };
