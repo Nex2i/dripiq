@@ -126,7 +126,7 @@ String.prototype.getEmailDomain = function (): string {
   if (!email || !email.includes('@')) return '';
   
   const parts = email.split('@');
-  if (parts.length !== 2) return '';
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return '';
   
   return parts[1]?.toLowerCase() || '';
 };

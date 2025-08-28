@@ -27,6 +27,13 @@ export interface CampaignEmailData {
   // Sender info (pre-fetched, pre-validated)
   senderIdentity: EmailSenderIdentity;
 
+  // Optional override for sender configuration (for domain validation fallback)
+  senderConfig?: {
+    fromEmail: string;
+    fromName: string;
+    replyTo?: string;
+  };
+
   // Calendar info (optional, pre-fetched)
   calendarInfo?: {
     calendarLink: string;
@@ -74,6 +81,7 @@ export class EmailProcessor {
       recipientEmail,
       recipientName,
       senderIdentity,
+      senderConfig,
       calendarInfo,
       skipMessageRecord = false,
       categories = ['campaign'],
@@ -213,6 +221,11 @@ export class EmailProcessor {
       const htmlBody = formatEmailBodyForHtml(emailBody);
       const textBody = formatEmailBodyForText(emailBody);
 
+      // Use senderConfig if provided (for domain validation fallback), otherwise use senderIdentity
+      const fromEmail = senderConfig?.fromEmail || senderIdentity.fromEmail;
+      const fromName = senderConfig?.fromName || senderIdentity.fromName;
+      const replyTo = senderConfig?.replyTo;
+
       const sendPayload: SendBase = {
         tenantId,
         campaignId,
@@ -220,14 +233,15 @@ export class EmailProcessor {
         outboundMessageId,
         dedupeKey,
         from: {
-          email: senderIdentity.fromEmail,
-          name: senderIdentity.fromName,
+          email: fromEmail,
+          name: fromName,
         },
         to: recipientEmail,
         subject,
         html: htmlBody,
         text: textBody,
         categories: [...categories, `tenant:${tenantId}`],
+        ...(replyTo && { reply_to: replyTo }),
       };
 
       // Send email via SendGrid
@@ -239,7 +253,8 @@ export class EmailProcessor {
         outboundMessageId,
         subject,
         to: recipientEmail,
-        from: senderIdentity.fromEmail,
+        from: fromEmail,
+        replyTo: replyTo || 'none',
         skipMessageRecord,
       });
 
