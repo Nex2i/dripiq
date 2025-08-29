@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify';
 import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
+import { logger } from '@/libs/logger';
 import { UserService } from '@/modules/user.service';
 import { emailSenderIdentityRepository, userTenantRepository } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
@@ -54,7 +55,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           calendarTieIn: user.calendarTieIn || DEFAULT_CALENDAR_TIE_IN,
         });
       } catch (error: any) {
-        fastify.log.error(`Error getting user: ${error.message}`);
+        logger.error(`Error getting user: ${error.message}`);
         reply.status(500).send({ message: 'Failed to get user', error: error.message });
       }
     },
@@ -98,7 +99,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error updating profile: ${error.message}`);
+        logger.error(`Error updating profile: ${error.message}`);
         reply.status(500).send({ message: 'Failed to update profile', error: error.message });
       }
     },
@@ -155,7 +156,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error updating user profile: ${error.message}`);
+        logger.error(`Error updating user profile: ${error.message}`);
         reply.status(500).send({ message: 'Failed to update user profile', error: error.message });
       }
     },
@@ -229,20 +230,20 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
             senderIdentity.fromName
           );
 
-          fastify.log.info('Test email sender configuration resolved', {
+          logger.info('Test email sender configuration resolved', {
             tenantId,
             userId,
             originalFrom: senderIdentity.fromEmail,
             resolvedFrom: senderConfig.fromEmail,
             replyTo: senderConfig.replyTo,
-          } as any);
+          });
         } catch (resolverError) {
-          fastify.log.error('Failed to resolve test email sender config, using original identity', {
+          logger.error('Failed to resolve test email sender config, using original identity', {
             tenantId,
             userId,
             error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
             fallbackFrom: senderIdentity.fromEmail,
-          } as any);
+          });
           // Continue with original sender identity if resolver fails
           senderConfig = undefined;
         }
@@ -264,11 +265,11 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
             };
           }
         } catch (calendarError) {
-          fastify.log.error('Failed to fetch calendar information for test email', {
+          logger.error('Failed to fetch calendar information for test email', {
             userId,
             tenantId,
             error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
-          } as any);
+          });
           // Continue without calendar info
         }
 
@@ -303,7 +304,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           messageId: result.providerMessageId,
         });
       } catch (error: any) {
-        fastify.log.error(`Error sending test email: ${error.message}`);
+        logger.error(`Error sending test email: ${error.message}`);
         reply.status(500).send({
           success: false,
           message: 'Failed to send test email',

@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
+import { logger } from '@/libs/logger';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { storageService } from '@/modules/storage/storage.service';
 
@@ -81,7 +82,7 @@ export default async function LogoRoutes(fastify: FastifyInstance, _opts: RouteO
           });
         }
       } catch (error: any) {
-        fastify.log.error(`Error generating logo upload URL: ${error.message}`);
+        logger.error(`Error generating logo upload URL: ${error.message}`);
 
         if (
           error.message?.includes('access to tenant') ||

@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
+import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
@@ -71,7 +72,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         });
 
         if (signUpError) {
-          fastify.log.error(`Supabase signup error: ${signUpError.message}`);
+          logger.error(`Supabase signup error: ${signUpError.message}`);
           reply.status(400).send({
             message: 'Failed to create user account',
             error: signUpError.message,
@@ -117,7 +118,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         });
 
         if (signInError) {
-          fastify.log.error(`Auto sign-in error: ${signInError.message}`);
+          logger.error(`Auto sign-in error: ${signInError.message}`);
           // User was created successfully, but auto sign-in failed
           reply.status(201).send({
             message: 'Registration successful. Please log in manually.',
@@ -148,7 +149,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           session: signInData.session,
         });
       } catch (error: any) {
-        fastify.log.error(`Registration error: ${error.message}`);
+        logger.error(`Registration error: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to complete registration',
           error: error.message,
@@ -187,7 +188,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error creating user: ${error.message}`);
+        logger.error(`Error creating user: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to create user',
           error: error.message,
@@ -275,7 +276,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error fetching user: ${error.message}`);
+        logger.error(`Error fetching user: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to fetch user data',
           error: error.message,
@@ -354,7 +355,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         } = await supabase.auth.getUser(token);
 
         if (getUserError || !user) {
-          fastify.log.error(`Error getting user from token: ${getUserError?.message}`);
+          logger.error(`Error getting user from token: ${getUserError?.message}`);
           reply.status(401).send({ message: 'Invalid token' });
           return;
         }
@@ -367,7 +368,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         // The token will naturally expire based on its TTL
         reply.send({ message: 'Logout successful. Please remove token from client storage.' });
       } catch (error: any) {
-        fastify.log.error(`Server error during logout: ${error.message}`);
+        logger.error(`Server error during logout: ${error.message}`);
         reply
           .status(500)
           .send({ message: 'Internal server error during logout', error: error.message });

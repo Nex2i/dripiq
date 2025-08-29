@@ -11,27 +11,27 @@ export default fp(async function queuesPlugin(app) {
 
   // Set up event listeners for job failures
   leadInitialProcessingEvents.on('failed', ({ jobId, failedReason }) => {
-    app.log.error({ jobId, failedReason }, 'Lead initial processing job failed');
+    logger.error('Lead initial processing job failed', { jobId, failedReason });
   });
 
   leadInitialProcessingEvents.on('completed', ({ jobId }) => {
-    app.log.info({ jobId }, 'Lead initial processing job completed');
+    logger.info('Lead initial processing job completed', { jobId });
   });
 
   leadAnalysisEvents.on('failed', ({ jobId, failedReason }) => {
-    app.log.error({ jobId, failedReason }, 'Lead analysis job failed');
+    logger.error('Lead analysis job failed', { jobId, failedReason });
   });
 
   leadAnalysisEvents.on('completed', ({ jobId }) => {
-    app.log.info({ jobId }, 'Lead analysis job completed');
+    logger.info('Lead analysis job completed', { jobId });
   });
 
   campaignCreationEvents.on('failed', ({ jobId, failedReason }) => {
-    app.log.error({ jobId, failedReason }, 'Campaign creation job failed');
+    logger.error('Campaign creation job failed', { jobId, failedReason });
   });
 
   campaignCreationEvents.on('completed', ({ jobId }) => {
-    app.log.info({ jobId }, 'Campaign creation job completed');
+    logger.info('Campaign creation job completed', { jobId });
   });
 
   logger.info('Queue workers and event listeners initialized', {

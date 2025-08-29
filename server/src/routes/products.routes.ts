@@ -1,6 +1,7 @@
 import { FastifyInstance, RouteOptions, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { defaultRouteResponse } from '@/types/response';
+import { logger } from '@/libs/logger';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { ProductsService } from '../modules/products.service';
 import {
@@ -46,7 +47,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
         const productsList = await ProductsService.getProducts(tenantId);
         return reply.status(200).send(productsList);
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in products endpoint', { error });
         return reply.status(500).send({
           message: 'Internal server error',
           error: error.message,
@@ -89,7 +90,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
 
         return reply.send(product);
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in products endpoint', { error });
         if (error.message === 'Access denied') {
           return reply.status(403).send({ message: 'Access denied' });
         }
@@ -146,7 +147,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
 
         return reply.status(201).send(newProduct);
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in products endpoint', { error });
         return reply.status(500).send({
           message: 'Internal server error',
           error: error.message,
@@ -193,7 +194,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
         const updatedProduct = await ProductsService.updateProduct(id, updateData, tenantId);
         return reply.send(updatedProduct);
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in products endpoint', { error });
         if (error.message === 'Access denied') {
           return reply.status(403).send({ message: 'Access denied' });
         }
@@ -236,7 +237,7 @@ export default async function ProductsRoutes(fastify: FastifyInstance, _opts: Ro
 
         return reply.status(204).send();
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in products endpoint', { error });
         if (error.message === 'Access denied') {
           return reply.status(403).send({ message: 'Access denied' });
         }

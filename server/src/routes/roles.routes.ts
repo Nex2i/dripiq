@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { RoleService, CreateRoleData, CreatePermissionData } from '@/modules/role.service';
+import { logger } from '@/libs/logger';
 import {
   RoleCreateSchema,
   RoleGetAllSchema,
@@ -35,7 +36,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           roles,
         });
       } catch (error: any) {
-        fastify.log.error(`Error fetching roles: ${error.message}`);
+        logger.error(`Error fetching roles: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to fetch roles',
           error: error.message,
@@ -63,7 +64,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           permissions,
         });
       } catch (error: any) {
-        fastify.log.error(`Error fetching permissions: ${error.message}`);
+        logger.error(`Error fetching permissions: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to fetch permissions',
           error: error.message,
@@ -101,7 +102,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           role,
         });
       } catch (error: any) {
-        fastify.log.error(`Error fetching role: ${error.message}`);
+        logger.error(`Error fetching role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to fetch role',
           error: error.message,
@@ -131,7 +132,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           role,
         });
       } catch (error: any) {
-        fastify.log.error(`Error creating role: ${error.message}`);
+        logger.error(`Error creating role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to create role',
           error: error.message,
@@ -164,7 +165,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           permission,
         });
       } catch (error: any) {
-        fastify.log.error(`Error creating permission: ${error.message}`);
+        logger.error(`Error creating permission: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to create permission',
           error: error.message,
@@ -202,7 +203,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           rolePermission,
         });
       } catch (error: any) {
-        fastify.log.error(`Error assigning permission to role: ${error.message}`);
+        logger.error(`Error assigning permission to role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to assign permission to role',
           error: error.message,
@@ -237,7 +238,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           message: 'Permission removed from role successfully',
         });
       } catch (error: any) {
-        fastify.log.error(`Error removing permission from role: ${error.message}`);
+        logger.error(`Error removing permission from role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to remove permission from role',
           error: error.message,
@@ -275,7 +276,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           role,
         });
       } catch (error: any) {
-        fastify.log.error(`Error updating role: ${error.message}`);
+        logger.error(`Error updating role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to update role',
           error: error.message,
@@ -309,7 +310,7 @@ export default async function RolesRoutes(fastify: FastifyInstance, _opts: Route
           role,
         });
       } catch (error: any) {
-        fastify.log.error(`Error deleting role: ${error.message}`);
+        logger.error(`Error deleting role: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to delete role',
           error: error.message,
