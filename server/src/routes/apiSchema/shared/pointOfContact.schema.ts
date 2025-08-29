@@ -21,4 +21,5 @@ export const PointOfContactResponseSchema = Type.Object({
   manuallyReviewed: Type.Boolean({ description: 'Whether the contact has been manually reviewed' }),
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
+  strategyStatus: Type.Optional(Type.String({ description: 'Strategy status' })),
 });

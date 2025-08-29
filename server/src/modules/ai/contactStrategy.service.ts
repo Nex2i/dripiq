@@ -141,7 +141,7 @@ export const generateContactStrategy = async (
         error: statusError instanceof Error ? statusError.message : 'Unknown status error',
       });
     }
-    
+
     logger.error('Contact strategy generation failed', {
       leadId,
       contactId,
