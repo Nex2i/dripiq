@@ -550,10 +550,7 @@ class LeadsService {
   }
 
   // Get existing contact strategy for a contact
-  async getContactStrategy(
-    leadId: string,
-    contactId: string,
-  ): Promise<any> {
+  async getContactStrategy(leadId: string, contactId: string): Promise<any> {
     const authHeaders = await authService.getAuthHeaders()
 
     const response = await fetch(
@@ -568,9 +565,7 @@ class LeadsService {
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(
-        errorData.message || 'Failed to get contact strategy',
-      )
+      throw new Error(errorData.message || 'Failed to get contact strategy')
     }
 
     const result = await response.json()
