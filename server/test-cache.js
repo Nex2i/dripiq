@@ -1,12 +1,10 @@
-// Simple cache test script
+// Simple cache test script for ioredis-based cache
 // Run with: node test-cache.js
 
-const { Keyv } = require('keyv');
-const KeyvRedis = require('@keyv/redis');
 const IORedis = require('ioredis');
 
 async function testCache() {
-    console.log('Testing cache connection...');
+    console.log('Testing direct ioredis cache...');
     
     try {
         // Get Redis URL from environment
@@ -49,83 +47,39 @@ async function testCache() {
         const keysBefore = await redis.keys('*');
         console.log('Keys in Redis before test:', keysBefore.length);
         
-        // Test 1: KeyvRedis with ioredis instance
-        console.log('\n=== Test 1: KeyvRedis with ioredis instance ===');
-        try {
-            const keyvRedis = new KeyvRedis(redis, {
-                namespace: 'dripiq',
-            });
-            
-            const keyv1 = new Keyv({
-                store: keyvRedis,
-                ttl: 3600 * 1000,
-            });
-            
-            const testKey1 = 'test1:' + Date.now();
-            const testValue1 = { message: 'Hello from Keyv1', timestamp: Date.now() };
-            
-            console.log('Setting value with KeyvRedis...');
-            await keyv1.set(testKey1, testValue1, 30000);
-            
-            console.log('Getting value with KeyvRedis...');
-            const retrieved1 = await keyv1.get(testKey1);
-            
-            console.log('Retrieved value:', retrieved1);
-            console.log('Test 1 result:', retrieved1 && retrieved1.message === testValue1.message ? 'PASS' : 'FAIL');
-            
-        } catch (error) {
-            console.error('Test 1 failed:', error.message);
-        }
+        // Test cache-like operations with JSON serialization
+        console.log('\n=== Test: Direct ioredis with JSON ===');
         
-        // Test 2: KeyvRedis with connection string
-        console.log('\n=== Test 2: KeyvRedis with connection string ===');
-        try {
-            const keyv2 = new Keyv({
-                store: new KeyvRedis(redisUrl, {
-                    namespace: 'dripiq',
-                }),
-                ttl: 3600 * 1000,
-            });
-            
-            const testKey2 = 'test2:' + Date.now();
-            const testValue2 = { message: 'Hello from Keyv2', timestamp: Date.now() };
-            
-            console.log('Setting value with connection string...');
-            await keyv2.set(testKey2, testValue2, 30000);
-            
-            console.log('Getting value with connection string...');
-            const retrieved2 = await keyv2.get(testKey2);
-            
-            console.log('Retrieved value:', retrieved2);
-            console.log('Test 2 result:', retrieved2 && retrieved2.message === testValue2.message ? 'PASS' : 'FAIL');
-            
-        } catch (error) {
-            console.error('Test 2 failed:', error.message);
-        }
+        const namespace = 'dripiq';
+        const buildKey = (key) => `${namespace}:${key}`;
         
-        // Test 3: Direct Keyv with Redis URI
-        console.log('\n=== Test 3: Direct Keyv with Redis URI ===');
-        try {
-            const keyv3 = new Keyv(redisUrl, {
-                namespace: 'dripiq',
-                ttl: 3600 * 1000,
-            });
-            
-            const testKey3 = 'test3:' + Date.now();
-            const testValue3 = { message: 'Hello from Keyv3', timestamp: Date.now() };
-            
-            console.log('Setting value with direct Keyv...');
-            await keyv3.set(testKey3, testValue3, 30000);
-            
-            console.log('Getting value with direct Keyv...');
-            const retrieved3 = await keyv3.get(testKey3);
-            
-            console.log('Retrieved value:', retrieved3);
-            console.log('Test 3 result:', retrieved3 && retrieved3.message === testValue3.message ? 'PASS' : 'FAIL');
-            
-        } catch (error) {
-            console.error('Test 3 failed:', error.message);
-        }
+        // Test 1: Basic set/get with JSON
+        const testKey1 = buildKey('test1:' + Date.now());
+        const testValue1 = { message: 'Hello from ioredis', timestamp: Date.now() };
+        const serialized1 = JSON.stringify(testValue1);
+        
+        console.log('Setting JSON value with SETEX...');
+        await redis.setex(testKey1, 30, serialized1); // 30 seconds TTL
+        
+        console.log('Getting JSON value...');
+        const retrieved1 = await redis.get(testKey1);
+        const parsed1 = retrieved1 ? JSON.parse(retrieved1) : null;
+        
+        console.log('Retrieved value:', parsed1);
+        console.log('JSON test result:', parsed1 && parsed1.message === testValue1.message ? 'PASS' : 'FAIL');
+        
+        // Test 2: Check TTL
+        const ttl = await redis.ttl(testKey1);
+        console.log('TTL test:', ttl > 0 && ttl <= 30 ? 'PASS' : 'FAIL', `(TTL: ${ttl})`);
+        
+        // Test 3: EXISTS check
+        const exists = await redis.exists(testKey1);
+        console.log('EXISTS test:', exists === 1 ? 'PASS' : 'FAIL');
+        
+        // Test 4: Multiple values
+        const testKey2 = buildKey('test2:' + Date.now());
+        const testValue2 = { type: 'user', id: 123, active: true };
+        await redis.setex(testKey2, 60, JSON.stringify(testValue2));
         
         // Check what keys exist now
         console.log('\n=== Redis Key Inspection ===');
@@ -135,27 +89,31 @@ async function testCache() {
         const dripiqKeys = await redis.keys('dripiq:*');
         console.log('Keys with dripiq namespace:', dripiqKeys);
         
-        const testKeys = await redis.keys('*test*');
-        console.log('Keys containing "test":', testKeys);
-        
         // Try to get values directly from Redis
-        if (allKeys.length > 0) {
-            console.log('\nDirect Redis values:');
-            for (const key of allKeys.slice(0, 5)) { // Limit to first 5
+        if (dripiqKeys.length > 0) {
+            console.log('\nDripiq namespace values:');
+            for (const key of dripiqKeys) {
                 try {
                     const value = await redis.get(key);
-                    console.log(`${key}: ${value}`);
+                    const parsed = JSON.parse(value);
+                    console.log(`${key}: ${JSON.stringify(parsed)}`);
                 } catch (err) {
-                    console.log(`${key}: [error getting value]`);
+                    console.log(`${key}: [error parsing JSON: ${value}]`);
                 }
             }
         }
         
-        // Clean up
+        // Test cleanup
+        await redis.del(testKey1, testKey2);
         await redis.del('test:basic');
+        
+        console.log('\n=== Final Key Check ===');
+        const finalKeys = await redis.keys('dripiq:*');
+        console.log('Remaining dripiq keys after cleanup:', finalKeys);
+        
         await redis.quit();
         
-        console.log('\nCache test completed!');
+        console.log('\nDirect ioredis cache test completed successfully!');
         
     } catch (error) {
         console.error('Cache test failed:', error.message);

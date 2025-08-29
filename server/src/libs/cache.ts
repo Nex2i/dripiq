@@ -1,7 +1,6 @@
-import { Keyv } from 'keyv';
-import KeyvRedis from '@keyv/redis';
 import { createRedisConnection } from '@/libs/bullmq';
 import { logger } from '@/libs/logger';
+import type { Redis } from 'ioredis';
 
 export interface CacheManagerConfig {
   defaultTtl?: number;
@@ -15,8 +14,7 @@ export interface CacheOptions {
 }
 
 class CacheManager {
-  private keyv!: Keyv;
-  private redis: any;
+  private redis: Redis;
   private config: CacheManagerConfig;
 
   constructor(config: CacheManagerConfig = {}) {
@@ -33,26 +31,24 @@ class CacheManager {
 
   private setupCache(): void {
     try {
-      // Create KeyvRedis store using the existing ioredis connection from BullMQ
-      const keyvRedis = new KeyvRedis(this.redis, {
-        namespace: this.config.namespace,
+      // Add error handling for the Redis instance
+      this.redis.on('error', (error) => {
+        logger.error('Redis cache error', { error: String(error) });
       });
 
-      // Use Keyv directly instead of wrapping with cache-manager
-      this.keyv = new Keyv({
-        store: keyvRedis,
-        ttl: (this.config.defaultTtl || 3600) * 1000, // Convert to milliseconds
+      this.redis.on('connect', () => {
+        logger.info('Cache Redis connected');
       });
 
-      // Add error handling for the keyv instance
-      this.keyv.on('error', (error) => {
-        logger.error('Keyv error', { error: String(error) });
+      this.redis.on('ready', () => {
+        logger.info('Cache Redis ready');
       });
 
       logger.info('Cache manager initialized successfully', {
         namespace: this.config.namespace,
         defaultTtl: this.config.defaultTtl,
-        redisConnection: 'shared with BullMQ (ioredis)',
+        redisConnection: 'shared with BullMQ (ioredis direct)',
+        redisStatus: this.redis.status,
       });
     } catch (error) {
       logger.error('Failed to initialize cache manager', { error: String(error) });
@@ -66,18 +62,21 @@ class CacheManager {
   async set<T = any>(key: string, value: T, options?: CacheOptions): Promise<void> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const ttl = options?.ttl ? options.ttl * 1000 : undefined; // Convert to milliseconds, use default if not specified
+      const ttl = options?.ttl || this.config.defaultTtl || 3600; // TTL in seconds
+      const serializedValue = JSON.stringify(value);
 
       logger.info('Cache set attempt', { 
         key: fullKey, 
         valueType: typeof value, 
-        ttl: ttl ? ttl / 1000 : 'default',
-        hasValue: value !== undefined && value !== null
+        ttl,
+        hasValue: value !== undefined && value !== null,
+        serializedLength: serializedValue.length
       });
 
-      await this.keyv.set(fullKey, value, ttl);
+      // Use Redis SETEX to set with TTL
+      await this.redis.setex(fullKey, ttl, serializedValue);
 
-      logger.info('Cache set successful', { key: fullKey, ttl: ttl ? ttl / 1000 : 'default' });
+      logger.info('Cache set successful', { key: fullKey, ttl });
     } catch (error) {
       logger.error('Cache set failed', { key, fullKey: this.buildKey(key, options?.prefix), error: String(error) });
       throw error;
@@ -93,16 +92,23 @@ class CacheManager {
       
       logger.info('Cache get attempt', { key: fullKey });
       
-      const value = await this.keyv.get<T>(fullKey);
+      const serializedValue = await this.redis.get(fullKey);
+
+      if (serializedValue === null) {
+        logger.info('Cache get result', { key: fullKey, hit: false });
+        return null;
+      }
+
+      const value = JSON.parse(serializedValue) as T;
 
       logger.info('Cache get result', { 
         key: fullKey, 
-        hit: value !== undefined, 
+        hit: true, 
         valueType: typeof value,
-        hasValue: value !== undefined && value !== null
+        serializedLength: serializedValue.length
       });
 
-      return value !== undefined ? value : null;
+      return value;
     } catch (error) {
       logger.error('Cache get failed', { key, fullKey: this.buildKey(key, options?.prefix), error: String(error) });
       return null; // Return null on error instead of throwing
@@ -115,7 +121,7 @@ class CacheManager {
   async del(key: string, options?: CacheOptions): Promise<void> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      await this.keyv.delete(fullKey);
+      await this.redis.del(fullKey);
 
       logger.debug('Cache delete successful', { key: fullKey });
     } catch (error) {
@@ -130,8 +136,8 @@ class CacheManager {
   async has(key: string, options?: CacheOptions): Promise<boolean> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const value = await this.keyv.get(fullKey);
-      return value !== undefined;
+      const exists = await this.redis.exists(fullKey);
+      return exists === 1;
     } catch (error) {
       logger.error('Cache has check failed', { key, error: String(error) });
       return false;
@@ -166,8 +172,15 @@ class CacheManager {
    */
   async clear(): Promise<void> {
     try {
-      await this.keyv.clear();
-      logger.info('Cache cleared successfully');
+      const pattern = `${this.config.namespace}:*`;
+      const keys = await this.redis.keys(pattern);
+      
+      if (keys.length > 0) {
+        await this.redis.del(...keys);
+        logger.info('Cache cleared successfully', { keysDeleted: keys.length });
+      } else {
+        logger.info('Cache clear - no keys to delete');
+      }
     } catch (error) {
       logger.error('Cache clear failed', { error: String(error) });
       throw error;
@@ -185,20 +198,20 @@ class CacheManager {
   }> {
     try {
       // Test basic Redis operations
-      const testKey = `test:${Date.now()}`;
-      const testValue = 'test-value';
+      const testKey = this.buildKey(`test:${Date.now()}`);
+      const testValue = { message: 'test-value', timestamp: Date.now() };
 
       // Test set
-      await this.keyv.set(testKey, testValue, 10000); // 10 seconds TTL
+      await this.set('test-connection', testValue, { ttl: 10 });
       logger.debug('Cache test set successful', { key: testKey });
 
       // Test get
-      const retrieved = await this.keyv.get(testKey);
-      const getTest = retrieved === testValue;
-      logger.debug('Cache test get', { key: testKey, value: retrieved, success: getTest });
+      const retrieved = await this.get<typeof testValue>('test-connection');
+      const getTest = retrieved !== null && retrieved.message === testValue.message;
+      logger.debug('Cache test get', { key: testKey, retrieved, success: getTest });
 
       // Cleanup
-      await this.keyv.delete(testKey);
+      await this.del('test-connection');
 
       return {
         connected: true,
@@ -283,7 +296,7 @@ class CacheManager {
 
       // Set TTL if specified
       if (options?.ttl || this.config.defaultTtl) {
-        const ttl = options?.ttl || this.config.defaultTtl;
+        const ttl = options?.ttl || this.config.defaultTtl || 3600;
         await this.redis.expire(fullKey, ttl);
       }
 
@@ -357,7 +370,7 @@ class CacheManager {
       const info = await this.redis.info('memory');
 
       const memoryMatch = info.match(/used_memory_human:([^\r\n]+)/);
-      const memory = memoryMatch ? memoryMatch[1].trim() : 'unknown';
+      const memory = memoryMatch ? memoryMatch[1]?.trim() || 'unknown' : 'unknown';
 
       // Get a sample of keys for debugging
       const sampleKeys = keys.slice(0, 10);

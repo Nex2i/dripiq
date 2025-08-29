@@ -53,7 +53,6 @@
     "@fastify/type-provider-typebox": "^5.1.0",
     "@highlight-run/node": "^3.12.21",
     "@highlight-run/pino": "^0.1.6",
-    "@keyv/redis": "^5.1.1",
     "@langchain/core": "^0.3.72",
     "@langchain/openai": "^0.6.9",
     "@mendable/firecrawl-js": "^1.29.3",
