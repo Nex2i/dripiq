@@ -1,4 +1,3 @@
-import { createCache } from 'cache-manager';
 import { Keyv } from 'keyv';
 import KeyvRedis from '@keyv/redis';
 import { createRedisConnection } from '@/libs/bullmq';
@@ -16,9 +15,8 @@ export interface CacheOptions {
 }
 
 class CacheManager {
-  private cache: any;
-  private redis: any;
   private keyv!: Keyv;
+  private redis: any;
   private config: CacheManagerConfig;
 
   constructor(config: CacheManagerConfig = {}) {
@@ -36,20 +34,19 @@ class CacheManager {
   private setupCache(): void {
     try {
       // Create KeyvRedis store using the existing ioredis connection from BullMQ
-      // This ensures we share the same Redis connection pool
       const keyvRedis = new KeyvRedis(this.redis, {
         namespace: this.config.namespace,
       });
 
-      // Create Keyv instance with KeyvRedis store
+      // Use Keyv directly instead of wrapping with cache-manager
       this.keyv = new Keyv({
         store: keyvRedis,
         ttl: (this.config.defaultTtl || 3600) * 1000, // Convert to milliseconds
       });
 
-      // Create cache-manager instance with Keyv store
-      this.cache = createCache({
-        stores: [this.keyv],
+      // Add error handling for the keyv instance
+      this.keyv.on('error', (error) => {
+        logger.error('Keyv error', { error: String(error) });
       });
 
       logger.info('Cache manager initialized successfully', {
@@ -69,13 +66,20 @@ class CacheManager {
   async set<T = any>(key: string, value: T, options?: CacheOptions): Promise<void> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const ttl = options?.ttl || this.config.defaultTtl || 3600;
+      const ttl = options?.ttl ? options.ttl * 1000 : undefined; // Convert to milliseconds, use default if not specified
 
-      await this.cache.set(fullKey, value, ttl * 1000); // Convert to milliseconds
+      logger.info('Cache set attempt', { 
+        key: fullKey, 
+        valueType: typeof value, 
+        ttl: ttl ? ttl / 1000 : 'default',
+        hasValue: value !== undefined && value !== null
+      });
 
-      logger.debug('Cache set successful', { key: fullKey, ttl });
+      await this.keyv.set(fullKey, value, ttl);
+
+      logger.info('Cache set successful', { key: fullKey, ttl: ttl ? ttl / 1000 : 'default' });
     } catch (error) {
-      logger.error('Cache set failed', { key, error: String(error) });
+      logger.error('Cache set failed', { key, fullKey: this.buildKey(key, options?.prefix), error: String(error) });
       throw error;
     }
   }
@@ -86,13 +90,21 @@ class CacheManager {
   async get<T = any>(key: string, options?: CacheOptions): Promise<T | null> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const value = await this.cache.get(fullKey);
+      
+      logger.info('Cache get attempt', { key: fullKey });
+      
+      const value = await this.keyv.get<T>(fullKey);
 
-      logger.debug('Cache get', { key: fullKey, hit: value !== undefined });
+      logger.info('Cache get result', { 
+        key: fullKey, 
+        hit: value !== undefined, 
+        valueType: typeof value,
+        hasValue: value !== undefined && value !== null
+      });
 
-      return value || null;
+      return value !== undefined ? value : null;
     } catch (error) {
-      logger.error('Cache get failed', { key, error: String(error) });
+      logger.error('Cache get failed', { key, fullKey: this.buildKey(key, options?.prefix), error: String(error) });
       return null; // Return null on error instead of throwing
     }
   }
@@ -103,7 +115,7 @@ class CacheManager {
   async del(key: string, options?: CacheOptions): Promise<void> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      await this.cache.del(fullKey);
+      await this.keyv.delete(fullKey);
 
       logger.debug('Cache delete successful', { key: fullKey });
     } catch (error) {
@@ -118,7 +130,7 @@ class CacheManager {
   async has(key: string, options?: CacheOptions): Promise<boolean> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const value = await this.cache.get(fullKey);
+      const value = await this.keyv.get(fullKey);
       return value !== undefined;
     } catch (error) {
       logger.error('Cache has check failed', { key, error: String(error) });
@@ -159,6 +171,48 @@ class CacheManager {
     } catch (error) {
       logger.error('Cache clear failed', { error: String(error) });
       throw error;
+    }
+  }
+
+  /**
+   * Test Redis connection and basic operations
+   */
+  async testConnection(): Promise<{
+    connected: boolean;
+    setTest: boolean;
+    getTest: boolean;
+    error?: string;
+  }> {
+    try {
+      // Test basic Redis operations
+      const testKey = `test:${Date.now()}`;
+      const testValue = 'test-value';
+
+      // Test set
+      await this.keyv.set(testKey, testValue, 10000); // 10 seconds TTL
+      logger.debug('Cache test set successful', { key: testKey });
+
+      // Test get
+      const retrieved = await this.keyv.get(testKey);
+      const getTest = retrieved === testValue;
+      logger.debug('Cache test get', { key: testKey, value: retrieved, success: getTest });
+
+      // Cleanup
+      await this.keyv.delete(testKey);
+
+      return {
+        connected: true,
+        setTest: true,
+        getTest,
+      };
+    } catch (error) {
+      logger.error('Cache connection test failed', { error: String(error) });
+      return {
+        connected: false,
+        setTest: false,
+        getTest: false,
+        error: String(error),
+      };
     }
   }
 
@@ -295,6 +349,7 @@ class CacheManager {
     memory: string;
     hits?: number;
     misses?: number;
+    sampleKeys?: string[];
   }> {
     try {
       const pattern = `${this.config.namespace}:*`;
@@ -304,13 +359,61 @@ class CacheManager {
       const memoryMatch = info.match(/used_memory_human:([^\r\n]+)/);
       const memory = memoryMatch ? memoryMatch[1].trim() : 'unknown';
 
+      // Get a sample of keys for debugging
+      const sampleKeys = keys.slice(0, 10);
+
       return {
         keys: keys.length,
         memory,
+        sampleKeys,
       };
     } catch (error) {
       logger.error('Cache stats failed', { error: String(error) });
       return { keys: 0, memory: 'unknown' };
+    }
+  }
+
+  /**
+   * Debug method to inspect Redis directly
+   */
+  async inspectRedis(): Promise<{
+    allKeys: string[];
+    namespaceKeys: string[];
+    redisInfo: any;
+  }> {
+    try {
+      // Get all keys
+      const allKeys = await this.redis.keys('*');
+      
+      // Get keys in our namespace
+      const namespaceKeys = await this.redis.keys(`${this.config.namespace}:*`);
+      
+      // Get Redis info
+      const redisInfo = {
+        connected: this.redis.status === 'ready',
+        status: this.redis.status,
+        mode: this.redis.mode,
+      };
+
+      logger.info('Redis inspection', {
+        totalKeys: allKeys.length,
+        namespaceKeys: namespaceKeys.length,
+        namespace: this.config.namespace,
+        redisStatus: this.redis.status,
+      });
+
+      return {
+        allKeys: allKeys.slice(0, 20), // Limit to first 20 for safety
+        namespaceKeys,
+        redisInfo,
+      };
+    } catch (error) {
+      logger.error('Redis inspection failed', { error: String(error) });
+      return {
+        allKeys: [],
+        namespaceKeys: [],
+        redisInfo: { error: String(error) },
+      };
     }
   }
 }
@@ -336,4 +439,6 @@ export const {
   expire: cacheExpire,
   ttl: cacheTtl,
   getStats: cacheGetStats,
+  testConnection: cacheTestConnection,
+  inspectRedis: cacheInspectRedis,
 } = cacheManager;
