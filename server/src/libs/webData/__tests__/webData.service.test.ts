@@ -1,8 +1,18 @@
 import { WebDataService } from '../webData.service';
 import { IWebDataProvider } from '../interfaces/webData.interface';
-import { mockEmployee, mockCompany } from './mocks';
+import { mockEmployee, mockCompany } from '../__mocks__';
 
 // Mock dependencies
+jest.mock('@/libs/cache-client');
+jest.mock('@/libs/cache', () => ({
+  cacheManager: {
+    set: jest.fn(),
+    get: jest.fn(),
+  },
+}));
+jest.mock('@/libs/bullmq', () => ({
+  createRedisConnection: jest.fn(),
+}));
 jest.mock('@/libs/logger', () => ({
   logger: {
     debug: jest.fn(),
@@ -13,7 +23,21 @@ jest.mock('@/libs/logger', () => ({
 }));
 
 // Create a mock provider for testing
-const createMockProvider = (name = 'MockProvider', healthy = true): IWebDataProvider => ({
+const createMockProvider = (
+  name = 'MockProvider',
+  healthy = true
+): IWebDataProvider & {
+  searchEmployees: jest.MockedFunction<IWebDataProvider['searchEmployees']>;
+  getEmployeeById: jest.MockedFunction<IWebDataProvider['getEmployeeById']>;
+  searchCompanies: jest.MockedFunction<IWebDataProvider['searchCompanies']>;
+  getCompanyById: jest.MockedFunction<IWebDataProvider['getCompanyById']>;
+  getCompanyByDomain: jest.MockedFunction<IWebDataProvider['getCompanyByDomain']>;
+  getEmployeesByCompany: jest.MockedFunction<IWebDataProvider['getEmployeesByCompany']>;
+  getCompanyWithAllEmployees: jest.MockedFunction<IWebDataProvider['getCompanyWithAllEmployees']>;
+  healthCheck: jest.MockedFunction<IWebDataProvider['healthCheck']>;
+  clearCache: jest.MockedFunction<IWebDataProvider['clearCache']>;
+  getCacheStats: jest.MockedFunction<IWebDataProvider['getCacheStats']>;
+} => ({
   providerName: name,
   isHealthy: healthy,
   searchEmployees: jest.fn(),
@@ -30,7 +54,7 @@ const createMockProvider = (name = 'MockProvider', healthy = true): IWebDataProv
 
 describe('WebDataService', () => {
   let service: WebDataService;
-  let mockProvider: IWebDataProvider;
+  let mockProvider: ReturnType<typeof createMockProvider>;
 
   beforeEach(() => {
     // Use custom provider to avoid CoreSignal client initialization issues
@@ -263,12 +287,8 @@ describe('WebDataService', () => {
 
     it('should return provider health status', () => {
       // Create new providers with different health status
-      const unhealthyProvider = Object.assign(createMockProvider(), {
-        isHealthy: false,
-      });
-      const healthyProvider = Object.assign(createMockProvider(), {
-        isHealthy: true,
-      });
+      const unhealthyProvider = createMockProvider('UnhealthyProvider', false);
+      const healthyProvider = createMockProvider('HealthyProvider', true);
 
       service.switchProvider('custom', unhealthyProvider);
       expect(service.isHealthy).toBe(false);

@@ -1,4 +1,4 @@
-import { Company, CompanySearchResponse } from '../../types';
+import { Company, CompanySearchResponse } from '../types';
 
 export const mockCompany: Company = {
   id: 'comp_456',

@@ -7,7 +7,7 @@ import {
   mockCompany,
   mockCompanySearchResponse,
   mockCompanyWithEmployees,
-} from './mocks';
+} from '../__mocks__';
 
 // Mock dependencies
 jest.mock('axios');
