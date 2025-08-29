@@ -7,8 +7,9 @@ declare module 'fastify' {
     authPrehandler: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     firecrawlAuth: Record<string, any>;
     authCache: {
-      clear: (supabaseId?: string) => void;
-      cleanup: () => void;
+      clear: (supabaseId?: string) => Promise<void>;
+      getStats: () => Promise<any>;
+      refresh: (supabaseId: string) => Promise<boolean>;
     };
   }
 }
