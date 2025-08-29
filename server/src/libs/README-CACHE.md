@@ -5,6 +5,7 @@ A comprehensive Redis-based cache manager that integrates with the existing Bull
 ## Overview
 
 This cache manager provides:
+
 - **Shared Redis Connection**: Uses the same ioredis connection as BullMQ for efficient resource utilization
 - **Easy-to-use Interface**: Multiple client interfaces for different use cases
 - **Type Safety**: Full TypeScript support with generics
@@ -56,11 +57,15 @@ await setCacheJson('config:settings', { theme: 'dark', lang: 'en' }, 3600);
 const settings = await getCacheJson('config:settings');
 
 // Session management
-await defaultCacheClient.setSession('sess_123', {
-  userId: '456',
-  role: 'admin',
-  permissions: ['read', 'write']
-}, 7200);
+await defaultCacheClient.setSession(
+  'sess_123',
+  {
+    userId: '456',
+    role: 'admin',
+    permissions: ['read', 'write'],
+  },
+  7200
+);
 
 const session = await defaultCacheClient.getSession('sess_123');
 ```
@@ -103,11 +108,11 @@ const stats = await cacheManager.getStats();
 Feature-rich client with common patterns:
 
 ```typescript
-import { 
-  defaultCacheClient, 
-  userCacheClient, 
-  apiCacheClient, 
-  sessionCacheClient 
+import {
+  defaultCacheClient,
+  userCacheClient,
+  apiCacheClient,
+  sessionCacheClient,
 } from '@/libs/cache-client';
 
 // Memoization
@@ -120,8 +125,8 @@ const result = await defaultCacheClient.memoize(
 // Rate limiting
 const { count, remaining } = await defaultCacheClient.incrementRateLimit(
   'api:user:123',
-  60,  // window in seconds
-  100  // limit
+  60, // window in seconds
+  100 // limit
 );
 
 // Feature flags
@@ -144,7 +149,7 @@ await authCacheRedis.clearToken('jwt_token_123');
 // User auth data
 await authCacheRedis.set('supabase_user_123', {
   user: { id: '123', email: 'user@example.com' },
-  userTenants: [{ id: 'tenant1', name: 'Company', isSuperUser: false }]
+  userTenants: [{ id: 'tenant1', name: 'Company', isSuperUser: false }],
 });
 
 const authData = await authCacheRedis.get('supabase_user_123');
@@ -158,17 +163,17 @@ const authData = await authCacheRedis.get('supabase_user_123');
 async function getUser(id: string) {
   // Try cache first
   let user = await getCacheJson(`user:${id}`);
-  
+
   if (!user) {
     // Cache miss - fetch from database
     user = await database.getUser(id);
-    
+
     // Store in cache
     if (user) {
       await setCacheJson(`user:${id}`, user, 3600);
     }
   }
-  
+
   return user;
 }
 ```
@@ -179,10 +184,10 @@ async function getUser(id: string) {
 async function updateUser(id: string, data: UserData) {
   // Update database
   const user = await database.updateUser(id, data);
-  
+
   // Update cache
   await setCacheJson(`user:${id}`, user, 3600);
-  
+
   return user;
 }
 ```
@@ -197,13 +202,13 @@ await defaultCacheClient.warmCache([
   {
     key: 'popular:products',
     fetcher: () => database.getPopularProducts(),
-    ttl: 1800
+    ttl: 1800,
   },
   {
     key: 'config:app_settings',
     fetcher: () => database.getAppSettings(),
-    ttl: 3600
-  }
+    ttl: 3600,
+  },
 ]);
 ```
 
@@ -213,7 +218,7 @@ await defaultCacheClient.warmCache([
 // Bulk set
 await defaultCacheClient.bulkSet([
   { key: 'user:1', value: { name: 'John' }, ttl: 3600 },
-  { key: 'user:2', value: { name: 'Jane' }, ttl: 3600 }
+  { key: 'user:2', value: { name: 'Jane' }, ttl: 3600 },
 ]);
 
 // Bulk get
@@ -237,9 +242,9 @@ BULLMQ_PREFIX=dripiq  # Optional: namespace for all cache keys
 import { CacheManager } from '@/libs/cache';
 
 const customCache = new CacheManager({
-  defaultTtl: 1800,      // 30 minutes default TTL
-  maxKeys: 50000,        // Maximum keys (informational)
-  namespace: 'myapp'     // Custom namespace
+  defaultTtl: 1800, // 30 minutes default TTL
+  maxKeys: 50000, // Maximum keys (informational)
+  namespace: 'myapp', // Custom namespace
 });
 ```
 
@@ -251,8 +256,8 @@ const customCache = new CacheManager({
 // API rate limiting
 const limit = await defaultCacheClient.incrementRateLimit(
   `api:${userIp}`,
-  60,   // 1 minute window
-  100   // 100 requests max
+  60, // 1 minute window
+  100 // 100 requests max
 );
 
 if (limit.remaining <= 0) {
@@ -264,12 +269,8 @@ if (limit.remaining <= 0) {
 
 ```typescript
 // Automatic memoization of expensive functions
-const memoizedFunction = (userId: string) => 
-  defaultCacheClient.memoize(
-    `user:${userId}:profile`,
-    () => fetchUserProfile(userId),
-    3600
-  );
+const memoizedFunction = (userId: string) =>
+  defaultCacheClient.memoize(`user:${userId}:profile`, () => fetchUserProfile(userId), 3600);
 ```
 
 ### Health Monitoring
@@ -299,7 +300,7 @@ async function getDataWithFallback(key: string) {
   } catch (error) {
     console.error('Cache error, falling back to database:', error);
   }
-  
+
   // Fallback to database
   return await database.getData(key);
 }
@@ -313,13 +314,9 @@ async function getDataWithFallback(key: string) {
 // In your route handler
 fastify.get('/api/users/:id', async (request, reply) => {
   const { id } = request.params;
-  
-  const user = await defaultCacheClient.memoize(
-    `user:${id}`,
-    () => userService.getUser(id),
-    3600
-  );
-  
+
+  const user = await defaultCacheClient.memoize(`user:${id}`, () => userService.getUser(id), 3600);
+
   return user;
 });
 ```
@@ -329,13 +326,9 @@ fastify.get('/api/users/:id', async (request, reply) => {
 ```typescript
 class UserService {
   async getUser(id: string) {
-    return userCacheClient.memoize(
-      `profile:${id}`,
-      () => this.fetchFromDatabase(id),
-      3600
-    );
+    return userCacheClient.memoize(`profile:${id}`, () => this.fetchFromDatabase(id), 3600);
   }
-  
+
   async invalidateUser(id: string) {
     await userCacheClient.deleteUserCache(id);
   }
@@ -350,17 +343,17 @@ import { cacheSet, cacheGet } from '@/libs/cache';
 
 const processJob = async (job: Job) => {
   const cacheKey = `job:${job.id}:result`;
-  
+
   // Check if already processed
   const cached = await cacheGet(cacheKey);
   if (cached) return cached;
-  
+
   // Process job
   const result = await performProcessing(job.data);
-  
+
   // Cache result
   await cacheSet(cacheKey, result, { ttl: 3600 });
-  
+
   return result;
 };
 ```

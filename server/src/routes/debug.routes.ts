@@ -35,9 +35,9 @@ export default async function Debug(fastify: FastifyInstance, _opts: RouteOption
     handler: async (_request: FastifyRequest, reply: FastifyReply) => {
       try {
         const connectionTest = await cacheTestConnection();
-        
+
         logger.info('Cache test results', connectionTest);
-        
+
         reply.send({
           success: true,
           redis: connectionTest,
@@ -88,15 +88,15 @@ export default async function Debug(fastify: FastifyInstance, _opts: RouteOption
     ) => {
       try {
         const { key, value, ttl } = request.body;
-        
+
         // Test set
         await cacheManager.set(key, value, { ttl });
         logger.info('Manual cache set', { key, value, ttl });
-        
+
         // Test get immediately
         const retrievedValue = await cacheManager.get(key);
         logger.info('Manual cache get', { key, retrievedValue });
-        
+
         reply.send({
           success: true,
           set: true,
@@ -114,7 +114,7 @@ export default async function Debug(fastify: FastifyInstance, _opts: RouteOption
     },
   });
 
-    // Get cache stats
+  // Get cache stats
   fastify.route({
     method: HttpMethods.GET,
     url: `${basePath}/cache/stats`,

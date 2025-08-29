@@ -1,6 +1,6 @@
+import type { Redis } from 'ioredis';
 import { createRedisConnection } from '@/libs/bullmq';
 import { logger } from '@/libs/logger';
-import type { Redis } from 'ioredis';
 
 export interface CacheManagerConfig {
   defaultTtl?: number;
@@ -65,12 +65,12 @@ class CacheManager {
       const ttl = options?.ttl || this.config.defaultTtl || 3600; // TTL in seconds
       const serializedValue = JSON.stringify(value);
 
-      logger.info('Cache set attempt', { 
-        key: fullKey, 
-        valueType: typeof value, 
+      logger.info('Cache set attempt', {
+        key: fullKey,
+        valueType: typeof value,
         ttl,
         hasValue: value !== undefined && value !== null,
-        serializedLength: serializedValue.length
+        serializedLength: serializedValue.length,
       });
 
       // Use Redis SETEX to set with TTL
@@ -78,7 +78,11 @@ class CacheManager {
 
       logger.info('Cache set successful', { key: fullKey, ttl });
     } catch (error) {
-      logger.error('Cache set failed', { key, fullKey: this.buildKey(key, options?.prefix), error: String(error) });
+      logger.error('Cache set failed', {
+        key,
+        fullKey: this.buildKey(key, options?.prefix),
+        error: String(error),
+      });
       throw error;
     }
   }
@@ -89,9 +93,9 @@ class CacheManager {
   async get<T = any>(key: string, options?: CacheOptions): Promise<T | null> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      
+
       logger.info('Cache get attempt', { key: fullKey });
-      
+
       const serializedValue = await this.redis.get(fullKey);
 
       if (serializedValue === null) {
@@ -101,16 +105,20 @@ class CacheManager {
 
       const value = JSON.parse(serializedValue) as T;
 
-      logger.info('Cache get result', { 
-        key: fullKey, 
-        hit: true, 
+      logger.info('Cache get result', {
+        key: fullKey,
+        hit: true,
         valueType: typeof value,
-        serializedLength: serializedValue.length
+        serializedLength: serializedValue.length,
       });
 
       return value;
     } catch (error) {
-      logger.error('Cache get failed', { key, fullKey: this.buildKey(key, options?.prefix), error: String(error) });
+      logger.error('Cache get failed', {
+        key,
+        fullKey: this.buildKey(key, options?.prefix),
+        error: String(error),
+      });
       return null; // Return null on error instead of throwing
     }
   }
@@ -174,7 +182,7 @@ class CacheManager {
     try {
       const pattern = `${this.config.namespace}:*`;
       const keys = await this.redis.keys(pattern);
-      
+
       if (keys.length > 0) {
         await this.redis.del(...keys);
         logger.info('Cache cleared successfully', { keysDeleted: keys.length });
@@ -397,10 +405,10 @@ class CacheManager {
     try {
       // Get all keys
       const allKeys = await this.redis.keys('*');
-      
+
       // Get keys in our namespace
       const namespaceKeys = await this.redis.keys(`${this.config.namespace}:*`);
-      
+
       // Get Redis info
       const redisInfo = {
         connected: this.redis.status === 'ready',

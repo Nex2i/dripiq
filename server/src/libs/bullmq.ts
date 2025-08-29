@@ -5,11 +5,11 @@ import {
   QueueOptions,
   WorkerOptions,
   QueueEventsOptions,
-  type Processor,
 } from 'bullmq';
 import Redis, { type RedisOptions } from 'ioredis';
 import { logger } from '@/libs/logger';
 import { BULLMQ_PREFIX } from '@/config';
+import { Processor } from 'bullmq/dist/esm/types/processor';
 
 export type RedisConnectionOptions = RedisOptions & { maxRetriesPerRequest?: number | null };
 
