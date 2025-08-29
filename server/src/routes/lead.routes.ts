@@ -4,7 +4,11 @@ import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { LeadInitialProcessingPublisher } from '@/modules/messages/leadInitialProcessing.publisher.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
-import { generateContactStrategy, updateContactStrategy, retrieveContactStrategyFromDatabase } from '@/modules/ai';
+import {
+  generateContactStrategy,
+  updateContactStrategy,
+  retrieveContactStrategyFromDatabase,
+} from '@/modules/ai';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
 import {
@@ -581,6 +585,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         required: ['leadId', 'contactId'],
       },
       response: {
+        ...defaultRouteResponse(),
         200: {
           type: 'object',
           description: 'Campaign plan',
@@ -593,7 +598,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
             message: { type: 'string' },
           },
         },
-        ...defaultRouteResponse(),
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
@@ -643,6 +647,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Leads'],
       ...LeadContactStrategySchema,
       response: {
+        ...defaultRouteResponse(),
         200: {
           type: 'object',
           properties: {
@@ -650,7 +655,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
             message: { type: 'string' },
           },
         },
-        ...defaultRouteResponse(),
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
