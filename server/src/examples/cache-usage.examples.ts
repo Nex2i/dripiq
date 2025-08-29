@@ -177,7 +177,7 @@ async function bulkOperationsExamples() {
   await defaultCacheClient.bulkSet([
     { key: 'config:app_name', value: 'DripIQ', ttl: 3600 },
     { key: 'config:version', value: '1.0.0', ttl: 3600 },
-    { key: 'config:maintenance', value: false, ttl: 300 }
+    { key: 'config:maintenance', value: 'false', ttl: 300 }
   ]);
   
   // Bulk get multiple cache entries
@@ -212,7 +212,11 @@ async function cacheWarmingExamples() {
       key: 'popular:posts',
       fetcher: async () => {
         // Simulate expensive query
-        return ['post1', 'post2', 'post3'];
+        return [
+          { id: 1, name: 'post1' },
+          { id: 2, name: 'post2' },
+          { id: 3, name: 'post3' }
+        ];
       },
       ttl: 900
     }

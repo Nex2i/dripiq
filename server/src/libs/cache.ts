@@ -35,12 +35,13 @@ class CacheManager {
 
   private setupCache(): void {
     try {
-      // Create KeyvRedis store using the existing Redis connection
+      // Create KeyvRedis store using the existing ioredis connection from BullMQ
+      // This ensures we share the same Redis connection pool
       const keyvRedis = new KeyvRedis(this.redis, {
         namespace: this.config.namespace,
       });
 
-      // Create Keyv instance with Redis store
+      // Create Keyv instance with KeyvRedis store
       this.keyv = new Keyv({
         store: keyvRedis,
         ttl: (this.config.defaultTtl || 3600) * 1000, // Convert to milliseconds
@@ -54,6 +55,7 @@ class CacheManager {
       logger.info('Cache manager initialized successfully', {
         namespace: this.config.namespace,
         defaultTtl: this.config.defaultTtl,
+        redisConnection: 'shared with BullMQ (ioredis)',
       });
     } catch (error) {
       logger.error('Failed to initialize cache manager', { error: String(error) });
@@ -67,7 +69,7 @@ class CacheManager {
   async set<T = any>(key: string, value: T, options?: CacheOptions): Promise<void> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const ttl = options?.ttl || this.config.defaultTtl;
+      const ttl = options?.ttl || this.config.defaultTtl || 3600;
       
       await this.cache.set(fullKey, value, ttl * 1000); // Convert to milliseconds
       
@@ -84,7 +86,7 @@ class CacheManager {
   async get<T = any>(key: string, options?: CacheOptions): Promise<T | null> {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
-      const value = await this.cache.get<T>(fullKey);
+      const value = await this.cache.get(fullKey);
       
       logger.debug('Cache get', { key: fullKey, hit: value !== undefined });
       
