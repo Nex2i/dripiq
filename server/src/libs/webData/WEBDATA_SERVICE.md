@@ -51,6 +51,8 @@ console.log(info); // { type: 'coresignal', name: 'CoreSignal', isHealthy: true 
 - **Status**: ✅ Fully Implemented
 - **Features**: Employee search, company search, comprehensive data
 - **Setup**: Requires `CORESIGNAL_API_KEY` in environment
+- **Documentation**: [CoreSignal API Docs](https://docs.coresignal.com/api)
+- **Free Testing**: [CoreSignal Dashboard](https://dashboard.coresignal.com/sign-up) (200 free credits)
 
 ### Future Providers
 - **Apollo**: `'apollo'` (planned)
@@ -317,3 +319,41 @@ CORESIGNAL_API_KEY=your_coresignal_api_key_here
 # Future providers will add their own keys
 # APOLLO_API_KEY=your_apollo_api_key_here
 ```
+
+## Schema Validation and Real Data
+
+### Mock Data vs Real API Data
+
+The TypeScript interfaces and mock data in this implementation were created based on:
+
+- **Industry standards** for employee and company data APIs
+- **Common patterns** from professional data providers (LinkedIn, Apollo, ZoomInfo)
+- **Logical data structures** for employee profiles and company information
+- **Best practices** for API response formatting
+
+### Validating Against Real API
+
+**Important**: Before production use, validate the schemas against actual CoreSignal API responses:
+
+1. **Sign up for CoreSignal**: Get [free 200 credits](https://dashboard.coresignal.com/sign-up)
+2. **Test real queries**: Use the API playground to see actual response structures
+3. **Compare schemas**: Check if our TypeScript interfaces match the real API
+4. **Update if needed**: Modify interfaces based on actual API responses
+
+### Schema Updates
+
+If you find differences between our interfaces and the real API:
+
+1. **Update Type Definitions**: Modify files in `types/` directory
+2. **Update Mock Data**: Adjust test mocks in `__tests__/mocks/`
+3. **Update Adapters**: Modify the provider adapters if field mappings change
+4. **Run Tests**: Ensure all tests pass with updated schemas
+
+### Official Documentation
+
+For the most accurate and up-to-date schema information:
+
+- **API Documentation**: [https://docs.coresignal.com/api](https://docs.coresignal.com/api)
+- **Employee API**: [https://docs.coresignal.com/api/employee](https://docs.coresignal.com/api/employee)
+- **Company API**: [https://docs.coresignal.com/api/company](https://docs.coresignal.com/api/company)
+- **Data Dictionary**: Available in the CoreSignal dashboard after signup

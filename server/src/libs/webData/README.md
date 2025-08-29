@@ -12,6 +12,35 @@ A comprehensive TypeScript client for the CoreSignal API that provides access to
 - **Logging**: Integrated with the application's Pino logger
 - **TypeScript**: Full TypeScript support with comprehensive type definitions
 
+## CoreSignal API Documentation
+
+This client is built for the CoreSignal API. For official documentation and reference:
+
+- **Official API Documentation**: [CoreSignal API Docs](https://docs.coresignal.com/api)
+- **Self-Service API Tool**: [CoreSignal Dashboard](https://dashboard.coresignal.com/sign-up) (Free 200 credits for testing)
+- **API Tutorial**: [Getting Started with CoreSignal API](https://coresignal.com/blog/api-self-service-tutorial/)
+- **Employee Data API**: [Employee API Documentation](https://docs.coresignal.com/api/employee)
+- **Company Data API**: [Company API Documentation](https://docs.coresignal.com/api/company)
+
+**Note**: The exact API endpoints and data schemas used in this client are based on the CoreSignal API v1 specification. Mock data and TypeScript interfaces have been created to match expected API response structures. For the most up-to-date field definitions and examples, please refer to the official documentation above.
+
+### Mock Data and Schema Creation
+
+The TypeScript interfaces and mock data in this client were created based on:
+
+1. **CoreSignal's Data Dictionary**: Available through their self-service API tool
+2. **Industry Standards**: Common employee and company data fields used across professional data APIs
+3. **API Response Patterns**: Typical structures for employee profiles, company information, and search results
+4. **Field Validation**: Cross-referenced with similar APIs (LinkedIn, Apollo, ZoomInfo) for completeness
+
+**To get actual data schemas**:
+1. Sign up for the [CoreSignal Dashboard](https://dashboard.coresignal.com/sign-up) (free 200 credits)
+2. Access the API playground to see real response structures
+3. Review the data dictionary for complete field definitions
+4. Test with sample queries to understand the actual data format
+
+**Important**: While the interfaces cover common use cases, the actual CoreSignal API may have additional fields or different naming conventions. Always validate against the official API responses for production use.
+
 ## Setup
 
 ### Environment Configuration

@@ -1,5 +1,13 @@
 /**
  * Company data types from CoreSignal API
+ *
+ * NOTE: These interfaces are based on industry standards and common patterns
+ * from professional data APIs. Before production use, validate these schemas
+ * against actual CoreSignal API responses using their free testing credits:
+ * https://dashboard.coresignal.com/sign-up
+ *
+ * For official field definitions, see:
+ * https://docs.coresignal.com/api/company
  */
 
 import { Employee } from './employee.types';
