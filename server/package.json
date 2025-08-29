@@ -20,6 +20,7 @@
     "db:migrate:new": "drizzle-kit generate --name ",
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:fresh": "CLEAR_DB=true npm run db:seed",
+    "db:backfill:strategy-status": "tsx src/scripts/backfill-strategy-status.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "nodemon": "nodemon --config nodemon.json",
