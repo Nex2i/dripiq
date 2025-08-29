@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { RoleService } from '@/modules/role.service';
 import { UserService } from '@/modules/user.service';
+import { logger } from '@/libs/logger';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -58,7 +59,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
 
         // Permission check passed, continue to route handler
       } catch (error: any) {
-        fastify.log.error(`Permission check error: ${error.message}`);
+        logger.error(`Permission check error: ${error.message}`);
         reply.status(500).send({ message: 'Permission check failed' });
       }
     }
@@ -100,7 +101,7 @@ async function permissionsPlugin(fastify: FastifyInstance) {
 
       // Admin check passed, continue to route handler
     } catch (error: any) {
-      fastify.log.error(`Admin check error: ${error.message}`);
+      logger.error(`Admin check error: ${error.message}`);
       reply.status(500).send({ message: 'Admin check failed' });
     }
   });

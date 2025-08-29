@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { InviteService, InviteDto, CreateInviteData } from '@/modules/invite.service';
+import { logger } from '@/libs/logger';
 import { SupabaseAdminService } from '@/modules/supabase-admin.service';
 import { handleExistingSupabaseUser, createNewUserInvite } from '@/modules/invite.handlers';
 import { UserService } from '@/modules/user.service';
@@ -51,7 +52,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error fetching users: ${error.message}`);
+        logger.error(`Error fetching users: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to fetch users',
           error: error.message,
@@ -102,7 +103,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
 
         reply.status(201).send(result);
       } catch (error: any) {
-        fastify.log.error(`Error creating invitation: ${error.message}`);
+        logger.error(`Error creating invitation: ${error.message}`);
 
         if (
           error.message.includes('already exists') ||
@@ -163,7 +164,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error activating user: ${error.message}`);
+        logger.error(`Error activating user: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to activate user account',
           error: error.message,
@@ -226,7 +227,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error resending invitation: ${error.message}`);
+        logger.error(`Error resending invitation: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to resend invitation',
           error: error.message,
@@ -272,7 +273,7 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
           },
         });
       } catch (error: any) {
-        fastify.log.error(`Error updating user role: ${error.message}`);
+        logger.error(`Error updating user role: ${error.message}`);
 
         if (error.message.includes('not found') || error.message.includes('Invalid role')) {
           reply.status(404).send({

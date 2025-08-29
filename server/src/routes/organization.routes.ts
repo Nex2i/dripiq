@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, RouteOptions } from 'fastify';
 import { Static } from '@sinclair/typebox';
 import { TenantService } from '@/modules/tenant.service';
+import { logger } from '@/libs/logger';
 import { OrganizationAnalyzerService } from '@/modules/ai/organizationAnalyzer.service';
 import { storageService } from '@/modules/storage/storage.service';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
@@ -66,7 +67,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           brandColors: tenant.brandColors || [],
         });
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in organization endpoint', { error });
         return reply.status(500).send({
           message: 'Internal server error',
           error: error.message,
@@ -126,7 +127,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           brandColors: updatedTenant.brandColors || [],
         });
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in organization endpoint', { error });
         if (error.message.includes('not found') || error.message.includes('access')) {
           return reply.status(404).send({ message: error.message });
         }
@@ -176,7 +177,7 @@ export default async function OrganizationRoutes(fastify: FastifyInstance, _opts
           siteAnalyzerResult,
         });
       } catch (error: any) {
-        fastify.log.error(error);
+        logger.error('Error in organization endpoint', { error });
         return reply.status(500).send({
           message: 'Internal server error',
           error: error.message,
