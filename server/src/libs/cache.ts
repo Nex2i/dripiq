@@ -1,5 +1,6 @@
-import { createCache, MemoryCache } from 'cache-manager';
+import { createCache } from 'cache-manager';
 import { Keyv } from 'keyv';
+import KeyvRedis from '@keyv/redis';
 import { createRedisConnection } from '@/libs/bullmq';
 import { logger } from '@/libs/logger';
 
@@ -15,9 +16,9 @@ export interface CacheOptions {
 }
 
 class CacheManager {
-  private cache: MemoryCache;
+  private cache: any;
   private redis: any;
-  private keyv: Keyv;
+  private keyv!: Keyv;
   private config: CacheManagerConfig;
 
   constructor(config: CacheManagerConfig = {}) {
@@ -34,11 +35,15 @@ class CacheManager {
 
   private setupCache(): void {
     try {
+      // Create KeyvRedis store using the existing Redis connection
+      const keyvRedis = new KeyvRedis(this.redis, {
+        namespace: this.config.namespace,
+      });
+
       // Create Keyv instance with Redis store
       this.keyv = new Keyv({
-        store: this.redis,
-        namespace: this.config.namespace,
-        ttl: this.config.defaultTtl * 1000, // Convert to milliseconds
+        store: keyvRedis,
+        ttl: (this.config.defaultTtl || 3600) * 1000, // Convert to milliseconds
       });
 
       // Create cache-manager instance with Keyv store
