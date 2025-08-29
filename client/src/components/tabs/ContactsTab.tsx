@@ -15,6 +15,7 @@ import {
   Plus,
   UserX,
 } from 'lucide-react'
+import { Menu, MenuItem, MenuSeparator } from '../ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import ContactStrategyModal from '../ContactStrategyModal'
@@ -188,7 +189,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const getStrategyButtonState = (contact: LeadPointOfContact) => {
     const isGenerating = qualifyingContactId === contact.id
     const strategyStatus = contact.strategyStatus || 'none'
-    
+
     if (isGenerating) {
       return {
         type: 'generating',
@@ -199,7 +200,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
         icon: <Loader2 className="h-4 w-4 animate-spin" />,
       }
     }
-    
+
     switch (strategyStatus) {
       case 'completed':
         return {
@@ -617,19 +618,6 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                       </>
                     ) : (
                       <>
-                        <button
-                          onClick={() => handleEditContact(contact)}
-                          disabled={
-                            editingContactId !== null ||
-                            qualifyingContactId === contact.id ||
-                            loadingContactId === contact.id
-                          }
-                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Edit contact"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                          <span className="text-sm font-medium">Edit</span>
-                        </button>
                         {(() => {
                           const buttonState = getStrategyButtonState(contact)
                           return (
@@ -649,26 +637,6 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                             </button>
                           )
                         })()}
-                        <button
-                          onClick={() => handleUnsubscribeContact(contact)}
-                          disabled={
-                            editingContactId !== null ||
-                            qualifyingContactId === contact.id ||
-                            unsubscribeContactMutation.isPending ||
-                            !contact.email
-                          }
-                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={
-                            !contact.email
-                              ? 'Contact must have an email to unsubscribe'
-                              : 'Unsubscribe this contact from email communications'
-                          }
-                        >
-                          <UserX className="h-4 w-4" />
-                          <span className="text-sm font-medium">
-                            Unsubscribe
-                          </span>
-                        </button>
                         <AnimatedCheckbox
                           checked={contact.manuallyReviewed}
                           onChange={() => handleToggleManuallyReviewed(contact)}
@@ -688,6 +656,37 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                               : 'Mark as manually reviewed'
                           }
                         />
+                        <Menu>
+                          <MenuItem
+                            onClick={() => handleEditContact(contact)}
+                            disabled={
+                              editingContactId !== null ||
+                              qualifyingContactId === contact.id ||
+                              loadingContactId === contact.id
+                            }
+                          >
+                            <div className="flex items-center space-x-2">
+                              <Edit3 className="h-4 w-4" />
+                              <span>Edit Contact</span>
+                            </div>
+                          </MenuItem>
+                          <MenuSeparator />
+                          <MenuItem
+                            onClick={() => handleUnsubscribeContact(contact)}
+                            disabled={
+                              editingContactId !== null ||
+                              qualifyingContactId === contact.id ||
+                              unsubscribeContactMutation.isPending ||
+                              !contact.email
+                            }
+                            variant="danger"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <UserX className="h-4 w-4" />
+                              <span>Unsubscribe</span>
+                            </div>
+                          </MenuItem>
+                        </Menu>
                       </>
                     )}
                   </div>
