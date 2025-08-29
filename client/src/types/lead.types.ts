@@ -16,6 +16,7 @@ export interface LeadPointOfContact {
   company?: string
   sourceUrl?: string
   manuallyReviewed: boolean
+  strategyStatus?: 'none' | 'generating' | 'completed' | 'failed'
   createdAt: string
   updatedAt: string
 }

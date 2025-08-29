@@ -231,6 +231,7 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
   company: text('company'),
   sourceUrl: text('source_url'), // URL where the contact information was found
   manuallyReviewed: boolean('manually_reviewed').notNull().default(false), // Whether the contact has been manually reviewed
+  strategyStatus: text('strategy_status').notNull().default('none'), // 'none' | 'generating' | 'completed' | 'failed'
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

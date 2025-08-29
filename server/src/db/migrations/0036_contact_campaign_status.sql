@@ -1,0 +1,1 @@
+ALTER TABLE "dripiq_app"."lead_point_of_contacts" ADD COLUMN "strategy_status" text DEFAULT 'none' NOT NULL;

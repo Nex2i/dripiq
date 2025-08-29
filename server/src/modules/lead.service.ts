@@ -159,7 +159,7 @@ export const getLeadById = async (
     // Get lead with owner information using repository
     const leadData = await leadRepository.findById(id);
 
-    // Get point of contacts for this lead
+    // Get point of contacts for this lead - strategyStatus is already stored in DB
     const contacts = await leadPointOfContactRepository.findByLeadId(id);
 
     // Get statuses for this lead (handle case where table doesn't exist yet)

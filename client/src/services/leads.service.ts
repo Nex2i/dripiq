@@ -525,7 +525,7 @@ class LeadsService {
   async generateContactStrategy(
     leadId: string,
     contactId: string,
-  ): Promise<any> {
+  ): Promise<{ success: boolean; message: string }> {
     const authHeaders = await authService.getAuthHeaders()
 
     const response = await fetch(
@@ -542,6 +542,34 @@ class LeadsService {
       const errorData = await response.json()
       throw new Error(
         errorData.message || 'Failed to generate contact strategy',
+      )
+    }
+
+    const result = await response.json()
+    return result
+  }
+
+  // Get existing contact strategy for a contact
+  async getContactStrategy(
+    leadId: string,
+    contactId: string,
+  ): Promise<any> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(
+      `${this.baseUrl}/leads/${leadId}/contacts/${contactId}/contact-strategy`,
+      {
+        method: 'GET',
+        headers: {
+          ...authHeaders,
+        },
+      },
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(
+        errorData.message || 'Failed to get contact strategy',
       )
     }
 

@@ -15,7 +15,7 @@ import {
   Plus,
   UserX,
 } from 'lucide-react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import CopyButton from '../CopyButton'
 import ContactStrategyModal from '../ContactStrategyModal'
 import CreateContactModal from '../CreateContactModal'
@@ -65,6 +65,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
   const [contactToUnsubscribe, setContactToUnsubscribe] =
     useState<LeadPointOfContact | null>(null)
   const leadsService = getLeadsService()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     if (!contactStrategyModalOpen) {
@@ -126,12 +127,35 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
       }
     },
     onSuccess: (result) => {
-      // API now returns the plan directly (no { data })
+      // Strategy generation now returns success response, not the full strategy
+      console.log('Strategy generated successfully:', result.message)
+      setQualifyingContactId(null)
+      // Invalidate lead query to refresh contact data
+      queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
+    },
+    onError: (error) => {
+      console.error('Failed to generate contact strategy:', error)
+      setQualifyingContactId(null)
+      // You might want to show a toast notification here
+    },
+  })
+
+  const getContactStrategyMutation = useMutation({
+    mutationFn: (contactId: string) =>
+      leadsService.getContactStrategy(leadId, contactId),
+    onMutate: (contactId) => {
+      const contact = contacts.find((c) => c.id === contactId)
+      if (contact) {
+        setSelectedContactName(contact.name)
+      }
+    },
+    onSuccess: (result) => {
+      // API returns the strategy data
       setContactStrategyData(result)
       setContactStrategyModalOpen(true)
     },
     onError: (error) => {
-      console.error('Failed to generate contact strategy:', error)
+      console.error('Failed to get contact strategy:', error)
       // You might want to show a toast notification here
     },
   })
@@ -154,6 +178,66 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const handleGenerateContactStrategy = (contactId: string) => {
     generateContactStrategyMutation.mutate(contactId)
+  }
+
+  const handleViewContactStrategy = (contactId: string) => {
+    getContactStrategyMutation.mutate(contactId)
+  }
+
+  // Helper function to determine strategy button state
+  const getStrategyButtonState = (contact: LeadPointOfContact) => {
+    const isGenerating = qualifyingContactId === contact.id
+    const strategyStatus = contact.strategyStatus || 'none'
+    
+    if (isGenerating) {
+      return {
+        type: 'generating',
+        text: 'Generating...',
+        onClick: () => {},
+        disabled: true,
+        className: 'bg-yellow-600 text-white',
+        icon: <Loader2 className="h-4 w-4 animate-spin" />,
+      }
+    }
+    
+    switch (strategyStatus) {
+      case 'completed':
+        return {
+          type: 'view',
+          text: 'View Strategy',
+          onClick: () => handleViewContactStrategy(contact.id),
+          disabled: false,
+          className: 'bg-green-600 text-white hover:bg-green-700',
+          icon: <Target className="h-4 w-4" />,
+        }
+      case 'failed':
+        return {
+          type: 'retry',
+          text: 'Retry Strategy',
+          onClick: () => handleGenerateContactStrategy(contact.id),
+          disabled: false,
+          className: 'bg-red-600 text-white hover:bg-red-700',
+          icon: <Target className="h-4 w-4" />,
+        }
+      case 'generating':
+        return {
+          type: 'generating',
+          text: 'Generating...',
+          onClick: () => {},
+          disabled: true,
+          className: 'bg-yellow-600 text-white',
+          icon: <Loader2 className="h-4 w-4 animate-spin" />,
+        }
+      default: // 'none'
+        return {
+          type: 'generate',
+          text: 'Generate Strategy',
+          onClick: () => handleGenerateContactStrategy(contact.id),
+          disabled: false,
+          className: 'bg-blue-600 text-white hover:bg-blue-700',
+          icon: <Target className="h-4 w-4" />,
+        }
+    }
   }
 
   const handleCreateContact = (contactData: {
@@ -546,28 +630,25 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           <Edit3 className="h-4 w-4" />
                           <span className="text-sm font-medium">Edit</span>
                         </button>
-                        <button
-                          onClick={() =>
-                            handleGenerateContactStrategy(contact.id)
-                          }
-                          disabled={
-                            qualifyingContactId === contact.id ||
-                            editingContactId !== null
-                          }
-                          className="flex items-center space-x-2 px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Generate contact strategy for this contact"
-                        >
-                          {qualifyingContactId === contact.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Target className="h-4 w-4" />
-                          )}
-                          <span className="text-sm font-medium">
-                            {qualifyingContactId === contact.id
-                              ? 'Generating...'
-                              : 'Generate Strategy'}
-                          </span>
-                        </button>
+                        {(() => {
+                          const buttonState = getStrategyButtonState(contact)
+                          return (
+                            <button
+                              onClick={buttonState.onClick}
+                              disabled={
+                                buttonState.disabled ||
+                                editingContactId !== null
+                              }
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${buttonState.className}`}
+                              title={`${buttonState.text} for this contact`}
+                            >
+                              {buttonState.icon}
+                              <span className="text-sm font-medium">
+                                {buttonState.text}
+                              </span>
+                            </button>
+                          )
+                        })()}
                         <button
                           onClick={() => handleUnsubscribeContact(contact)}
                           disabled={

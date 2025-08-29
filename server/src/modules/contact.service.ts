@@ -234,6 +234,44 @@ export const toggleContactManuallyReviewed = async (
 };
 
 /**
+ * Updates the strategy status of a contact.
+ * @param tenantId - The ID of the tenant.
+ * @param leadId - The ID of the lead the contact belongs to.
+ * @param contactId - The ID of the contact to update.
+ * @param strategyStatus - The new strategy status ('none' | 'generating' | 'completed' | 'failed').
+ * @returns A promise that resolves to the updated contact.
+ */
+export const updateContactStrategyStatus = async (
+  tenantId: string,
+  leadId: string,
+  contactId: string,
+  strategyStatus: 'none' | 'generating' | 'completed' | 'failed'
+): Promise<LeadPointOfContact> => {
+  try {
+    // Verify the contact exists and belongs to the tenant/lead
+    const existingContact = await getContactById(tenantId, leadId, contactId);
+    if (!existingContact) {
+      throw new Error(`Contact not found with ID: ${contactId} for lead: ${leadId}`);
+    }
+
+    // Update the contact's strategy status
+    const updatedContact = await leadPointOfContactRepository.updateById(contactId, {
+      strategyStatus,
+    });
+
+    if (!updatedContact) {
+      throw new Error('Failed to update contact strategy status');
+    }
+
+    logger.info(`Updated contact ${contactId} strategy status to ${strategyStatus}`);
+    return updatedContact;
+  } catch (error) {
+    logger.error('Error updating contact strategy status:', error);
+    throw error;
+  }
+};
+
+/**
  * Unsubscribes a contact from email communications.
  * @param tenantId - The ID of the tenant.
  * @param leadId - The ID of the lead the contact belongs to.

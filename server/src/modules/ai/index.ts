@@ -1,6 +1,10 @@
 // Export services
 export { ContactExtractionService } from './contactExtraction.service';
-export { generateContactStrategy, updateContactStrategy } from './contactStrategy.service';
+export {
+  generateContactStrategy,
+  updateContactStrategy,
+  retrieveContactStrategyFromDatabase,
+} from './contactStrategy.service';
 
 // Export LangChain-based AI system
 export {

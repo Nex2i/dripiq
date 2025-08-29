@@ -4,7 +4,11 @@ import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { LeadInitialProcessingPublisher } from '@/modules/messages/leadInitialProcessing.publisher.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
-import { generateContactStrategy, updateContactStrategy } from '@/modules/ai';
+import {
+  generateContactStrategy,
+  updateContactStrategy,
+  retrieveContactStrategyFromDatabase,
+} from '@/modules/ai';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
 import {
@@ -564,6 +568,75 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
+  // Get contact strategy endpoint
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/:leadId/contacts/:contactId/contact-strategy`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      description: 'Get existing contact strategy and outreach plan for a specific contact',
+      tags: ['Leads'],
+      params: {
+        type: 'object',
+        properties: {
+          leadId: { type: 'string' },
+          contactId: { type: 'string' },
+        },
+        required: ['leadId', 'contactId'],
+      },
+      response: {
+        ...defaultRouteResponse(),
+        200: {
+          type: 'object',
+          description: 'Campaign plan',
+          additionalProperties: true,
+        },
+        404: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+          },
+        },
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const { tenantId } = request as AuthenticatedRequest;
+      const { leadId, contactId } = request.params as { leadId: string; contactId: string };
+
+      try {
+        const existingStrategy = await retrieveContactStrategyFromDatabase({
+          leadId,
+          contactId,
+          tenantId,
+        });
+
+        if (!existingStrategy) {
+          reply.status(404).send({
+            success: false,
+            message: 'No contact strategy found',
+          });
+          return;
+        }
+
+        // Return the campaign plan JSON
+        reply.status(200).send(existingStrategy.finalResponseParsed);
+      } catch (error: any) {
+        logger.error(`Error retrieving contact strategy: ${error.message}`);
+
+        if (error.message?.includes('Access denied')) {
+          reply.status(403).send({
+            success: false,
+            message: 'Access denied to tenant resources',
+          });
+          return;
+        }
+
+        reply.status(500).send({ success: false, message: 'Failed to retrieve contact strategy' });
+      }
+    },
+  });
+
   // Contact strategy endpoint
   fastify.route({
     method: HttpMethods.PUT,
@@ -574,7 +647,14 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Leads'],
       ...LeadContactStrategySchema,
       response: {
-        ...LeadContactStrategySchema.response,
+        ...defaultRouteResponse(),
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+          },
+        },
       },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
@@ -583,15 +663,18 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       const userId = user?.id;
 
       try {
-        const result = await generateContactStrategy({
+        await generateContactStrategy({
           leadId,
           contactId,
           tenantId,
           userId,
         });
 
-        // Return the campaign plan JSON directly per new schema
-        reply.status(200).send(result.finalResponseParsed);
+        // Return success response instead of full strategy data
+        reply.status(200).send({
+          success: true,
+          message: 'Contact strategy generated successfully',
+        });
       } catch (error: any) {
         logger.error(`Error qualifying lead contact: ${error.message}`);
 
