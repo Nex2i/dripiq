@@ -5,7 +5,7 @@ import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
 import { UserService } from '@/modules/user.service';
 import { getDecodedJwt, isTokenExpired } from '@/libs/jwt';
-import { authCache } from '@/cache/AuthCache';
+import { authCache } from '@/cache/AuthCacheRedis';
 
 export interface IUser {
   id: string; // Database user ID
@@ -48,13 +48,13 @@ export default fastifyPlugin(
           throw new ForbiddenError('No token provided in Authorization Header.');
         }
 
-        let cachedToken = authCache.getToken(token);
+        let cachedToken = await authCache.getToken(token);
 
         let supabaseUserId: string | null = null;
 
         if (!cachedToken || isTokenExpired(token)) {
-          authCache.clearToken(token);
-          authCache.setToken(token);
+          await authCache.clearToken(token);
+          await authCache.setToken(token);
 
           const supabaseGetUserStart = process.hrtime();
           // Validate JWT with Supabase
@@ -82,7 +82,7 @@ export default fastifyPlugin(
         }
 
         // Check cache first
-        let userData = authCache.get(supabaseUserId);
+        let userData = await authCache.get(supabaseUserId);
 
         if (!userData) {
           const dbResultStart = process.hrtime();
@@ -115,7 +115,7 @@ export default fastifyPlugin(
           };
 
           // Cache the result
-          authCache.set(supabaseUserId, userData);
+          await authCache.set(supabaseUserId, userData);
 
           logger.debug(
             `Authentication cache miss for user ${userData.user.id} - data loaded from DB`
@@ -175,7 +175,8 @@ export default fastifyPlugin(
     fastify.decorate('authPrehandler', authPrehandler);
     fastify.decorate('authCache', {
       clear: authCache.clear.bind(authCache),
-      cleanup: authCache.cleanup.bind(authCache),
+      getStats: authCache.getStats.bind(authCache),
+      refresh: authCache.refresh.bind(authCache),
     });
   },
   {

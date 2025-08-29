@@ -70,9 +70,9 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
       const ttl = options?.ttl || this.config.defaultTtl || 3600;
-      
+
       await this.cache.set(fullKey, value, ttl * 1000); // Convert to milliseconds
-      
+
       logger.debug('Cache set successful', { key: fullKey, ttl });
     } catch (error) {
       logger.error('Cache set failed', { key, error: String(error) });
@@ -87,9 +87,9 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
       const value = await this.cache.get(fullKey);
-      
+
       logger.debug('Cache get', { key: fullKey, hit: value !== undefined });
-      
+
       return value || null;
     } catch (error) {
       logger.error('Cache get failed', { key, error: String(error) });
@@ -104,7 +104,7 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
       await this.cache.del(fullKey);
-      
+
       logger.debug('Cache delete successful', { key: fullKey });
     } catch (error) {
       logger.error('Cache delete failed', { key, error: String(error) });
@@ -169,14 +169,14 @@ class CacheManager {
     try {
       const fullPattern = this.buildKey(pattern, undefined);
       const keys = await this.redis.keys(fullPattern);
-      
+
       if (keys.length === 0) {
         return 0;
       }
 
       const result = await this.redis.del(...keys);
       logger.debug('Cache pattern delete successful', { pattern: fullPattern, deleted: result });
-      
+
       return result;
     } catch (error) {
       logger.error('Cache pattern delete failed', { pattern, error: String(error) });
@@ -189,10 +189,8 @@ class CacheManager {
    */
   async mset(entries: Array<{ key: string; value: any; options?: CacheOptions }>): Promise<void> {
     try {
-      const promises = entries.map(({ key, value, options }) => 
-        this.set(key, value, options)
-      );
-      
+      const promises = entries.map(({ key, value, options }) => this.set(key, value, options));
+
       await Promise.all(promises);
       logger.debug('Cache mset successful', { count: entries.length });
     } catch (error) {
@@ -206,14 +204,14 @@ class CacheManager {
    */
   async mget<T = any>(keys: string[], options?: CacheOptions): Promise<(T | null)[]> {
     try {
-      const promises = keys.map(key => this.get<T>(key, options));
+      const promises = keys.map((key) => this.get<T>(key, options));
       const results = await Promise.all(promises);
-      
-      logger.debug('Cache mget successful', { 
-        count: keys.length, 
-        hits: results.filter(r => r !== null).length 
+
+      logger.debug('Cache mget successful', {
+        count: keys.length,
+        hits: results.filter((r) => r !== null).length,
       });
-      
+
       return results;
     } catch (error) {
       logger.error('Cache mget failed', { error: String(error) });
@@ -228,13 +226,13 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
       const result = await this.redis.incrby(fullKey, amount);
-      
+
       // Set TTL if specified
       if (options?.ttl || this.config.defaultTtl) {
         const ttl = options?.ttl || this.config.defaultTtl;
         await this.redis.expire(fullKey, ttl);
       }
-      
+
       logger.debug('Cache increment successful', { key: fullKey, amount, result });
       return result;
     } catch (error) {
@@ -250,7 +248,7 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
       const result = await this.redis.expire(fullKey, ttl);
-      
+
       logger.debug('Cache expire successful', { key: fullKey, ttl, result: Boolean(result) });
       return Boolean(result);
     } catch (error) {
@@ -266,7 +264,7 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
       const result = await this.redis.ttl(fullKey);
-      
+
       logger.debug('Cache TTL check', { key: fullKey, ttl: result });
       return result;
     } catch (error) {
@@ -280,11 +278,11 @@ class CacheManager {
    */
   private buildKey(key: string, prefix?: string): string {
     const parts = [this.config.namespace];
-    
+
     if (prefix) {
       parts.push(prefix);
     }
-    
+
     parts.push(key);
     return parts.join(':');
   }
@@ -302,10 +300,10 @@ class CacheManager {
       const pattern = `${this.config.namespace}:*`;
       const keys = await this.redis.keys(pattern);
       const info = await this.redis.info('memory');
-      
+
       const memoryMatch = info.match(/used_memory_human:([^\r\n]+)/);
       const memory = memoryMatch ? memoryMatch[1].trim() : 'unknown';
-      
+
       return {
         keys: keys.length,
         memory,

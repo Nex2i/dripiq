@@ -6,7 +6,7 @@ import { supabase } from '@/libs/supabase.client';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
 import { RoleService } from '@/modules/role.service';
-import { authCache } from '@/cache/AuthCache';
+import { authCache } from '@/cache/AuthCacheRedis';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 
 // Import all authentication schemas from organized schema files
@@ -360,8 +360,8 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           return;
         }
 
-        authCache.clearToken(token);
-        authCache.clear(user.id);
+        await authCache.clearToken(token);
+        await authCache.clear(user.id);
 
         // For client-side authentication, we don't need to invalidate the token server-side
         // The client should remove the token from storage upon receiving this response

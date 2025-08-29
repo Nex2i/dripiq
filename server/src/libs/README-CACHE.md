@@ -367,18 +367,16 @@ const processJob = async (job: Job) => {
 
 ## Migration from In-Memory Cache
 
-If you're migrating from the old in-memory AuthCache:
+The project has been migrated from the old in-memory AuthCache to the Redis-based AuthCacheRedis:
 
 ```typescript
-// Old way
-import { authCache } from '@/cache/AuthCache';
-
-// New way - drop-in replacement
+// Current implementation
 import { authCache } from '@/cache/AuthCacheRedis';
 
-// API remains the same
+// All methods are now async
 await authCache.setToken(token);
 const user = await authCache.get(supabaseId);
+await authCache.clearToken(token);
 ```
 
 ## Performance Tips
@@ -416,11 +414,8 @@ src/
 │   ├── cache.ts              # Core cache manager
 │   ├── cache-client.ts       # High-level client interface
 │   └── README-CACHE.md       # This documentation
-├── cache/
-│   ├── AuthCache.ts          # Original in-memory cache (legacy)
-│   └── AuthCacheRedis.ts     # New Redis-based auth cache
-└── examples/
-    └── cache-usage.examples.ts # Usage examples and patterns
+└── cache/
+    └── AuthCacheRedis.ts     # Redis-based auth cache
 ```
 
 This cache manager provides a robust, scalable caching solution that integrates seamlessly with your existing Redis infrastructure while offering multiple interfaces for different use cases.

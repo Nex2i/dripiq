@@ -1,8 +1,4 @@
-import { 
-  cacheManager, 
-  CacheOptions,
-  type CacheManager as CacheManagerType 
-} from '@/libs/cache';
+import { cacheManager, CacheOptions, type CacheManager as CacheManagerType } from '@/libs/cache';
 import { logger } from '@/libs/logger';
 
 /**
@@ -25,7 +21,7 @@ export class CacheClient {
       prefix: this.defaultPrefix,
       ttl,
     };
-    
+
     try {
       const serialized = JSON.stringify(value);
       await this.manager.set(key, serialized, options);
@@ -39,11 +35,11 @@ export class CacheClient {
     const options: CacheOptions = {
       prefix: this.defaultPrefix,
     };
-    
+
     try {
       const cached = await this.manager.get<string>(key, options);
       if (!cached) return null;
-      
+
       return JSON.parse(cached) as T;
     } catch (error) {
       logger.error('JSON cache get failed', { key, error: String(error) });
@@ -99,21 +95,21 @@ export class CacheClient {
    * Rate limiting cache
    */
   async incrementRateLimit(
-    identifier: string, 
-    window: number = 60, 
+    identifier: string,
+    window: number = 60,
     limit: number = 100
   ): Promise<{ count: number; remaining: number; resetTime: number }> {
     const key = `rate_limit:${identifier}`;
-    const options: CacheOptions = { 
+    const options: CacheOptions = {
       prefix: this.defaultPrefix,
-      ttl: window 
+      ttl: window,
     };
-    
+
     try {
       const count = await this.manager.increment(key, 1, options);
       const remaining = Math.max(0, limit - count);
-      const resetTime = Date.now() + (window * 1000);
-      
+      const resetTime = Date.now() + window * 1000;
+
       return { count, remaining, resetTime };
     } catch (error) {
       logger.error('Rate limit increment failed', { identifier, error: String(error) });
@@ -124,7 +120,7 @@ export class CacheClient {
   async checkRateLimit(identifier: string): Promise<number> {
     const key = `rate_limit:${identifier}`;
     const options: CacheOptions = { prefix: this.defaultPrefix };
-    
+
     const cached = await this.manager.get<number>(key, options);
     return cached || 0;
   }
@@ -140,7 +136,7 @@ export class CacheClient {
   async getFeatureFlag(flagName: string, defaultValue: boolean = false): Promise<boolean> {
     const key = `feature_flag:${flagName}`;
     const options: CacheOptions = { prefix: this.defaultPrefix };
-    
+
     const cached = await this.manager.get<boolean>(key, options);
     return cached !== null ? cached : defaultValue;
   }
@@ -148,27 +144,25 @@ export class CacheClient {
   /**
    * Memoization helper for expensive operations
    */
-  async memoize<T = any>(
-    key: string,
-    fetcher: () => Promise<T> | T,
-    ttl?: number
-  ): Promise<T> {
+  async memoize<T = any>(key: string, fetcher: () => Promise<T> | T, ttl?: number): Promise<T> {
     const options: CacheOptions = {
       prefix: this.defaultPrefix,
       ttl,
     };
-    
+
     return this.manager.getOrSet(key, fetcher, options);
   }
 
   /**
    * Cache warming - preload cache with data
    */
-  async warmCache<T = any>(entries: Array<{
-    key: string;
-    fetcher: () => Promise<T> | T;
-    ttl?: number;
-  }>): Promise<void> {
+  async warmCache<T = any>(
+    entries: Array<{
+      key: string;
+      fetcher: () => Promise<T> | T;
+      ttl?: number;
+    }>
+  ): Promise<void> {
     const promises = entries.map(async ({ key, fetcher, ttl }) => {
       try {
         const data = await fetcher();
@@ -186,11 +180,13 @@ export class CacheClient {
   /**
    * Bulk operations
    */
-  async bulkSet<T = any>(entries: Array<{
-    key: string;
-    value: T;
-    ttl?: number;
-  }>): Promise<void> {
+  async bulkSet<T = any>(
+    entries: Array<{
+      key: string;
+      value: T;
+      ttl?: number;
+    }>
+  ): Promise<void> {
     const cacheEntries = entries.map(({ key, value, ttl }) => ({
       key,
       value: JSON.stringify(value),
@@ -203,13 +199,13 @@ export class CacheClient {
   async bulkGet<T = any>(keys: string[]): Promise<Record<string, T | null>> {
     const options: CacheOptions = { prefix: this.defaultPrefix };
     const values = await this.manager.mget<string>(keys, options);
-    
+
     const result: Record<string, T | null> = {};
-    
+
     keys.forEach((key, index) => {
       const value = values[index];
       try {
-        result[key] = value ? JSON.parse(value) as T : null;
+        result[key] = value ? (JSON.parse(value) as T) : null;
       } catch (error) {
         logger.error('Bulk get JSON parse failed', { key, error: String(error) });
         result[key] = null;
@@ -222,23 +218,21 @@ export class CacheClient {
   /**
    * Cache tags for grouped invalidation
    */
-  async setWithTags<T = any>(
-    key: string, 
-    value: T, 
-    tags: string[], 
-    ttl?: number
-  ): Promise<void> {
+  async setWithTags<T = any>(key: string, value: T, tags: string[], ttl?: number): Promise<void> {
     // Set the main value
     await this.setJson(key, value, ttl);
-    
+
     // Add key to each tag set
-    const tagPromises = tags.map(tag => {
+    const tagPromises = tags.map((tag) => {
       const tagKey = `tag:${tag}`;
-      return this.manager.increment(tagKey, 0, { prefix: this.defaultPrefix, ttl: ttl ? ttl + 300 : undefined });
+      return this.manager.increment(tagKey, 0, {
+        prefix: this.defaultPrefix,
+        ttl: ttl ? ttl + 300 : undefined,
+      });
     });
-    
+
     await Promise.all(tagPromises);
-    
+
     // Store tag metadata for the key
     const metaKey = `meta:${key}`;
     await this.setJson(metaKey, { tags, createdAt: Date.now() }, ttl);
@@ -258,17 +252,17 @@ export class CacheClient {
     latency: number;
   }> {
     const start = Date.now();
-    
+
     try {
       // Test basic operations
       const testKey = `health_check:${Date.now()}`;
       await this.manager.set(testKey, 'test', { prefix: this.defaultPrefix, ttl: 10 });
       const value = await this.manager.get(testKey, { prefix: this.defaultPrefix });
       await this.manager.del(testKey, { prefix: this.defaultPrefix });
-      
+
       const latency = Date.now() - start;
       const stats = await this.manager.getStats();
-      
+
       return {
         status: value === 'test' ? 'healthy' : 'unhealthy',
         stats,

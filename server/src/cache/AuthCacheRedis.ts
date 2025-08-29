@@ -28,9 +28,9 @@ class AuthCacheRedis {
       await sessionCacheClient.setJson(key, { token, createdAt: Date.now() }, this.TOKEN_TTL);
       logger.debug('Auth token cached', { tokenHash: this.hashToken(token) });
     } catch (error) {
-      logger.error('Failed to cache auth token', { 
+      logger.error('Failed to cache auth token', {
         error: String(error),
-        tokenHash: this.hashToken(token)
+        tokenHash: this.hashToken(token),
       });
       throw error;
     }
@@ -43,18 +43,18 @@ class AuthCacheRedis {
     try {
       const key = `token:${token}`;
       const cached = await sessionCacheClient.getJson<{ token: string; createdAt: number }>(key);
-      
+
       if (cached) {
         logger.debug('Auth token cache hit', { tokenHash: this.hashToken(token) });
         return cached.token;
       }
-      
+
       logger.debug('Auth token cache miss', { tokenHash: this.hashToken(token) });
       return null;
     } catch (error) {
-      logger.error('Failed to get auth token from cache', { 
+      logger.error('Failed to get auth token from cache', {
         error: String(error),
-        tokenHash: this.hashToken(token)
+        tokenHash: this.hashToken(token),
       });
       return null;
     }
@@ -69,9 +69,9 @@ class AuthCacheRedis {
       await sessionCacheClient.deleteSession(key);
       logger.debug('Auth token cleared', { tokenHash: this.hashToken(token) });
     } catch (error) {
-      logger.error('Failed to clear auth token', { 
+      logger.error('Failed to clear auth token', {
         error: String(error),
-        tokenHash: this.hashToken(token)
+        tokenHash: this.hashToken(token),
       });
     }
   }
@@ -86,13 +86,13 @@ class AuthCacheRedis {
         ...data,
         cachedAt: Date.now(),
       };
-      
+
       await sessionCacheClient.setJson(key, cacheData, this.TTL);
       logger.debug('Auth data cached', { supabaseId, userTenants: data.userTenants.length });
     } catch (error) {
-      logger.error('Failed to cache auth data', { 
+      logger.error('Failed to cache auth data', {
         error: String(error),
-        supabaseId 
+        supabaseId,
       });
       throw error;
     }
@@ -105,24 +105,24 @@ class AuthCacheRedis {
     try {
       const key = `auth:${supabaseId}`;
       const cached = await sessionCacheClient.getJson<AuthData & { cachedAt: number }>(key);
-      
+
       if (cached) {
-        logger.debug('Auth data cache hit', { 
-          supabaseId, 
-          age: Date.now() - cached.cachedAt 
+        logger.debug('Auth data cache hit', {
+          supabaseId,
+          age: Date.now() - cached.cachedAt,
         });
-        
+
         // Remove cache metadata before returning
-        const { cachedAt, ...authData } = cached;
+        const { cachedAt: _cachedAt, ...authData } = cached;
         return authData;
       }
-      
+
       logger.debug('Auth data cache miss', { supabaseId });
       return null;
     } catch (error) {
-      logger.error('Failed to get auth data from cache', { 
+      logger.error('Failed to get auth data from cache', {
         error: String(error),
-        supabaseId 
+        supabaseId,
       });
       return null;
     }
@@ -143,9 +143,9 @@ class AuthCacheRedis {
         logger.info('All auth data cleared');
       }
     } catch (error) {
-      logger.error('Failed to clear auth data', { 
+      logger.error('Failed to clear auth data', {
         error: String(error),
-        supabaseId 
+        supabaseId,
       });
     }
   }
@@ -158,9 +158,9 @@ class AuthCacheRedis {
       const data = await this.get(supabaseId);
       return data !== null;
     } catch (error) {
-      logger.error('Failed to check auth data existence', { 
+      logger.error('Failed to check auth data existence', {
         error: String(error),
-        supabaseId 
+        supabaseId,
       });
       return false;
     }
@@ -176,7 +176,7 @@ class AuthCacheRedis {
   }> {
     try {
       const health = await sessionCacheClient.healthCheck();
-      
+
       // Note: Getting exact counts would require scanning all keys
       // which is expensive. Consider implementing counters if needed.
       return {
@@ -207,9 +207,9 @@ class AuthCacheRedis {
       }
       return false;
     } catch (error) {
-      logger.error('Failed to refresh auth data TTL', { 
+      logger.error('Failed to refresh auth data TTL', {
         error: String(error),
-        supabaseId 
+        supabaseId,
       });
       return false;
     }
@@ -223,7 +223,7 @@ class AuthCacheRedis {
     let hash = 0;
     for (let i = 0; i < Math.min(token.length, 10); i++) {
       const char = token.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(16);
