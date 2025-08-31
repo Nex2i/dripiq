@@ -1,4 +1,5 @@
 import type { Job } from 'bullmq';
+import { SearchResultWeb } from '@mendable/firecrawl-js';
 import { getWorker } from '@/libs/bullmq';
 import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { LEAD_STATUS } from '@/constants/leadStatus.constants';
@@ -33,8 +34,7 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.UNPROCESSED]
     );
 
-    // Step 1: Get sitemap
-    let siteMap: string[];
+    let siteMap: SearchResultWeb[];
     try {
       siteMap = await firecrawlClient.getSiteMap(leadUrl.cleanWebsiteUrl());
       logger.info('[LeadInitialProcessingWorker] Sitemap retrieved', {
@@ -53,23 +53,13 @@ async function processLeadInitialProcessing(
       );
     }
 
-    // Step 2: Filter URLs (basic filtering)
-    const filteredUrls = filterUrls(siteMap);
-    logger.info('[LeadInitialProcessingWorker] URLs filtered', {
-      jobId: job.id,
-      leadId,
-      originalCount: siteMap.length,
-      filteredCount: filteredUrls.length,
-    });
-
-    // Step 3: Smart filter sitemap
     let smartFilteredUrls: string[];
     try {
-      smartFilteredUrls = await SiteScrapeService.smartFilterSiteMap(filteredUrls, 'lead_site');
+      smartFilteredUrls = await SiteScrapeService.smartFilterSiteMap(siteMap, 'lead_site');
       logger.info('[LeadInitialProcessingWorker] Smart filter applied', {
         jobId: job.id,
         leadId,
-        filteredCount: filteredUrls.length,
+        filteredCount: siteMap.length,
         smartFilteredCount: smartFilteredUrls.length,
       });
     } catch (error) {
@@ -78,10 +68,9 @@ async function processLeadInitialProcessing(
         leadId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      smartFilteredUrls = filteredUrls;
+      smartFilteredUrls = siteMap.map((url) => url.url);
     }
 
-    // Step 4: Update status to Syncing Site
     await updateLeadStatuses(
       tenantId,
       leadId,
@@ -89,7 +78,6 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.INITIAL_PROCESSING]
     );
 
-    // Step 5: Trigger batch scrape
     const batchMetadata = {
       leadId,
       tenantId,
@@ -126,7 +114,7 @@ async function processLeadInitialProcessing(
     return {
       success: true,
       leadId,
-      sitemapUrls: siteMap,
+      sitemapUrls: siteMap.map((url) => url.url),
       filteredUrls: smartFilteredUrls,
       batchScrapeJobId,
     };
@@ -173,35 +161,6 @@ async function processLeadInitialProcessing(
       errorCode,
     };
   }
-}
-
-// Helper function from SiteScrapeService
-const excludePathPattern = [
-  '^/blog(?:/.*)?$',
-  '^/support(?:/.*)?$',
-  '^/privacy(?:-policy)?(?:/.*)?$',
-  '^/terms(?:-of-(service|use|conditions))?(?:/.*)?$',
-  '^/(careers?|jobs)(?:/.*)?$',
-  '^/wp-content(?:/.*)?$',
-  '^/wp-includes(?:/.*)?$',
-  '^/wp-admin(?:/.*)?$',
-  '^/wp-login(?:/.*)?$',
-  '^/wp-register(?:/.*)?$',
-  '^/wp-trackback(?:/.*)?$',
-  '^/wp-json(?:/.*)?$',
-  '^/wp-jsonp(?:/.*)?$',
-].join('|');
-const excludeRegex = new RegExp(excludePathPattern, 'i');
-
-function filterUrls(urls: string[]): string[] {
-  return urls.filter((url) => {
-    try {
-      const { pathname } = new URL(url);
-      return !excludeRegex.test(pathname);
-    } catch {
-      return false;
-    }
-  });
 }
 
 const leadInitialProcessingWorker = getWorker<

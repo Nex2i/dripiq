@@ -94,23 +94,13 @@ class CacheManager {
     try {
       const fullKey = this.buildKey(key, options?.prefix);
 
-      logger.info('Cache get attempt', { key: fullKey });
-
       const serializedValue = await this.redis.get(fullKey);
 
       if (serializedValue === null) {
-        logger.info('Cache get result', { key: fullKey, hit: false });
         return null;
       }
 
       const value = JSON.parse(serializedValue) as T;
-
-      logger.info('Cache get result', {
-        key: fullKey,
-        hit: true,
-        valueType: typeof value,
-        serializedLength: serializedValue.length,
-      });
 
       return value;
     } catch (error) {
@@ -185,7 +175,6 @@ class CacheManager {
 
       if (keys.length > 0) {
         await this.redis.del(...keys);
-        logger.info('Cache cleared successfully', { keysDeleted: keys.length });
       } else {
         logger.info('Cache clear - no keys to delete');
       }

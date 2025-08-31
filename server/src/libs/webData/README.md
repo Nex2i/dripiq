@@ -34,6 +34,7 @@ The TypeScript interfaces and mock data in this client were created based on:
 4. **Field Validation**: Cross-referenced with similar APIs (LinkedIn, Apollo, ZoomInfo) for completeness
 
 **To get actual data schemas**:
+
 1. Sign up for the [CoreSignal Dashboard](https://dashboard.coresignal.com/sign-up) (free 200 credits)
 2. Access the API playground to see real response structures
 3. Review the data dictionary for complete field definitions
@@ -86,7 +87,7 @@ const employees = await client.searchEmployees({
   job_title: 'Software Engineer',
   location: 'San Francisco',
   limit: 50,
-  offset: 0
+  offset: 0,
 });
 
 console.log(employees.employees); // Array of Employee objects
@@ -112,11 +113,11 @@ Get all employees for a specific company:
 // By company domain
 const companyData = await client.getEmployeesByCompany('techcorp.com');
 console.log(companyData.employees.current); // Current employees
-console.log(companyData.employees.former);  // Former employees
+console.log(companyData.employees.former); // Former employees
 
 // Include past employees
 const withPast = await client.getEmployeesByCompany('techcorp.com', {
-  includePastEmployees: true
+  includePastEmployees: true,
 });
 ```
 
@@ -129,7 +130,7 @@ const companies = await client.searchCompanies({
   name: 'TechCorp',
   industry: 'Technology',
   location: 'San Francisco',
-  limit: 10
+  limit: 10,
 });
 
 console.log(companies.companies); // Array of Company objects
@@ -151,7 +152,7 @@ Get comprehensive company information including all employees:
 
 ```typescript
 const fullData = await client.getCompanyWithAllEmployees('techcorp.com');
-console.log(fullData.company);   // Company information
+console.log(fullData.company); // Company information
 console.log(fullData.employees); // All employees data
 ```
 
@@ -166,16 +167,10 @@ The client includes built-in Redis caching to improve performance and reduce API
 const employees = await client.searchEmployees({ company_name: 'TechCorp' });
 
 // Disable caching for this request
-const employees = await client.searchEmployees(
-  { company_name: 'TechCorp' },
-  { useCache: false }
-);
+const employees = await client.searchEmployees({ company_name: 'TechCorp' }, { useCache: false });
 
 // Custom cache TTL (30 minutes)
-const employees = await client.searchEmployees(
-  { company_name: 'TechCorp' },
-  { cacheTtl: 1800 }
-);
+const employees = await client.searchEmployees({ company_name: 'TechCorp' }, { cacheTtl: 1800 });
 ```
 
 ### Cache Management
@@ -313,7 +308,7 @@ All API requests and responses are logged using the application's Pino logger:
 const engineers = await client.searchEmployees({
   company_name: 'TechCorp Inc',
   job_title: 'Software Engineer',
-  limit: 100
+  limit: 100,
 });
 
 console.log(`Found ${engineers.total_count} software engineers at TechCorp`);
@@ -323,13 +318,10 @@ console.log(`Found ${engineers.total_count} software engineers at TechCorp`);
 
 ```typescript
 const companyData = await client.getCompanyWithAllEmployees('techcorp.com', {
-  includePastEmployees: true
+  includePastEmployees: true,
 });
 
-const allEmployees = [
-  ...companyData.employees.current,
-  ...companyData.employees.former
-];
+const allEmployees = [...companyData.employees.current, ...companyData.employees.former];
 
 console.log(`Total employees analyzed: ${allEmployees.length}`);
 ```
@@ -341,7 +333,7 @@ const techCompanies = await client.searchCompanies({
   industry: 'Technology',
   location: 'San Francisco',
   size: '100-500',
-  limit: 50
+  limit: 50,
 });
 
 for (const company of techCompanies.companies) {

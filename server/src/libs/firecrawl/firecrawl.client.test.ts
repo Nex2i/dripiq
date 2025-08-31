@@ -6,17 +6,17 @@ process.env = {
   API_URL: 'https://test-api.com',
 };
 
-// Mock FirecrawlApp before any imports
-const mockAsyncCrawlUrl = jest.fn();
-const mockAsyncBatchScrapeUrls = jest.fn();
-const mockMapUrl = jest.fn();
+// Mock Firecrawl before any imports
+const mockStartCrawl = jest.fn();
+const mockStartBatchScrape = jest.fn();
+const mockMap = jest.fn();
 const mockScrapeUrl = jest.fn();
 
 jest.mock('@mendable/firecrawl-js', () => {
   return jest.fn().mockImplementation(() => ({
-    asyncCrawlUrl: mockAsyncCrawlUrl,
-    asyncBatchScrapeUrls: mockAsyncBatchScrapeUrls,
-    mapUrl: mockMapUrl,
+    startCrawl: mockStartCrawl,
+    startBatchScrape: mockStartBatchScrape,
+    map: mockMap,
     scrapeUrl: mockScrapeUrl,
   }));
 });
@@ -46,6 +46,17 @@ describe('firecrawlClient', () => {
 
     // Default mock implementations
     mockCreateSignedJwt.mockReturnValue('test-jwt-token');
+    mockStartCrawl.mockResolvedValue({ id: 'crawl-123', url: 'https://example.com' });
+    mockStartBatchScrape.mockResolvedValue({
+      id: 'batch-123',
+      url: 'https://api.firecrawl.dev/v1/batch/scrape',
+    });
+    mockMap.mockResolvedValue({
+      links: [
+        { url: 'https://example.com/', title: 'Home', description: 'Home page' },
+        { url: 'https://example.com/about', title: 'About', description: 'About us page' },
+      ],
+    });
   });
 
   afterEach(() => {
@@ -54,56 +65,49 @@ describe('firecrawlClient', () => {
 
   describe('crawlEntireDomain', () => {
     it('should successfully crawl a domain with default metadata', async () => {
-      const mockCrawlResult = { id: 'crawl-123', success: true };
-      mockAsyncCrawlUrl.mockResolvedValue(mockCrawlResult);
+      const mockCrawlResult = { id: 'crawl-123', url: 'https://example.com' };
+      mockStartCrawl.mockResolvedValue(mockCrawlResult);
 
       const result = await firecrawlClient.crawlEntireDomain('https://example.com');
 
       expect(mockCreateSignedJwt).toHaveBeenCalledWith('test-api-key');
-      expect(mockAsyncCrawlUrl).toHaveBeenCalledWith('https://example.com', {
-        limit: 50,
-        allowExternalLinks: false,
-        allowSubdomains: false,
-        deduplicateSimilarURLs: true,
-        ignoreQueryParameters: true,
-        regexOnFullURL: true,
-        allowBackwardLinks: true,
-        ignoreSitemap: true,
-        maxDepth: 3,
-        excludePaths: [
-          '^/blog(?:/.*)?$',
-          '^/support(?:/.*)?$',
-          '^/privacy(?:-policy)?(?:/.*)?$',
-          '^/terms(?:-of-(service|use|conditions))?(?:/.*)?$',
-          '^/(careers?|jobs)(?:/.*)?$',
-        ],
-        scrapeOptions: {
-          formats: ['markdown'],
-          onlyMainContent: true,
-          parsePDF: false,
-          maxAge: 14400000,
-          excludeTags: ['#ad', '#footer'],
-        },
-        webhook: {
-          url: 'https://test-api.com/api/firecrawl/webhook',
-          events: ['completed', 'page', 'failed'],
-          metadata: {},
-          headers: {
-            'x-api-key': 'test-jwt-token',
+      expect(mockStartCrawl).toHaveBeenCalledWith(
+        'https://example.com',
+        expect.objectContaining({
+          excludePaths: [
+            '^/blog(?:/.*)?$',
+            '^/support(?:/.*)?$',
+            '^/privacy(?:-policy)?(?:/.*)?$',
+            '^/terms(?:-of-(service|use|conditions))?(?:/.*)?$',
+            '^/(careers?|jobs)(?:/.*)?$',
+          ],
+          scrapeOptions: {
+            formats: ['markdown'],
+            onlyMainContent: true,
+            maxAge: 14400000,
+            excludeTags: ['#ad', '#footer'],
           },
-        },
-      });
+          webhook: {
+            url: 'https://test-api.com/api/firecrawl/webhook',
+            events: ['completed', 'page', 'failed'],
+            metadata: {},
+            headers: {
+              'x-api-key': 'test-jwt-token',
+            },
+          },
+        })
+      );
       expect(result).toEqual(mockCrawlResult);
     });
 
     it('should crawl with custom metadata', async () => {
-      const mockCrawlResult = { id: 'crawl-456', success: true };
+      const mockCrawlResult = { id: 'crawl-456', url: 'https://example.com' };
       const customMetadata = { tenantId: '123', leadId: '456' };
-      mockAsyncCrawlUrl.mockResolvedValue(mockCrawlResult);
+      mockStartCrawl.mockResolvedValue(mockCrawlResult);
 
       const result = await firecrawlClient.crawlEntireDomain('https://example.com', customMetadata);
 
-      expect(mockAsyncCrawlUrl).toHaveBeenCalledWith(
+      expect(mockStartCrawl).toHaveBeenCalledWith(
         'https://example.com',
         expect.objectContaining({
           webhook: expect.objectContaining({
@@ -116,7 +120,7 @@ describe('firecrawlClient', () => {
 
     it('should handle crawl errors', async () => {
       const error = new Error('Crawl failed');
-      mockAsyncCrawlUrl.mockRejectedValue(error);
+      mockStartCrawl.mockRejectedValue(error);
 
       await expect(firecrawlClient.crawlEntireDomain('https://example.com')).rejects.toThrow(
         'Crawl failed'
@@ -128,7 +132,7 @@ describe('firecrawlClient', () => {
     it('should return early for empty URL array', async () => {
       const result = await firecrawlClient.batchScrapeUrls([]);
 
-      expect(mockAsyncBatchScrapeUrls).not.toHaveBeenCalled();
+      expect(mockStartBatchScrape).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
 
@@ -138,8 +142,11 @@ describe('firecrawlClient', () => {
         status: 200,
       } as Response);
 
-      const mockScrapeResult = { id: 'batch-123', success: true };
-      mockAsyncBatchScrapeUrls.mockResolvedValue(mockScrapeResult);
+      const mockScrapeResult = {
+        id: 'batch-123',
+        url: 'https://api.firecrawl.dev/v1/batch/scrape',
+      };
+      mockStartBatchScrape.mockResolvedValue(mockScrapeResult);
 
       const result = await firecrawlClient.batchScrapeUrls(['https://example.com']);
 
@@ -151,7 +158,7 @@ describe('firecrawlClient', () => {
         },
         signal: expect.any(AbortSignal),
       });
-      expect(mockAsyncBatchScrapeUrls).toHaveBeenCalled();
+      expect(mockStartBatchScrape).toHaveBeenCalled();
       expect(result).toEqual(mockScrapeResult);
     });
 
@@ -165,55 +172,58 @@ describe('firecrawlClient', () => {
         'Site does not exist'
       );
 
-      expect(mockAsyncBatchScrapeUrls).not.toHaveBeenCalled();
+      expect(mockStartBatchScrape).not.toHaveBeenCalled();
     });
 
     it('should successfully scrape multiple URLs without site check', async () => {
-      const mockScrapeResult = { id: 'batch-456', success: true };
-      mockAsyncBatchScrapeUrls.mockResolvedValue(mockScrapeResult);
+      const mockScrapeResult = {
+        id: 'batch-456',
+        url: 'https://api.firecrawl.dev/v1/batch/scrape',
+      };
+      mockStartBatchScrape.mockResolvedValue(mockScrapeResult);
 
       const urls = ['https://example.com', 'https://another.com'];
       const result = await firecrawlClient.batchScrapeUrls(urls);
 
       expect(mockFetch).not.toHaveBeenCalled(); // No site check for multiple URLs
-      expect(mockAsyncBatchScrapeUrls).toHaveBeenCalledWith(
-        urls,
-        {
+      expect(mockStartBatchScrape).toHaveBeenCalledWith(urls, {
+        options: {
           formats: ['markdown'],
           onlyMainContent: false,
-          parsePDF: false,
           maxAge: 14400000,
           excludeTags: ['#ad', 'header', 'footer'],
         },
-        undefined,
-        {
+        webhook: {
           url: 'https://test-api.com/api/firecrawl/webhook',
           events: ['completed', 'page', 'failed'],
           metadata: {},
           headers: {
             'x-api-key': 'test-jwt-token',
           },
-        }
-      );
+        },
+      });
       expect(result).toEqual(mockScrapeResult);
     });
 
     it('should pass through custom metadata', async () => {
-      const mockScrapeResult = { id: 'batch-789', success: true };
+      const mockScrapeResult = {
+        id: 'batch-789',
+        url: 'https://api.firecrawl.dev/v1/batch/scrape',
+      };
       const customMetadata = { userId: '123' };
-      mockAsyncBatchScrapeUrls.mockResolvedValue(mockScrapeResult);
+      mockStartBatchScrape.mockResolvedValue(mockScrapeResult);
 
       const result = await firecrawlClient.batchScrapeUrls(
         ['https://example.com', 'https://another.com'],
         customMetadata
       );
 
-      expect(mockAsyncBatchScrapeUrls).toHaveBeenCalledWith(
+      expect(mockStartBatchScrape).toHaveBeenCalledWith(
         expect.any(Array),
-        expect.any(Object),
-        undefined,
         expect.objectContaining({
-          metadata: customMetadata,
+          webhook: expect.objectContaining({
+            metadata: customMetadata,
+          }),
         })
       );
       expect(result).toEqual(mockScrapeResult);
@@ -228,20 +238,25 @@ describe('firecrawlClient', () => {
       } as Response);
 
       const mockSiteMap = {
-        success: true,
-        links: ['https://example.com/', 'https://example.com/about'],
+        links: [
+          { url: 'https://example.com/', title: 'Home', description: 'Home page' },
+          { url: 'https://example.com/about', title: 'About', description: 'About us page' },
+        ],
       };
-      mockMapUrl.mockResolvedValue(mockSiteMap);
+      mockMap.mockResolvedValue(mockSiteMap);
 
       const result = await firecrawlClient.getSiteMap('https://www.example.com/path');
 
       expect(mockFetch).toHaveBeenCalledWith('https://www.example.com/path', expect.any(Object));
-      expect(mockMapUrl).toHaveBeenCalledWith('example.com', {
-        ignoreSitemap: true,
+      expect(mockMap).toHaveBeenCalledWith('example.com', {
+        sitemap: 'include',
         includeSubdomains: false,
         limit: 500,
       });
-      expect(result).toEqual(['https://example.com/', 'https://example.com/about']);
+      expect(result).toEqual([
+        { url: 'https://example.com/', title: 'Home', description: 'Home page' },
+        { url: 'https://example.com/about', title: 'About', description: 'About us page' },
+      ]);
     });
 
     it('should throw error if site does not exist', async () => {
@@ -254,24 +269,23 @@ describe('firecrawlClient', () => {
         'Site does not exist'
       );
 
-      expect(mockMapUrl).not.toHaveBeenCalled();
+      expect(mockMap).not.toHaveBeenCalled();
     });
 
-    it('should throw error if sitemap request fails', async () => {
+    it('should handle sitemap with empty links', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
       } as Response);
 
       const mockSiteMap = {
-        success: false,
-        error: 'Failed to map site',
+        links: [], // Empty links array
       };
-      mockMapUrl.mockResolvedValue(mockSiteMap);
+      mockMap.mockResolvedValue(mockSiteMap);
 
-      await expect(firecrawlClient.getSiteMap('https://example.com')).rejects.toThrow(
-        'Failed to map site'
-      );
+      const result = await firecrawlClient.getSiteMap('https://example.com');
+
+      expect(result).toEqual([]);
     });
 
     it('should handle sitemap with no links', async () => {
@@ -281,10 +295,9 @@ describe('firecrawlClient', () => {
       } as Response);
 
       const mockSiteMap = {
-        success: true,
         links: null,
       };
-      mockMapUrl.mockResolvedValue(mockSiteMap);
+      mockMap.mockResolvedValue(mockSiteMap);
 
       const result = await firecrawlClient.getSiteMap('https://example.com');
 

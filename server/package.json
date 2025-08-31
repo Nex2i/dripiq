@@ -55,7 +55,7 @@
     "@highlight-run/pino": "^0.1.6",
     "@langchain/core": "^0.3.72",
     "@langchain/openai": "^0.6.9",
-    "@mendable/firecrawl-js": "^1.29.3",
+    "@mendable/firecrawl-js": "^4.1.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@sendgrid/client": "^8.1.5",
     "@sendgrid/eventwebhook": "^8.0.0",

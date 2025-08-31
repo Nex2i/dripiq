@@ -23,9 +23,9 @@ const webData = getWebDataService();
 
 // Get all employees for a company (your primary use case)
 const companyData = await webData.getCompanyWithAllEmployees('techcorp.com');
-console.log(companyData.company);        // Company information
-console.log(companyData.employees);      // All employee data
-console.log(companyData.provider);       // "CoreSignal"
+console.log(companyData.company); // Company information
+console.log(companyData.employees); // All employee data
+console.log(companyData.provider); // "CoreSignal"
 ```
 
 ### Advanced Usage
@@ -47,6 +47,7 @@ console.log(info); // { type: 'coresignal', name: 'CoreSignal', isHealthy: true 
 ## Available Providers
 
 ### CoreSignal (Default)
+
 - **Provider Type**: `'coresignal'`
 - **Status**: ✅ Fully Implemented
 - **Features**: Employee search, company search, comprehensive data
@@ -55,6 +56,7 @@ console.log(info); // { type: 'coresignal', name: 'CoreSignal', isHealthy: true 
 - **Free Testing**: [CoreSignal Dashboard](https://dashboard.coresignal.com/sign-up) (200 free credits)
 
 ### Future Providers
+
 - **Apollo**: `'apollo'` (planned)
 - **ZoomInfo**: `'zoominfo'` (planned)
 - **Custom**: `'custom'` (for your own implementations)
@@ -71,7 +73,7 @@ const employees = await webData.searchEmployees({
   company_name: 'TechCorp Inc',
   job_title: 'Software Engineer',
   location: 'San Francisco',
-  skills: ['JavaScript', 'TypeScript']
+  skills: ['JavaScript', 'TypeScript'],
 });
 
 // Get specific employee
@@ -85,7 +87,7 @@ const employee = await webData.getEmployeeById('emp_123');
 const companies = await webData.searchCompanies({
   name: 'TechCorp',
   industry: 'Technology',
-  location: 'San Francisco'
+  location: 'San Francisco',
 });
 
 // Get specific company
@@ -100,7 +102,7 @@ const company = await webData.getCompanyByDomain('techcorp.com');
 const companyData = await webData.getCompanyWithAllEmployees('techcorp.com', {
   includePastEmployees: true,
   useCache: true,
-  cacheTtl: 3600
+  cacheTtl: 3600,
 });
 
 // Get just employees (without full company details)
@@ -140,6 +142,7 @@ interface WebDataCompany {
 To add a new data provider:
 
 1. **Implement the Interface**:
+
 ```typescript
 import { IWebDataProvider } from '@/libs/webData';
 
@@ -150,12 +153,13 @@ class ApolloWebDataProvider implements IWebDataProvider {
   async searchEmployees(filters, options) {
     // Implementation
   }
-  
+
   // ... implement all other methods
 }
 ```
 
 2. **Register in Service**:
+
 ```typescript
 // In webData.service.ts
 case 'apollo':
@@ -163,6 +167,7 @@ case 'apollo':
 ```
 
 3. **Use the New Provider**:
+
 ```typescript
 const webData = new WebDataService('apollo');
 ```
@@ -175,10 +180,10 @@ All providers return standardized errors:
 try {
   const employee = await webData.getEmployeeById('invalid_id');
 } catch (error) {
-  console.log(error.provider);    // "CoreSignal"
-  console.log(error.statusCode);  // 404
-  console.log(error.message);     // "Employee not found"
-  console.log(error.code);        // "EMPLOYEE_NOT_FOUND"
+  console.log(error.provider); // "CoreSignal"
+  console.log(error.statusCode); // 404
+  console.log(error.message); // "Employee not found"
+  console.log(error.code); // "EMPLOYEE_NOT_FOUND"
 }
 ```
 
@@ -192,12 +197,12 @@ const data = await webData.getCompanyWithAllEmployees('techcorp.com');
 
 // Skip cache
 const data = await webData.getCompanyWithAllEmployees('techcorp.com', {
-  useCache: false
+  useCache: false,
 });
 
 // Custom cache TTL
 const data = await webData.getCompanyWithAllEmployees('techcorp.com', {
-  cacheTtl: 1800 // 30 minutes
+  cacheTtl: 1800, // 30 minutes
 });
 ```
 
@@ -242,6 +247,7 @@ console.log(companyData2.provider); // "Apollo"
 ## Singleton vs Instance Usage
 
 ### Singleton (Recommended for most cases)
+
 ```typescript
 import { getWebDataService } from '@/libs/webData';
 
@@ -249,6 +255,7 @@ const webData = getWebDataService(); // Always returns same instance
 ```
 
 ### New Instance (For testing or multiple providers)
+
 ```typescript
 import { WebDataService } from '@/libs/webData';
 
@@ -282,6 +289,7 @@ const webData = new WebDataService('custom', mockProvider);
 If you're currently using the CoreSignal client directly:
 
 ### Before (Direct Usage)
+
 ```typescript
 import { getCoreSignalClient } from '@/libs/webData';
 
@@ -290,6 +298,7 @@ const data = await client.getCompanyWithAllEmployees('techcorp.com');
 ```
 
 ### After (Provider Abstraction)
+
 ```typescript
 import { getWebDataService } from '@/libs/webData';
 

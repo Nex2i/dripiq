@@ -1,9 +1,9 @@
-import FirecrawlApp from '@mendable/firecrawl-js';
+import Firecrawl, { type SearchResultWeb } from '@mendable/firecrawl-js';
 import { createSignedJwt } from '../jwt';
 import { IUploadFile } from '../supabase.storage';
 import { PageData } from './firecrawl';
 
-const firecrawlApp = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
+const firecrawlApp = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
 
 const apiUrl = process.env.API_URL;
 const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
@@ -16,16 +16,16 @@ const firecrawlClient = {
   crawlEntireDomain: async (url: string, metadata: Record<string, any> = {}) => {
     const jwt = createSignedJwt(firecrawlApiKey);
 
-    const crawlResult = await firecrawlApp.asyncCrawlUrl(url, {
+    const crawlResult = await firecrawlApp.startCrawl(url, {
       limit: 50,
       allowExternalLinks: false,
       allowSubdomains: false,
-      deduplicateSimilarURLs: true,
+      // deduplicateSimilarURLs: true,
       ignoreQueryParameters: true,
-      regexOnFullURL: true,
-      allowBackwardLinks: true,
-      ignoreSitemap: true,
-      maxDepth: 3,
+      // regexOnFullURL: true,
+      // allowBackwardLinks: true,
+      // ignoreSitemap: true,
+      // maxDepth: 3,
       excludePaths: [
         '^/blog(?:/.*)?$',
         '^/support(?:/.*)?$',
@@ -36,7 +36,6 @@ const firecrawlClient = {
       scrapeOptions: {
         formats: ['markdown'],
         onlyMainContent: true,
-        parsePDF: false,
         maxAge: 14400000,
         excludeTags: ['#ad', '#footer'],
       },
@@ -65,42 +64,35 @@ const firecrawlClient = {
 
     const jwt = createSignedJwt(firecrawlApiKey);
 
-    const crawlResult = await firecrawlApp.asyncBatchScrapeUrls(
-      urls,
-      {
+    const crawlResult = await firecrawlApp.startBatchScrape(urls, {
+      options: {
         formats: ['markdown'],
         onlyMainContent: false,
-        parsePDF: false,
         maxAge: 14400000,
         excludeTags: ['#ad', 'header', 'footer'],
       },
-      undefined,
-      {
+      webhook: {
         url: `${apiUrl}/api/firecrawl/webhook`,
         events: ['completed', 'page', 'failed'],
         metadata,
         headers: {
           'x-api-key': jwt,
         },
-      }
-    );
+      },
+    });
 
     return crawlResult;
   },
-  getSiteMap: async (url: string): Promise<string[]> => {
+  getSiteMap: async (url: string): Promise<SearchResultWeb[]> => {
     if (!(await firecrawlClient.checkSiteExists(url))) {
       throw new Error('Site does not exist');
     }
 
-    const siteMap = await firecrawlApp.mapUrl(siteMapOptimizedUrl(url), {
-      ignoreSitemap: true,
+    const siteMap = await firecrawlApp.map(siteMapOptimizedUrl(url), {
+      sitemap: 'include',
       includeSubdomains: false,
       limit: 500,
     });
-
-    if (!siteMap.success) {
-      throw new Error(siteMap.error ?? 'Failed to get site map');
-    }
 
     return siteMap.links ?? [];
   },
