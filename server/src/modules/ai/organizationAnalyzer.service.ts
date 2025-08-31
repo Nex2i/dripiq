@@ -1,4 +1,5 @@
 import { firecrawlTypes } from '@/libs/firecrawl/firecrawl.metadata';
+import { tenantRepository } from '@/repositories';
 import { TenantService } from '../tenant.service';
 import { EmbeddingsService } from './embeddings.service';
 import { siteAnalysisAgent } from './langchain';
@@ -44,6 +45,15 @@ export const OrganizationAnalyzerService = {
     }
     const { summary, products, services, differentiators, targetMarket, tone } =
       aiOutput.finalResponseParsed;
+    // Link tenant to its site embedding domain
+    try {
+      const domain = await EmbeddingsService.getOrCreateDomainByUrl(website.getFullDomain());
+      await tenantRepository.setSiteEmbeddingDomain(id, domain.id);
+    } catch (error) {
+      // Log error but don't fail the analysis
+      console.error('Failed to link tenant to site embedding domain:', error);
+    }
+
     // save on tenant
     await TenantService.updateTenant(id, {
       summary: summary,
@@ -55,7 +65,7 @@ export const OrganizationAnalyzerService = {
     });
   },
   wasLastScrapeTooRecent: async (url: string) => {
-    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
+    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getFullDomain());
 
     if (!lastScrape) {
       return false;

@@ -22,6 +22,10 @@ interface String {
    */
   getDomain(): string;
   /**
+   * Get the full domain of a website URL including TLD, without protocol or www
+   */
+  getFullDomain(): string;
+  /**
    * Clean a website URL by adding https:// if missing, adding www. if missing, and removing trailing slash
    */
   cleanWebsiteUrl(): string;
@@ -95,6 +99,24 @@ String.prototype.getDomain = function (): string {
   url = url.replace(/^www\./, '');
   url = url.replace(/\.[^.]+$/, '');
   return url?.toLowerCase() || '';
+};
+
+String.prototype.getFullDomain = function (): string {
+  let url = this.toString();
+
+  // Handle empty or invalid URLs
+  if (!url || url.trim() === '') return '';
+
+  // Remove protocol
+  url = url.replace(/^https?:\/\//, '');
+
+  // Remove www prefix
+  url = url.replace(/^www\./, '');
+
+  // Split by "/" and take the first part (domain only, no path)
+  const domain = url.split('/')[0] || '';
+
+  return domain?.toLowerCase() || '';
 };
 
 String.prototype.cleanWebsiteUrl = function (): string {

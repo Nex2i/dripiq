@@ -1,7 +1,8 @@
 import { supabaseStorage } from '@/libs/supabase.storage';
 import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { updateLeadStatuses } from '../lead.service';
+import { leadRepository } from '@/repositories';
+import { updateLeadStatuses, getLeadById } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
 import { EmbeddingsService } from './embeddings.service';
@@ -31,7 +32,7 @@ export const SiteAnalyzerService = {
           return;
         }
 
-        const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getDomain());
+        const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getFullDomain());
 
         const markdownFile = firecrawlClient.createFirecrawlMarkdownFile(id, page);
         await supabaseStorage.uploadFile(markdownFile.slug, markdownFile);
@@ -51,6 +52,22 @@ export const SiteAnalyzerService = {
           [],
           [LEAD_STATUS.SCRAPING_SITE]
         );
+
+        // Link the lead to its site embedding domain
+        try {
+          const lead = await getLeadById(metadata.tenantId, metadata.leadId);
+          if (lead.url) {
+            const domain = await EmbeddingsService.getOrCreateDomainByUrl(lead.url.getFullDomain());
+            await leadRepository.setSiteEmbeddingDomainForTenant(
+              metadata.leadId,
+              metadata.tenantId,
+              domain.id
+            );
+          }
+        } catch (error) {
+          // Log error but don't fail the crawl completion
+          console.error('Failed to link lead to site embedding domain:', error);
+        }
 
         await LeadAnalysisPublisher.publish({
           tenantId: metadata.tenantId,
