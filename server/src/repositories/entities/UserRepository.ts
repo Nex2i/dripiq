@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { users, User, NewUser, tenants, userTenants } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
@@ -95,43 +95,6 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
   }
 
   /**
-   * Create user with duplicate handling (returns existing user if supabaseId already exists)
-   */
-  async createWithDuplicateHandling(userData: NewUser): Promise<User> {
-    try {
-      const [user] = await this.db.insert(this.table).values(userData).returning();
-      return user!;
-    } catch (error: any) {
-      // If user already exists (unique constraint violation), fetch and return it
-      if (error.code === '23505') {
-        const existingUser = await this.findBySupabaseId(userData.supabaseId);
-        if (!existingUser) {
-          throw new Error('User creation failed and user not found');
-        }
-        return existingUser;
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Find user by Id and Tenant Id
-   */
-  async findByIdForTenant(id: string, tenantId: string): Promise<User> {
-    const results = await this.db
-      .select()
-      .from(this.table)
-      .innerJoin(userTenants, eq(userTenants.userId, this.table.id))
-      .where(and(eq(this.table.id, id), eq(userTenants.tenantId, tenantId)))
-      .limit(1);
-
-    if (!results[0]) {
-      throw new NotFoundError(`User not found with id: ${id} for tenant: ${tenantId}`);
-    }
-
-    return (results[0] as any).users;
-  }
-  /**
    * Delete user by Supabase ID
    */
   async deleteBySupabaseId(supabaseId: string): Promise<User> {
@@ -166,21 +129,5 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
     }
 
     return result;
-  }
-
-  /**
-   * Check if user exists by Supabase ID
-   */
-  async existsBySupabaseId(supabaseId: string): Promise<boolean> {
-    const result = await this.findBySupabaseId(supabaseId);
-    return !!result;
-  }
-
-  /**
-   * Check if user exists by email
-   */
-  async existsByEmail(email: string): Promise<boolean> {
-    const result = await this.findByEmail(email);
-    return !!result;
   }
 }

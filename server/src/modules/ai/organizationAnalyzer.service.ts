@@ -55,7 +55,7 @@ export const OrganizationAnalyzerService = {
     });
   },
   wasLastScrapeTooRecent: async (url: string) => {
-    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
+    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getFullDomain());
 
     if (!lastScrape) {
       return false;

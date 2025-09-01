@@ -9,7 +9,7 @@ import { ContactExtractionService } from './contactExtraction.service';
 export const LeadAnalyzerService = {
   analyze: async (tenantId: string, leadId: string) => {
     const { url } = await getLeadById(tenantId, leadId);
-    const domain = url.getDomain();
+    const domain = url.getFullDomain();
 
     const [siteAnalysisResult, contactExtractionResult] = await Promise.allSettled([
       LeadAnalyzerService.summarizeSite(tenantId, leadId, domain),
@@ -85,7 +85,7 @@ export const LeadAnalyzerService = {
       [LEAD_STATUS.UNPROCESSED]
     );
 
-    if (await LeadAnalyzerService.wasLastScrapeTooRecent(url.getDomain())) {
+    if (await LeadAnalyzerService.wasLastScrapeTooRecent(url.getFullDomain())) {
       await LeadAnalyzerService.analyze(tenantId, leadId);
       return;
     }
@@ -108,7 +108,7 @@ export const LeadAnalyzerService = {
   },
 
   wasLastScrapeTooRecent: async (url: string) => {
-    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
+    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getFullDomain());
 
     if (!lastScrape) {
       return false;

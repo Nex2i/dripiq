@@ -118,6 +118,31 @@ describe('String Extensions', () => {
     });
   });
 
+  describe('getFullDomain', () => {
+    it('should extract full domain including TLD from URLs', () => {
+      expect('https://www.google.com/'.getFullDomain()).toBe('google.com');
+      expect('http://www.facebook.com/'.getFullDomain()).toBe('facebook.com');
+      expect('https://twitter.com'.getFullDomain()).toBe('twitter.com');
+      expect('www.example.com'.getFullDomain()).toBe('example.com');
+      expect('leventhal-law.com'.getFullDomain()).toBe('leventhal-law.com');
+    });
+
+    it('should extract full domain from URLs with paths', () => {
+      expect('https://www.leventhal-law.com/lawyers/alex-wilschke'.getFullDomain()).toBe(
+        'leventhal-law.com'
+      );
+      expect('http://example.org/about/team'.getFullDomain()).toBe('example.org');
+      expect('subdomain.example.net/api/v1'.getFullDomain()).toBe('subdomain.example.net');
+    });
+
+    it('should handle edge cases', () => {
+      expect(''.getFullDomain()).toBe('');
+      expect('https://'.getFullDomain()).toBe('');
+      expect('http://'.getFullDomain()).toBe('');
+      expect('www.'.getFullDomain()).toBe('');
+    });
+  });
+
   describe('getDomain', () => {
     it('should extract domain from simple URLs', () => {
       expect('https://www.google.com/'.getDomain()).toBe('google');

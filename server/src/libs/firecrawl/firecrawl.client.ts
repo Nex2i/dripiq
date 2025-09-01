@@ -111,7 +111,7 @@ const firecrawlClient = {
       ),
       contentType: 'text/markdown',
       fileName: `${slug}.md`,
-      slug: `${url.getDomain()}/${slug}`,
+      slug: `${url.getFullDomain()}/${slug}`,
     };
   },
   cleanMetadata: (metadata: Record<string, any>) => {

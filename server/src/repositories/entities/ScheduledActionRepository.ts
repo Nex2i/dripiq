@@ -148,23 +148,6 @@ export class ScheduledActionRepository extends TenantAwareRepository<
       .returning()) as ScheduledAction[];
   }
 
-  // Domain helpers
-  async listDuePendingForTenant(tenantId: string, beforeOrAt: Date): Promise<ScheduledAction[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(
-        and(
-          eq(this.table.tenantId, tenantId),
-          eq(
-            this.table.status,
-            'pending' as (typeof scheduledActionStatusEnum)['enumValues'][number]
-          ),
-          lte(this.table.scheduledAt, beforeOrAt)
-        )
-      );
-  }
-
   // cancel by campaign id
   async cancelByCampaignForTenant(
     tenantId: string,

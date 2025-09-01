@@ -31,7 +31,7 @@ export const SiteAnalyzerService = {
           return;
         }
 
-        const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getDomain());
+        const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getFullDomain());
 
         const markdownFile = firecrawlClient.createFirecrawlMarkdownFile(id, page);
         await supabaseStorage.uploadFile(markdownFile.slug, markdownFile);

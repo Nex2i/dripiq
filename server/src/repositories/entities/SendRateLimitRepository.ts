@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { sendRateLimits, SendRateLimit, NewSendRateLimit, channelEnum } from '@/db/schema';
+import { sendRateLimits, SendRateLimit, NewSendRateLimit } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 /**
@@ -115,18 +115,5 @@ export class SendRateLimitRepository extends TenantAwareRepository<
       .delete(this.table)
       .where(eq(this.table.tenantId, tenantId))
       .returning()) as SendRateLimit[];
-  }
-
-  // Domain helper
-  async getTenantLimit(
-    tenantId: string,
-    channel: (typeof channelEnum)['enumValues'][number]
-  ): Promise<SendRateLimit | undefined> {
-    const results = await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.channel, channel)))
-      .limit(1);
-    return results[0];
   }
 }

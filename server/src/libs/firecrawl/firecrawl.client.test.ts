@@ -323,7 +323,7 @@ describe('firecrawlClient', () => {
 
       expect(result.contentType).toBe('text/markdown');
       expect(result.fileName).toBe('example-about.md');
-      expect(result.slug).toBe('example/example-about');
+      expect(result.slug).toBe('example.com/example-about');
 
       // Verify file content
       expect(result.fileBody).toBeInstanceOf(Blob);
@@ -346,7 +346,7 @@ describe('firecrawlClient', () => {
       const result = firecrawlClient.createFirecrawlMarkdownFile(crawlId, pageData);
 
       expect(result.fileName).toBe('example.md');
-      expect(result.slug).toBe('example/example');
+      expect(result.slug).toBe('example.com/example');
     });
   });
 

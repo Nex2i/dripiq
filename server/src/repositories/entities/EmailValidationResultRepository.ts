@@ -1,4 +1,4 @@
-import { and, eq, desc, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import {
   emailValidationResults,
   EmailValidationResult,
@@ -123,19 +123,5 @@ export class EmailValidationResultRepository extends TenantAwareRepository<
       .delete(this.table)
       .where(eq(this.table.tenantId, tenantId))
       .returning()) as EmailValidationResult[];
-  }
-
-  // Domain helper
-  async findByEmailForTenant(
-    tenantId: string,
-    email: string
-  ): Promise<EmailValidationResult | undefined> {
-    const results = await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.email, email)))
-      .orderBy(desc(this.table.checkedAt))
-      .limit(1);
-    return results[0];
   }
 }

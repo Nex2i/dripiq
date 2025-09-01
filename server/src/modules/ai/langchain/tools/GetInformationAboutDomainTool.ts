@@ -24,7 +24,7 @@ export const GetInformationAboutDomainTool = new DynamicStructuredTool({
         });
       }
 
-      const cleanDomain = domain.getDomain();
+      const cleanDomain = domain.getFullDomain();
       logger.info(`Searching for "${queryText}" in domain: ${cleanDomain}`);
 
       const domainRecord = await siteEmbeddingDomainRepository.findByDomain(cleanDomain);

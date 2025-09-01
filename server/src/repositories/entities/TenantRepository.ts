@@ -26,33 +26,6 @@ export class TenantRepository extends BaseRepository<typeof tenants, Tenant, New
   }
 
   /**
-   * Check if tenant exists by name
-   */
-  async existsByName(name: string): Promise<boolean> {
-    const result = await this.findByName(name);
-    return !!result;
-  }
-
-  /**
-   * Update tenant details
-   */
-  async updateDetails(
-    tenantId: string,
-    data: {
-      organizationName?: string;
-      website?: string;
-      summary?: string;
-      differentiators?: string[];
-      targetMarket?: string;
-      tone?: string;
-      brandColors?: string[];
-      siteEmbeddingDomainId?: string;
-    }
-  ): Promise<Tenant | undefined> {
-    return await this.updateById(tenantId, data);
-  }
-
-  /**
    * Create tenant with formatted name
    */
   async createWithFormattedName(data: Omit<NewTenant, 'name'> & { name: string }): Promise<Tenant> {
@@ -65,15 +38,5 @@ export class TenantRepository extends BaseRepository<typeof tenants, Tenant, New
     };
 
     return await this.create(tenantData);
-  }
-
-  /**
-   * Set site embedding domain for tenant
-   */
-  async setSiteEmbeddingDomain(
-    tenantId: string,
-    siteEmbeddingDomainId: string | null
-  ): Promise<Tenant | undefined> {
-    return await this.updateById(tenantId, { siteEmbeddingDomainId });
   }
 }
