@@ -1,6 +1,7 @@
 import { eq, desc, gt, lt } from 'drizzle-orm';
 import { siteEmbeddingDomains, SiteEmbeddingDomain, NewSiteEmbeddingDomain } from '@/db/schema';
 import { BaseRepository } from '../base/BaseRepository';
+import '../../extensions';
 
 export class SiteEmbeddingDomainRepository extends BaseRepository<
   typeof siteEmbeddingDomains,
@@ -35,11 +36,15 @@ export class SiteEmbeddingDomainRepository extends BaseRepository<
    * Create domain if it doesn't exist
    */
   async createIfNotExists(data: NewSiteEmbeddingDomain): Promise<SiteEmbeddingDomain> {
-    const existing = await this.findByDomain(data.domain);
+    // Ensure we have a proper domain, not a full URL
+    const domain = data.domain.includes('/') ? data.domain.getFullDomain() : data.domain;
+    const normalizedData = { ...data, domain };
+    
+    const existing = await this.findByDomain(domain);
     if (existing) {
       return existing;
     }
-    return await this.create(data);
+    return await this.create(normalizedData);
   }
 
   /**
