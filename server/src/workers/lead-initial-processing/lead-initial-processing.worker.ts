@@ -9,6 +9,7 @@ import { SiteScrapeService } from '@/modules/ai/siteScrape.service';
 import { EmbeddingsService } from '@/modules/ai/embeddings.service';
 import { LeadAnalysisPublisher } from '@/modules/messages/leadAnalysis.publisher.service';
 import { firecrawlTypes } from '@/libs/firecrawl/firecrawl.metadata';
+import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import type {
   LeadInitialProcessingJobPayload,
   LeadInitialProcessingJobResult,
@@ -105,63 +106,83 @@ async function processLeadInitialProcessing(
       ...metadata,
     };
 
-    let result;
+    // Step 1: Get sitemap
+    let siteMap: SearchResultWeb[];
     try {
-      result = await SiteScrapeService.scrapeSiteWithCallbacks(
-        leadUrl,
-        batchMetadata,
-        'lead_site',
-        {
-          onSitemapRetrieved: async (siteMap: SearchResultWeb[]) => {
-            logger.info('[LeadInitialProcessingWorker] Sitemap retrieved', {
-              jobId: job.id,
-              leadId,
-              sitemapSize: siteMap.length,
-            });
-          },
-          onUrlsFiltered: async (basicFiltered: SearchResultWeb[], smartFiltered: string[]) => {
-            logger.info('[LeadInitialProcessingWorker] URL filtering completed', {
-              jobId: job.id,
-              leadId,
-              originalCount: basicFiltered.length,
-              smartFilteredCount: smartFiltered.length,
-            });
-          },
-          onBatchScrapeInitiated: async () => {
-            await updateLeadStatuses(
-              tenantId,
-              leadId,
-              [LEAD_STATUS.SYNCING_SITE],
-              [LEAD_STATUS.INITIAL_PROCESSING]
-            );
-            logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
-              jobId: job.id,
-              leadId,
-            });
-          },
-        }
-      );
+      siteMap = await firecrawlClient.getSiteMap(leadUrl.cleanWebsiteUrl());
+      logger.info('[LeadInitialProcessingWorker] Sitemap retrieved', {
+        jobId: job.id,
+        leadId,
+        sitemapSize: siteMap.length,
+      });
     } catch (error) {
-      logger.error('[LeadInitialProcessingWorker] Site scraping failed', {
+      logger.error('[LeadInitialProcessingWorker] Failed to get sitemap', {
         jobId: job.id,
         leadId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-
-      // Determine specific error type for better error handling
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      if (errorMessage.includes('sitemap')) {
-        throw new Error(`Failed to retrieve sitemap: ${errorMessage}`);
-      } else if (errorMessage.includes('batch scrape')) {
-        throw new Error(`Failed to initiate batch scrape: ${errorMessage}`);
-      } else if (errorMessage.includes('filter')) {
-        throw new Error(`Failed to filter URLs: ${errorMessage}`);
-      } else {
-        throw error;
-      }
+      throw new Error(
+        `Failed to retrieve sitemap: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
-    const { siteMap, smartFilteredUrls } = result;
+    // Step 2: Apply basic URL filtering
+    const basicFilteredUrls = SiteScrapeService.filterUrls(siteMap);
+    logger.info('[LeadInitialProcessingWorker] Basic URL filtering applied', {
+      jobId: job.id,
+      leadId,
+      originalCount: siteMap.length,
+      basicFilteredCount: basicFilteredUrls.length,
+    });
+
+    // Step 3: Apply smart filtering
+    let smartFilteredUrls: string[];
+    try {
+      smartFilteredUrls = await SiteScrapeService.smartFilterSiteMap(
+        basicFilteredUrls,
+        'lead_site'
+      );
+      logger.info('[LeadInitialProcessingWorker] Smart filter applied', {
+        jobId: job.id,
+        leadId,
+        basicFilteredCount: basicFilteredUrls.length,
+        smartFilteredCount: smartFilteredUrls.length,
+      });
+    } catch (error) {
+      logger.warn('[LeadInitialProcessingWorker] Smart filter failed, using basic filtered URLs', {
+        jobId: job.id,
+        leadId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      smartFilteredUrls = basicFilteredUrls.map((url) => url.url);
+    }
+
+    // Step 4: Update status to syncing site
+    await updateLeadStatuses(
+      tenantId,
+      leadId,
+      [LEAD_STATUS.SYNCING_SITE],
+      [LEAD_STATUS.INITIAL_PROCESSING]
+    );
+
+    // Step 5: Initiate batch scraping
+    try {
+      await firecrawlClient.batchScrapeUrls(smartFilteredUrls, batchMetadata);
+      logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
+        jobId: job.id,
+        leadId,
+        urlCount: smartFilteredUrls.length,
+      });
+    } catch (error) {
+      logger.error('[LeadInitialProcessingWorker] Failed to initiate batch scrape', {
+        jobId: job.id,
+        leadId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw new Error(
+        `Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
 
     logger.info('[LeadInitialProcessingWorker] Initial processing completed successfully', {
       jobId: job.id,

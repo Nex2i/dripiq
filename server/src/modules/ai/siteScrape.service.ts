@@ -24,49 +24,6 @@ export const SiteScrapeService = {
     await firecrawlClient.batchScrapeUrls(siteUrls, metadata);
   },
 
-  scrapeSiteWithCallbacks: async (
-    url: string,
-    metadata: Record<string, any>,
-    siteType: SiteType,
-    callbacks?: {
-      onSitemapRetrieved?: (siteMap: SearchResultWeb[]) => Promise<void>;
-      onUrlsFiltered?: (basicFiltered: SearchResultWeb[], smartFiltered: string[]) => Promise<void>;
-      onBatchScrapeInitiated?: () => Promise<void>;
-    }
-  ): Promise<{
-    siteMap: SearchResultWeb[];
-    basicFilteredUrls: SearchResultWeb[];
-    smartFilteredUrls: string[];
-  }> => {
-    const siteMap = await firecrawlClient.getSiteMap(url.cleanWebsiteUrl());
-
-    if (callbacks?.onSitemapRetrieved) {
-      await callbacks.onSitemapRetrieved(siteMap);
-    }
-
-    const basicFilteredUrls = SiteScrapeService.filterUrls(siteMap);
-    const smartFilteredUrls = await SiteScrapeService.smartFilterSiteMap(
-      basicFilteredUrls,
-      siteType
-    );
-
-    if (callbacks?.onUrlsFiltered) {
-      await callbacks.onUrlsFiltered(basicFilteredUrls, smartFilteredUrls);
-    }
-
-    await firecrawlClient.batchScrapeUrls(smartFilteredUrls, metadata);
-
-    if (callbacks?.onBatchScrapeInitiated) {
-      await callbacks.onBatchScrapeInitiated();
-    }
-
-    return {
-      siteMap,
-      basicFilteredUrls,
-      smartFilteredUrls,
-    };
-  },
-
   smartFilterSiteMap: async (siteMap: SearchResultWeb[], siteType: SiteType): Promise<string[]> => {
     const minUrls = 45;
     const maxUrls = 75;
