@@ -47,31 +47,6 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
 
     return calendarLinkClick;
   }
-
-  async findByContactForTenant(contactId: string, tenantId: string): Promise<CalendarLinkClick[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.contactId, contactId), eq(this.table.tenantId, tenantId)))
-      .orderBy(this.table.clickedAt);
-  }
-
-  async findByLeadForTenant(leadId: string, tenantId: string): Promise<CalendarLinkClick[]> {
-    return await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.leadId, leadId), eq(this.table.tenantId, tenantId)))
-      .orderBy(this.table.clickedAt);
-  }
-
-  async countByContactForTenant(contactId: string, tenantId: string): Promise<number> {
-    const result = await this.db
-      .select({ id: this.table.id })
-      .from(this.table)
-      .where(and(eq(this.table.contactId, contactId), eq(this.table.tenantId, tenantId)));
-
-    return result.length;
-  }
 }
 
 export const calendarLinkClickRepository = new CalendarLinkClickRepository();

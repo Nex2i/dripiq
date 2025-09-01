@@ -26,15 +26,4 @@ export class RoleRepository extends BaseRepository<typeof roles, Role, NewRole> 
     const result = await this.findByName(name);
     return !!result;
   }
-
-  /**
-   * Create role with duplicate check
-   */
-  async createIfNotExists(data: NewRole): Promise<Role> {
-    const existing = await this.findByName(data.name);
-    if (existing) {
-      return existing;
-    }
-    return await this.create(data);
-  }
 }

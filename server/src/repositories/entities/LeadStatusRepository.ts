@@ -86,22 +86,6 @@ export class LeadStatusRepository extends TenantAwareRepository<
   }
 
   /**
-   * Create multiple statuses for a lead
-   */
-  async createMultipleForLeadAndTenant(
-    leadId: string,
-    statuses: string[],
-    tenantId: string
-  ): Promise<LeadStatus[]> {
-    const statusData = statuses.map((status) => ({
-      leadId,
-      status,
-    }));
-
-    return await this.createManyForTenant(tenantId, statusData);
-  }
-
-  /**
    * Delete status by lead and status name for tenant
    */
   async deleteByLeadAndStatusForTenant(
@@ -111,68 +95,6 @@ export class LeadStatusRepository extends TenantAwareRepository<
   ): Promise<LeadStatus | undefined> {
     const [result] = await this.db
       .delete(this.table)
-      .where(
-        and(
-          eq(this.table.leadId, leadId),
-          eq(this.table.status, status),
-          eq(this.table.tenantId, tenantId)
-        )
-      )
-      .returning();
-    return result;
-  }
-
-  /**
-   * Delete all statuses for a lead
-   */
-  async deleteAllForLeadAndTenant(leadId: string, tenantId: string): Promise<LeadStatus[]> {
-    return await this.db
-      .delete(this.table)
-      .where(and(eq(this.table.leadId, leadId), eq(this.table.tenantId, tenantId)))
-      .returning();
-  }
-
-  /**
-   * Get unique statuses for tenant
-   */
-  async getUniqueStatusesForTenant(tenantId: string): Promise<string[]> {
-    const results = await this.db
-      .select({ status: this.table.status })
-      .from(this.table)
-      .where(eq(this.table.tenantId, tenantId));
-
-    const uniqueStatuses = [...new Set(results.map((r) => r.status))];
-    return uniqueStatuses;
-  }
-
-  /**
-   * Count leads by status for tenant
-   */
-  async countLeadsByStatusForTenant(tenantId: string): Promise<Record<string, number>> {
-    const results = await this.db
-      .select({ status: this.table.status })
-      .from(this.table)
-      .where(eq(this.table.tenantId, tenantId));
-
-    const counts: Record<string, number> = {};
-    results.forEach((result) => {
-      counts[result.status] = (counts[result.status] || 0) + 1;
-    });
-
-    return counts;
-  }
-
-  /**
-   * Update status timestamps (for tracking when statuses were added)
-   */
-  async touchStatusForTenant(
-    leadId: string,
-    status: string,
-    tenantId: string
-  ): Promise<LeadStatus | undefined> {
-    const [result] = await this.db
-      .update(this.table)
-      .set({ updatedAt: new Date() })
       .where(
         and(
           eq(this.table.leadId, leadId),

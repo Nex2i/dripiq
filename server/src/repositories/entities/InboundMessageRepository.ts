@@ -1,4 +1,4 @@
-import { and, eq, desc, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { inboundMessages, InboundMessage, NewInboundMessage } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
@@ -115,19 +115,5 @@ export class InboundMessageRepository extends TenantAwareRepository<
       .delete(this.table)
       .where(eq(this.table.tenantId, tenantId))
       .returning()) as InboundMessage[];
-  }
-
-  // Domain helper
-  async listByCampaignForTenant(
-    tenantId: string,
-    campaignId: string,
-    limit = 100
-  ): Promise<InboundMessage[]> {
-    return (await this.db
-      .select()
-      .from(this.table)
-      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.campaignId, campaignId)))
-      .orderBy(desc(this.table.receivedAt))
-      .limit(limit)) as InboundMessage[];
   }
 }
