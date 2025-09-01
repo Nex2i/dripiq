@@ -528,29 +528,38 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
 
   const results = [];
 
-  for (const website of websites) {
+  for (const domain of websites) {
     try {
-      // Extract domain name using string extension
-      const leadName = website.getDomain();
+      // The input is already a clean domain (e.g., "dominguezfirm.com")
+      // Extract lead name by removing TLD using getDomain
+      const leadName = domain.getDomain();
+      
+      // Create the full URL for storage
+      const websiteUrl = `https://www.${domain}`;
 
       if (!leadName) {
         results.push({
-          url: website,
+          url: domain,
           success: false,
           error: 'Unable to extract domain name from URL',
         });
         continue;
       }
 
-      // Check if a lead with this URL already exists for this tenant
-      // We'll use a simple query to check for existing URL
-      const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: website });
-      const existingLead = existingLeads.find(lead => lead.url === website);
+      // Check if a lead with this domain already exists for this tenant
+      // Check both the domain and the full URL format
+      const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: domain });
+      const existingLead = existingLeads.find(lead => 
+        lead.url === websiteUrl || 
+        lead.url === `https://${domain}` || 
+        lead.url === domain ||
+        lead.url.includes(domain)
+      );
       if (existingLead) {
         results.push({
-          url: website,
+          url: domain,
           success: false,
-          error: 'Lead with this URL already exists',
+          error: 'Lead with this domain already exists',
           leadId: existingLead.id,
           name: existingLead.name,
         });
@@ -560,7 +569,7 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
       // Create the lead
       const leadData: Omit<NewLead, 'tenantId'> = {
         name: leadName,
-        url: website,
+        url: websiteUrl,
         status: 'new',
         ownerId,
       };
@@ -596,17 +605,17 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
       });
 
       results.push({
-        url: website,
+        url: domain,
         success: true,
         leadId: newLead.id,
         name: newLead.name,
       });
 
-      logger.info(`Successfully created lead in batch: ${newLead.id} for URL: ${website}`);
+      logger.info(`Successfully created lead in batch: ${newLead.id} for domain: ${domain}`);
     } catch (error: any) {
-      logger.error(`Failed to create lead for URL ${website}:`, error);
+      logger.error(`Failed to create lead for domain ${domain}:`, error);
       results.push({
-        url: website,
+        url: domain,
         success: false,
         error: error.message || 'Unknown error occurred',
       });

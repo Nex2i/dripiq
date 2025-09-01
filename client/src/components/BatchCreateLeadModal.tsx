@@ -121,7 +121,7 @@ export function BatchCreateLeadModal({
     }
 
     const batchData: BatchCreateLeadData = {
-      websites: validUrls.map((url) => url.cleaned),
+      websites: validUrls.map((url) => url.fullDomain),
       ownerId: selectedOwnerId,
     }
 

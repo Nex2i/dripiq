@@ -4,14 +4,13 @@ import { Type } from '@sinclair/typebox';
 export const BatchCreateLeadRequestSchema = Type.Object({
   websites: Type.Array(
     Type.String({
-      format: 'uri',
       minLength: 1,
-      description: 'Lead website URL',
+      description: 'Lead website domain (e.g., "example.com")',
     }),
     {
       minItems: 1,
       maxItems: 50, // Reasonable limit for batch operations
-      description: 'Array of website URLs to create leads from',
+      description: 'Array of website domains to create leads from',
     }
   ),
   ownerId: Type.String({

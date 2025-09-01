@@ -291,7 +291,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         if (!websites || !Array.isArray(websites) || websites.length === 0) {
           reply.status(400).send({
             message: 'Websites array is required and cannot be empty',
-            error: 'At least one website URL must be provided',
+            error: 'At least one website domain must be provided',
           });
           return;
         }
@@ -299,7 +299,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         if (websites.length > 50) {
           reply.status(400).send({
             message: 'Too many websites provided',
-            error: 'Maximum 50 websites allowed per batch',
+            error: 'Maximum 50 website domains allowed per batch',
           });
           return;
         }
@@ -320,8 +320,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         if (cleanedWebsites.length === 0) {
           reply.status(400).send({
-            message: 'No valid website URLs provided',
-            error: 'All provided URLs are empty or invalid',
+            message: 'No valid website domains provided',
+            error: 'All provided domains are empty or invalid',
           });
           return;
         }
