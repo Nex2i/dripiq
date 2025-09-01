@@ -13,6 +13,7 @@ import { LEAD_STATUS } from '../constants/leadStatus.constants';
 import { storageService } from './storage/storage.service';
 import { ProductsService } from './products.service';
 import { attachProductsToLead } from './leadProduct.service';
+import { LeadInitialProcessingPublisher } from './messages/leadInitialProcessing.publisher.service';
 
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
@@ -510,11 +511,6 @@ export const updateLeadStatuses = async (
  * @returns A promise that resolves to an array of batch creation results.
  */
 export const createLeadsBatch = async (tenantId: string, websites: string[], ownerId: string) => {
-  // Import here to avoid circular dependencies
-  const { LeadInitialProcessingPublisher } = await import(
-    '@/modules/messages/leadInitialProcessing.publisher.service'
-  );
-
   // If ownerId is provided, enforce verified sender identity for that owner
   if (ownerId) {
     const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
