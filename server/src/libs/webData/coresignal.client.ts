@@ -23,7 +23,7 @@ export class CoreSignalClient {
   private readonly apiKey: string;
   private readonly httpClient: AxiosInstance;
   private readonly cacheClient: CacheClient;
-  private readonly defaultCacheTtl = 60 * 60; // 1 hour in seconds
+  private readonly defaultCacheTtl = 60 * 60 * 24 * 7; // 7 days in seconds
 
   constructor() {
     this.apiKey = process.env.CORESIGNAL_API_KEY || '';
