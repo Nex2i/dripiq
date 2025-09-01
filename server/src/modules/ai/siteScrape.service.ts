@@ -25,9 +25,9 @@ export const SiteScrapeService = {
   },
 
   smartFilterSiteMap: async (siteMap: SearchResultWeb[], siteType: SiteType): Promise<string[]> => {
-    const minUrls = 25;
+    const minUrls = 45;
     const maxUrls = 75;
-    if (siteMap.length <= 25) {
+    if (siteMap.length <= minUrls) {
       return siteMap.map((url) => url.url);
     }
 
