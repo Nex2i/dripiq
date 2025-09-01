@@ -106,7 +106,7 @@ async function processLeadInitialProcessing(
       ...metadata,
     };
 
-    // Step 1: Get sitemap
+    // Get sitemap
     let siteMap: SearchResultWeb[];
     try {
       siteMap = await firecrawlClient.getSiteMap(leadUrl.cleanWebsiteUrl());
@@ -126,7 +126,7 @@ async function processLeadInitialProcessing(
       );
     }
 
-    // Step 2: Apply basic URL filtering
+    // Apply basic URL filtering
     const basicFilteredUrls = SiteScrapeService.filterUrls(siteMap);
     logger.info('[LeadInitialProcessingWorker] Basic URL filtering applied', {
       jobId: job.id,
@@ -135,7 +135,7 @@ async function processLeadInitialProcessing(
       basicFilteredCount: basicFilteredUrls.length,
     });
 
-    // Step 3: Apply smart filtering
+    // Apply smart filtering
     let smartFilteredUrls: string[];
     try {
       smartFilteredUrls = await SiteScrapeService.smartFilterSiteMap(
@@ -157,7 +157,7 @@ async function processLeadInitialProcessing(
       smartFilteredUrls = basicFilteredUrls.map((url) => url.url);
     }
 
-    // Step 4: Update status to syncing site
+    // Update status to syncing site
     await updateLeadStatuses(
       tenantId,
       leadId,
@@ -165,7 +165,7 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.INITIAL_PROCESSING]
     );
 
-    // Step 5: Initiate batch scraping
+    // Initiate batch scraping
     try {
       await firecrawlClient.batchScrapeUrls(smartFilteredUrls, batchMetadata);
       logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
