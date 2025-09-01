@@ -531,29 +531,30 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
   for (const domain of websites) {
     try {
       // The input is already a clean domain (e.g., "dominguezfirm.com")
-      // Extract lead name by removing TLD using getDomain
+      // Lead name: Extract domain without TLD using getDomain (e.g., "dominguezfirm")
       const leadName = domain.getDomain();
-      
-      // Create the full URL for storage
-      const websiteUrl = `https://www.${domain}`;
+
+      // URL: Save the full domain as received (e.g., "dominguezfirm.com")
+      const websiteUrl = domain;
 
       if (!leadName) {
         results.push({
           url: domain,
           success: false,
-          error: 'Unable to extract domain name from URL',
+          error: 'Unable to extract domain name',
         });
         continue;
       }
 
       // Check if a lead with this domain already exists for this tenant
-      // Check both the domain and the full URL format
+      // Check both the domain and common URL variations
       const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: domain });
-      const existingLead = existingLeads.find(lead => 
-        lead.url === websiteUrl || 
-        lead.url === `https://${domain}` || 
-        lead.url === domain ||
-        lead.url.includes(domain)
+      const existingLead = existingLeads.find(
+        (lead) =>
+          lead.url === domain ||
+          lead.url === `https://${domain}` ||
+          lead.url === `https://www.${domain}` ||
+          lead.url.includes(domain)
       );
       if (existingLead) {
         results.push({
