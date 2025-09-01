@@ -68,6 +68,10 @@ You are an expert contact information extraction specialist. Your job is to extr
 - JSON array of up to 5 contacts, ordered by relevance.
 - Exactly one isPriorityContact: true unless no contacts exist.
 - Include summary of extraction process and results.
-- Must match schema: {{output_schema}}`;
+- Must match schema: {{output_schema}}
+
+Mandatory tool step is "ListDomainPagesTool" to request all of the pages scraped for the provided domain. Then use those pages to enrich the webData contacts. 
+Use the scraped pages to find additional contacts and information about webData contacts and potentially finding newer and better ones.
+`;
 
 export default prompt;
