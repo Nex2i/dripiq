@@ -6,6 +6,7 @@ import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
+import { fetchWebDataContacts, formatWebDataContactsForPrompt } from '../../webDataContactHelper';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
@@ -55,8 +56,14 @@ export class ContactExtractionAgent {
   }
 
   async extractContacts(domain: string): Promise<ContactExtractionResult> {
+    // First, fetch webData contacts to include in the prompt
+    logger.info('Fetching webData contacts for extraction', { domain });
+    const webDataSummary = await fetchWebDataContacts(domain);
+    const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
+
     const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
       domain,
+      webdata_contacts: webDataContactsText,
       output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
     });
 
