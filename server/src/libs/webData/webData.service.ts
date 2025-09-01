@@ -355,4 +355,43 @@ export class WebDataService implements IWebDataProvider {
       throw error;
     }
   }
+
+  /**
+   * Get employees by company domain using multi-source data
+   */
+  async getEmployeesByCompanyDomain(
+    domain: string,
+    options?: WebDataSearchOptions & { isDecisionMaker?: boolean }
+  ): Promise<WebDataCompanyEmployeesResult> {
+    try {
+      logger.info('WebDataService: Getting employees by company domain', {
+        domain,
+        options,
+        provider: this.provider.providerName,
+      });
+
+      // Check if provider supports this method
+      if (
+        'getEmployeesByCompanyDomain' in this.provider &&
+        typeof this.provider.getEmployeesByCompanyDomain === 'function'
+      ) {
+        return await this.provider.getEmployeesByCompanyDomain(domain, options);
+      } else {
+        // Fallback for providers that don't support this method
+        logger.warn('Provider does not support getEmployeesByCompanyDomain, using fallback', {
+          provider: this.provider.providerName,
+        });
+
+        // Use the existing getCompanyWithAllEmployees method as fallback
+        return await this.getCompanyWithAllEmployees(domain, options);
+      }
+    } catch (error) {
+      logger.error('WebDataService: Get employees by company domain failed', {
+        domain,
+        provider: this.provider.providerName,
+        error: String(error),
+      });
+      throw error;
+    }
+  }
 }
