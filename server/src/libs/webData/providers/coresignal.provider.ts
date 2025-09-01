@@ -1,14 +1,9 @@
 import { logger } from '@/libs/logger';
 import { CoreSignalClient } from '../coresignal.client';
 import {
-  IWebDataProvider,
+  IWebDataProviderWithDomainSearch,
   WebDataSearchOptions,
-  EmployeeSearchFilters,
-  CompanySearchFilters,
-  WebDataEmployee,
   WebDataCompany,
-  WebDataEmployeeSearchResult,
-  WebDataCompanySearchResult,
   WebDataCompanyEmployeesResult,
   WebDataError,
 } from '../interfaces/webData.interface';
@@ -18,7 +13,7 @@ import { CoreSignalError, CoreSignalEmployeeCollectionResponse } from '../types'
  * CoreSignal implementation of the WebData provider interface
  * Adapted for v2 multi-source API
  */
-export class CoreSignalWebDataProvider implements IWebDataProvider {
+export class CoreSignalWebDataProvider implements IWebDataProviderWithDomainSearch {
   public readonly providerName = 'CoreSignal';
   private client: CoreSignalClient;
   private _isHealthy = true;
@@ -138,53 +133,7 @@ export class CoreSignalWebDataProvider implements IWebDataProvider {
     }
   }
 
-  // Stub implementations for required interface methods
-  // These are not implemented in the v2 multi-source API but required by the interface
 
-  async searchEmployees(
-    _filters: EmployeeSearchFilters,
-    _options?: WebDataSearchOptions
-  ): Promise<WebDataEmployeeSearchResult> {
-    throw new Error('searchEmployees is not implemented in CoreSignal v2 multi-source API');
-  }
-
-  async getEmployeeById(_id: string, _options?: WebDataSearchOptions): Promise<WebDataEmployee> {
-    throw new Error('getEmployeeById is not implemented in CoreSignal v2 multi-source API');
-  }
-
-  async searchCompanies(
-    _filters: CompanySearchFilters,
-    _options?: WebDataSearchOptions
-  ): Promise<WebDataCompanySearchResult> {
-    throw new Error('searchCompanies is not implemented in CoreSignal v2 multi-source API');
-  }
-
-  async getCompanyById(_id: string, _options?: WebDataSearchOptions): Promise<WebDataCompany> {
-    throw new Error('getCompanyById is not implemented in CoreSignal v2 multi-source API');
-  }
-
-  async getCompanyByDomain(
-    _domain: string,
-    _options?: WebDataSearchOptions
-  ): Promise<WebDataCompany> {
-    throw new Error('getCompanyByDomain is not implemented in CoreSignal v2 multi-source API');
-  }
-
-  async getEmployeesByCompany(
-    _companyIdentifier: string,
-    _options?: WebDataSearchOptions & { includePastEmployees?: boolean }
-  ): Promise<WebDataCompanyEmployeesResult> {
-    throw new Error('getEmployeesByCompany is not implemented in CoreSignal v2 multi-source API');
-  }
-
-  async getCompanyWithAllEmployees(
-    _companyIdentifier: string,
-    _options?: WebDataSearchOptions & { includePastEmployees?: boolean }
-  ): Promise<WebDataCompanyEmployeesResult> {
-    throw new Error(
-      'getCompanyWithAllEmployees is not implemented in CoreSignal v2 multi-source API'
-    );
-  }
 
   /**
    * Check the health of the provider

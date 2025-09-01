@@ -161,13 +161,50 @@ export interface WebDataError {
 }
 
 /**
- * Main WebData provider interface
- * All data providers must implement this interface
+ * Base WebData provider interface with common methods
  */
-export interface IWebDataProvider {
+export interface IWebDataProviderBase {
   readonly providerName: string;
   readonly isHealthy: boolean;
 
+  // Utility methods
+  /**
+   * Check the health of the provider
+   */
+  healthCheck(): Promise<boolean>;
+
+  /**
+   * Clear the cache
+   * @param pattern
+   */
+  clearCache(pattern?: string): Promise<void>;
+
+  /**
+   * Get the cache stats
+   */
+  getCacheStats(): Promise<{ hits: number; misses: number; size: number }>;
+}
+
+/**
+ * Extended WebData provider interface with domain-based employee search
+ */
+export interface IWebDataProviderWithDomainSearch extends IWebDataProviderBase {
+  /**
+   * Get employees by company domain using multi-source data
+   * @param domain
+   * @param options
+   */
+  getEmployeesByCompanyDomain(
+    domain: string,
+    options?: WebDataSearchOptions & { isDecisionMaker?: boolean }
+  ): Promise<WebDataCompanyEmployeesResult>;
+}
+
+/**
+ * Full WebData provider interface (legacy)
+ * All data providers should ideally implement this interface
+ */
+export interface IWebDataProvider extends IWebDataProviderBase {
   // Employee methods
   /**
    * Search for employees
@@ -231,21 +268,4 @@ export interface IWebDataProvider {
     companyIdentifier: string,
     options?: WebDataSearchOptions & { includePastEmployees?: boolean }
   ): Promise<WebDataCompanyEmployeesResult>;
-
-  // Utility methods
-  /**
-   * Check the health of the provider
-   */
-  healthCheck(): Promise<boolean>;
-
-  /**
-   * Clear the cache
-   * @param pattern
-   */
-  clearCache(pattern?: string): Promise<void>;
-
-  /**
-   * Get the cache stats
-   */
-  getCacheStats(): Promise<{ hits: number; misses: number; size: number }>;
 }

@@ -2,6 +2,8 @@ import { logger } from '@/libs/logger';
 import { CoreSignalWebDataProvider } from './providers/coresignal.provider';
 import {
   IWebDataProvider,
+  IWebDataProviderBase,
+  IWebDataProviderWithDomainSearch,
   WebDataSearchOptions,
   EmployeeSearchFilters,
   CompanySearchFilters,
@@ -19,10 +21,10 @@ type WebDataProviderType = 'coresignal' | 'apollo' | 'zoominfo' | 'custom';
  * Provides a unified interface that can switch between different data providers
  */
 export class WebDataService implements IWebDataProvider {
-  private provider: IWebDataProvider;
+  private provider: IWebDataProviderBase;
   private providerType: WebDataProviderType;
 
-  constructor(providerType: WebDataProviderType = 'coresignal', customProvider?: IWebDataProvider) {
+  constructor(providerType: WebDataProviderType = 'coresignal', customProvider?: IWebDataProviderBase) {
     this.providerType = providerType;
     this.provider = this.createProvider(providerType, customProvider);
 
@@ -37,8 +39,8 @@ export class WebDataService implements IWebDataProvider {
    */
   private createProvider(
     type: WebDataProviderType,
-    customProvider?: IWebDataProvider
-  ): IWebDataProvider {
+    customProvider?: IWebDataProviderBase
+  ): IWebDataProviderBase {
     switch (type) {
       case 'coresignal':
         return new CoreSignalWebDataProvider();
