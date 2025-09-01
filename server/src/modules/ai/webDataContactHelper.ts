@@ -20,6 +20,8 @@ export interface WebDataContactSummary {
   companyName?: string;
 }
 
+const DEFAULT_WEBDATA_LIMIT = 15;
+
 /**
  * Fetch and format webData contacts for prompt injection
  * Creates a smaller, optimized payload to reduce token usage
@@ -30,21 +32,18 @@ export async function fetchWebDataContacts(domain: string): Promise<WebDataConta
 
     const webDataService = getWebDataService();
     const webDataResult: WebDataCompanyEmployeesResult =
-      await webDataService.getEmployeesByCompanyDomain(domain);
+      await webDataService.getEmployeesByCompanyDomain(domain, { limit: DEFAULT_WEBDATA_LIMIT });
 
     // Extract current employees (prioritize over former)
-    const currentEmployees = webDataResult.employees.current || [];
+    let currentEmployees = webDataResult.employees.current || [];
 
-    // Filter and format contacts
     const formattedContacts = currentEmployees
-      .filter((employee) => employee.email) // Only include employees with emails
       .map((employee) => formatEmployee(employee))
       .sort((a, b) => {
         // Sort by priority: high -> medium -> low
         const priorityOrder = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
-      })
-      .slice(0, 10); // Limit to top 10 contacts to control prompt size
+      });
 
     logger.info('WebData contacts processed', {
       domain,
