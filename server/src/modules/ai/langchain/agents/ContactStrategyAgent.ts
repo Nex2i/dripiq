@@ -29,12 +29,14 @@ import {
 } from '../../schemas/contactCampaignStrategyInputSchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
 import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
+import { ConversationStorageService } from '../storage/ConversationStorageService';
 
 export type ContactStrategyResult = {
   finalResponse: string;
   finalResponseParsed: EmailContentOutput;
   totalIterations: number;
   functionCalls: any[];
+  conversationId?: string;
 };
 
 type ValueSchema<T> = {
@@ -89,6 +91,9 @@ export class ContactStrategyAgent {
     leadId: string,
     contactId: string
   ): Promise<ContactStrategyResult> {
+    const startTime = Date.now();
+    const conversationId = ConversationStorageService.generateConversationId();
+
     let systemPrompt: string;
     try {
       systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
@@ -98,6 +103,14 @@ export class ContactStrategyAgent {
         `Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+
+    // Create conversation metadata
+    const conversationMetadata = ConversationStorageService.createConversationMetadata(
+      'contact-strategy',
+      tenantId,
+      { leadId, contactId },
+      conversationId
+    );
 
     try {
       const result = await this.agent.invoke({
@@ -121,14 +134,40 @@ export class ContactStrategyAgent {
       // Enhanced JSON parsing with better error handling
       const parsedResult = parseWithSchema(finalResponse);
 
+      // Create enhanced result with parsed data
+      const enhancedResult = {
+        ...result,
+        finalResponseParsed: parsedResult,
+      };
+
+      // Save conversation asynchronously
+      const conversationOutput = ConversationStorageService.createConversationOutput(
+        conversationMetadata,
+        systemPrompt,
+        enhancedResult,
+        startTime
+      );
+      ConversationStorageService.saveConversationAsync('contact-strategy', conversationOutput);
+
       return {
         finalResponse: result.output || finalResponse || 'Email content generation completed',
         finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        conversationId,
       };
     } catch (error) {
       logger.error('Email content generation failed:', error);
+
+      // Save error conversation asynchronously
+      const conversationOutput = ConversationStorageService.createConversationOutput(
+        conversationMetadata,
+        systemPrompt,
+        { intermediateSteps: [], output: '' },
+        startTime,
+        error as Error
+      );
+      ConversationStorageService.saveConversationAsync('contact-strategy', conversationOutput);
 
       throw error;
     }

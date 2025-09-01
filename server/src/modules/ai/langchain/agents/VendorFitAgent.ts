@@ -11,12 +11,14 @@ import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import vendorFitOutputSchema from '../../schemas/vendorFitOutputSchema';
 import vendorFitInputSchema from '../../schemas/vendorFitInputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import { ConversationStorageService } from '../storage/ConversationStorageService';
 
 export type VendorFitResult = {
   finalResponse: string;
   finalResponseParsed: z.infer<typeof vendorFitOutputSchema>;
   totalIterations: number;
   functionCalls: any[];
+  conversationId?: string;
 };
 
 export class VendorFitAgent {
@@ -53,13 +55,28 @@ export class VendorFitAgent {
     });
   }
 
-  async analyzeVendorFit(partnerInfo: any, opportunityContext: string): Promise<VendorFitResult> {
+  async analyzeVendorFit(
+    partnerInfo: any,
+    opportunityContext: string,
+    tenantId?: string
+  ): Promise<VendorFitResult> {
+    const startTime = Date.now();
+    const conversationId = ConversationStorageService.generateConversationId();
+
     const systemPrompt = promptHelper.getPromptAndInject('vendor_fit', {
       input_schema: JSON.stringify(z.toJSONSchema(vendorFitInputSchema), null, 2),
       partner_details: JSON.stringify(partnerInfo, null, 2),
       opportunity_details: opportunityContext,
       output_schema: JSON.stringify(z.toJSONSchema(vendorFitOutputSchema), null, 2),
     });
+
+    // Create conversation metadata
+    const conversationMetadata = ConversationStorageService.createConversationMetadata(
+      'vendor-fit',
+      tenantId || 'unknown',
+      { partnerInfo, opportunityContext },
+      conversationId
+    );
 
     try {
       const result = await this.agent.invoke({
@@ -78,14 +95,45 @@ export class VendorFitAgent {
 
       const finalResponseParsed = parseWithSchema(finalResponse, partnerInfo);
 
+      // Create enhanced result with parsed data
+      const enhancedResult = {
+        ...result,
+        finalResponseParsed,
+      };
+
+      // Save conversation asynchronously
+      if (tenantId) {
+        const conversationOutput = ConversationStorageService.createConversationOutput(
+          conversationMetadata,
+          systemPrompt,
+          enhancedResult,
+          startTime
+        );
+        ConversationStorageService.saveConversationAsync('vendor-fit', conversationOutput);
+      }
+
       return {
         finalResponse,
         finalResponseParsed,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps ?? [],
+        conversationId,
       };
     } catch (error) {
       logger.error('Error in vendor fit analysis:', error);
+
+      // Save error conversation asynchronously
+      if (tenantId) {
+        const conversationOutput = ConversationStorageService.createConversationOutput(
+          conversationMetadata,
+          systemPrompt,
+          { intermediateSteps: [], output: '' },
+          startTime,
+          error as Error
+        );
+        ConversationStorageService.saveConversationAsync('vendor-fit', conversationOutput);
+      }
+
       return {
         finalResponse: `Error occurred during vendor fit analysis: ${
           error instanceof Error ? error.message : 'Unknown error'
@@ -93,6 +141,7 @@ export class VendorFitAgent {
         totalIterations: 1,
         functionCalls: [],
         finalResponseParsed: getFallbackResult(partnerInfo, error),
+        conversationId,
       };
     }
   }

@@ -4,7 +4,7 @@ import { supabase } from './supabase.client';
 const bucket = process.env.SITE_STORAGE_BUCKET;
 
 if (!bucket) {
-  throw new Error('SUPABASE_STORAGE_BUCKET is not set');
+  throw new Error('SITE_STORAGE_BUCKET is not set');
 }
 
 export interface IUploadFile {

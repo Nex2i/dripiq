@@ -34,3 +34,13 @@ export {
   createContactExtractionAgent,
   createContactStrategyAgent,
 } from './factories/AgentFactory';
+
+// Export storage service
+export {
+  ConversationStorageService,
+  type AgentType,
+  type ConversationOutput,
+  type ConversationInput,
+  type ConversationStep,
+  type ConversationMetrics,
+} from './storage/ConversationStorageService';
