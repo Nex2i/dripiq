@@ -18,6 +18,10 @@ interface String {
    */
   getUrlSlug(): string;
   /**
+   * Get the full domain of a website URL including TLD, without protocol or www
+   */
+  getFullDomain(): string;
+  /**
    * Get the domain of a website URL without the protocol or www
    */
   getDomain(): string;
@@ -87,6 +91,24 @@ String.prototype.getUrlSlug = function (): string {
   const allParts = [...domainParts, ...pathParts].filter((part) => part && part.trim() !== '');
 
   return allParts.join('-')?.toLowerCase() || '';
+};
+
+String.prototype.getFullDomain = function (): string {
+  let url = this.toString();
+
+  // Handle empty or invalid URLs
+  if (!url || url.trim() === '') return '';
+
+  // Remove protocol
+  url = url.replace(/^https?:\/\//, '');
+
+  // Remove www prefix
+  url = url.replace(/^www\./, '');
+
+  // Split by "/" and take the first part (domain only, no path)
+  const domain = url.split('/')[0] || '';
+
+  return domain?.toLowerCase() || '';
 };
 
 String.prototype.getDomain = function (): string {

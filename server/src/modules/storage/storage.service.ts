@@ -42,7 +42,7 @@ export const storageService = {
   },
 
   getTenantDomainLogoKey: (tenantId: string, domain?: string | null) => {
-    const cleanedDomain = domain?.getDomain();
+    const cleanedDomain = domain?.getFullDomain();
     return `${tenantId}/${cleanedDomain}/images/logo`;
   },
 };

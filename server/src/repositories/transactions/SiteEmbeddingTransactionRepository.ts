@@ -7,11 +7,12 @@ export class SiteEmbeddingTransactionRepository {
    * Get or create a domain by URL in a transaction
    */
   static async getOrCreateDomainByUrl(url: string): Promise<SiteEmbeddingDomain> {
+    const cleanUrl = url.getFullDomain();
     const result = await db.transaction(async (tx) => {
       const existing = await tx
         .select()
         .from(siteEmbeddingDomains)
-        .where(eq(siteEmbeddingDomains.domain, url))
+        .where(eq(siteEmbeddingDomains.domain, cleanUrl))
         .limit(1);
 
       if (existing.length > 0) {
@@ -21,7 +22,7 @@ export class SiteEmbeddingTransactionRepository {
       const inserted = await tx
         .insert(siteEmbeddingDomains)
         .values({
-          domain: url,
+          domain: cleanUrl,
           scrapedAt: new Date(),
         })
         .returning();

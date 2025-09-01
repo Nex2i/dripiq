@@ -100,7 +100,7 @@ export class SenderIdentityResolverService {
 
       // Option 1: Use tenant website domain if available
       if (tenant.website && !tenant.website.isNullOrEmpty()) {
-        const websiteDomain = tenant.website.getDomain();
+        const websiteDomain = tenant.website.getFullDomain();
         if (websiteDomain && !websiteDomain.isNullOrEmpty()) {
           logger.info('[SenderIdentityResolver] Using tenant website domain', {
             tenantId,
