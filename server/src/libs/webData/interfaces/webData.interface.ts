@@ -169,36 +169,83 @@ export interface IWebDataProvider {
   readonly isHealthy: boolean;
 
   // Employee methods
+  /**
+   * Search for employees
+   * @param filters
+   * @param options
+   */
   searchEmployees(
     filters: EmployeeSearchFilters,
     options?: WebDataSearchOptions
   ): Promise<WebDataEmployeeSearchResult>;
 
+  /**
+   * Get an employee by ID
+   * @param id
+   * @param options
+   */
   getEmployeeById(id: string, options?: WebDataSearchOptions): Promise<WebDataEmployee>;
 
   // Company methods
+  /**
+   * Search for companies
+   * @param filters
+   * @param options
+   */
   searchCompanies(
     filters: CompanySearchFilters,
     options?: WebDataSearchOptions
   ): Promise<WebDataCompanySearchResult>;
 
+  /**
+   * Get a company by ID
+   * @param id
+   * @param options
+   */
   getCompanyById(id: string, options?: WebDataSearchOptions): Promise<WebDataCompany>;
 
+  /**
+   * Get a company by domain
+   * @param domain
+   * @param options
+   */
   getCompanyByDomain(domain: string, options?: WebDataSearchOptions): Promise<WebDataCompany>;
 
   // Combined methods
+  /**
+   * Get employees by company
+   * @param companyIdentifier
+   * @param options
+   */
   getEmployeesByCompany(
     companyIdentifier: string,
     options?: WebDataSearchOptions & { includePastEmployees?: boolean }
   ): Promise<WebDataCompanyEmployeesResult>;
 
+  /**
+   * Get a company with all employees
+   * @param companyIdentifier
+   * @param options
+   */
   getCompanyWithAllEmployees(
     companyIdentifier: string,
     options?: WebDataSearchOptions & { includePastEmployees?: boolean }
   ): Promise<WebDataCompanyEmployeesResult>;
 
   // Utility methods
+  /**
+   * Check the health of the provider
+   */
   healthCheck(): Promise<boolean>;
+
+  /**
+   * Clear the cache
+   * @param pattern
+   */
   clearCache(pattern?: string): Promise<void>;
+
+  /**
+   * Get the cache stats
+   */
   getCacheStats(): Promise<{ hits: number; misses: number; size: number }>;
 }
