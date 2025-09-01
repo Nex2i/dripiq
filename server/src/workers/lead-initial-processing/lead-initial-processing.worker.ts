@@ -35,10 +35,10 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.UNPROCESSED]
     );
 
-    // Check if site was recently scraped (within 24 hours)
+    // Check if site was recently scraped (within 2 weeks)
     const domain = leadUrl.getFullDomain();
     const lastScrapeDate = await EmbeddingsService.getDateOfLastDomainScrape(domain);
-    const recentScrapeThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
+    const recentScrapeThreshold = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 2 weeks ago
 
     if (lastScrapeDate && lastScrapeDate > recentScrapeThreshold) {
       logger.info(
