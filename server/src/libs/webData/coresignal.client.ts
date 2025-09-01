@@ -339,7 +339,7 @@ export class CoreSignalClient {
     return {
       hits: stats.hits || 0,
       misses: stats.misses || 0,
-      size: stats.keyCount || 0,
+      size: stats.keys || 0,
     };
   }
 
