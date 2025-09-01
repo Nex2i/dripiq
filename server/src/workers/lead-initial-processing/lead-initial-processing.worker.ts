@@ -6,6 +6,8 @@ import { LEAD_STATUS } from '@/constants/leadStatus.constants';
 import { logger } from '@/libs/logger';
 import { updateLeadStatuses } from '@/modules/lead.service';
 import { SiteScrapeService } from '@/modules/ai/siteScrape.service';
+import { EmbeddingsService } from '@/modules/ai/embeddings.service';
+import { LeadAnalysisPublisher } from '@/modules/messages/leadAnalysis.publisher.service';
 import { firecrawlTypes } from '@/libs/firecrawl/firecrawl.metadata';
 import type {
   LeadInitialProcessingJobPayload,
@@ -31,6 +33,69 @@ async function processLeadInitialProcessing(
       leadId,
       [LEAD_STATUS.INITIAL_PROCESSING],
       [LEAD_STATUS.UNPROCESSED]
+    );
+
+    // Check if site was recently scraped (within 24 hours)
+    const domain = leadUrl.getFullDomain();
+    const lastScrapeDate = await EmbeddingsService.getDateOfLastDomainScrape(domain);
+    const recentScrapeThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
+
+    if (lastScrapeDate && lastScrapeDate > recentScrapeThreshold) {
+      logger.info(
+        '[LeadInitialProcessingWorker] Site was recently scraped, skipping scraping and triggering analysis directly',
+        {
+          jobId: job.id,
+          leadId,
+          domain,
+          lastScrapeDate: lastScrapeDate.toISOString(),
+        }
+      );
+
+      // Update status to processed and trigger lead analysis directly
+      await updateLeadStatuses(
+        tenantId,
+        leadId,
+        [LEAD_STATUS.PROCESSED],
+        [LEAD_STATUS.INITIAL_PROCESSING]
+      );
+
+      // Trigger lead analysis directly
+      await LeadAnalysisPublisher.publish({
+        tenantId,
+        leadId,
+        metadata: {
+          ...metadata,
+          skippedScraping: true,
+          lastScrapeDate: lastScrapeDate.toISOString(),
+          triggeredFromWorker: true,
+        },
+      });
+
+      logger.info('[LeadInitialProcessingWorker] Initial processing completed (skipped scraping)', {
+        jobId: job.id,
+        tenantId,
+        leadId,
+        skippedScraping: true,
+      });
+
+      return {
+        success: true,
+        leadId,
+        sitemapUrls: [],
+        filteredUrls: [],
+        batchScrapeJobId: undefined,
+        skippedScraping: true,
+      };
+    }
+
+    logger.info(
+      '[LeadInitialProcessingWorker] Site not recently scraped, proceeding with scraping',
+      {
+        jobId: job.id,
+        leadId,
+        domain,
+        lastScrapeDate: lastScrapeDate?.toISOString() || 'never',
+      }
     );
 
     const batchMetadata = {
@@ -111,6 +176,7 @@ async function processLeadInitialProcessing(
       sitemapUrls: siteMap.map((url) => url.url),
       filteredUrls: smartFilteredUrls,
       batchScrapeJobId: undefined, // batchScrapeJobId is handled internally by the service
+      skippedScraping: false,
     };
   } catch (error) {
     logger.error('[LeadInitialProcessingWorker] Initial processing failed', {
@@ -153,6 +219,7 @@ async function processLeadInitialProcessing(
       leadId,
       error: errorMessage,
       errorCode,
+      skippedScraping: false,
     };
   }
 }
@@ -173,6 +240,7 @@ const leadInitialProcessingWorker = getWorker<
         leadId: job.data.leadId,
         error: 'Unexpected job name',
         errorCode: 'UNKNOWN',
+        skippedScraping: false,
       };
     }
 
