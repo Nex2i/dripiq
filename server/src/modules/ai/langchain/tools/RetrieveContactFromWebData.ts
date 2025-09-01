@@ -13,7 +13,7 @@ export const RetrieveContactFromWebDataTool = new DynamicStructuredTool({
   func: async (input: { domain: string }) => {
     const { domain } = input;
 
-    const webData = await webDataService.getCompanyWithAllEmployees(domain);
+    const webData = await webDataService.getEmployeesByCompanyDomain(domain);
 
     // Clean the webData to not use unnecessary tokens
 

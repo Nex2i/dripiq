@@ -1,32 +1,29 @@
+import { Buffer } from 'buffer';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import dotenv from 'dotenv';
 import { CacheClient } from '@/libs/cache-client';
+import { cacheManager } from '@/libs/cache';
 import { logger } from '@/libs/logger';
 import {
-  CoreSignalApiResponse,
   CoreSignalError,
-  EmployeeSearchQuery,
-  CompanySearchQuery,
   CoreSignalRequestOptions,
-  Employee,
-  Company,
-  EmployeeSearchResponse,
-  CompanySearchResponse,
-  CompanyWithEmployees,
+  CoreSignalEmployeeSearchQuery,
+  CoreSignalEmployeeSearchResponse,
+  CoreSignalEmployeeCollectionResponse,
 } from './types';
 
 dotenv.config();
 
 /**
- * CoreSignal API Client for employee and company data retrieval
- * Provides caching, error handling, and comprehensive employee/company search functionality
+ * CoreSignal API v2 Multi-Source Client for employee data retrieval
+ * Provides caching, error handling, and multi-source employee search/collection functionality
  */
 export class CoreSignalClient {
-  private readonly baseUrl = 'https://api.coresignal.com/v1';
+  private readonly baseUrl = 'https://api.coresignal.com/cdapi/v2';
   private readonly apiKey: string;
   private readonly httpClient: AxiosInstance;
   private readonly cacheClient: CacheClient;
-  private readonly defaultCacheTtl = 60 * 60; // 1 hour in seconds
+  private readonly defaultCacheTtl = 60 * 60 * 24 * 7; // 7 days in seconds
 
   constructor() {
     this.apiKey = process.env.CORESIGNAL_API_KEY || '';
@@ -37,45 +34,47 @@ export class CoreSignalClient {
       );
     }
 
-    // Initialize HTTP client with authentication
+    // Initialize HTTP client with API key header (not Bearer token)
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        apikey: this.apiKey,
         'Content-Type': 'application/json',
       },
-      timeout: 30000, // 30 seconds timeout
+      timeout: 60000, // 60 seconds timeout for multi-source calls
     });
 
     // Initialize cache client with CoreSignal prefix
-    this.cacheClient = new CacheClient(undefined, 'coresignal');
+    this.cacheClient = new CacheClient(cacheManager, 'coresignal-v2');
 
-    // Add request/response interceptors for logging
+    // Set up request/response interceptors for logging and error handling
     this.setupInterceptors();
   }
 
   /**
-   * Setup axios interceptors for logging and error handling
+   * Set up axios interceptors for logging and error handling
    */
   private setupInterceptors(): void {
+    // Request interceptor
     this.httpClient.interceptors.request.use(
       (config) => {
-        logger.debug('CoreSignal API request', {
+        logger.debug('CoreSignal API v2 request', {
           method: config.method?.toUpperCase(),
           url: config.url,
-          params: config.params,
+          hasData: !!config.data,
         });
         return config;
       },
       (error) => {
-        logger.error('CoreSignal API request error', { error: String(error) });
+        logger.error('CoreSignal API v2 request error', { error });
         return Promise.reject(error);
       }
     );
 
+    // Response interceptor
     this.httpClient.interceptors.response.use(
       (response) => {
-        logger.debug('CoreSignal API response', {
+        logger.debug('CoreSignal API v2 response', {
           status: response.status,
           url: response.config.url,
           dataSize: JSON.stringify(response.data).length,
@@ -87,245 +86,260 @@ export class CoreSignalClient {
           status: error.response?.status,
           statusText: error.response?.statusText,
           url: error.config?.url,
-          message: error.message,
+          message: error.response?.data?.message || error.message,
         };
-        logger.error('CoreSignal API response error', errorDetails);
+        logger.error('CoreSignal API v2 response error', errorDetails);
         return Promise.reject(this.handleApiError(error));
       }
     );
   }
 
   /**
-   * Handle API errors and convert to standardized format
+   * Handle and standardize API errors
    */
   private handleApiError(error: any): CoreSignalError {
-    const statusCode = error.response?.status || 500;
+    const status = error.response?.status || 500;
     const message = error.response?.data?.message || error.message || 'Unknown error';
     const code = error.response?.data?.code || 'UNKNOWN_ERROR';
 
     return {
       message,
       code,
-      statusCode,
+      statusCode: status,
     };
   }
 
   /**
    * Generate cache key for requests
    */
-  private generateCacheKey(endpoint: string, params: Record<string, any>): string {
-    const sortedParams = Object.keys(params)
-      .sort()
-      .reduce(
-        (result, key) => {
-          result[key] = params[key];
-          return result;
-        },
-        {} as Record<string, any>
-      );
-
-    const paramString = JSON.stringify(sortedParams);
-    const hash = paramString.split('').reduce((a, b) => {
-      a = (a << 5) - a + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return `${endpoint}:${hash}`;
+  private generateCacheKey(endpoint: string, params: any): string {
+    const paramString = JSON.stringify(params);
+    return `${endpoint}:${Buffer.from(paramString).toString('base64')}`;
   }
 
   /**
-   * Make cached API request
+   * Make cached API request with POST method
    */
-  private async makeRequest<T>(
+  private async makePostRequest<T>(
     endpoint: string,
-    params: Record<string, any> = {},
+    data: any = {},
     options: CoreSignalRequestOptions = {}
   ): Promise<T> {
     const { useCache = true, cacheTtl = this.defaultCacheTtl } = options;
-    const cacheKey = this.generateCacheKey(endpoint, params);
+    const cacheKey = this.generateCacheKey(endpoint, data);
 
     // Try to get from cache first
     if (useCache) {
-      try {
-        const cached = await this.cacheClient.getJson<T>(cacheKey);
-        if (cached) {
-          logger.debug('CoreSignal cache hit', { endpoint, cacheKey });
-          return cached;
-        }
-      } catch (error) {
-        logger.warn('CoreSignal cache get failed', { error: String(error), cacheKey });
+      const cachedResult = await this.cacheClient.getJson<T>(cacheKey);
+      if (cachedResult) {
+        logger.debug('CoreSignal v2 cache hit', { endpoint, cacheKey });
+        return cachedResult;
       }
     }
 
     // Make API request
-    const response: AxiosResponse<CoreSignalApiResponse<T>> = await this.httpClient.get(endpoint, {
-      params,
-    });
+    logger.debug('CoreSignal v2 cache miss, making API request', { endpoint, cacheKey });
+    const response: AxiosResponse<T> = await this.httpClient.post(endpoint, data);
 
-    const data = response.data.data;
+    // Cache the result
+    if (useCache) {
+      await this.cacheClient.setJson(cacheKey, response.data, cacheTtl);
+    }
 
-    // Cache the response
-    if (useCache && data) {
-      try {
-        await this.cacheClient.setJson(cacheKey, data, cacheTtl);
-        logger.debug('CoreSignal data cached', { endpoint, cacheKey, ttl: cacheTtl });
-      } catch (error) {
-        logger.warn('CoreSignal cache set failed', { error: String(error), cacheKey });
+    return response.data;
+  }
+
+  /**
+   * Make cached API request with GET method
+   */
+  private async makeGetRequest<T>(
+    endpoint: string,
+    options: CoreSignalRequestOptions = {}
+  ): Promise<T> {
+    const { useCache = true, cacheTtl = this.defaultCacheTtl } = options;
+    const cacheKey = this.generateCacheKey(endpoint, {});
+
+    // Try to get from cache first
+    if (useCache) {
+      const cachedResult = await this.cacheClient.getJson<T>(cacheKey);
+      if (cachedResult) {
+        logger.debug('CoreSignal v2 cache hit', { endpoint, cacheKey });
+        return cachedResult;
       }
     }
 
-    return data;
+    // Make API request
+    logger.debug('CoreSignal v2 cache miss, making API request', { endpoint, cacheKey });
+    const response: AxiosResponse<T> = await this.httpClient.get(endpoint);
+
+    // Cache the result
+    if (useCache) {
+      await this.cacheClient.setJson(cacheKey, response.data, cacheTtl);
+    }
+
+    return response.data;
   }
 
   /**
-   * Search for employees based on various criteria
+   * Search for employees by company domain using multi-source API
    */
-  async searchEmployees(
-    query: EmployeeSearchQuery,
-    options?: CoreSignalRequestOptions
-  ): Promise<EmployeeSearchResponse> {
-    logger.info('Searching employees', { query });
-
-    const params = {
-      ...query,
-      limit: query.limit || 50,
-      offset: query.offset || 0,
-    };
-
-    return this.makeRequest<EmployeeSearchResponse>('/employees/search', params, options);
-  }
-
-  /**
-   * Get a specific employee by ID
-   */
-  async getEmployeeById(id: string, options?: CoreSignalRequestOptions): Promise<Employee> {
-    logger.info('Getting employee by ID', { id });
-    return this.makeRequest<Employee>(`/employees/${id}`, {}, options);
-  }
-
-  /**
-   * Get employees by company name or domain
-   */
-  async getEmployeesByCompany(
-    companyIdentifier: string,
-    options?: CoreSignalRequestOptions & { includePastEmployees?: boolean }
-  ): Promise<CompanyWithEmployees> {
-    logger.info('Getting employees by company', { companyIdentifier });
-
-    const { includePastEmployees = false, ...requestOptions } = options || {};
-
-    const params = {
-      company: companyIdentifier,
-      include_past: includePastEmployees,
-    };
-
-    return this.makeRequest<CompanyWithEmployees>('/companies/employees', params, requestOptions);
-  }
-
-  /**
-   * Search for companies based on various criteria
-   */
-  async searchCompanies(
-    query: CompanySearchQuery,
-    options?: CoreSignalRequestOptions
-  ): Promise<CompanySearchResponse> {
-    logger.info('Searching companies', { query });
-
-    const params = {
-      ...query,
-      limit: query.limit || 50,
-      offset: query.offset || 0,
-    };
-
-    return this.makeRequest<CompanySearchResponse>('/companies/search', params, options);
-  }
-
-  /**
-   * Get a specific company by ID
-   */
-  async getCompanyById(id: string, options?: CoreSignalRequestOptions): Promise<Company> {
-    logger.info('Getting company by ID', { id });
-    return this.makeRequest<Company>(`/companies/${id}`, {}, options);
-  }
-
-  /**
-   * Get company by domain
-   */
-  async getCompanyByDomain(domain: string, options?: CoreSignalRequestOptions): Promise<Company> {
-    logger.info('Getting company by domain', { domain });
-    return this.makeRequest<Company>('/companies/domain', { domain }, options);
-  }
-
-  /**
-   * Get all employees for a company with full details
-   * This is a convenience method that combines company and employee data
-   */
-  async getCompanyWithAllEmployees(
-    companyIdentifier: string,
-    options?: CoreSignalRequestOptions & { includePastEmployees?: boolean }
-  ): Promise<{
-    company: Company;
-    employees: CompanyWithEmployees;
-  }> {
-    logger.info('Getting company with all employees', { companyIdentifier });
-
-    // First, try to get company info
-    let company: Company;
+  async searchEmployeesByDomain(
+    domain: string,
+    options: CoreSignalRequestOptions = {}
+  ): Promise<CoreSignalEmployeeSearchResponse> {
     try {
-      // Try by domain first
-      if (companyIdentifier.includes('.')) {
-        company = await this.getCompanyByDomain(companyIdentifier, options);
-      } else {
-        // Search by name
-        const searchResult = await this.searchCompanies(
-          { name: companyIdentifier, limit: 1 },
-          options
-        );
-        if (searchResult.companies.length === 0) {
-          throw new Error(`Company not found: ${companyIdentifier}`);
-        }
-        company = searchResult.companies[0]!;
-      }
-    } catch (error) {
-      logger.warn('Could not find company, proceeding with employee search only', {
-        companyIdentifier,
-        error: String(error),
-      });
-      company = {
-        id: '',
-        name: companyIdentifier,
+      const { isDecisionMaker = true } = options;
+
+      const searchQuery: CoreSignalEmployeeSearchQuery = {
+        query: {
+          bool: {
+            must: [
+              ...(isDecisionMaker
+                ? [
+                    {
+                      term: {
+                        is_decision_maker: 1,
+                      },
+                    },
+                  ]
+                : []),
+              {
+                nested: {
+                  path: 'experience',
+                  query: {
+                    match_phrase: {
+                      'experience.company_website.domain_only': domain,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
       };
+
+      const response = await this.makePostRequest<CoreSignalEmployeeSearchResponse>(
+        '/employee_multi_source/search/es_dsl',
+        searchQuery,
+        options
+      );
+
+      logger.info('CoreSignal employee search completed', {
+        domain,
+        isDecisionMaker,
+        resultCount: response.length,
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Failed to search employees by domain', { error, domain, options });
+      throw error;
     }
-
-    // Get employees
-    const employees = await this.getEmployeesByCompany(companyIdentifier, options);
-
-    return {
-      company,
-      employees,
-    };
   }
 
   /**
-   * Clear cache for a specific key pattern
+   * Collect employee data by ID using multi-source API
+   */
+  async collectEmployeeById(
+    id: number,
+    options: CoreSignalRequestOptions = {}
+  ): Promise<CoreSignalEmployeeCollectionResponse> {
+    try {
+      const response = await this.makeGetRequest<CoreSignalEmployeeCollectionResponse>(
+        `/employee_multi_source/collect/${id}`,
+        options
+      );
+
+      logger.debug('CoreSignal employee collection completed', {
+        id,
+        employeeName: response.full_name,
+      });
+
+      return response;
+    } catch (error) {
+      logger.error('Failed to collect employee by ID', { error, id });
+      throw error;
+    }
+  }
+
+  /**
+   * Get employees by company domain (search + collect)
+   */
+  async getEmployeesByCompanyDomain(
+    domain: string,
+    options: CoreSignalRequestOptions = {}
+  ): Promise<CoreSignalEmployeeCollectionResponse[]> {
+    try {
+      // First, search for employee IDs
+      const employeeIds = await this.searchEmployeesByDomain(domain, options);
+
+      if (employeeIds.length === 0) {
+        logger.info('No employees found for domain', { domain });
+        return [];
+      }
+
+      // Then, collect detailed data for each employee
+      logger.info('Collecting employee data', {
+        domain,
+        employeeCount: employeeIds.length,
+      });
+
+      const employees: CoreSignalEmployeeCollectionResponse[] = [];
+
+      // Process employees in batches to avoid overwhelming the API
+      const batchSize = 5;
+      for (let i = 0; i < employeeIds.length; i += batchSize) {
+        const batch = employeeIds.slice(i, i + batchSize);
+        const batchPromises = batch.map((id) =>
+          this.collectEmployeeById(id, options).catch((error) => {
+            logger.warn('Failed to collect employee data', { id, error: error.message });
+            return null;
+          })
+        );
+
+        const batchResults = await Promise.all(batchPromises);
+        const validResults = batchResults.filter(
+          (result) => result !== null
+        ) as CoreSignalEmployeeCollectionResponse[];
+        employees.push(...validResults);
+
+        // Add a small delay between batches to be respectful to the API
+        if (i + batchSize < employeeIds.length) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      logger.info('Employee collection completed', {
+        domain,
+        requestedCount: employeeIds.length,
+        collectedCount: employees.length,
+      });
+
+      return employees;
+    } catch (error) {
+      logger.error('Failed to get employees by company domain', { error, domain });
+      throw error;
+    }
+  }
+
+  /**
+   * Clear cache for specific pattern or all CoreSignal cache
    */
   async clearCache(pattern?: string): Promise<void> {
-    logger.info('Clearing CoreSignal cache', { pattern });
-    // Note: This would need implementation in the cache client
-    // For now, just log the action
-    logger.warn('Cache clearing not implemented in current cache client');
+    // Use the cache manager directly for clear operations
+    await cacheManager.clear();
+    logger.info('CoreSignal v2 cache cleared', { pattern });
   }
 
   /**
    * Get cache statistics
    */
   async getCacheStats(): Promise<{ hits: number; misses: number; size: number }> {
-    logger.info('Getting CoreSignal cache stats');
-    // Note: This would need implementation in the cache client
-    // For now, return placeholder stats
+    const stats = await cacheManager.getStats();
     return {
-      hits: 0,
-      misses: 0,
-      size: 0,
+      hits: stats.hits || 0,
+      misses: stats.misses || 0,
+      size: stats.keys || 0,
     };
   }
 }
