@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { SiteEmbeddingDomain, siteEmbeddingDomains } from '@/db/schema';
 import { db } from '@/db';
-import '../extensions';
 
 export class SiteEmbeddingTransactionRepository {
   /**
@@ -9,8 +8,8 @@ export class SiteEmbeddingTransactionRepository {
    * Note: The url parameter should be a domain (e.g., "example.com"), not a full URL
    */
   static async getOrCreateDomainByUrl(url: string): Promise<SiteEmbeddingDomain> {
-    // Ensure we have a proper domain, not a full URL
-    const domain = url.includes('/') ? url.getFullDomain() : url;
+    // Always extract the full domain to ensure consistency
+    const domain = url.getFullDomain();
     
     const result = await db.transaction(async (tx) => {
       const existing = await tx
