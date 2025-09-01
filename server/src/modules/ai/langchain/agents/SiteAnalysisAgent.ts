@@ -10,12 +10,14 @@ import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomai
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import reportOutputSchema from '../../schemas/reportOutputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import { ConversationStorageService } from '../storage/ConversationStorageService';
 
 export type SiteAnalysisResult = {
   finalResponse: string;
   finalResponseParsed: z.infer<typeof reportOutputSchema>;
   totalIterations: number;
   functionCalls: any[];
+  conversationId?: string;
 };
 
 export class SiteAnalysisAgent {
@@ -53,12 +55,23 @@ export class SiteAnalysisAgent {
     });
   }
 
-  async analyze(domain: string): Promise<SiteAnalysisResult> {
+  async analyze(domain: string, tenantId?: string, leadId?: string): Promise<SiteAnalysisResult> {
+    const startTime = Date.now();
+    const conversationId = ConversationStorageService.generateConversationId();
+
     const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
     const systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
       domain,
       output_schema: outputSchemaJson,
     });
+
+    // Create conversation metadata
+    const conversationMetadata = ConversationStorageService.createConversationMetadata(
+      'site-analysis',
+      tenantId || 'unknown',
+      { domain, leadId },
+      conversationId
+    );
 
     try {
       const result = await this.agent.invoke({
@@ -73,14 +86,45 @@ export class SiteAnalysisAgent {
 
       const finalResponseParsed = parseWithSchema(finalResponse, domain);
 
+      // Create enhanced result with parsed data
+      const enhancedResult = {
+        ...result,
+        finalResponseParsed,
+      };
+
+      // Save conversation asynchronously
+      if (tenantId) {
+        const conversationOutput = ConversationStorageService.createConversationOutput(
+          conversationMetadata,
+          systemPrompt,
+          enhancedResult,
+          startTime
+        );
+        ConversationStorageService.saveConversationAsync('site-analysis', conversationOutput);
+      }
+
       return {
         finalResponse,
         finalResponseParsed,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps ?? [],
+        conversationId,
       };
     } catch (error) {
       logger.error('Error in site analysis:', error);
+
+      // Save error conversation asynchronously
+      if (tenantId) {
+        const conversationOutput = ConversationStorageService.createConversationOutput(
+          conversationMetadata,
+          systemPrompt,
+          { intermediateSteps: [], output: '' },
+          startTime,
+          error as Error
+        );
+        ConversationStorageService.saveConversationAsync('site-analysis', conversationOutput);
+      }
+
       return {
         finalResponse: `Error occurred during site analysis: ${
           error instanceof Error ? error.message : 'Unknown error'
@@ -88,6 +132,7 @@ export class SiteAnalysisAgent {
         totalIterations: 1,
         functionCalls: [],
         finalResponseParsed: getFallbackResult(domain, error),
+        conversationId,
       };
     }
   }

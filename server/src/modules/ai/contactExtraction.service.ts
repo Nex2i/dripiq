@@ -16,7 +16,11 @@ export const ContactExtractionService = {
       logger.info(`Starting contact extraction for domain: ${domain}, leadId: ${leadId}`);
 
       // Extract contacts using the agent
-      const extractionResult = await contactExtractionAgent.extractContacts(domain);
+      const extractionResult = await contactExtractionAgent.extractContacts(
+        domain,
+        tenantId,
+        leadId
+      );
 
       if (!extractionResult.finalResponseParsed?.contacts) {
         logger.warn(`No contacts found for domain: ${domain}`);

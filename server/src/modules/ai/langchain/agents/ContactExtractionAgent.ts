@@ -13,12 +13,14 @@ import contactExtractionOutputSchema, {
   ContactExtractionOutput,
 } from '../../schemas/contactExtractionSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import { ConversationStorageService } from '../storage/ConversationStorageService';
 
 export type ContactExtractionResult = {
   finalResponse: string;
   finalResponseParsed: ContactExtractionOutput;
   totalIterations: number;
   functionCalls: any[];
+  conversationId?: string;
 };
 
 export class ContactExtractionAgent {
@@ -54,11 +56,26 @@ export class ContactExtractionAgent {
     });
   }
 
-  async extractContacts(domain: string): Promise<ContactExtractionResult> {
+  async extractContacts(
+    domain: string,
+    tenantId?: string,
+    leadId?: string
+  ): Promise<ContactExtractionResult> {
+    const startTime = Date.now();
+    const conversationId = ConversationStorageService.generateConversationId();
+
     const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
       domain,
       output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
     });
+
+    // Create conversation metadata
+    const conversationMetadata = ConversationStorageService.createConversationMetadata(
+      'contact-extraction',
+      tenantId || 'unknown',
+      { domain, leadId },
+      conversationId
+    );
 
     try {
       const result = await this.agent.invoke({
@@ -73,14 +90,44 @@ export class ContactExtractionAgent {
 
       const parsedResult = parseWithSchema(finalResponse, domain);
 
+      // Create enhanced result with parsed data
+      const enhancedResult = {
+        ...result,
+        finalResponseParsed: parsedResult,
+      };
+
+      // Save conversation asynchronously
+      if (tenantId) {
+        const conversationOutput = ConversationStorageService.createConversationOutput(
+          conversationMetadata,
+          systemPrompt,
+          enhancedResult,
+          startTime
+        );
+        ConversationStorageService.saveConversationAsync('contact-extraction', conversationOutput);
+      }
+
       return {
         finalResponse: result.output || 'Contact extraction completed',
         finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        conversationId,
       };
     } catch (error) {
       logger.error('Contact extraction failed:', error);
+
+      // Save error conversation asynchronously
+      if (tenantId) {
+        const conversationOutput = ConversationStorageService.createConversationOutput(
+          conversationMetadata,
+          systemPrompt,
+          { intermediateSteps: [], output: '' },
+          startTime,
+          error as Error
+        );
+        ConversationStorageService.saveConversationAsync('contact-extraction', conversationOutput);
+      }
 
       // Return fallback result
       const fallbackResult = getFallbackResult(domain, error);
@@ -89,6 +136,7 @@ export class ContactExtractionAgent {
         finalResponseParsed: fallbackResult,
         totalIterations: 0,
         functionCalls: [],
+        conversationId,
       };
     }
   }
