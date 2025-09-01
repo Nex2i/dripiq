@@ -342,18 +342,4 @@ export class CoreSignalClient {
       size: stats.keys || 0,
     };
   }
-
-  /**
-   * Health check
-   */
-  async healthCheck(): Promise<boolean> {
-    try {
-      // Use a simple search to test the API
-      await this.searchEmployeesByDomain('test.com', { useCache: false });
-      return true;
-    } catch (error) {
-      logger.error('CoreSignal v2 health check failed', { error });
-      return false;
-    }
-  }
 }

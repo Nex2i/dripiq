@@ -165,13 +165,6 @@ export interface WebDataError {
  */
 export interface IWebDataProviderBase {
   readonly providerName: string;
-  readonly isHealthy: boolean;
-
-  // Utility methods
-  /**
-   * Check the health of the provider
-   */
-  healthCheck(): Promise<boolean>;
 
   /**
    * Clear the cache
@@ -205,6 +198,13 @@ export interface IWebDataProviderWithDomainSearch extends IWebDataProviderBase {
  * All data providers should ideally implement this interface
  */
 export interface IWebDataProvider extends IWebDataProviderBase {
+  readonly isHealthy: boolean;
+
+  // Utility methods
+  /**
+   * Check the health of the provider
+   */
+  healthCheck(): Promise<boolean>;
   // Employee methods
   /**
    * Search for employees

@@ -3,6 +3,7 @@ import { CoreSignalClient } from '../coresignal.client';
 import {
   IWebDataProviderWithDomainSearch,
   WebDataSearchOptions,
+  WebDataEmployee,
   WebDataCompany,
   WebDataCompanyEmployeesResult,
   WebDataError,
@@ -16,14 +17,9 @@ import { CoreSignalError, CoreSignalEmployeeCollectionResponse } from '../types'
 export class CoreSignalWebDataProvider implements IWebDataProviderWithDomainSearch {
   public readonly providerName = 'CoreSignal';
   private client: CoreSignalClient;
-  private _isHealthy = true;
 
   constructor(client?: CoreSignalClient) {
     this.client = client || new CoreSignalClient();
-  }
-
-  public get isHealthy(): boolean {
-    return this._isHealthy;
   }
 
   /**
@@ -128,25 +124,7 @@ export class CoreSignalWebDataProvider implements IWebDataProviderWithDomainSear
         error,
         domain,
       });
-      this._isHealthy = false;
       throw this.adaptError(error as CoreSignalError);
-    }
-  }
-
-
-
-  /**
-   * Check the health of the provider
-   */
-  async healthCheck(): Promise<boolean> {
-    try {
-      const isHealthy = await this.client.healthCheck();
-      this._isHealthy = isHealthy;
-      return isHealthy;
-    } catch (error) {
-      logger.error('CoreSignal provider: Health check failed', { error });
-      this._isHealthy = false;
-      return false;
     }
   }
 

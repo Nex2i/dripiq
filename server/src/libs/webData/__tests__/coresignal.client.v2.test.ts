@@ -284,22 +284,4 @@ describe('CoreSignalClient v2 Multi-Source', () => {
       });
     });
   });
-
-  describe('health check', () => {
-    it('should return true when API is healthy', async () => {
-      mockCache.getJson.mockResolvedValue(null);
-      mockAxiosInstance.post.mockResolvedValue({ data: [] });
-
-      const result = await client.healthCheck();
-      expect(result).toBe(true);
-    });
-
-    it('should return false when API is unhealthy', async () => {
-      mockCache.getJson.mockResolvedValue(null);
-      mockAxiosInstance.post.mockRejectedValue(new Error('API Error'));
-
-      const result = await client.healthCheck();
-      expect(result).toBe(false);
-    });
-  });
 });
