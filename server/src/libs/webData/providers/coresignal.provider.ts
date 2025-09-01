@@ -97,6 +97,7 @@ export class CoreSignalWebDataProvider implements IWebDataProviderWithDomainSear
         useCache: options?.useCache,
         cacheTtl: options?.cacheTtl,
         isDecisionMaker: options?.isDecisionMaker,
+        limit: options?.limit,
       });
 
       const adaptedEmployees = employees.map((emp) => this.adaptMultiSourceEmployee(emp));

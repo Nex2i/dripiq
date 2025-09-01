@@ -267,11 +267,16 @@ export class CoreSignalClient {
    */
   async getEmployeesByCompanyDomain(
     domain: string,
-    options: CoreSignalRequestOptions = {}
+    options: CoreSignalRequestOptions = {
+      limit: 5,
+    }
   ): Promise<CoreSignalEmployeeCollectionResponse[]> {
     try {
       // First, search for employee IDs
-      const employeeIds = await this.searchEmployeesByDomain(domain, options);
+      const employeeIds = (await this.searchEmployeesByDomain(domain, options)).slice(
+        0,
+        options.limit
+      );
 
       if (employeeIds.length === 0) {
         logger.info('No employees found for domain', { domain });

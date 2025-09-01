@@ -231,5 +231,6 @@ export interface CoreSignalEmployeeCollectionResponse {
 export interface CoreSignalRequestOptions {
   useCache?: boolean;
   cacheTtl?: number;
+  limit?: number;
   isDecisionMaker?: boolean;
 }
