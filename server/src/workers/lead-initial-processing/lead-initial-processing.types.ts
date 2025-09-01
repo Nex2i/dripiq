@@ -11,6 +11,7 @@ export interface LeadInitialProcessingJobResult {
   sitemapUrls?: string[];
   filteredUrls?: string[];
   batchScrapeJobId?: string;
+  skippedScraping?: boolean;
   error?: string;
   errorCode?:
     | 'INVALID_URL'

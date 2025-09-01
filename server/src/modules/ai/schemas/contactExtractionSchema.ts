@@ -17,7 +17,7 @@ const extractedContactSchema = z.object({
     .string()
     .nullable()
     .describe(
-      'Job title for individuals (e.g., "CEO", "Head of Support"), or department type for offices (e.g., "Sales Department"), null if unknown'
+      'Job title for individuals (e.g., "CEO", "Head of Support"), or department type for offices (e.g., "Sales Department"), null if unknown. Do not include any additional notes here'
     ),
   company: z
     .string()
