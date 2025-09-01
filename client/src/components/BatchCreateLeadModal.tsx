@@ -19,8 +19,6 @@ interface BatchCreateLeadModalProps {
   onSuccess: () => void
 }
 
-
-
 export function BatchCreateLeadModal({
   isOpen,
   onClose,
@@ -29,6 +27,10 @@ export function BatchCreateLeadModal({
   const [urlsInput, setUrlsInput] = useState('')
   const [selectedOwnerId, setSelectedOwnerId] = useState('')
   const [showResults, setShowResults] = useState(false)
+  const [inputMode, setInputMode] = useState<'textarea' | 'individual'>(
+    'textarea',
+  )
+  const [individualUrls, setIndividualUrls] = useState<string[]>([''])
 
   const batchCreateMutation = useBatchCreateLeads()
   const { data: usersResponse, isLoading: usersLoading } = useUsers()
@@ -40,11 +42,18 @@ export function BatchCreateLeadModal({
     [users],
   )
 
-  // Parse URLs in real-time
+  // Parse URLs in real-time based on input mode
   const parsedUrls = useMemo(() => {
-    if (!urlsInput.trim()) return []
-    return parseUrlList(urlsInput)
-  }, [urlsInput])
+    if (inputMode === 'textarea') {
+      if (!urlsInput.trim()) return []
+      return parseUrlList(urlsInput)
+    } else {
+      // Individual mode: filter out empty URLs and parse
+      const validUrls = individualUrls.filter((url) => url.trim().length > 0)
+      if (validUrls.length === 0) return []
+      return parseUrlList(validUrls.join('\n'))
+    }
+  }, [urlsInput, individualUrls, inputMode])
 
   // Count valid and invalid URLs
   const urlCounts = useMemo(() => {
@@ -73,9 +82,29 @@ export function BatchCreateLeadModal({
       setShowResults(false)
     } else {
       setUrlsInput('')
+      setIndividualUrls([''])
+      setInputMode('textarea')
       setShowResults(false)
     }
   }, [isOpen])
+
+  // Functions for individual URL management
+  const addUrlInput = () => {
+    setIndividualUrls([...individualUrls, ''])
+  }
+
+  const removeUrlInput = (index: number) => {
+    if (individualUrls.length > 1) {
+      const newUrls = individualUrls.filter((_, i) => i !== index)
+      setIndividualUrls(newUrls)
+    }
+  }
+
+  const updateUrlInput = (index: number, value: string) => {
+    const newUrls = [...individualUrls]
+    newUrls[index] = value
+    setIndividualUrls(newUrls)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,7 +145,7 @@ export function BatchCreateLeadModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -190,25 +219,101 @@ export function BatchCreateLeadModal({
 
               {/* URL Input */}
               <div>
-                <label
-                  htmlFor="websites"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Website URLs <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="websites"
-                  value={urlsInput}
-                  onChange={(e) => setUrlsInput(e.target.value)}
-                  placeholder="Enter website URLs, one per line:&#10;https://example.com&#10;https://company.com&#10;another-site.org"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px] font-mono text-sm"
-                  disabled={isSubmitting}
-                  required
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Enter one website URL per line. Duplicates will be
-                  automatically removed.
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Website URLs <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setInputMode('textarea')}
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                        inputMode === 'textarea'
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      Bulk Input
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputMode('individual')}
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                        inputMode === 'individual'
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      Individual Input
+                    </button>
+                  </div>
+                </div>
+
+                {inputMode === 'textarea' ? (
+                  <>
+                    <textarea
+                      id="websites"
+                      value={urlsInput}
+                      onChange={(e) => setUrlsInput(e.target.value)}
+                      placeholder="Enter website URLs, one per line or comma-separated:&#10;https://example.com, https://company.com&#10;another-site.org"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px] font-mono text-sm"
+                      disabled={isSubmitting}
+                      required
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Enter website URLs one per line or comma-separated.
+                      Duplicates will be automatically removed.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {individualUrls.map((url, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2"
+                        >
+                          <input
+                            type="text"
+                            value={url}
+                            onChange={(e) =>
+                              updateUrlInput(index, e.target.value)
+                            }
+                            placeholder="https://example.com"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            disabled={isSubmitting}
+                          />
+                          {individualUrls.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeUrlInput(index)}
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                              disabled={isSubmitting}
+                              title="Remove URL"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addUrlInput}
+                      className="mt-2 inline-flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                      disabled={isSubmitting}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Another URL
+                    </button>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Add website URLs individually. Click "Add Another URL" to
+                      add more inputs.
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* URL Preview */}

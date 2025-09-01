@@ -98,6 +98,7 @@ export const isValidUrl = (url: string): boolean => {
 
 /**
  * Parse and validate a list of URLs from text input
+ * Supports both newline-separated and comma-separated input
  * Returns an array of objects with original input, cleaned URL, domain name, and validation status
  */
 export const parseUrlList = (
@@ -112,17 +113,18 @@ export const parseUrlList = (
 }> => {
   if (!input || input.trim() === '') return []
 
-  const lines = input
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
+  // Split by both newlines and commas, then clean up
+  const rawUrls = input
+    .split(/[\n,]/)
+    .map((url) => url.trim())
+    .filter((url) => url.length > 0)
 
-  return lines.map((line) => {
-    const isValid = isValidUrl(line)
+  return rawUrls.map((url) => {
+    const isValid = isValidUrl(url)
 
     if (!isValid) {
       return {
-        original: line,
+        original: url,
         cleaned: '',
         domain: '',
         fullDomain: '',
@@ -132,13 +134,13 @@ export const parseUrlList = (
     }
 
     try {
-      const cleaned = cleanWebsiteUrl(line)
-      const domain = getDomain(line)
-      const fullDomain = getFullDomain(line)
+      const cleaned = cleanWebsiteUrl(url)
+      const domain = getDomain(url)
+      const fullDomain = getFullDomain(url)
 
       if (!domain) {
         return {
-          original: line,
+          original: url,
           cleaned,
           domain: '',
           fullDomain,
@@ -148,7 +150,7 @@ export const parseUrlList = (
       }
 
       return {
-        original: line,
+        original: url,
         cleaned,
         domain,
         fullDomain,
@@ -156,7 +158,7 @@ export const parseUrlList = (
       }
     } catch (error) {
       return {
-        original: line,
+        original: url,
         cleaned: '',
         domain: '',
         fullDomain: '',
