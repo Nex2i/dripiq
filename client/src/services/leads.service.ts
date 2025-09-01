@@ -25,6 +25,29 @@ export interface UpdateLeadData {
   status?: string
 }
 
+export interface BatchCreateLeadData {
+  websites: string[]
+  ownerId: string
+}
+
+export interface BatchCreateLeadResult {
+  url: string
+  success: boolean
+  leadId?: string
+  error?: string
+  name?: string
+}
+
+export interface BatchCreateLeadResponse {
+  message: string
+  results: BatchCreateLeadResult[]
+  summary: {
+    total: number
+    successful: number
+    failed: number
+  }
+}
+
 // Query keys for leads (centralized)
 export const leadQueryKeys = {
   all: ['leads'] as const,
@@ -117,6 +140,38 @@ class LeadsService {
       )
 
       // Invalidate leads list to refresh
+      this.queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    }
+
+    return result
+  }
+
+  // Create multiple leads in batch
+  async createLeadsBatch(
+    data: BatchCreateLeadData,
+  ): Promise<BatchCreateLeadResponse> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(`${this.baseUrl}/leads/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to create leads in batch')
+    }
+
+    const result = await response.json()
+
+    // Invalidate leads list to refresh after batch creation if queryClient is available
+    if (this.queryClient) {
       this.queryClient.invalidateQueries({
         queryKey: leadQueryKeys.lists(),
       })

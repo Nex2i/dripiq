@@ -14,6 +14,7 @@ import { logger } from '@/libs/logger';
 import {
   getLeads,
   createLead,
+  createLeadsBatch,
   updateLead,
   deleteLead,
   bulkDeleteLeads,
@@ -31,6 +32,7 @@ import { AuthenticatedRequest } from '../plugins/authentication.plugin';
 // Import all lead schemas
 import {
   LeadCreateSchema,
+  LeadBatchCreateSchema,
   LeadGetAllSchema,
   LeadGetByIdSchema,
   LeadUpdateSchema,
@@ -251,6 +253,117 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to create lead',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Batch create leads route
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/batch`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Leads'],
+      summary: 'Batch Create Leads',
+      description: 'Create multiple leads from website URLs in batch (tenant-scoped)',
+      ...LeadBatchCreateSchema,
+      response: {
+        ...defaultRouteResponse(),
+        ...LeadBatchCreateSchema.response,
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Body: {
+          websites: string[];
+          ownerId: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { websites, ownerId } = request.body;
+
+        // Validate required fields
+        if (!websites || !Array.isArray(websites) || websites.length === 0) {
+          reply.status(400).send({
+            message: 'Websites array is required and cannot be empty',
+            error: 'At least one website URL must be provided',
+          });
+          return;
+        }
+
+        if (websites.length > 50) {
+          reply.status(400).send({
+            message: 'Too many websites provided',
+            error: 'Maximum 50 websites allowed per batch',
+          });
+          return;
+        }
+
+        // Owner is required; validate presence
+        if (!ownerId || !ownerId.trim()) {
+          reply.status(400).send({
+            message: 'Assigned owner is required',
+            error: 'ownerId must be provided',
+          });
+          return;
+        }
+
+        // Clean and deduplicate websites
+        const cleanedWebsites = [
+          ...new Set(websites.map((url) => url.trim()).filter((url) => url.length > 0)),
+        ];
+
+        if (cleanedWebsites.length === 0) {
+          reply.status(400).send({
+            message: 'No valid website URLs provided',
+            error: 'All provided URLs are empty or invalid',
+          });
+          return;
+        }
+
+        // Create leads in batch
+        const batchResult = await createLeadsBatch(
+          authenticatedRequest.tenantId,
+          cleanedWebsites,
+          ownerId
+        );
+
+        reply.status(201).send({
+          message: `Batch lead creation completed: ${batchResult.summary.successful}/${batchResult.summary.total} successful`,
+          results: batchResult.results,
+          summary: batchResult.summary,
+        });
+      } catch (error: any) {
+        logger.error(`Error in batch lead creation: ${error.message}`);
+
+        // Check for tenant access errors
+        if (
+          error.message?.includes('access to tenant') ||
+          error.message?.includes('ForbiddenError')
+        ) {
+          reply.status(403).send({
+            message: 'Access denied to tenant resources',
+            error: error.message,
+          });
+          return;
+        }
+
+        // Validation: owner must be verified
+        if (error.message?.includes('verified sender identity')) {
+          reply.status(400).send({
+            message: 'Assigned owner must be verified',
+            error: error.message,
+          });
+          return;
+        }
+
+        reply.status(500).send({
+          message: 'Failed to create leads in batch',
           error: error.message,
         });
       }

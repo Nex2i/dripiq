@@ -2,7 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leadsService, leadQueryKeys } from '../services/leads.service'
 import { invitesService } from '../services/invites.service'
 import type { Lead, LeadPointOfContact } from '../types/lead.types'
-import type { CreateLeadData, UpdateLeadData } from '../services/leads.service'
+import type {
+  CreateLeadData,
+  UpdateLeadData,
+  BatchCreateLeadData,
+  BatchCreateLeadResponse,
+} from '../services/leads.service'
 
 // Hook to get all leads
 export function useLeads(searchQuery?: string) {
@@ -65,6 +70,40 @@ export function useCreateLead() {
     onError: (error, newLeadData, context) => {
       console.error('Error creating lead:', error, newLeadData, context)
       // No need to rollback since we're not doing optimistic updates
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+  })
+}
+
+// Hook to create multiple leads in batch
+export function useBatchCreateLeads() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (
+      data: BatchCreateLeadData,
+    ): Promise<BatchCreateLeadResponse> => {
+      return await leadsService.createLeadsBatch(data)
+    },
+    onMutate: async (_batchData: BatchCreateLeadData) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: leadQueryKeys.lists() })
+    },
+    onSuccess: (response: BatchCreateLeadResponse) => {
+      console.log('Batch lead creation completed:', response.summary)
+
+      // Invalidate and refetch leads list to show new leads
+      queryClient.invalidateQueries({
+        queryKey: leadQueryKeys.lists(),
+      })
+    },
+    onError: (error, batchData, context) => {
+      console.error('Error creating leads in batch:', error, batchData, context)
     },
     onSettled: () => {
       // Always refetch after error or success to ensure consistency
