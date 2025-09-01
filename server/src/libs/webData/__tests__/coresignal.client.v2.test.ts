@@ -4,6 +4,18 @@ import axios from 'axios';
 
 // Mock dependencies
 jest.mock('@/libs/cache-client');
+
+jest.mock('@/libs/cache', () => ({
+  cacheManager: {
+    clear: jest.fn(),
+    getStats: jest.fn().mockResolvedValue({
+      keys: 0,
+      memory: '1MB',
+      hits: 0,
+      misses: 0,
+    }),
+  },
+}));
 jest.mock('@/libs/logger', () => ({
   logger: {
     debug: jest.fn(),
@@ -16,6 +28,9 @@ jest.mock('axios');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const mockCacheClient = CacheClient as jest.MockedClass<typeof CacheClient>;
+
+// Import the mocked cache manager
+const { cacheManager: mockCacheManager } = jest.requireMock('@/libs/cache');
 
 describe('CoreSignalClient v2 Multi-Source', () => {
   let client: CoreSignalClient;
@@ -44,8 +59,8 @@ describe('CoreSignalClient v2 Multi-Source', () => {
 
     // Mock cache instance
     mockCache = {
-      get: jest.fn(),
-      set: jest.fn(),
+      getJson: jest.fn(),
+      setJson: jest.fn(),
       clear: jest.fn(),
       getStats: jest.fn(),
     };
@@ -84,7 +99,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     const mockSearchResponse = [93486394, 327313517, 87115457];
 
     it('should search for employees with decision maker filter', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockResolvedValue({ data: mockSearchResponse });
 
       const result = await client.searchEmployeesByDomain('leventhal-law.com', {
@@ -119,7 +134,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     });
 
     it('should search for employees without decision maker filter', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockResolvedValue({ data: mockSearchResponse });
 
       await client.searchEmployeesByDomain('leventhal-law.com', {
@@ -148,7 +163,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
 
     it('should use cache when available', async () => {
       const cachedResult = [123, 456];
-      mockCache.get.mockResolvedValue(cachedResult);
+      mockCache.getJson.mockResolvedValue(cachedResult);
 
       const result = await client.searchEmployeesByDomain('leventhal-law.com');
 
@@ -175,7 +190,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     };
 
     it('should collect employee data by ID', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.get.mockResolvedValue({ data: mockEmployeeResponse });
 
       const result = await client.collectEmployeeById(327313517);
@@ -187,7 +202,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     });
 
     it('should use cache when available', async () => {
-      mockCache.get.mockResolvedValue(mockEmployeeResponse);
+      mockCache.getJson.mockResolvedValue(mockEmployeeResponse);
 
       const result = await client.collectEmployeeById(327313517);
 
@@ -212,7 +227,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     };
 
     it('should search and collect employees', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockResolvedValue({ data: mockSearchResponse });
       mockAxiosInstance.get
         .mockResolvedValueOnce({ data: mockEmployee1 })
@@ -228,7 +243,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     });
 
     it('should return empty array when no employees found', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockResolvedValue({ data: [] });
 
       const result = await client.getEmployeesByCompanyDomain('nonexistent.com');
@@ -238,7 +253,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     });
 
     it('should handle individual employee collection failures gracefully', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockResolvedValue({ data: mockSearchResponse });
       mockAxiosInstance.get
         .mockResolvedValueOnce({ data: mockEmployee1 })
@@ -254,21 +269,25 @@ describe('CoreSignalClient v2 Multi-Source', () => {
   describe('cache operations', () => {
     it('should clear cache', async () => {
       await client.clearCache('pattern');
-      expect(mockCache.clear).toHaveBeenCalledWith('pattern');
+      expect(mockCacheManager.clear).toHaveBeenCalled();
     });
 
     it('should get cache stats', async () => {
-      const mockStats = { hits: 10, misses: 5, size: 100 };
-      mockCache.getStats.mockResolvedValue(mockStats);
+      const mockStats = { keys: 100, memory: '1MB', hits: 10, misses: 5 };
+      mockCacheManager.getStats.mockResolvedValue(mockStats);
 
       const result = await client.getCacheStats();
-      expect(result).toEqual(mockStats);
+      expect(result).toEqual({
+        hits: 10,
+        misses: 5,
+        size: 100,
+      });
     });
   });
 
   describe('health check', () => {
     it('should return true when API is healthy', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockResolvedValue({ data: [] });
 
       const result = await client.healthCheck();
@@ -276,7 +295,7 @@ describe('CoreSignalClient v2 Multi-Source', () => {
     });
 
     it('should return false when API is unhealthy', async () => {
-      mockCache.get.mockResolvedValue(null);
+      mockCache.getJson.mockResolvedValue(null);
       mockAxiosInstance.post.mockRejectedValue(new Error('API Error'));
 
       const result = await client.healthCheck();
