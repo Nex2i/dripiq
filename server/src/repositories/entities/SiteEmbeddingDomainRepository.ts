@@ -35,11 +35,15 @@ export class SiteEmbeddingDomainRepository extends BaseRepository<
    * Create domain if it doesn't exist
    */
   async createIfNotExists(data: NewSiteEmbeddingDomain): Promise<SiteEmbeddingDomain> {
-    const existing = await this.findByDomain(data.domain);
+    // Always extract the full domain to ensure consistency
+    const domain = data.domain.getFullDomain();
+    const normalizedData = { ...data, domain };
+    
+    const existing = await this.findByDomain(domain);
     if (existing) {
       return existing;
     }
-    return await this.create(data);
+    return await this.create(normalizedData);
   }
 
   /**

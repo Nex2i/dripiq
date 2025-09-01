@@ -44,6 +44,8 @@ export const OrganizationAnalyzerService = {
     }
     const { summary, products, services, differentiators, targetMarket, tone } =
       aiOutput.finalResponseParsed;
+
+
     // save on tenant
     await TenantService.updateTenant(id, {
       summary: summary,
@@ -55,7 +57,7 @@ export const OrganizationAnalyzerService = {
     });
   },
   wasLastScrapeTooRecent: async (url: string) => {
-    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getDomain());
+    const lastScrape = await EmbeddingsService.getDateOfLastDomainScrape(url.getFullDomain());
 
     if (!lastScrape) {
       return false;

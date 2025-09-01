@@ -31,7 +31,7 @@ export const SiteAnalyzerService = {
           return;
         }
 
-        const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getDomain());
+        const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getFullDomain());
 
         const markdownFile = firecrawlClient.createFirecrawlMarkdownFile(id, page);
         await supabaseStorage.uploadFile(markdownFile.slug, markdownFile);
@@ -51,6 +51,8 @@ export const SiteAnalyzerService = {
           [],
           [LEAD_STATUS.SCRAPING_SITE]
         );
+
+
 
         await LeadAnalysisPublisher.publish({
           tenantId: metadata.tenantId,
