@@ -30,6 +30,7 @@ import { TablePagination } from '../components/table/TablePagination'
 import { BulkActions } from '../components/leads/BulkActions'
 import { EmptyState } from '../components/leads/EmptyState'
 import { useLeadsColumns } from '../components/leads/LeadsTableColumns'
+import { BatchCreateLeadModal } from '../components/BatchCreateLeadModal'
 import { fuzzyFilter } from '../utils/tableFilters'
 import { formatDate } from '../utils/dateUtils'
 import { Plus, RefreshCw, AlertCircle, Search, X } from 'lucide-react'
@@ -49,6 +50,8 @@ const LeadsPage: React.FC = () => {
     null,
   )
   const [selectedUserId, setSelectedUserId] = React.useState<string>('')
+  const [isBatchCreateModalOpen, setIsBatchCreateModalOpen] =
+    React.useState(false)
 
   const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
   const {
@@ -202,162 +205,183 @@ const LeadsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
-            <p className="mt-2 text-gray-600">
-              {table.getFilteredRowModel().rows.length === 0 &&
-              !hasSearchOrFilters
-                ? 'No leads yet'
-                : hasSearchOrFilters
-                  ? `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} found`
-                  : `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} total`}
-              {selectedRowCount > 0 && (
-                <span className="ml-2 text-[var(--color-primary-600)] font-medium">
-                  ({selectedRowCount} selected)
-                </span>
-              )}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate({ to: '/leads/new' })}
-              className="inline-flex items-center px-4 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Lead
-            </button>
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Refresh leads"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-              />
-              <span className="ml-2">Refresh</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Search Input */}
-        <div className="mb-6">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+    <>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
+              <p className="mt-2 text-gray-600">
+                {table.getFilteredRowModel().rows.length === 0 &&
+                !hasSearchOrFilters
+                  ? 'No leads yet'
+                  : hasSearchOrFilters
+                    ? `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} found`
+                    : `${table.getFilteredRowModel().rows.length} lead${table.getFilteredRowModel().rows.length === 1 ? '' : 's'} total`}
+                {selectedRowCount > 0 && (
+                  <span className="ml-2 text-[var(--color-primary-600)] font-medium">
+                    ({selectedRowCount} selected)
+                  </span>
+                )}
+              </p>
             </div>
-            <DebouncedInput
-              value={searchQuery}
-              onChange={(value) => setSearchQuery(String(value))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] bg-white text-gray-900 placeholder-gray-500"
-              placeholder="Search leads by name or website..."
-            />
-            {searchQuery && (
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                title="Clear search"
+                onClick={() => navigate({ to: '/leads/new' })}
+                className="inline-flex items-center px-4 py-2 bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
               >
-                <X className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                <Plus className="h-4 w-4 mr-2" />
+                New Lead
               </button>
+              <button
+                onClick={() => setIsBatchCreateModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg border border-gray-300 shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Batch Create
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh leads"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+                />
+                <span className="ml-2">Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Search Input */}
+          <div className="mb-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <DebouncedInput
+                value={searchQuery}
+                onChange={(value) => setSearchQuery(String(value))}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] bg-white text-gray-900 placeholder-gray-500"
+                placeholder="Search leads by name or website..."
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  title="Clear search"
+                >
+                  <X className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Table Controls */}
+          <TableControls
+            table={table}
+            users={users}
+            usersLoading={usersLoading}
+            usersError={usersError}
+            selectedUserId={selectedUserId}
+            onUserChange={setSelectedUserId}
+            showUserFilter={true}
+          />
+
+          {/* Bulk Actions */}
+          <BulkActions
+            selectedRowCount={selectedRowCount}
+            onClearSelection={() => setRowSelection({})}
+            onBulkDelete={handleBulkDelete}
+            isDeleting={bulkDeleteMutation.isPending}
+          />
+
+          {/* Table */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            {table.getFilteredRowModel().rows.length === 0 ? (
+              <EmptyState
+                hasSearchOrFilters={hasSearchOrFilters}
+                onClearSearch={
+                  searchQuery ? () => setSearchQuery('') : undefined
+                }
+                onClearFilters={
+                  selectedUserId ? () => setSelectedUserId('') : undefined
+                }
+              />
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <tr key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <th
+                              key={header.id}
+                              scope="col"
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider"
+                            >
+                              {header.isPlaceholder
+                                ? null
+                                : flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
+                            </th>
+                          ))}
+                        </tr>
+                      ))}
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {table.getRowModel().rows.map((row) => (
+                        <tr
+                          key={row.id}
+                          className={`hover:bg-gray-50 transition-colors cursor-pointer ${
+                            row.getIsSelected()
+                              ? 'bg-[var(--color-primary-50)]'
+                              : ''
+                          }`}
+                          onClick={() =>
+                            navigate({ to: `/leads/${row.original.id}` })
+                          }
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <td
+                              key={cell.id}
+                              className="px-6 py-4 whitespace-nowrap"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <TablePagination table={table} />
+              </>
             )}
           </div>
         </div>
-
-        {/* Table Controls */}
-        <TableControls
-          table={table}
-          users={users}
-          usersLoading={usersLoading}
-          usersError={usersError}
-          selectedUserId={selectedUserId}
-          onUserChange={setSelectedUserId}
-          showUserFilter={true}
-        />
-
-        {/* Bulk Actions */}
-        <BulkActions
-          selectedRowCount={selectedRowCount}
-          onClearSelection={() => setRowSelection({})}
-          onBulkDelete={handleBulkDelete}
-          isDeleting={bulkDeleteMutation.isPending}
-        />
-
-        {/* Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          {table.getFilteredRowModel().rows.length === 0 ? (
-            <EmptyState
-              hasSearchOrFilters={hasSearchOrFilters}
-              onClearSearch={searchQuery ? () => setSearchQuery('') : undefined}
-              onClearFilters={
-                selectedUserId ? () => setSelectedUserId('') : undefined
-              }
-            />
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <th
-                            key={header.id}
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider"
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext(),
-                                )}
-                          </th>
-                        ))}
-                      </tr>
-                    ))}
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {table.getRowModel().rows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className={`hover:bg-gray-50 transition-colors cursor-pointer ${
-                          row.getIsSelected()
-                            ? 'bg-[var(--color-primary-50)]'
-                            : ''
-                        }`}
-                        onClick={() =>
-                          navigate({ to: `/leads/${row.original.id}` })
-                        }
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <td
-                            key={cell.id}
-                            className="px-6 py-4 whitespace-nowrap"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <TablePagination table={table} />
-            </>
-          )}
-        </div>
       </div>
-    </div>
+
+      {/* Batch Create Lead Modal */}
+      <BatchCreateLeadModal
+        isOpen={isBatchCreateModalOpen}
+        onClose={() => setIsBatchCreateModalOpen(false)}
+        onSuccess={() => {
+          setIsBatchCreateModalOpen(false)
+          handleRefresh()
+        }}
+      />
+    </>
   )
 }
 

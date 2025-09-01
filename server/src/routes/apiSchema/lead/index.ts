@@ -1,5 +1,6 @@
 // Lead CRUD operations
 export * from './lead.create.schema';
+export * from './lead.batchCreate.schema';
 export * from './lead.get.schema';
 export * from './lead.update.schema';
 export * from './lead.delete.schema';

@@ -13,6 +13,7 @@ import { LEAD_STATUS } from '../constants/leadStatus.constants';
 import { storageService } from './storage/storage.service';
 import { ProductsService } from './products.service';
 import { attachProductsToLead } from './leadProduct.service';
+import { LeadInitialProcessingPublisher } from './messages/leadInitialProcessing.publisher.service';
 
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
@@ -499,4 +500,132 @@ export const updateLeadStatuses = async (
     logger.error('Error updating lead statuses:', error);
     throw error;
   }
+};
+
+/**
+ * Creates multiple leads in batch for a specific tenant.
+ * Each lead will be processed individually with its own queue message.
+ * @param tenantId - The ID of the tenant the leads will belong to.
+ * @param websites - Array of website URLs to create leads from.
+ * @param ownerId - The ID of the user who will own these leads.
+ * @returns A promise that resolves to an array of batch creation results.
+ */
+export const createLeadsBatch = async (tenantId: string, websites: string[], ownerId: string) => {
+  // If ownerId is provided, enforce verified sender identity for that owner
+  if (ownerId) {
+    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
+      ownerId,
+      tenantId
+    );
+    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
+      throw new Error('Assigned owner must have a verified sender identity');
+    }
+  }
+
+  const results = [];
+
+  for (const domain of websites) {
+    try {
+      // The input is already a clean domain (e.g., "dominguezfirm.com")
+      // Lead name: Extract domain without TLD using getDomain (e.g., "dominguezfirm")
+      const leadName = domain.getDomain();
+
+      // URL: Save the full domain as received (e.g., "dominguezfirm.com")
+      const websiteUrl = domain;
+
+      if (!leadName) {
+        results.push({
+          url: domain,
+          success: false,
+          error: 'Unable to extract domain name',
+        });
+        continue;
+      }
+
+      // Check if a lead with this domain already exists for this tenant
+      // Check both the domain and common URL variations
+      const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: domain });
+      const existingLead = existingLeads.find(
+        (lead) =>
+          lead.url === domain ||
+          lead.url === `https://${domain}` ||
+          lead.url === `https://www.${domain}` ||
+          lead.url.includes(domain)
+      );
+      if (existingLead) {
+        results.push({
+          url: domain,
+          success: false,
+          error: 'Lead with this domain already exists',
+          leadId: existingLead.id,
+          name: existingLead.name,
+        });
+        continue;
+      }
+
+      // Create the lead
+      const leadData: Omit<NewLead, 'tenantId'> = {
+        name: leadName,
+        url: websiteUrl,
+        status: 'new',
+        ownerId,
+      };
+
+      const newLead = await leadRepository.createForTenant(tenantId, leadData);
+
+      // Create initial status
+      await leadStatusRepository.createForTenant(tenantId, {
+        leadId: newLead.id,
+        status: LEAD_STATUS.UNPROCESSED,
+      });
+
+      // Auto-attach default products if any exist
+      const defaultProducts = await ProductsService.getDefaultProducts(tenantId);
+      if (defaultProducts.length > 0) {
+        await attachProductsToLead(
+          newLead.id,
+          defaultProducts.map((p: any) => p.id),
+          tenantId
+        );
+      }
+
+      // Publish individual queue message for this lead
+      await LeadInitialProcessingPublisher.publish({
+        tenantId,
+        leadId: newLead.id,
+        leadUrl: newLead.url,
+        metadata: {
+          createdBy: ownerId,
+          createdAt: new Date().toISOString(),
+          batchCreation: true,
+        },
+      });
+
+      results.push({
+        url: domain,
+        success: true,
+        leadId: newLead.id,
+        name: newLead.name,
+      });
+
+      logger.info(`Successfully created lead in batch: ${newLead.id} for domain: ${domain}`);
+    } catch (error: any) {
+      logger.error(`Failed to create lead for domain ${domain}:`, error);
+      results.push({
+        url: domain,
+        success: false,
+        error: error.message || 'Unknown error occurred',
+      });
+    }
+  }
+
+  const summary = {
+    total: websites.length,
+    successful: results.filter((r) => r.success).length,
+    failed: results.filter((r) => !r.success).length,
+  };
+
+  logger.info(`Batch lead creation completed: ${summary.successful}/${summary.total} successful`);
+
+  return { results, summary };
 };
