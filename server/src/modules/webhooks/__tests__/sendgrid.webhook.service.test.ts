@@ -1125,32 +1125,72 @@ describe('SendGridWebhookService', () => {
       const mockWebhookDelivery = {
         id: 'webhook-123',
         tenantId: 'tenant-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        provider: 'sendgrid',
+        eventType: 'open',
+        status: 'received',
+        messageId: 'message-123',
+        receivedAt: new Date(),
+        payload: {},
+        signature: 'valid-signature',
       };
-      mockWebhookDeliveryRepository.createForTenant.mockResolvedValue(mockWebhookDelivery);
+      mockWebhookDeliveryRepo.createForTenant.mockResolvedValue(mockWebhookDelivery as any);
 
       const mockMessageEvent = {
         id: 'message-event-123',
         messageId: 'message-123',
         type: 'open',
+        data: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        tenantId: 'tenant-123',
+        eventAt: new Date(),
+        sgEventId: 'sg-event-123',
       };
-      mockMessageEventRepository.createForTenant.mockResolvedValue(mockMessageEvent);
-      mockMessageEventRepository.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+      mockMessageEventRepo.createForTenant.mockResolvedValue(mockMessageEvent as any);
+      mockMessageEventRepo.findByIdsForTenant.mockResolvedValue([mockMessageEvent as any]);
 
       const mockOutboundMessage = {
         id: 'message-123',
         campaignId: 'campaign-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        tenantId: 'tenant-123',
+        contactId: 'contact-123',
+        channel: 'email' as const,
+        senderIdentityId: 'sender-123',
+        providerMessageId: 'provider-123',
+        subject: 'Test Subject',
+        body: 'Test Body',
+        state: 'sent' as const,
+        sentAt: new Date(),
+        lastError: null,
+        errorAt: null,
+        retryCount: 0,
       };
-      mockOutboundMessageRepository.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+      mockOutboundMessageRepo.findByIdsForTenant.mockResolvedValue([mockOutboundMessage as any]);
 
       const mockCampaign = {
         id: 'campaign-123',
-        status: 'active',
+        status: 'active' as const,
         currentNodeId: 'node-123',
         contactId: 'contact-123',
         leadId: 'lead-123',
         planJson: { nodes: [], startNodeId: 'node-123' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        tenantId: 'tenant-123',
+        channel: 'email' as const,
+        currentNodeStartedAt: new Date(),
+        startedAt: new Date(),
+        pausedAt: null,
+        completedAt: null,
+        stoppedAt: null,
+        errorAt: null,
+        lastError: null,
       };
-      mockContactCampaignRepository.findByIdsForTenant.mockResolvedValue([mockCampaign]);
+      mockContactCampaignRepo.findByIdsForTenant.mockResolvedValue([mockCampaign as any]);
 
       mockCampaignPlanExecutionService.processTransition.mockResolvedValue({
         success: true,
@@ -1159,7 +1199,7 @@ describe('SendGridWebhookService', () => {
       });
 
       // Execute webhook processing
-      const result = await webhookService.processWebhook(
+      const result = await service.processWebhook(
         { 'x-twilio-email-event-webhook-signature': 'valid-signature' },
         JSON.stringify([mockOpenEvent])
       );

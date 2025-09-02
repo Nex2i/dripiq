@@ -11,6 +11,10 @@ import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExe
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
 import {
+  normalizeEventTypeForCampaign,
+  IGNORED_TRANSITION_EVENTS,
+} from '@/constants/campaign-events';
+import {
   SendGridEvent,
   SendGridEventType,
   SendGridWebhookPayload,
@@ -22,12 +26,6 @@ import {
   KNOWN_SENDGRID_EVENTS_NOT_RECORDED,
   ALL_KNOWN_SENDGRID_EVENTS,
 } from './sendgrid.webhook.types';
-import { 
-  normalizeEventTypeForCampaign,
-  shouldTriggerCampaignTransition,
-  SENDGRID_EVENT_TYPES as SENDGRID_EVENTS,
-  IGNORED_TRANSITION_EVENTS
-} from '@/constants/campaign-events';
 
 /**
  * SendGrid Webhook Service

@@ -449,7 +449,10 @@ export class EmailExecutionService {
 
     // Only schedule default timeout jobs for event types that actually have transitions in the plan
     // This prevents scheduling no_click timeouts when the plan only has no_open transitions
-    if (!scheduledTimeouts.has(CAMPAIGN_EVENT_TYPES.NO_OPEN) && timeoutEventTypesInTransitions.has(CAMPAIGN_EVENT_TYPES.NO_OPEN)) {
+    if (
+      !scheduledTimeouts.has(CAMPAIGN_EVENT_TYPES.NO_OPEN) &&
+      timeoutEventTypesInTransitions.has(CAMPAIGN_EVENT_TYPES.NO_OPEN)
+    ) {
       const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
       try {
         const noOpenDelayMs = parseIsoDuration(noOpenDelay);
@@ -481,7 +484,10 @@ export class EmailExecutionService {
       }
     }
 
-    if (!scheduledTimeouts.has(CAMPAIGN_EVENT_TYPES.NO_CLICK) && timeoutEventTypesInTransitions.has(CAMPAIGN_EVENT_TYPES.NO_CLICK)) {
+    if (
+      !scheduledTimeouts.has(CAMPAIGN_EVENT_TYPES.NO_CLICK) &&
+      timeoutEventTypesInTransitions.has(CAMPAIGN_EVENT_TYPES.NO_CLICK)
+    ) {
       const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
       try {
         const noClickDelayMs = parseIsoDuration(noClickDelay);

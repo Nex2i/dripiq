@@ -1,6 +1,6 @@
 /**
  * Campaign Event Type Constants
- * 
+ *
  * This file centralizes all event type strings used throughout the campaign system
  * to prevent typos and ensure consistency between different parts of the codebase.
  */
@@ -10,7 +10,7 @@
  */
 export const SENDGRID_EVENT_TYPES = {
   DELIVERED: 'delivered',
-  BOUNCE: 'bounce', 
+  BOUNCE: 'bounce',
   DEFERRED: 'deferred',
   DROPPED: 'dropped',
   OPEN: 'open',
@@ -29,17 +29,17 @@ export const CAMPAIGN_EVENT_TYPES = {
   // Engagement events
   OPENED: 'opened',
   CLICKED: 'clicked',
-  
+
   // Delivery events
   DELIVERED: 'delivered',
   BOUNCE: 'bounce',
   DROPPED: 'dropped',
   DEFERRED: 'deferred',
-  
+
   // Negative events (timeouts)
   NO_OPEN: 'no_open',
   NO_CLICK: 'no_click',
-  
+
   // Other events
   SPAM: 'spam',
   UNSUBSCRIBE: 'unsubscribe',

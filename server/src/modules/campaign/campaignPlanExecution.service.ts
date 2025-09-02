@@ -444,7 +444,7 @@ export class CampaignPlanExecutionService {
         error: nextActionError instanceof Error ? nextActionError.message : 'Unknown error',
         stack: nextActionError instanceof Error ? nextActionError.stack : undefined,
       });
-      
+
       // Continue with transition but mark next action as failed
       nextActionResult = {
         scheduled: false,
@@ -483,7 +483,7 @@ export class CampaignPlanExecutionService {
       leadId,
       nodeId,
       totalNodesInPlan: plan.nodes.length,
-      availableNodeIds: plan.nodes.map(n => n.id),
+      availableNodeIds: plan.nodes.map((n) => n.id),
     });
 
     const node = plan.nodes.find((n) => n.id === nodeId);
@@ -492,7 +492,7 @@ export class CampaignPlanExecutionService {
         tenantId,
         campaignId,
         nodeId,
-        availableNodes: plan.nodes.map(n => ({ id: n.id, action: n.action })),
+        availableNodes: plan.nodes.map((n) => ({ id: n.id, action: n.action })),
       });
       return { scheduled: false, reason: 'node_not_found' };
     }
@@ -503,9 +503,9 @@ export class CampaignPlanExecutionService {
       nodeId,
       action: node.action,
       channel: node.channel,
-      hasSubject: !!node.subject,
-      hasBody: !!node.body,
-      hasSchedule: !!node.schedule,
+      hasSubject: !!(node.action === 'send' && 'subject' in node && node.subject),
+      hasBody: !!(node.action === 'send' && 'body' in node && node.body),
+      hasSchedule: !!(node.action === 'send' && 'schedule' in node && node.schedule),
     });
 
     if (node.action === 'send') {
