@@ -73,22 +73,42 @@ jobs:
       - name: Build
         run: npm run build
 
-  deploy:
-    name: Deploy to Render
+  deploy-app:
+    name: Deploy App to Render
     runs-on: ubuntu-latest
     needs: [server-check, server-test, server-build]
-    
+
     steps:
-      - name: Trigger Render Deploy Hook
+      - name: Trigger Render App Deploy Hook
         run: |
-          echo "All validation checks passed. Triggering Render deployment..."
-          response=$(curl -s -w "HTTP_STATUS:%{http_code}" -X POST "${{ secrets.RENDER_DEPLOY_URL }}")
+          echo "All validation checks passed. Triggering Render app deployment..."
+          response=$(curl -s -w "HTTP_STATUS:%{http_code}" -X POST "${{ secrets.RENDER_APP_DEPLOY_URL }}")
           http_status=$(echo "$response" | grep -o "HTTP_STATUS:[0-9]*" | cut -d: -f2)
-          
+
           if [[ "$http_status" -ge 200 && "$http_status" -lt 300 ]]; then
-            echo "✅ Deploy hook triggered successfully (HTTP $http_status)"
+            echo "✅ App deploy hook triggered successfully (HTTP $http_status)"
           else
-            echo "❌ Deploy hook failed (HTTP $http_status)"
+            echo "❌ App deploy hook failed (HTTP $http_status)"
+            echo "Response: $response"
+            exit 1
+          fi
+
+  deploy-worker:
+    name: Deploy Worker to Render
+    runs-on: ubuntu-latest
+    needs: [server-check, server-test, server-build]
+
+    steps:
+      - name: Trigger Render Worker Deploy Hook
+        run: |
+          echo "All validation checks passed. Triggering Render worker deployment..."
+          response=$(curl -s -w "HTTP_STATUS:%{http_code}" -X POST "${{ secrets.RENDER_WORKER_DEPLOY_URL }}")
+          http_status=$(echo "$response" | grep -o "HTTP_STATUS:[0-9]*" | cut -d: -f2)
+
+          if [[ "$http_status" -ge 200 && "$http_status" -lt 300 ]]; then
+            echo "✅ Worker deploy hook triggered successfully (HTTP $http_status)"
+          else
+            echo "❌ Worker deploy hook failed (HTTP $http_status)"
             echo "Response: $response"
             exit 1
           fi
