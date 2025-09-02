@@ -68,6 +68,26 @@ export class TimeoutExecutionService {
         };
       }
 
+      // Get the campaign to check current state and access the plan
+      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+      
+      // Check if campaign has moved past this node (stale timeout job)
+      if (campaign && campaign.currentNodeId !== nodeId) {
+        logger.info('[CampaignExecutionWorker] Campaign has moved past this node, skipping timeout', {
+          campaignId,
+          timeoutNodeId: nodeId,
+          currentNodeId: campaign.currentNodeId,
+          eventType,
+          messageId,
+          jobId: job.id,
+        });
+        return {
+          success: true,
+          skipped: true,
+          reason: 'campaign_moved_past_node',
+        };
+      }
+
       // Generate synthetic event
       const syntheticEvent = await messageEventRepository.createForTenant(tenantId, {
         messageId,
@@ -92,8 +112,6 @@ export class TimeoutExecutionService {
       });
 
       // Trigger campaign transition processing
-      // Get the campaign to access the plan
-      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
 
       if (campaign && campaign.planJson) {
         const campaignPlan = campaign.planJson as CampaignPlanOutput;

@@ -73,9 +73,20 @@ export class CampaignPlanExecutionService {
         return;
       }
 
-      // Check if campaign is already active to prevent duplicate execution
-      if (existingCampaign.status !== 'draft') {
-        logger.info('Campaign already initialized, skipping execution', {
+      // Handle campaigns that are already active - clean up and re-initialize
+      if (existingCampaign.status === 'active') {
+        logger.info('Campaign already active, cleaning up existing jobs and re-initializing', {
+          tenantId,
+          leadId,
+          contactId,
+          campaignId: existingCampaign.id,
+          currentStatus: existingCampaign.status,
+        });
+        
+        // Cancel all existing timeout jobs for this campaign to prevent conflicts
+        await this.cancelAllCampaignTimeoutJobs(tenantId, existingCampaign.id);
+      } else if (existingCampaign.status !== 'draft') {
+        logger.info('Campaign in non-actionable status, skipping execution', {
           tenantId,
           leadId,
           contactId,
@@ -769,6 +780,85 @@ export class CampaignPlanExecutionService {
       await scheduledActionRepository.cancelByCampaignForTenant(tenantId, campaignId);
     } catch (error) {
       logger.error('Failed to cancel campaign actions', {
+        tenantId,
+        campaignId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Cancels ALL timeout jobs for a campaign (used during manual re-initialization)
+   */
+  private async cancelAllCampaignTimeoutJobs(
+    tenantId: string,
+    campaignId: string
+  ): Promise<void> {
+    try {
+      // Find all pending timeout actions for this campaign
+      const pendingTimeoutActions = await scheduledActionRepository.findPendingByCampaignAndType(
+        tenantId,
+        campaignId,
+        JOB_NAMES.campaign_execution.timeout
+      );
+
+      if (pendingTimeoutActions.length === 0) {
+        logger.debug('[CampaignPlanExecutionService] No timeout jobs to cancel for campaign', {
+          tenantId,
+          campaignId,
+        });
+        return;
+      }
+
+      // Cancel the BullMQ jobs
+      const campaignExecutionQueue = getQueue('campaign_execution');
+      let canceledCount = 0;
+
+      for (const action of pendingTimeoutActions) {
+        if (action.bullmqJobId) {
+          try {
+            const job = await campaignExecutionQueue.getJob(action.bullmqJobId);
+            if (job) {
+              await job.remove();
+
+              // Update the database status
+              await scheduledActionRepository.updateById(action.id, {
+                status: 'canceled',
+                updatedAt: new Date(),
+              });
+
+              canceledCount++;
+
+              logger.debug('[CampaignPlanExecutionService] Canceled timeout job for campaign', {
+                tenantId,
+                campaignId,
+                actionId: action.id,
+                jobId: action.bullmqJobId,
+                nodeId: (action.payload as any)?.nodeId,
+                eventType: (action.payload as any)?.eventType,
+              });
+            }
+          } catch (error) {
+            logger.warn('[CampaignPlanExecutionService] Failed to cancel timeout job', {
+              tenantId,
+              campaignId,
+              actionId: action.id,
+              jobId: action.bullmqJobId,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
+        }
+      }
+
+      logger.info('[CampaignPlanExecutionService] Canceled timeout jobs for campaign', {
+        tenantId,
+        campaignId,
+        totalCanceled: canceledCount,
+        totalPending: pendingTimeoutActions.length,
+      });
+    } catch (error) {
+      logger.error('[CampaignPlanExecutionService] Failed to cancel campaign timeout jobs', {
         tenantId,
         campaignId,
         error: error instanceof Error ? error.message : 'Unknown error',
