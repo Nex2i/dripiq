@@ -11,6 +11,7 @@ import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext'
 export interface FormattedWebDataContact {
   name: string;
   email?: string;
+  phone?: string;
   title?: string;
   priority: 'high' | 'medium' | 'low';
   linkedinUrl?: string;
@@ -78,6 +79,7 @@ function formatEmployee(employee: WebDataEmployee): FormattedWebDataContact {
     employee.full_name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim();
   const title = employee.job_title;
   const email = employee.email;
+  const phone = employee.phone;
   const linkedinUrl = employee.linkedin_url;
   const department = employee.job_department;
 
@@ -87,6 +89,7 @@ function formatEmployee(employee: WebDataEmployee): FormattedWebDataContact {
   return {
     name: name || 'Unknown',
     email,
+    phone,
     title,
     priority,
     linkedinUrl,
@@ -188,7 +191,7 @@ export function convertWebDataToExtractedContact(
   return {
     name: webDataContact.name,
     email: webDataContact.email || null,
-    phone: null, // webData doesn't typically have phone numbers
+    phone: webDataContact.phone || null,
     title: webDataContact.title || null,
     company: null, // webData contacts are from the same company
     contactType: 'individual' as const,
@@ -324,6 +327,90 @@ function mergeContactDetails(
     return webDataValue;
   };
 
+  // Special email merging logic to preserve high-quality webData emails
+  const mergeEmail = (aiEmail: string | null, webDataEmail: string | null) => {
+    // If webData has an email, prefer it unless AI email is clearly more specific
+    if (webDataEmail && webDataEmail.trim() !== '') {
+      // If AI doesn't have an email, keep webData email
+      if (!aiEmail || aiEmail.trim() === '') {
+        return webDataEmail;
+      }
+
+      // Check if AI email is generic (should not override webData)
+      const genericEmailPatterns = [
+        /^info@/i,
+        /^contact@/i,
+        /^hello@/i,
+        /^sales@/i,
+        /^office@/i,
+        /^support@/i,
+        /^admin@/i,
+        /^marketing@/i,
+        /^hr@/i,
+        /^careers@/i,
+      ];
+
+      const aiEmailLower = aiEmail.toLowerCase().trim();
+      const isGenericAiEmail = genericEmailPatterns.some((pattern) => pattern.test(aiEmailLower));
+
+      // If AI email is generic, keep webData email
+      if (isGenericAiEmail) {
+        logger.debug(
+          `Preserving webData email over generic AI email: ${webDataEmail} vs ${aiEmail}`
+        );
+        return webDataEmail;
+      }
+
+      // If AI email appears more specific (contains person's name or similar), use it
+      // Otherwise, keep the webData email as it's likely more accurate
+      return webDataEmail;
+    }
+
+    // If webData doesn't have an email, use AI email (even if generic)
+    return aiEmail;
+  };
+
+  // Special phone merging logic to preserve high-quality webData phone numbers
+  const mergePhone = (aiPhone: string | null, webDataPhone: string | null) => {
+    // If webData has a phone number, prefer it unless AI phone is clearly more specific
+    if (webDataPhone && webDataPhone.trim() !== '') {
+      // If AI doesn't have a phone, keep webData phone
+      if (!aiPhone || aiPhone.trim() === '') {
+        return webDataPhone;
+      }
+
+      // Check if AI phone is generic/main office number (should not override webData)
+      const genericPhonePatterns = [
+        /^\+?1?\s*\(?800\)?/i, // 800 numbers (toll-free)
+        /^\+?1?\s*\(?888\)?/i, // 888 numbers (toll-free)
+        /^\+?1?\s*\(?877\)?/i, // 877 numbers (toll-free)
+        /^\+?1?\s*\(?866\)?/i, // 866 numbers (toll-free)
+        /^\+?1?\s*\(?855\)?/i, // 855 numbers (toll-free)
+        /^\+?1?\s*\(?844\)?/i, // 844 numbers (toll-free)
+        /main.*office/i,
+        /general.*line/i,
+        /switchboard/i,
+      ];
+
+      const aiPhoneLower = aiPhone.toLowerCase().trim();
+      const isGenericAiPhone = genericPhonePatterns.some((pattern) => pattern.test(aiPhoneLower));
+
+      // If AI phone is generic, keep webData phone
+      if (isGenericAiPhone) {
+        logger.debug(
+          `Preserving webData phone over generic AI phone: ${webDataPhone} vs ${aiPhone}`
+        );
+        return webDataPhone;
+      }
+
+      // If both phones look specific, prefer webData as it's likely more accurate
+      return webDataPhone;
+    }
+
+    // If webData doesn't have a phone, use AI phone (even if generic)
+    return aiPhone;
+  };
+
   // For completeness check: if one source has "complete" info, prefer it
   const aiCompleteness = calculateContactCompleteness(aiContact);
   const webDataCompleteness = calculateContactCompleteness(webDataContact);
@@ -334,14 +421,17 @@ function mergeContactDetails(
     return { ...webDataContact, isPriorityContact: aiContact.isPriorityContact }; // Keep AI priority flag
   } else if (aiCompleteness - webDataCompleteness >= 2) {
     logger.debug(`Using AI contact entirely due to completeness: ${aiContact.name}`);
-    return aiContact;
+    // Even when using AI contact for completeness, preserve webData email and phone if they exist and AI values are generic/missing
+    const finalEmail = mergeEmail(aiContact.email, webDataContact.email);
+    const finalPhone = mergePhone(aiContact.phone, webDataContact.phone);
+    return { ...aiContact, email: finalEmail, phone: finalPhone };
   }
 
-  // Otherwise merge field by field, preferring AI
+  // Otherwise merge field by field, preferring AI (except for emails and phones which have special logic)
   return {
     name: mergeField(aiContact.name, webDataContact.name),
-    email: mergeField(aiContact.email, webDataContact.email),
-    phone: mergeField(aiContact.phone, webDataContact.phone),
+    email: mergeEmail(aiContact.email, webDataContact.email),
+    phone: mergePhone(aiContact.phone, webDataContact.phone),
     title: mergeField(aiContact.title, webDataContact.title),
     company: mergeField(aiContact.company, webDataContact.company),
     contactType: aiContact.contactType, // Prefer AI's assessment of contact type

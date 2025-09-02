@@ -116,11 +116,27 @@ describe('CoreSignalClient v2 Multi-Source', () => {
                 },
               },
               {
+                term: {
+                  is_working: 1,
+                },
+              },
+              {
                 nested: {
                   path: 'experience',
                   query: {
-                    match_phrase: {
-                      'experience.company_website.domain_only': 'leventhal-law.com',
+                    bool: {
+                      must: [
+                        {
+                          term: {
+                            'experience.active_experience': 1,
+                          },
+                        },
+                        {
+                          match: {
+                            'experience.company_website.domain_only': 'leventhal-law.com',
+                          },
+                        },
+                      ],
                     },
                   },
                 },
@@ -146,11 +162,27 @@ describe('CoreSignalClient v2 Multi-Source', () => {
           bool: {
             must: [
               {
+                term: {
+                  is_working: 1,
+                },
+              },
+              {
                 nested: {
                   path: 'experience',
                   query: {
-                    match_phrase: {
-                      'experience.company_website.domain_only': 'leventhal-law.com',
+                    bool: {
+                      must: [
+                        {
+                          term: {
+                            'experience.active_experience': 1,
+                          },
+                        },
+                        {
+                          match: {
+                            'experience.company_website.domain_only': 'leventhal-law.com',
+                          },
+                        },
+                      ],
                     },
                   },
                 },
