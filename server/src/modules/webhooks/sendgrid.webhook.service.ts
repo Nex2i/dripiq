@@ -12,6 +12,7 @@ import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStr
 import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
 import {
   SendGridEvent,
+  SendGridEventType,
   SendGridWebhookPayload,
   ProcessedEventResult,
   WebhookProcessingResult,
@@ -821,9 +822,11 @@ export class SendGridWebhookService {
     events: ProcessedEventResult[],
     webhookDeliveryId: string
   ): Promise<void> {
-    // Filter out click events - campaign transitions are now handled by calendar click validation
+    // Events that should not trigger campaign transitions
+    const ignoredEventTypes: SendGridEventType[] = ['click'];
+    
     const successfulEvents = events.filter(
-      (e) => e.success && !e.skipped && e.messageId && e.eventType !== 'click'
+      (e) => e.success && !e.skipped && e.messageId && !ignoredEventTypes.includes(e.eventType)
     );
 
     if (successfulEvents.length === 0) {
