@@ -86,56 +86,47 @@ export class TimeoutExecutionService {
         }
       }
 
-      // Generate synthetic event
-      const syntheticEvent = await messageEventRepository.createForTenant(tenantId, {
-        messageId,
-        type: eventType, // no_open, no_click
-        eventAt: new Date(),
-        data: {
-          synthetic: true,
-          triggeredBy: 'timeout',
-          originalJobId: job.id?.toString(),
-          scheduledAt: job.opts?.delay
-            ? new Date(Date.now() - (job.opts.delay as number))
-            : new Date(),
-          actualFiredAt: new Date(),
-        },
-      });
-
-      logger.info('[CampaignExecutionWorker] Created synthetic event', {
-        eventId: syntheticEvent.id,
-        eventType,
-        messageId,
-        jobId: job.id,
-      });
-
-      // Trigger campaign transition processing
+      // Process timeout transition directly without creating synthetic events
       // Get the campaign to access the plan
       const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
 
       if (campaign && campaign.planJson) {
         const campaignPlan = campaign.planJson as CampaignPlanOutput;
 
-        await campaignPlanExecutionService.processTransition({
+        const timeoutResult = await campaignPlanExecutionService.processTimeoutTransition({
           tenantId,
           campaignId,
           contactId: campaign.contactId,
           leadId: campaign.leadId,
-          eventType,
+          timeoutEventType: eventType,
           currentNodeId: nodeId, // Use the nodeId from timeout payload, not campaign state
           plan: campaignPlan,
-          eventRef: syntheticEvent.id,
+          originalJobId: job.id?.toString(),
+          scheduledAt: job.opts?.delay
+            ? new Date(Date.now() - (job.opts.delay as number))
+            : new Date(),
         });
 
-        logger.info('[CampaignExecutionWorker] Campaign transition processed successfully', {
+        logger.info('[CampaignExecutionWorker] Timeout transition processed successfully', {
           tenantId,
           campaignId,
-          eventType,
-          currentNodeId: nodeId, // Log the actual node used for transition
+          timeoutEventType: eventType,
+          currentNodeId: nodeId,
+          transitionSuccess: timeoutResult.success,
+          fromNodeId: timeoutResult.fromNodeId,
+          toNodeId: timeoutResult.toNodeId,
+          nextActionScheduled: timeoutResult.nextAction?.scheduled,
+          reason: timeoutResult.reason,
         });
+
+        return {
+          success: timeoutResult.success,
+          reason: timeoutResult.reason,
+          // Note: No syntheticEventId since we're not creating synthetic events
+        };
       } else {
         logger.warn(
-          '[CampaignExecutionWorker] Could not process campaign transition - missing campaign data',
+          '[CampaignExecutionWorker] Could not process timeout transition - missing campaign data',
           {
             tenantId,
             campaignId,
@@ -145,12 +136,12 @@ export class TimeoutExecutionService {
             jobId: job.id,
           }
         );
-      }
 
-      return {
-        success: true,
-        syntheticEventId: syntheticEvent.id,
-      };
+        return {
+          success: false,
+          reason: 'missing_campaign_data',
+        };
+      }
     } catch (error) {
       logger.error('[CampaignExecutionWorker] Failed to process timeout job', {
         jobId: job.id,
@@ -251,7 +242,7 @@ export class TimeoutExecutionService {
       if (campaign.planJson) {
         const campaignPlan = campaign.planJson as CampaignPlanOutput;
 
-        await campaignPlanExecutionService.processTransition({
+        const clickTransitionResult = await campaignPlanExecutionService.processTransition({
           tenantId,
           campaignId,
           contactId: campaign.contactId,
@@ -259,15 +250,16 @@ export class TimeoutExecutionService {
           eventType: CAMPAIGN_EVENT_TYPES.CLICKED,
           currentNodeId: nodeId,
           plan: campaignPlan,
-          eventRef: calendarClickResult.latestClick!.id, // Use actual calendar click ID
         });
 
-        logger.info('[CampaignExecutionWorker] Campaign click transition processed successfully', {
+        logger.info('[CampaignExecutionWorker] Campaign click transition processed', {
           tenantId,
           campaignId,
           eventType: CAMPAIGN_EVENT_TYPES.CLICKED,
           currentNodeId: nodeId,
           calendarClickId: calendarClickResult.latestClick!.id,
+          transitionSuccess: clickTransitionResult.success,
+          reason: clickTransitionResult.reason,
         });
       }
 

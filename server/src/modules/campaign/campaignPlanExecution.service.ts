@@ -4,7 +4,6 @@ import {
   contactCampaignRepository,
   campaignTransitionRepository,
 } from '@/repositories';
-import type { ContactCampaign } from '@/db/schema';
 import { CampaignExecutionPublisher } from '@/modules/messages';
 import type { ScheduledAction } from '@/db/schema';
 import { getQueue } from '@/libs/bullmq';
@@ -13,6 +12,10 @@ import type {
   TransitionResult,
   NextActionResult,
 } from '@/types/campaign-transition.types';
+import type {
+  ProcessTimeoutTransitionParams,
+  TimeoutTransitionResult,
+} from '@/types/timeout-transition.types';
 import { JOB_NAMES, QUEUE_NAMES } from '@/constants/queues';
 import type {
   CampaignPlanOutput,
@@ -314,8 +317,7 @@ export class CampaignPlanExecutionService {
    * Processes an event-driven transition in the campaign plan
    */
   async processTransition(params: ProcessTransitionParams): Promise<TransitionResult> {
-    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan, eventRef } =
-      params;
+    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan } = params;
 
     logger.info('Processing campaign transition', {
       tenantId,
@@ -356,8 +358,7 @@ export class CampaignPlanExecutionService {
         tenantId,
         campaignId,
         currentNodeId,
-        new Date(),
-        eventRef
+        new Date()
       );
 
       if (isValid) {
@@ -756,24 +757,67 @@ export class CampaignPlanExecutionService {
     nodeId: string
   ): Promise<Date | null> {
     try {
-      // Get the most recent transition that resulted in entering this node
+      // Get all transitions for this campaign
       const transitions = await campaignTransitionRepository.listByCampaignForTenant(
         tenantId,
         campaignId
       );
 
+      // Sort transitions by occurredAt in descending order (most recent first)
+      const sortedTransitions = transitions.sort(
+        (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+      );
+
       // Find the most recent transition where the reason indicates entering this node
-      // or if this is the start node, use the campaign start time
-      const nodeEntryTransition = transitions.find((t) => t.reason?.includes(`to ${nodeId}`));
+      // The reason format is: "Event: ${eventType} - transition from ${fromNodeId} to ${toNodeId}"
+      // or "Timeout: ${timeoutEventType} - transition from ${fromNodeId} to ${toNodeId}..."
+      const nodeEntryTransition = sortedTransitions.find((t) => {
+        if (!t.reason) return false;
+
+        // Check if this transition has the target node in the "to nodeId" format
+        const toPattern = new RegExp(`to ${nodeId}(\\s|\\(|$)`);
+        return toPattern.test(t.reason);
+      });
 
       if (nodeEntryTransition) {
+        logger.debug('Found node entry transition', {
+          tenantId,
+          campaignId,
+          nodeId,
+          transitionId: nodeEntryTransition.id,
+          reason: nodeEntryTransition.reason,
+          occurredAt: nodeEntryTransition.occurredAt.toISOString(),
+        });
         return nodeEntryTransition.occurredAt;
       }
 
       // If no transition found, this might be the start node
       // Get campaign start time as fallback
       const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
-      return campaign?.startedAt || null;
+
+      if (campaign?.startedAt) {
+        logger.debug('Using campaign start time as fallback for node start time', {
+          tenantId,
+          campaignId,
+          nodeId,
+          campaignStartedAt: campaign.startedAt.toISOString(),
+        });
+        return campaign.startedAt;
+      }
+
+      logger.warn(
+        'Could not determine node start time - no transitions found and no campaign start time',
+        {
+          tenantId,
+          campaignId,
+          nodeId,
+          transitionCount: transitions.length,
+          hasCampaign: !!campaign,
+          campaignStatus: campaign?.status,
+        }
+      );
+
+      return null;
     } catch (error) {
       logger.error('Failed to get current node start time', {
         tenantId,
@@ -793,8 +837,7 @@ export class CampaignPlanExecutionService {
     tenantId: string,
     campaignId: string,
     currentNodeId: string,
-    eventTime: Date = new Date(),
-    _eventRef?: string
+    eventTime: Date = new Date()
   ): Promise<boolean> {
     try {
       // Get when the current node was entered
@@ -890,26 +933,6 @@ export class CampaignPlanExecutionService {
   }
 
   /**
-   * Cancels all pending scheduled actions for a campaign
-   */
-  async cancelCampaignActions(tenantId: string, campaignId: string): Promise<void> {
-    try {
-      // This would require a method to find pending actions by campaign
-      // and update their status to 'canceled'
-      logger.info('Canceling campaign actions', { tenantId, campaignId });
-
-      await scheduledActionRepository.cancelByCampaignForTenant(tenantId, campaignId);
-    } catch (error) {
-      logger.error('Failed to cancel campaign actions', {
-        tenantId,
-        campaignId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Cancels timeout jobs for a specific node when transitioning away from it
    */
   private async cancelNodeTimeoutJobs(
@@ -999,36 +1022,183 @@ export class CampaignPlanExecutionService {
   }
 
   /**
-   * Gets campaign execution status with current state
+   * Processes timeout-triggered transitions directly without creating synthetic events.
+   * This bypasses timing constraints since timeouts already handle timing.
+   *
+   * Unlike processTransition, this method:
+   * - Does not validate timing constraints (timing already handled by timeout job)
+   * - Does not create synthetic events in the database
+   * - Uses timeout-specific audit trail format
+   *
+   * @param params - Timeout transition parameters
+   * @returns Promise<TimeoutTransitionResult> - Result of the timeout transition
    */
-  async getCampaignExecutionStatus(
-    tenantId: string,
-    campaignId: string
-  ): Promise<{
-    campaign: ContactCampaign | undefined;
-    pendingActions: number;
-    sentMessages: number;
-    lastTransition?: Date;
-  }> {
+  async processTimeoutTransition(
+    params: ProcessTimeoutTransitionParams
+  ): Promise<TimeoutTransitionResult> {
+    const {
+      tenantId,
+      campaignId,
+      contactId,
+      leadId,
+      timeoutEventType,
+      currentNodeId,
+      plan,
+      originalJobId,
+      scheduledAt,
+    } = params;
+
+    logger.info('Processing timeout transition directly', {
+      tenantId,
+      campaignId,
+      contactId,
+      leadId,
+      timeoutEventType,
+      currentNodeId,
+      originalJobId,
+    });
+
     try {
-      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+      // Find current node in plan
+      const currentNode = plan.nodes.find((n) => n.id === currentNodeId);
+      if (!currentNode) {
+        throw new Error(`Current node not found in plan: ${currentNodeId}`);
+      }
 
-      // TODO: Add methods to count related records
-      // const pendingActions = await scheduledActionRepository.countPendingByCampaign(tenantId, campaignId);
-      // const sentMessages = await outboundMessageRepository.countByCampaign(tenantId, campaignId);
+      // Find matching transitions by timeout event type
+      const candidateTransitions =
+        currentNode.transitions?.filter((t) => t.on === timeoutEventType) || [];
 
-      return {
-        campaign,
-        pendingActions: 0, // TODO: Implement count
-        sentMessages: 0, // TODO: Implement count
-        lastTransition: undefined, // TODO: Get from transitions
+      if (candidateTransitions.length === 0) {
+        logger.warn('No timeout transitions found for event type', {
+          currentNodeId,
+          timeoutEventType,
+          availableTransitions: currentNode.transitions?.map((t) => ({ on: t.on, to: t.to })),
+          nodeAction: currentNode.action,
+        });
+        return {
+          success: false,
+          reason: 'no_matching_timeout_transition',
+          availableTransitions: currentNode.transitions?.length || 0,
+        };
+      }
+
+      // For timeout transitions, use the first matching transition
+      // Skip timing validation since timeouts already handled the timing
+      const transition = candidateTransitions[0];
+
+      // Validate that the target node exists in the plan
+      const targetNode = plan.nodes.find((n) => n.id === transition?.to);
+      if (!targetNode) {
+        logger.error('Target node not found in campaign plan', {
+          currentNodeId,
+          targetNodeId: transition?.to,
+          timeoutEventType,
+          availableNodes: plan.nodes.map((n) => n.id),
+        });
+        throw new Error(`Target node not found in plan: ${transition?.to}`);
+      }
+
+      logger.info('Found matching timeout transition', {
+        from: currentNodeId,
+        to: transition?.to,
+        trigger: timeoutEventType,
+        targetNodeAction: targetNode.action,
+        bypassedTimingValidation: true,
+      });
+
+      // Cancel any remaining timeout jobs for the current node since we're transitioning away
+      await this.cancelNodeTimeoutJobs(tenantId, campaignId, currentNodeId);
+
+      // Update campaign state
+      await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
+        currentNodeId: transition?.to,
+        updatedAt: new Date(),
+      });
+
+      // Record transition for audit (with timeout-specific reason)
+      const transitionRecord = await campaignTransitionRepository.createForTenant(tenantId, {
+        campaignId,
+        fromStatus: null, // Node IDs are not campaign statuses
+        toStatus: 'active', // Assume active unless it's a stop action
+        reason: `Timeout: ${timeoutEventType} - transition from ${currentNodeId} to ${transition?.to}${originalJobId ? ` (job: ${originalJobId})` : ''}`,
+        occurredAt: scheduledAt || new Date(),
+      });
+
+      // Schedule next action if target node requires it
+      let nextActionResult: NextActionResult;
+      try {
+        logger.info('[CampaignPlanExecutionService] About to schedule next action from timeout', {
+          tenantId,
+          campaignId,
+          fromNodeId: currentNodeId,
+          toNodeId: transition?.to,
+          timeoutEventType,
+        });
+
+        nextActionResult = await this.scheduleNextAction(
+          tenantId,
+          campaignId,
+          contactId,
+          leadId,
+          transition?.to || '',
+          plan
+        );
+
+        logger.info(
+          '[CampaignPlanExecutionService] Next action scheduling completed from timeout',
+          {
+            tenantId,
+            campaignId,
+            toNodeId: transition?.to,
+            scheduled: nextActionResult.scheduled,
+            actionType: nextActionResult.actionType,
+            reason: nextActionResult.reason,
+            scheduledAt: nextActionResult.scheduledAt?.toISOString(),
+            scheduledActionId: nextActionResult.scheduledActionId,
+          }
+        );
+      } catch (nextActionError) {
+        logger.error('[CampaignPlanExecutionService] Failed to schedule next action from timeout', {
+          tenantId,
+          campaignId,
+          fromNodeId: currentNodeId,
+          toNodeId: transition?.to,
+          timeoutEventType,
+          error: nextActionError instanceof Error ? nextActionError.message : 'Unknown error',
+          stack: nextActionError instanceof Error ? nextActionError.stack : undefined,
+        });
+
+        // Continue with transition but mark next action as failed
+        nextActionResult = {
+          scheduled: false,
+          reason: 'scheduling_failed',
+        };
+      }
+
+      const result: TimeoutTransitionResult = {
+        success: true,
+        fromNodeId: currentNodeId,
+        toNodeId: transition?.to,
+        timeoutEventType,
+        transitionId: transitionRecord.id,
+        nextAction: nextActionResult,
       };
+
+      logger.info('Timeout transition completed successfully', result);
+      return result;
     } catch (error) {
-      logger.error('Failed to get campaign execution status', {
+      logger.error('Failed to process timeout transition', {
         tenantId,
         campaignId,
+        contactId,
+        leadId,
+        timeoutEventType,
+        currentNodeId,
         error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       });
+
       throw error;
     }
   }
