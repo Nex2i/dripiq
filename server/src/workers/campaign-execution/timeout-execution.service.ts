@@ -2,6 +2,8 @@ import type { Job } from 'bullmq';
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, messageEventRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
+import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
+import { CAMPAIGN_CONSTANTS } from '@/constants/staticCampaignTemplate';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
@@ -10,6 +12,7 @@ export interface TimeoutJobResult {
   skipped?: boolean;
   reason?: string;
   syntheticEventId?: string;
+  calendarClickId?: string;
 }
 
 export class TimeoutExecutionService {
@@ -66,6 +69,21 @@ export class TimeoutExecutionService {
           skipped: true,
           reason: 'real_event_exists',
         };
+      }
+
+      // Special handling for no_click events - check calendar clicks
+      if (eventType === CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK) {
+        const calendarClickResult = await this.handleNoClickCalendarValidation(
+          job,
+          tenantId,
+          campaignId,
+          nodeId,
+          messageId
+        );
+        
+        if (calendarClickResult) {
+          return calendarClickResult;
+        }
       }
 
       // Generate synthetic event
@@ -146,6 +164,129 @@ export class TimeoutExecutionService {
       });
 
       throw error;
+    }
+  }
+
+  /**
+   * Handle calendar click validation for no_click timeout events
+   * Returns TimeoutJobResult if calendar clicks are found, null otherwise
+   */
+  private async handleNoClickCalendarValidation(
+    job: Job<TimeoutJobPayload>,
+    tenantId: string,
+    campaignId: string,
+    nodeId: string,
+    messageId: string
+  ): Promise<TimeoutJobResult | null> {
+    try {
+      // Get campaign details for calendar click validation
+      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
+
+      if (!campaign) {
+        return null;
+      }
+
+      // Get the proper node start time from campaign execution service
+      const nodeStartTime = await campaignPlanExecutionService.getCurrentNodeStartTime(
+        tenantId,
+        campaignId,
+        nodeId
+      );
+
+      if (!nodeStartTime) {
+        logger.warn(
+          '[CampaignExecutionWorker] Could not determine node start time for calendar click validation',
+          {
+            tenantId,
+            campaignId,
+            nodeId,
+            jobId: job.id,
+          }
+        );
+        return null; // Skip calendar validation, proceed with normal no_click timeout
+      }
+
+      // Check for any calendar clicks since the node started
+      const timeSinceNodeStart = new Date().getTime() - nodeStartTime.getTime();
+
+      const calendarClickResult = await calendarClickValidationService.hasCalendarClicksInWindow({
+        tenantId,
+        campaignId,
+        contactId: campaign.contactId,
+        leadId: campaign.leadId,
+        timeWindowMs: timeSinceNodeStart,
+        referenceTime: new Date(),
+      });
+
+      if (!calendarClickResult.hasClicks) {
+        logger.debug(
+          '[CampaignExecutionWorker] No calendar clicks found, proceeding with no_click timeout',
+          {
+            messageId,
+            campaignId,
+            contactId: campaign.contactId,
+            leadId: campaign.leadId,
+            nodeStartTime: nodeStartTime.toISOString(),
+            timeSinceNodeStart,
+            jobId: job.id,
+          }
+        );
+        return null; // No clicks found, proceed with normal no_click timeout
+      }
+
+      logger.info(
+        '[CampaignExecutionWorker] Calendar clicks found, triggering click transition instead of no_click',
+        {
+          messageId,
+          campaignId,
+          contactId: campaign.contactId,
+          leadId: campaign.leadId,
+          clickCount: calendarClickResult.clickCount,
+          latestClickId: calendarClickResult.latestClick?.id,
+          jobId: job.id,
+        }
+      );
+
+      // Trigger campaign transition using the actual calendar click
+      if (campaign.planJson) {
+        const campaignPlan = campaign.planJson as CampaignPlanOutput;
+
+        await campaignPlanExecutionService.processTransition({
+          tenantId,
+          campaignId,
+          contactId: campaign.contactId,
+          leadId: campaign.leadId,
+          eventType: 'click',
+          currentNodeId: nodeId,
+          plan: campaignPlan,
+          eventRef: calendarClickResult.latestClick!.id, // Use actual calendar click ID
+        });
+
+        logger.info('[CampaignExecutionWorker] Campaign click transition processed successfully', {
+          tenantId,
+          campaignId,
+          eventType: 'click',
+          currentNodeId: nodeId,
+          calendarClickId: calendarClickResult.latestClick!.id,
+        });
+      }
+
+      return {
+        success: true,
+        reason: 'calendar_click_found',
+        calendarClickId: calendarClickResult.latestClick!.id,
+      };
+    } catch (error) {
+      logger.error('[CampaignExecutionWorker] Error in calendar click validation', {
+        tenantId,
+        campaignId,
+        nodeId,
+        messageId,
+        jobId: job.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      return null; // On error, proceed with normal no_click timeout
     }
   }
 }
