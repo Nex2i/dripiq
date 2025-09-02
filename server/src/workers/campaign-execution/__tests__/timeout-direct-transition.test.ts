@@ -16,6 +16,15 @@ jest.mock('@/repositories');
 jest.mock('@/modules/campaign/campaignPlanExecution.service');
 jest.mock('@/services/calendarClickValidation.service');
 
+// Mock BullMQ to prevent Redis connection issues
+jest.mock('@/libs/bullmq', () => ({
+  createRedisConnection: jest.fn(() => ({})),
+  getQueue: jest.fn(() => ({})),
+  getQueueEvents: jest.fn(() => ({})),
+  getWorker: jest.fn(() => ({})),
+  shutdownQueues: jest.fn(),
+}));
+
 const mockCampaignTransitionRepository = jest.mocked(campaignTransitionRepository);
 
 const mockContactCampaignRepository = jest.mocked(contactCampaignRepository);
