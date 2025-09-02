@@ -9,6 +9,7 @@ import { logger } from '@/libs/logger';
 
 export default fp(async function bullBoardPlugin(app) {
   // Create queue instances for monitoring
+  const leadInitialProcessingQueue = getQueue(QUEUE_NAMES.lead_initial_processing);
   const leadAnalysisQueue = getQueue(QUEUE_NAMES.lead_analysis);
   const campaignCreationQueue = getQueue(QUEUE_NAMES.campaign_creation);
   const campaignExecutionQueue = getQueue(QUEUE_NAMES.campaign_execution);
@@ -19,6 +20,7 @@ export default fp(async function bullBoardPlugin(app) {
   // Create the Bull-Board instance with the queues
   createBullBoard({
     queues: [
+      new BullMQAdapter(leadInitialProcessingQueue),
       new BullMQAdapter(leadAnalysisQueue),
       new BullMQAdapter(campaignCreationQueue),
       new BullMQAdapter(campaignExecutionQueue),
