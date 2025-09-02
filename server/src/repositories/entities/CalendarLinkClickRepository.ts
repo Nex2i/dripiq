@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, desc, isNull } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, isNull, or } from 'drizzle-orm';
 import { calendarLinkClicks, CalendarLinkClick, NewCalendarLinkClick } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
@@ -69,12 +69,23 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
     );
 
     // Add campaign filter if provided
+    // Note: campaignId is nullable in the schema
     if (campaignId) {
+      // When campaignId is provided, we have two options:
+      // 1. Only find clicks for this specific campaign: eq(this.table.campaignId, campaignId)
+      // 2. Find clicks for this campaign OR clicks without campaign context: or(eq(...), isNull(...))
+      // 
+      // For calendar click validation (no_click timeouts), we want option 2
+      // because ANY calendar click should indicate engagement, regardless of campaign tracking
       whereConditions = and(
         whereConditions,
-        eq(this.table.campaignId, campaignId)
+        or(
+          eq(this.table.campaignId, campaignId),
+          isNull(this.table.campaignId)
+        )
       );
     }
+    // If campaignId is not provided, we include all clicks (no additional filtering needed)
 
     let query = this.db
       .select()
