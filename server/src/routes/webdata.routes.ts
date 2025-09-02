@@ -1,10 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
-import { defaultRouteResponse } from '@/types/response';
 import { logger } from '@/libs/logger';
 import { getWebDataService } from '@/libs/webData';
 import '@/extensions/string.extensions';
-import { WebDataEmployeesRequestSchema, WebDataEmployeesResponseSchema } from './apiSchema/webdata';
+import { fetchWebDataContacts } from '@/modules/ai/webDataContactHelper';
 
 const basePath = '/webdata';
 
@@ -16,23 +15,19 @@ export default async function webdataRoutes(fastify: FastifyInstance) {
     schema: {
       description: 'Get employees by company domain using CoreSignal multi-source data',
       tags: ['WebData'],
-      ...WebDataEmployeesRequestSchema,
-      response: {
-        ...defaultRouteResponse,
-        ...WebDataEmployeesResponseSchema.response,
-      },
     },
     handler: async (
       request: FastifyRequest<{
         Body: {
           domainUrl: string;
           isDecisionMaker?: boolean;
+          aiFormat?: boolean;
         };
       }>,
       reply: FastifyReply
     ) => {
       try {
-        const { domainUrl, isDecisionMaker = true } = request.body;
+        const { domainUrl, isDecisionMaker = true, aiFormat = true } = request.body;
 
         logger.info('WebData employees request', {
           domainUrl,
@@ -47,6 +42,18 @@ export default async function webdataRoutes(fastify: FastifyInstance) {
           return reply.status(400).send({
             success: false,
             error: 'Invalid domain URL provided',
+          });
+        }
+
+        if (aiFormat) {
+          const webDataAiResult = await fetchWebDataContacts(domainUrl);
+          return reply.status(200).send({
+            success: true,
+            data: {
+              result: webDataAiResult,
+              company_domain: cleanDomain,
+              provider: 'ai',
+            },
           });
         }
 
