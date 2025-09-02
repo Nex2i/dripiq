@@ -94,7 +94,6 @@ async function processLeadAnalysis(
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    // Re-throw the error so BullMQ can handle retries properly
     throw error;
   }
 }

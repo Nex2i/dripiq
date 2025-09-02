@@ -79,7 +79,6 @@ async function processCampaignCreation(
       });
     }
 
-    // Re-throw the error so BullMQ can handle retries properly
     throw error;
   }
 }

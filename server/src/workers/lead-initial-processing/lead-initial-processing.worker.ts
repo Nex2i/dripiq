@@ -18,13 +18,7 @@ import type {
 async function processLeadInitialProcessing(
   job: Job<LeadInitialProcessingJobPayload>
 ): Promise<LeadInitialProcessingJobResult> {
-  const {
-    tenantId,
-    leadId,
-    leadUrl,
-    metadata = {},
-    firecrawlJobId: existingFirecrawlJobId,
-  } = job.data;
+  const { tenantId, leadId, leadUrl, metadata = {} } = job.data;
 
   try {
     logger.info('[LeadInitialProcessingWorker] Starting initial processing', {
@@ -171,43 +165,22 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.INITIAL_PROCESSING]
     );
 
-    // Initiate batch scraping (only if not already created)
-    let firecrawlJobId = existingFirecrawlJobId;
-    if (!existingFirecrawlJobId) {
-      try {
-        const crawlResult = await firecrawlClient.batchScrapeUrls(smartFilteredUrls, batchMetadata);
-        firecrawlJobId = crawlResult?.id;
-
-        logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
-          jobId: job.id,
-          leadId,
-          urlCount: smartFilteredUrls.length,
-          firecrawlJobId,
-        });
-
-        // Update the job data to include the firecrawl job ID for retries
-        await job.updateData({
-          ...job.data,
-          firecrawlJobId,
-        });
-      } catch (error) {
-        logger.error('[LeadInitialProcessingWorker] Failed to initiate batch scrape', {
-          jobId: job.id,
-          leadId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        throw new Error(
-          `Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-      }
-    } else {
-      logger.info(
-        '[LeadInitialProcessingWorker] Firecrawl job already exists, skipping batch scrape initiation',
-        {
-          jobId: job.id,
-          leadId,
-          existingFirecrawlJobId,
-        }
+    // Initiate batch scraping
+    try {
+      await firecrawlClient.batchScrapeUrls(smartFilteredUrls, batchMetadata);
+      logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
+        jobId: job.id,
+        leadId,
+        urlCount: smartFilteredUrls.length,
+      });
+    } catch (error) {
+      logger.error('[LeadInitialProcessingWorker] Failed to initiate batch scrape', {
+        jobId: job.id,
+        leadId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw new Error(
+        `Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
 
@@ -224,7 +197,6 @@ async function processLeadInitialProcessing(
       sitemapUrls: siteMap.map((url) => url.url),
       filteredUrls: smartFilteredUrls,
       batchScrapeJobId: undefined, // batchScrapeJobId is handled internally by the service
-      firecrawlJobId,
       skippedScraping: false,
     };
   } catch (error) {
@@ -241,7 +213,7 @@ async function processLeadInitialProcessing(
       await updateLeadStatuses(
         tenantId,
         leadId,
-        [LEAD_STATUS.UNPROCESSED],
+        [LEAD_STATUS.UNPROCESSED, LEAD_STATUS.INITIAL_PROCESSING_FAILED],
         [LEAD_STATUS.INITIAL_PROCESSING, LEAD_STATUS.SYNCING_SITE]
       );
     } catch (statusError) {
@@ -252,7 +224,25 @@ async function processLeadInitialProcessing(
       });
     }
 
-    // Re-throw the error so BullMQ can handle retries properly
+    // Determine error code
+    let errorCode: LeadInitialProcessingJobResult['errorCode'] = 'UNKNOWN';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('sitemap')) {
+      errorCode = 'SITEMAP_FETCH_FAILED';
+    } else if (errorMessage.includes('batch scrape')) {
+      errorCode = 'BATCH_SCRAPE_FAILED';
+    } else if (errorMessage.includes('filter')) {
+      errorCode = 'SMART_FILTER_FAILED';
+    }
+
+    logger.error('[LeadInitialProcessingWorker] Initial processing failed', {
+      jobId: job.id,
+      tenantId,
+      leadId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     throw error;
   }
 }

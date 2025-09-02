@@ -1,7 +1,6 @@
 import { supabaseStorage } from '@/libs/supabase.storage';
 import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { logger } from '@/libs/logger';
 import { updateLeadStatuses } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
@@ -45,39 +44,23 @@ export const SiteAnalyzerService = {
     const { metadata } = payload;
 
     switch (metadata.type) {
-      case 'lead_site': {
-        // Validate that the lead is in the expected state before proceeding
-        // This prevents processing webhooks from orphaned firecrawl jobs
-        const leadStatuses = await updateLeadStatuses(
+      case 'lead_site':
+        await updateLeadStatuses(
           metadata.tenantId,
           metadata.leadId,
           [],
           [LEAD_STATUS.SCRAPING_SITE]
         );
 
-        // Only proceed if the lead was actually in SCRAPING_SITE status
-        // This prevents duplicate processing from race conditions
-        if (leadStatuses && leadStatuses.length > 0) {
-          await LeadAnalysisPublisher.publish({
-            tenantId: metadata.tenantId,
-            leadId: metadata.leadId,
-            metadata: {
-              firecrawlJobId: payload.id,
-              crawlCompleteAt: new Date().toISOString(),
-            },
-          });
-        } else {
-          logger.warn(
-            '[SiteAnalyzerService] Firecrawl completion received for lead not in SCRAPING_SITE status',
-            {
-              firecrawlJobId: payload.id,
-              tenantId: metadata.tenantId,
-              leadId: metadata.leadId,
-            }
-          );
-        }
+        await LeadAnalysisPublisher.publish({
+          tenantId: metadata.tenantId,
+          leadId: metadata.leadId,
+          metadata: {
+            firecrawlJobId: payload.id,
+            crawlCompleteAt: new Date().toISOString(),
+          },
+        });
         break;
-      }
 
       case 'organization_site':
         OrganizationAnalyzerService.analyzeOrganization(metadata.tenantId);

@@ -6,6 +6,7 @@ export const LEAD_STATUS = {
   ANALYZING_SITE: 'Analyzing Site',
   EXTRACTING_CONTACTS: 'Extracting Contacts',
   PROCESSED: 'Processed',
+  INITIAL_PROCESSING_FAILED: 'Initial Processing Failed',
 } as const;
 
 export type LeadStatusValue = (typeof LEAD_STATUS)[keyof typeof LEAD_STATUS];
