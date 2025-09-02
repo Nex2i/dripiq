@@ -6,7 +6,13 @@ import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
-import { fetchWebDataContacts, formatWebDataContactsForPrompt } from '../../webDataContactHelper';
+import {
+  fetchWebDataContacts,
+  formatWebDataContactsForPrompt,
+  mergeContactSources,
+  WebDataContactSummary,
+  convertWebDataToExtractedContact,
+} from '../../webDataContactHelper';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
@@ -78,19 +84,68 @@ export class ContactExtractionAgent {
         finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt);
       }
 
-      const parsedResult = parseWithSchema(finalResponse, domain);
+      const aiParsedResult = parseWithSchema(finalResponse, domain);
+
+      // Merge AI contacts with webData contacts - webData first approach
+      const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
+
+      // Combine contacts: enriched webData contacts first, then AI-only contacts
+      const finalContacts = [...mergeResult.enrichedContacts, ...mergeResult.aiOnlyContacts];
+
+      // Update priority contact index after merging
+      let updatedPriorityContactId = aiParsedResult.priorityContactId;
+      if (updatedPriorityContactId !== null && aiParsedResult.contacts.length > 0) {
+        const originalPriorityContact = aiParsedResult.contacts[updatedPriorityContactId];
+        if (originalPriorityContact) {
+          // Find the priority contact in the final list
+          const finalIndex = finalContacts.findIndex(
+            (contact) =>
+              contact.name.toLowerCase().trim() ===
+              originalPriorityContact.name.toLowerCase().trim()
+          );
+          updatedPriorityContactId = finalIndex >= 0 ? finalIndex : null;
+        }
+      }
+
+      // If no priority contact found from AI, try to find one from high-priority webData contacts
+      if (updatedPriorityContactId === null) {
+        const highPriorityIndex = finalContacts.findIndex((contact) => contact.isPriorityContact);
+        if (highPriorityIndex >= 0 && finalContacts[highPriorityIndex]) {
+          updatedPriorityContactId = highPriorityIndex;
+          logger.info(
+            `Set priority contact from webData: ${finalContacts[highPriorityIndex].name}`
+          );
+        }
+      }
+
+      const finalParsedResult: ContactExtractionOutput = {
+        contacts: finalContacts,
+        priorityContactId: updatedPriorityContactId,
+        summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
+      };
+
+      logger.info('Contact extraction and merge completed', {
+        domain,
+        originalAI: aiParsedResult.contacts.length,
+        originalWebData: webDataSummary.contacts.length,
+        webDataPreserved: mergeResult.webDataContacts.length,
+        enrichedContacts: mergeResult.enrichedContacts.length,
+        aiOnlyContacts: mergeResult.aiOnlyContacts.length,
+        finalTotal: finalContacts.length,
+        priorityContactIndex: updatedPriorityContactId,
+      });
 
       return {
         finalResponse: result.output || 'Contact extraction completed',
-        finalResponseParsed: parsedResult,
+        finalResponseParsed: finalParsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
       };
     } catch (error) {
       logger.error('Contact extraction failed:', error);
 
-      // Return fallback result
-      const fallbackResult = getFallbackResult(domain, error);
+      // Return fallback result with webData contacts if available
+      const fallbackResult = getFallbackResultWithWebData(domain, error, webDataSummary);
       return {
         finalResponse: `Contact extraction failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         finalResponseParsed: fallbackResult,
@@ -159,4 +214,27 @@ function getFallbackResult(domain: string, error: unknown): ContactExtractionOut
       error instanceof Error ? error.message : 'Unknown error'
     }`,
   };
+}
+
+function getFallbackResultWithWebData(
+  domain: string,
+  error: unknown,
+  webDataSummary: WebDataContactSummary
+): ContactExtractionOutput {
+  // If we have webData contacts, use them as fallback
+  if (webDataSummary.contacts.length > 0) {
+    const webDataAsExtracted = webDataSummary.contacts.map(convertWebDataToExtractedContact);
+    const priorityIndex = webDataAsExtracted.findIndex((contact) => contact.isPriorityContact);
+
+    return {
+      contacts: webDataAsExtracted,
+      priorityContactId: priorityIndex >= 0 ? priorityIndex : null,
+      summary: `AI extraction failed for ${domain}, but ${webDataSummary.contacts.length} webData contacts were preserved. Error: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`,
+    };
+  }
+
+  // No webData contacts available, return empty result
+  return getFallbackResult(domain, error);
 }

@@ -1,9 +1,12 @@
+import { compareTwoStrings } from 'string-similarity';
 import { getWebDataService } from '@/libs/webData';
 import {
   WebDataEmployee,
   WebDataCompanyEmployeesResult,
 } from '@/libs/webData/interfaces/webData.interface';
 import { logger } from '@/libs/logger';
+import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
 
 export interface FormattedWebDataContact {
   name: string;
@@ -174,4 +177,197 @@ ${contactsList}
 - DO NOT overwrite with generic emails like: sales@, info@, office@, support@, contact@, admin@, hello@
 - Merge additional information found on website (phone, address, LinkedIn) with webData contacts
 - Prioritize contacts marked as "High Priority" in your final selection`;
+}
+
+/**
+ * Convert FormattedWebDataContact to ExtractedContact format for consistency
+ */
+export function convertWebDataToExtractedContact(
+  webDataContact: FormattedWebDataContact
+): ExtractedContact {
+  return {
+    name: webDataContact.name,
+    email: webDataContact.email || null,
+    phone: null, // webData doesn't typically have phone numbers
+    title: webDataContact.title || null,
+    company: null, // webData contacts are from the same company
+    contactType: 'individual' as const,
+    context: webDataContact.department
+      ? `${webDataContact.department} ${CONTACT_CONTEXT.DEPARTMENT_SUFFIX}`
+      : CONTACT_CONTEXT.WEBDATA_EMPLOYEE,
+    isPriorityContact: webDataContact.priority === CONTACT_CONFIDENCE.HIGH,
+    address: null,
+    linkedinUrl: webDataContact.linkedinUrl || null,
+    websiteUrl: null,
+    sourceUrl: null,
+    confidence: CONTACT_CONFIDENCE.HIGH, // webData is typically high confidence
+  };
+}
+
+/**
+ * Merge webData contacts with AI-extracted contacts
+ * Uses name as the merge identifier, preferring AI details when both sources have data
+ */
+export function mergeContactSources(
+  webDataSummary: WebDataContactSummary,
+  aiContacts: ExtractedContact[]
+): {
+  webDataContacts: ExtractedContact[];
+  enrichedContacts: ExtractedContact[];
+  aiOnlyContacts: ExtractedContact[];
+} {
+  logger.info('Starting webData-first contact merge process', {
+    webDataCount: webDataSummary.contacts.length,
+    aiContactCount: aiContacts.length,
+  });
+
+  // Convert webData contacts to ExtractedContact format - these are always preserved
+  const webDataAsExtracted = webDataSummary.contacts.map(convertWebDataToExtractedContact);
+
+  // Track processed names to avoid duplicates
+  const processedNames = new Set<string>();
+  const enrichedContacts: ExtractedContact[] = [];
+  const aiOnlyContacts: ExtractedContact[] = [];
+
+  // First, process all webData contacts and enrich them with AI data
+  for (const webDataContact of webDataAsExtracted) {
+    const normalizedName = webDataContact.name.toLowerCase().trim();
+    processedNames.add(normalizedName);
+
+    // Find matching AI contact for enrichment
+    const matchingAiContact = findMatchingContactByName(webDataContact, aiContacts);
+
+    if (matchingAiContact) {
+      // Enrich webData contact with AI data
+      const enrichedContact = mergeContactDetails(webDataContact, matchingAiContact);
+      enrichedContacts.push(enrichedContact);
+      logger.debug(`Enriched webData contact with AI data: ${enrichedContact.name}`);
+    } else {
+      // No AI enrichment available, keep webData contact as-is
+      enrichedContacts.push(webDataContact);
+      logger.debug(`Preserved webData-only contact: ${webDataContact.name}`);
+    }
+  }
+
+  // Then, add AI-only contacts that don't match any webData contacts
+  for (const aiContact of aiContacts) {
+    const normalizedName = aiContact.name.toLowerCase().trim();
+
+    if (!processedNames.has(normalizedName)) {
+      // Check if this AI contact is similar to any webData contact we haven't matched yet
+      const matchingWebDataContact = findMatchingContactByName(aiContact, webDataAsExtracted);
+
+      if (!matchingWebDataContact) {
+        // This is a truly new AI contact
+        aiOnlyContacts.push(aiContact);
+        processedNames.add(normalizedName);
+        logger.debug(`Added AI-only contact: ${aiContact.name}`);
+      }
+    }
+  }
+
+  logger.info('WebData-first contact merge completed', {
+    originalWebData: webDataSummary.contacts.length,
+    originalAI: aiContacts.length,
+    webDataPreserved: webDataAsExtracted.length,
+    enrichedContacts: enrichedContacts.length,
+    aiOnlyContacts: aiOnlyContacts.length,
+  });
+
+  return {
+    webDataContacts: webDataAsExtracted,
+    enrichedContacts,
+    aiOnlyContacts,
+  };
+}
+
+/**
+ * Find matching contact by name using similarity scoring
+ */
+function findMatchingContactByName(
+  targetContact: ExtractedContact,
+  contacts: ExtractedContact[],
+  threshold: number = 0.8
+): ExtractedContact | null {
+  const targetName = targetContact.name.toLowerCase().trim();
+
+  let bestMatch: ExtractedContact | null = null;
+  let bestScore = 0;
+
+  for (const contact of contacts) {
+    const contactName = contact.name.toLowerCase().trim();
+    const similarity = compareTwoStrings(targetName, contactName);
+
+    if (similarity > threshold && similarity > bestScore) {
+      bestScore = similarity;
+      bestMatch = contact;
+    }
+  }
+
+  return bestMatch;
+}
+
+/**
+ * Merge two contacts, preferring AI data but filling gaps with webData
+ */
+function mergeContactDetails(
+  webDataContact: ExtractedContact,
+  aiContact: ExtractedContact
+): ExtractedContact {
+  // Helper function to choose between two values, preferring AI but allowing webData to fill gaps
+  const mergeField = (aiValue: any, webDataValue: any) => {
+    // If AI has a value, use it
+    if (aiValue !== null && aiValue !== undefined && aiValue !== '') {
+      return aiValue;
+    }
+    // Otherwise use webData value
+    return webDataValue;
+  };
+
+  // For completeness check: if one source has "complete" info, prefer it
+  const aiCompleteness = calculateContactCompleteness(aiContact);
+  const webDataCompleteness = calculateContactCompleteness(webDataContact);
+
+  // If one source is significantly more complete (>2 additional fields), prefer it entirely
+  if (webDataCompleteness - aiCompleteness >= 2) {
+    logger.debug(`Using webData contact entirely due to completeness: ${webDataContact.name}`);
+    return { ...webDataContact, isPriorityContact: aiContact.isPriorityContact }; // Keep AI priority flag
+  } else if (aiCompleteness - webDataCompleteness >= 2) {
+    logger.debug(`Using AI contact entirely due to completeness: ${aiContact.name}`);
+    return aiContact;
+  }
+
+  // Otherwise merge field by field, preferring AI
+  return {
+    name: mergeField(aiContact.name, webDataContact.name),
+    email: mergeField(aiContact.email, webDataContact.email),
+    phone: mergeField(aiContact.phone, webDataContact.phone),
+    title: mergeField(aiContact.title, webDataContact.title),
+    company: mergeField(aiContact.company, webDataContact.company),
+    contactType: aiContact.contactType, // Prefer AI's assessment of contact type
+    context: mergeField(aiContact.context, webDataContact.context),
+    isPriorityContact: aiContact.isPriorityContact, // AI determines priority
+    address: mergeField(aiContact.address, webDataContact.address),
+    linkedinUrl: mergeField(aiContact.linkedinUrl, webDataContact.linkedinUrl),
+    websiteUrl: mergeField(aiContact.websiteUrl, webDataContact.websiteUrl),
+    sourceUrl: mergeField(aiContact.sourceUrl, webDataContact.sourceUrl),
+    confidence: aiContact.confidence, // Use AI's confidence assessment
+  };
+}
+
+/**
+ * Calculate how complete a contact's information is (0-7 scale)
+ */
+function calculateContactCompleteness(contact: ExtractedContact): number {
+  let completeness = 0;
+
+  if (contact.email) completeness++;
+  if (contact.phone) completeness++;
+  if (contact.title) completeness++;
+  if (contact.address) completeness++;
+  if (contact.linkedinUrl) completeness++;
+  if (contact.websiteUrl) completeness++;
+  if (contact.company) completeness++;
+
+  return completeness;
 }
