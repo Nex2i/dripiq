@@ -68,15 +68,8 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
       lte(this.table.clickedAt, windowEnd)
     );
 
-    // Add campaign filter if provided
-    // Note: campaignId is nullable in the schema
+    // Include clicks for the specific campaign OR clicks without campaign context
     if (campaignId) {
-      // When campaignId is provided, we have two options:
-      // 1. Only find clicks for this specific campaign: eq(this.table.campaignId, campaignId)
-      // 2. Find clicks for this campaign OR clicks without campaign context: or(eq(...), isNull(...))
-      // 
-      // For calendar click validation (no_click timeouts), we want option 2
-      // because ANY calendar click should indicate engagement, regardless of campaign tracking
       whereConditions = and(
         whereConditions,
         or(
@@ -85,7 +78,6 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
         )
       );
     }
-    // If campaignId is not provided, we include all clicks (no additional filtering needed)
 
     let query = this.db
       .select()
