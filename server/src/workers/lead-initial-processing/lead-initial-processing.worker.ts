@@ -19,36 +19,47 @@ async function processLeadInitialProcessing(
   job: Job<LeadInitialProcessingJobPayload>
 ): Promise<LeadInitialProcessingJobResult> {
   const { tenantId, leadId, leadUrl, metadata = {} } = job.data;
+  const isResync = metadata.isResync === 'true';
 
   try {
-    logger.info('[LeadInitialProcessingWorker] Starting initial processing', {
-      jobId: job.id,
-      tenantId,
-      leadId,
-      leadUrl,
-    });
+    logger.info(
+      `[LeadInitialProcessingWorker] Starting ${isResync ? 'resync' : 'initial'} processing`,
+      {
+        jobId: job.id,
+        tenantId,
+        leadId,
+        leadUrl,
+        isResync,
+        triggeredBy: metadata.triggeredBy,
+      }
+    );
 
     // Update status to Initial Processing
     await updateLeadStatuses(
       tenantId,
       leadId,
       [LEAD_STATUS.INITIAL_PROCESSING],
-      [LEAD_STATUS.UNPROCESSED]
+      [LEAD_STATUS.UNPROCESSED, LEAD_STATUS.PROCESSED] // For resync, we might be starting from PROCESSED status
     );
 
-    // Check if site was recently scraped (within 2 weeks)
+    // Check if site was recently scraped - use different thresholds for resync vs initial
     const domain = leadUrl.getFullDomain();
     const lastScrapeDate = await EmbeddingsService.getDateOfLastDomainScrape(domain);
-    const recentScrapeThreshold = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 2 weeks ago
 
-    if (lastScrapeDate && lastScrapeDate > recentScrapeThreshold) {
+    // For resync: 1 day threshold, for initial processing: 2 weeks threshold
+    const recentScrapeThreshold = isResync
+      ? new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago for resync
+      : new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 2 weeks ago for initial
+
+    if (lastScrapeDate && lastScrapeDate > recentScrapeThreshold && !isResync) {
       logger.info(
-        '[LeadInitialProcessingWorker] Site was recently scraped, skipping scraping and triggering analysis directly',
+        `[LeadInitialProcessingWorker] Site was recently scraped, skipping scraping and triggering analysis directly`,
         {
           jobId: job.id,
           leadId,
           domain,
           lastScrapeDate: lastScrapeDate.toISOString(),
+          isResync,
         }
       );
 
@@ -72,12 +83,16 @@ async function processLeadInitialProcessing(
         },
       });
 
-      logger.info('[LeadInitialProcessingWorker] Initial processing completed (skipped scraping)', {
-        jobId: job.id,
-        tenantId,
-        leadId,
-        skippedScraping: true,
-      });
+      logger.info(
+        `[LeadInitialProcessingWorker] ${isResync ? 'Resync' : 'Initial'} processing completed (skipped scraping)`,
+        {
+          jobId: job.id,
+          tenantId,
+          leadId,
+          skippedScraping: true,
+          isResync,
+        }
+      );
 
       return {
         success: true,
@@ -90,12 +105,13 @@ async function processLeadInitialProcessing(
     }
 
     logger.info(
-      '[LeadInitialProcessingWorker] Site not recently scraped, proceeding with scraping',
+      `[LeadInitialProcessingWorker] ${isResync ? 'Resync requested' : 'Site not recently scraped'}, proceeding with scraping`,
       {
         jobId: job.id,
         leadId,
         domain,
         lastScrapeDate: lastScrapeDate?.toISOString() || 'never',
+        isResync,
       }
     );
 
@@ -104,6 +120,7 @@ async function processLeadInitialProcessing(
       tenantId,
       type: firecrawlTypes.lead_site,
       ...metadata,
+      isResync: isResync.toString(),
     };
 
     // Get sitemap
@@ -184,12 +201,16 @@ async function processLeadInitialProcessing(
       );
     }
 
-    logger.info('[LeadInitialProcessingWorker] Initial processing completed successfully', {
-      jobId: job.id,
-      tenantId,
-      leadId,
-      finalUrlCount: smartFilteredUrls.length,
-    });
+    logger.info(
+      `[LeadInitialProcessingWorker] ${isResync ? 'Resync' : 'Initial'} processing completed successfully`,
+      {
+        jobId: job.id,
+        tenantId,
+        leadId,
+        finalUrlCount: smartFilteredUrls.length,
+        isResync,
+      }
+    );
 
     return {
       success: true,
@@ -200,13 +221,17 @@ async function processLeadInitialProcessing(
       skippedScraping: false,
     };
   } catch (error) {
-    logger.error('[LeadInitialProcessingWorker] Initial processing failed', {
-      jobId: job.id,
-      tenantId,
-      leadId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    logger.error(
+      `[LeadInitialProcessingWorker] ${isResync ? 'Resync' : 'Initial'} processing failed`,
+      {
+        jobId: job.id,
+        tenantId,
+        leadId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        isResync,
+      }
+    );
 
     // Update status back to unprocessed on failure
     try {
@@ -235,14 +260,18 @@ async function processLeadInitialProcessing(
       errorCode = 'SMART_FILTER_FAILED';
     }
 
-    logger.error('[LeadInitialProcessingWorker] Initial processing failed', {
-      jobId: job.id,
-      tenantId,
-      leadId,
-      errorCode,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    logger.error(
+      `[LeadInitialProcessingWorker] ${isResync ? 'Resync' : 'Initial'} processing failed`,
+      {
+        jobId: job.id,
+        tenantId,
+        leadId,
+        errorCode,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        isResync,
+      }
+    );
 
     throw error;
   }
