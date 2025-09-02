@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, isNull } from 'drizzle-orm';
 import { calendarLinkClicks, CalendarLinkClick, NewCalendarLinkClick } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
@@ -46,6 +46,69 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
       .limit(1);
 
     return calendarLinkClick;
+  }
+
+  /**
+   * Find calendar clicks for a contact within a time window
+   */
+  async findByContactInTimeWindow(
+    tenantId: string,
+    contactId: string,
+    leadId: string,
+    windowStart: Date,
+    windowEnd: Date,
+    campaignId?: string,
+    limit?: number
+  ): Promise<CalendarLinkClick[]> {
+    let whereConditions = and(
+      eq(this.table.tenantId, tenantId),
+      eq(this.table.contactId, contactId),
+      eq(this.table.leadId, leadId),
+      gte(this.table.clickedAt, windowStart),
+      lte(this.table.clickedAt, windowEnd)
+    );
+
+    // Add campaign filter if provided
+    if (campaignId) {
+      whereConditions = and(
+        whereConditions,
+        eq(this.table.campaignId, campaignId)
+      );
+    }
+
+    let query = this.db
+      .select()
+      .from(this.table)
+      .where(whereConditions)
+      .orderBy(desc(this.table.clickedAt)); // Most recent first
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    return await query;
+  }
+
+  /**
+   * Get the latest calendar click for a contact
+   */
+  async findLatestByContact(
+    tenantId: string,
+    contactId: string,
+    leadId: string,
+    campaignId?: string
+  ): Promise<CalendarLinkClick | undefined> {
+    const clicks = await this.findByContactInTimeWindow(
+      tenantId,
+      contactId,
+      leadId,
+      new Date(0), // From beginning of time
+      new Date(), // To now
+      campaignId,
+      1 // Limit to 1 result
+    );
+
+    return clicks.length > 0 ? clicks[0] : undefined;
   }
 }
 

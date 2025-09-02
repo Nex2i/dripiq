@@ -821,7 +821,10 @@ export class SendGridWebhookService {
     events: ProcessedEventResult[],
     webhookDeliveryId: string
   ): Promise<void> {
-    const successfulEvents = events.filter((e) => e.success && !e.skipped && e.messageId);
+    // Filter out click events - campaign transitions are now handled by calendar click validation
+    const successfulEvents = events.filter(
+      (e) => e.success && !e.skipped && e.messageId && e.eventType !== 'click'
+    );
 
     if (successfulEvents.length === 0) {
       logger.debug('No successful events to process campaign transitions for', {
