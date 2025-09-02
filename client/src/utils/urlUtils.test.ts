@@ -16,21 +16,37 @@ describe('urlUtils', () => {
     })
 
     it('should handle URLs with paths and query parameters', () => {
-      expect(getFullDomain('https://dominguezfirm.com/locations/los-angeles/?utm_source=google')).toBe('dominguezfirm.com')
-      expect(getFullDomain('https://dklaw.com/locations/ca/los-angeles/?utm_source=gmb&utm_medium=organic')).toBe('dklaw.com')
-      expect(getFullDomain('https://example.com/very/long/path?param1=value1&param2=value2#fragment')).toBe('example.com')
+      expect(
+        getFullDomain(
+          'https://dominguezfirm.com/locations/los-angeles/?utm_source=google',
+        ),
+      ).toBe('dominguezfirm.com')
+      expect(
+        getFullDomain(
+          'https://dklaw.com/locations/ca/los-angeles/?utm_source=gmb&utm_medium=organic',
+        ),
+      ).toBe('dklaw.com')
+      expect(
+        getFullDomain(
+          'https://example.com/very/long/path?param1=value1&param2=value2#fragment',
+        ),
+      ).toBe('example.com')
     })
 
     it('should handle URLs without protocol', () => {
       expect(getFullDomain('example.com')).toBe('example.com')
       expect(getFullDomain('www.test.org')).toBe('test.org')
-      expect(getFullDomain('subdomain.example.com')).toBe('subdomain.example.com')
+      expect(getFullDomain('subdomain.example.com')).toBe(
+        'subdomain.example.com',
+      )
     })
 
     it('should handle URLs with www prefix', () => {
       expect(getFullDomain('https://www.example.com')).toBe('example.com')
       expect(getFullDomain('www.test.org')).toBe('test.org')
-      expect(getFullDomain('https://www.subdomain.example.com')).toBe('subdomain.example.com')
+      expect(getFullDomain('https://www.subdomain.example.com')).toBe(
+        'subdomain.example.com',
+      )
     })
 
     it('should handle URLs with ports', () => {
@@ -51,8 +67,16 @@ describe('urlUtils', () => {
     })
 
     it('should handle complex real-world URLs', () => {
-      expect(getFullDomain('https://www.admiralplumbing.com/?gad_source=1&gad_campaignid=22488929404')).toBe('admiralplumbing.com')
-      expect(getFullDomain('https://westcoasttriallawyers.com/?utm_campaign=gmb&utm_medium=gmb&utm_source=gmb+la+south+grand')).toBe('westcoasttriallawyers.com')
+      expect(
+        getFullDomain(
+          'https://www.admiralplumbing.com/?gad_source=1&gad_campaignid=22488929404',
+        ),
+      ).toBe('admiralplumbing.com')
+      expect(
+        getFullDomain(
+          'https://westcoasttriallawyers.com/?utm_campaign=gmb&utm_medium=gmb&utm_source=gmb+la+south+grand',
+        ),
+      ).toBe('westcoasttriallawyers.com')
     })
   })
 
@@ -64,9 +88,19 @@ describe('urlUtils', () => {
     })
 
     it('should handle URLs with paths and query parameters', () => {
-      expect(getDomain('https://dominguezfirm.com/locations/los-angeles/?utm_source=google')).toBe('dominguezfirm')
-      expect(getDomain('https://dklaw.com/locations/ca/los-angeles/?utm_source=gmb')).toBe('dklaw')
-      expect(getDomain('https://topdoglaw.com/personal-injury-lawyer/california/los-angeles/')).toBe('topdoglaw')
+      expect(
+        getDomain(
+          'https://dominguezfirm.com/locations/los-angeles/?utm_source=google',
+        ),
+      ).toBe('dominguezfirm')
+      expect(
+        getDomain('https://dklaw.com/locations/ca/los-angeles/?utm_source=gmb'),
+      ).toBe('dklaw')
+      expect(
+        getDomain(
+          'https://topdoglaw.com/personal-injury-lawyer/california/los-angeles/',
+        ),
+      ).toBe('topdoglaw')
     })
 
     it('should handle URLs without protocol', () => {
@@ -100,8 +134,14 @@ describe('urlUtils', () => {
     })
 
     it('should handle real-world complex URLs', () => {
-      expect(getDomain('https://attorneyguss.com/los-angeles/?utm_source=google&utm_medium=local')).toBe('attorneyguss')
-      expect(getDomain('https://westcoasttriallawyers.com/?utm_campaign=gmb')).toBe('westcoasttriallawyers')
+      expect(
+        getDomain(
+          'https://attorneyguss.com/los-angeles/?utm_source=google&utm_medium=local',
+        ),
+      ).toBe('attorneyguss')
+      expect(
+        getDomain('https://westcoasttriallawyers.com/?utm_campaign=gmb'),
+      ).toBe('westcoasttriallawyers')
     })
   })
 
@@ -112,32 +152,46 @@ describe('urlUtils', () => {
     })
 
     it('should preserve existing https protocol', () => {
-      expect(cleanWebsiteUrl('https://example.com')).toBe('https://www.example.com')
-      expect(cleanWebsiteUrl('https://www.test.org')).toBe('https://www.test.org')
+      expect(cleanWebsiteUrl('https://example.com')).toBe(
+        'https://www.example.com',
+      )
+      expect(cleanWebsiteUrl('https://www.test.org')).toBe(
+        'https://www.test.org',
+      )
     })
 
     it('should preserve existing http protocol', () => {
-      expect(cleanWebsiteUrl('http://example.com')).toBe('http://www.example.com')
+      expect(cleanWebsiteUrl('http://example.com')).toBe(
+        'http://www.example.com',
+      )
       expect(cleanWebsiteUrl('http://www.test.org')).toBe('http://www.test.org')
     })
 
     it('should add www when missing', () => {
-      expect(cleanWebsiteUrl('https://example.com')).toBe('https://www.example.com')
+      expect(cleanWebsiteUrl('https://example.com')).toBe(
+        'https://www.example.com',
+      )
       expect(cleanWebsiteUrl('example.com')).toBe('https://www.example.com')
     })
 
     it('should preserve existing www', () => {
-      expect(cleanWebsiteUrl('https://www.example.com')).toBe('https://www.example.com')
+      expect(cleanWebsiteUrl('https://www.example.com')).toBe(
+        'https://www.example.com',
+      )
       expect(cleanWebsiteUrl('www.test.org')).toBe('https://www.test.org')
     })
 
     it('should remove trailing slash', () => {
-      expect(cleanWebsiteUrl('https://www.example.com/')).toBe('https://www.example.com')
+      expect(cleanWebsiteUrl('https://www.example.com/')).toBe(
+        'https://www.example.com',
+      )
       expect(cleanWebsiteUrl('example.com/')).toBe('https://www.example.com')
     })
 
     it('should return lowercase URLs', () => {
-      expect(cleanWebsiteUrl('https://example.com')).toBe('https://www.example.com')
+      expect(cleanWebsiteUrl('https://example.com')).toBe(
+        'https://www.example.com',
+      )
       expect(cleanWebsiteUrl('example.com')).toBe('https://www.example.com')
     })
 
@@ -148,7 +202,9 @@ describe('urlUtils', () => {
     })
 
     it('should handle complex URLs', () => {
-      expect(cleanWebsiteUrl('dominguezfirm.com/locations/los-angeles/')).toBe('https://www.dominguezfirm.com/locations/los-angeles')
+      expect(cleanWebsiteUrl('dominguezfirm.com/locations/los-angeles/')).toBe(
+        'https://www.dominguezfirm.com/locations/los-angeles',
+      )
     })
   })
 
@@ -170,7 +226,9 @@ describe('urlUtils', () => {
     it('should validate URLs with paths and parameters', () => {
       expect(isValidUrl('https://example.com/path')).toBe(true)
       expect(isValidUrl('https://test.org/path?param=value')).toBe(true)
-      expect(isValidUrl('example.com/locations/los-angeles/?utm_source=google')).toBe(true)
+      expect(
+        isValidUrl('example.com/locations/los-angeles/?utm_source=google'),
+      ).toBe(true)
     })
 
     it('should validate URLs with ports', () => {
@@ -205,18 +263,18 @@ describe('urlUtils', () => {
       const input = `https://example.com
 https://test.org
 www.google.com`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
       expect(result[0].fullDomain).toBe('example.com')
       expect(result[0].domain).toBe('example')
       expect(result[0].isValid).toBe(true)
-      
+
       expect(result[1].fullDomain).toBe('test.org')
       expect(result[1].domain).toBe('test')
       expect(result[1].isValid).toBe(true)
-      
+
       expect(result[2].fullDomain).toBe('google.com')
       expect(result[2].domain).toBe('google')
       expect(result[2].isValid).toBe(true)
@@ -224,9 +282,9 @@ www.google.com`
 
     it('should parse comma-separated URLs', () => {
       const input = 'https://example.com, https://test.org, www.google.com'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
       expect(result[0].fullDomain).toBe('example.com')
       expect(result[1].fullDomain).toBe('test.org')
@@ -236,15 +294,15 @@ www.google.com`
     it('should parse mixed newline and comma-separated URLs', () => {
       const input = `https://example.com, https://test.org
 www.google.com, github.com`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(4)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com',
-        'test.org', 
+        'test.org',
         'google.com',
-        'github.com'
+        'github.com',
       ])
     })
 
@@ -257,31 +315,31 @@ www.google.com, github.com`
 , https://www.admiralplumbing.com/?gad_source=1&gad_campaignid=22488929404&gbraid=0AAAAAqJDgZNfQr0gqDn4eAPR9--erCIEj`
 
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(6)
-      
+
       // Check full domains (what gets sent to backend)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'dominguezfirm.com',
         'dklaw.com',
         'topdoglaw.com',
         'westcoasttriallawyers.com',
         'attorneyguss.com',
-        'admiralplumbing.com'
+        'admiralplumbing.com',
       ])
-      
+
       // Check domain names (what becomes lead names)
-      expect(result.map(r => r.domain)).toEqual([
+      expect(result.map((r) => r.domain)).toEqual([
         'dominguezfirm',
         'dklaw',
         'topdoglaw',
         'westcoasttriallawyers',
         'attorneyguss',
-        'admiralplumbing'
+        'admiralplumbing',
       ])
-      
+
       // All should be valid
-      expect(result.every(r => r.isValid)).toBe(true)
+      expect(result.every((r) => r.isValid)).toBe(true)
     })
 
     it('should filter out empty lines and whitespace', () => {
@@ -291,14 +349,14 @@ www.google.com, github.com`
 https://test.org
    
 www.google.com`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com',
         'test.org',
-        'google.com'
+        'google.com',
       ])
     })
 
@@ -308,17 +366,17 @@ invalid-url
 not-a-domain
 https://test.org
 just-text`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(5)
-      
+
       // Valid URLs
       expect(result[0].isValid).toBe(true)
       expect(result[0].fullDomain).toBe('example.com')
       expect(result[3].isValid).toBe(true)
       expect(result[3].fullDomain).toBe('test.org')
-      
+
       // Invalid URLs
       expect(result[1].isValid).toBe(false)
       expect(result[1].error).toBe('Invalid URL format')
@@ -327,10 +385,11 @@ just-text`
     })
 
     it('should handle mixed valid and invalid URLs with commas', () => {
-      const input = 'https://example.com, invalid-url, https://test.org, not-a-domain'
-      
+      const input =
+        'https://example.com, invalid-url, https://test.org, not-a-domain'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(4)
       expect(result[0].isValid).toBe(true)
       expect(result[1].isValid).toBe(false)
@@ -345,16 +404,17 @@ just-text`
     })
 
     it('should handle URLs with special characters in paths', () => {
-      const input = 'https://example.com/path-with-dashes, https://test.org/path_with_underscores, https://site.com/path%20with%20encoded'
-      
+      const input =
+        'https://example.com/path-with-dashes, https://test.org/path_with_underscores, https://site.com/path%20with%20encoded'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com',
         'test.org',
-        'site.com'
+        'site.com',
       ])
     })
 
@@ -363,49 +423,51 @@ just-text`
 https://example.com/different/path
 www.example.com
 example.com`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(4)
-      expect(result.every(r => r.fullDomain === 'example.com')).toBe(true)
-      expect(result.every(r => r.domain === 'example')).toBe(true)
+      expect(result.every((r) => r.fullDomain === 'example.com')).toBe(true)
+      expect(result.every((r) => r.domain === 'example')).toBe(true)
     })
 
     it('should handle international domains', () => {
-      const input = 'https://example.co.uk, https://site.com.au, https://test.org.nz'
-      
+      const input =
+        'https://example.co.uk, https://site.com.au, https://test.org.nz'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.co.uk',
         'site.com.au',
-        'test.org.nz'
+        'test.org.nz',
       ])
-      expect(result.map(r => r.domain)).toEqual([
+      expect(result.map((r) => r.domain)).toEqual([
         'example.co',
         'site.com',
-        'test.org'
+        'test.org',
       ])
     })
 
     it('should handle URLs with fragments', () => {
       const input = 'https://example.com#section, https://test.org/page#top'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(2)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com#section',
-        'test.org'
+        'test.org',
       ])
     })
 
     it('should handle very long URLs', () => {
-      const longUrl = 'https://example.com/very/long/path/with/many/segments?param1=value1&param2=value2&param3=value3&param4=value4&param5=value5#very-long-fragment-identifier'
-      
+      const longUrl =
+        'https://example.com/very/long/path/with/many/segments?param1=value1&param2=value2&param3=value3&param4=value4&param5=value5#very-long-fragment-identifier'
+
       const result = parseUrlList(longUrl)
-      
+
       expect(result).toHaveLength(1)
       expect(result[0].isValid).toBe(true)
       expect(result[0].fullDomain).toBe('example.com')
@@ -418,15 +480,15 @@ invalid-url
 https://test.org
 not-a-domain
 just-text`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(5)
-      
+
       // Valid URLs should have no error
       expect(result[0].error).toBeUndefined()
       expect(result[2].error).toBeUndefined()
-      
+
       // Invalid URLs should have error messages
       expect(result[1].error).toBe('Invalid URL format')
       expect(result[3].error).toBe('Invalid URL format')
@@ -434,29 +496,30 @@ just-text`
     })
 
     it('should handle URLs with encoded characters', () => {
-      const input = 'https://example.com/path%20with%20spaces, https://test.org/caf%C3%A9'
-      
+      const input =
+        'https://example.com/path%20with%20spaces, https://test.org/caf%C3%A9'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(2)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com',
-        'test.org'
+        'test.org',
       ])
     })
 
     it('should handle malformed but recoverable URLs', () => {
       const input = 'example.com, www.test.org, https://google.com'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com',
         'test.org',
-        'google.com'
+        'google.com',
       ])
     })
   })
@@ -481,41 +544,42 @@ just-text`
     })
 
     it('should handle domains with numbers', () => {
-      const input = 'https://123example.com, https://example123.org, https://123.456.com'
-      
+      const input =
+        'https://123example.com, https://example123.org, https://123.456.com'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.domain)).toEqual([
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.domain)).toEqual([
         '123example',
         'example123',
-        '123.456'
+        '123.456',
       ])
     })
 
     it('should handle domains with hyphens', () => {
       const input = 'https://my-company.com, https://test-site.org'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(2)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.domain)).toEqual([
-        'my-company',
-        'test-site'
-      ])
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.domain)).toEqual(['my-company', 'test-site'])
     })
   })
 
   describe('performance and scalability', () => {
     it('should handle large lists of URLs efficiently', () => {
-      const urls = Array.from({ length: 50 }, (_, i) => `https://example${i}.com`).join(', ')
-      
+      const urls = Array.from(
+        { length: 50 },
+        (_, i) => `https://example${i}.com`,
+      ).join(', ')
+
       const result = parseUrlList(urls)
-      
+
       expect(result).toHaveLength(50)
-      expect(result.every(r => r.isValid)).toBe(true)
+      expect(result.every((r) => r.isValid)).toBe(true)
       expect(result[0].fullDomain).toBe('example0.com')
       expect(result[49].fullDomain).toBe('example49.com')
     })
@@ -526,11 +590,11 @@ just-text`
       https://test.org   ,
       
       www.google.com  `
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.every(r => r.isValid)).toBe(true)
+      expect(result.every((r) => r.isValid)).toBe(true)
     })
   })
 
@@ -544,56 +608,57 @@ just-text`
 , https://www.admiralplumbing.com/?gad_source=1&gad_campaignid=22488929404&gbraid=0AAAAAqJDgZNfQr0gqDn4eAPR9--erCIEj`
 
       const result = parseUrlList(input)
-      
+
       // Should extract exactly these domains for the API payload
       const expectedFullDomains = [
         'dominguezfirm.com',
-        'dklaw.com', 
+        'dklaw.com',
         'topdoglaw.com',
         'westcoasttriallawyers.com',
         'attorneyguss.com',
-        'admiralplumbing.com'
+        'admiralplumbing.com',
       ]
-      
+
       // Should extract these names for lead names
       const expectedDomainNames = [
         'dominguezfirm',
         'dklaw',
-        'topdoglaw', 
+        'topdoglaw',
         'westcoasttriallawyers',
         'attorneyguss',
-        'admiralplumbing'
+        'admiralplumbing',
       ]
-      
+
       expect(result).toHaveLength(6)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.fullDomain)).toEqual(expectedFullDomains)
-      expect(result.map(r => r.domain)).toEqual(expectedDomainNames)
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.fullDomain)).toEqual(expectedFullDomains)
+      expect(result.map((r) => r.domain)).toEqual(expectedDomainNames)
     })
 
     it('should handle spreadsheet-style comma-separated input', () => {
-      const input = 'https://company1.com, https://company2.org, https://company3.net, https://company4.co.uk'
-      
+      const input =
+        'https://company1.com, https://company2.org, https://company3.net, https://company4.co.uk'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(4)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'company1.com',
-        'company2.org', 
+        'company2.org',
         'company3.net',
-        'company4.co.uk'
+        'company4.co.uk',
       ])
     })
 
     it('should provide all necessary data for UI preview', () => {
       const input = 'https://example.com/path?param=value'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(1)
       const parsed = result[0]
-      
+
       expect(parsed.original).toBe('https://example.com/path?param=value')
       expect(parsed.cleaned).toBe('https://www.example.com/path?param=value')
       expect(parsed.domain).toBe('example')
@@ -605,9 +670,9 @@ just-text`
     it('should handle domains that fail domain extraction', () => {
       // Create a mock scenario where getDomain might fail
       const input = 'https://..com, https://example.com'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(2)
       expect(result[0].isValid).toBe(true) // Browser URL constructor handles this
       expect(result[1].isValid).toBe(true)
@@ -618,9 +683,9 @@ just-text`
       const input = `https://valid.com
 invalid-input
 https://another-valid.org`
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result[0].original).toBe('https://valid.com')
       expect(result[1].original).toBe('invalid-input')
       expect(result[2].original).toBe('https://another-valid.org')
@@ -634,63 +699,61 @@ https://another-valid.org`
           input: 'example.com',
           expectedCleaned: 'https://www.example.com',
           expectedFullDomain: 'example.com',
-          expectedDomain: 'example'
+          expectedDomain: 'example',
         },
         {
           input: 'https://example.com/',
           expectedCleaned: 'https://www.example.com',
           expectedFullDomain: 'example.com',
-          expectedDomain: 'example'
+          expectedDomain: 'example',
         },
         {
           input: 'www.example.com',
           expectedCleaned: 'https://www.example.com',
           expectedFullDomain: 'example.com',
-          expectedDomain: 'example'
+          expectedDomain: 'example',
         },
         {
           input: 'https://www.example.com/path?param=value',
           expectedCleaned: 'https://www.example.com/path?param=value',
           expectedFullDomain: 'example.com',
-          expectedDomain: 'example'
-        }
+          expectedDomain: 'example',
+        },
       ]
 
-      testCases.forEach(({ input, expectedCleaned, expectedFullDomain, expectedDomain }) => {
-        const result = parseUrlList(input)
-        expect(result).toHaveLength(1)
-        expect(result[0].cleaned).toBe(expectedCleaned)
-        expect(result[0].fullDomain).toBe(expectedFullDomain)
-        expect(result[0].domain).toBe(expectedDomain)
-        expect(result[0].isValid).toBe(true)
-      })
+      testCases.forEach(
+        ({ input, expectedCleaned, expectedFullDomain, expectedDomain }) => {
+          const result = parseUrlList(input)
+          expect(result).toHaveLength(1)
+          expect(result[0].cleaned).toBe(expectedCleaned)
+          expect(result[0].fullDomain).toBe(expectedFullDomain)
+          expect(result[0].domain).toBe(expectedDomain)
+          expect(result[0].isValid).toBe(true)
+        },
+      )
     })
 
     it('should handle case insensitive input', () => {
       const input = 'https://example.com, www.test.org, google.com'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.com',
         'test.org',
-        'google.com'
+        'google.com',
       ])
-      expect(result.map(r => r.domain)).toEqual([
-        'example',
-        'test',
-        'google'
-      ])
+      expect(result.map((r) => r.domain)).toEqual(['example', 'test', 'google'])
     })
   })
 
   describe('validation edge cases', () => {
     it('should handle protocol variations', () => {
       const input = 'http://example.com, https://test.org, ftp://files.com'
-      
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
       expect(result[0].isValid).toBe(true) // http is valid
       expect(result[1].isValid).toBe(true) // https is valid
@@ -699,25 +762,26 @@ https://another-valid.org`
 
     it('should handle localhost and IP addresses', () => {
       const input = 'localhost:3000, 192.168.1.1, 127.0.0.1:8080'
-      
+
       const result = parseUrlList(input)
-      
+
       // These should be invalid because they don't have proper TLDs
-      expect(result.every(r => !r.isValid)).toBe(false) // Some might be valid due to URL constructor
-      expect(result.filter(r => !r.isValid).length).toBeGreaterThan(0)
+      expect(result.every((r) => !r.isValid)).toBe(false) // Some might be valid due to URL constructor
+      expect(result.filter((r) => !r.isValid).length).toBeGreaterThan(0)
     })
 
     it('should handle domains with unusual TLDs', () => {
-      const input = 'https://example.museum, https://test.travel, https://site.name'
-      
+      const input =
+        'https://example.museum, https://test.travel, https://site.name'
+
       const result = parseUrlList(input)
-      
+
       expect(result).toHaveLength(3)
-      expect(result.every(r => r.isValid)).toBe(true)
-      expect(result.map(r => r.fullDomain)).toEqual([
+      expect(result.every((r) => r.isValid)).toBe(true)
+      expect(result.map((r) => r.fullDomain)).toEqual([
         'example.museum',
         'test.travel',
-        'site.name'
+        'site.name',
       ])
     })
   })

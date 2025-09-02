@@ -6,7 +6,11 @@ import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
-import { fetchWebDataContacts, formatWebDataContactsForPrompt } from '../../webDataContactHelper';
+import {
+  fetchWebDataContacts,
+  formatWebDataContactsForPrompt,
+  WebDataContactSummary,
+} from '../../webDataContactHelper';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
@@ -20,6 +24,7 @@ export type ContactExtractionResult = {
   finalResponseParsed: ContactExtractionOutput;
   totalIterations: number;
   functionCalls: any[];
+  webDataContacts: WebDataContactSummary;
 };
 
 export class ContactExtractionAgent {
@@ -85,6 +90,7 @@ export class ContactExtractionAgent {
         finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        webDataContacts: webDataSummary,
       };
     } catch (error) {
       logger.error('Contact extraction failed:', error);
@@ -96,6 +102,7 @@ export class ContactExtractionAgent {
         finalResponseParsed: fallbackResult,
         totalIterations: 0,
         functionCalls: [],
+        webDataContacts: webDataSummary,
       };
     }
   }

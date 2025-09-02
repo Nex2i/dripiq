@@ -6,6 +6,7 @@ import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { createContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
 import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { FormattedWebDataContact } from './webDataContactHelper';
 
 export const ContactExtractionService = {
   /**
@@ -18,7 +19,16 @@ export const ContactExtractionService = {
       // Extract contacts using the agent
       const extractionResult = await contactExtractionAgent.extractContacts(domain);
 
-      if (!extractionResult.finalResponseParsed?.contacts) {
+      // Merge AI contacts with webData contacts to ensure nothing is lost
+      const aiContacts = extractionResult.finalResponseParsed?.contacts || [];
+      const webDataContacts = extractionResult.webDataContacts?.contacts || [];
+
+      const mergedContacts = ContactExtractionService.mergeAIAndWebDataContacts(
+        aiContacts,
+        webDataContacts
+      );
+
+      if (mergedContacts.length === 0) {
         logger.warn(`No contacts found for domain: ${domain}`);
         return {
           contactsCreated: 0,
@@ -28,7 +38,7 @@ export const ContactExtractionService = {
       }
 
       // Soft-cap to 5 for processing order, but keep original for dedup/priority alignment
-      const contacts = extractionResult.finalResponseParsed.contacts;
+      const contacts = mergedContacts;
       const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
 
       // Deduplicate contacts before processing
@@ -95,6 +105,212 @@ export const ContactExtractionService = {
         `Contact extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  },
+
+  /**
+   * Merge AI contacts with webData contacts to ensure no data is lost
+   * Uses contact name as the merge key, preferring AI details when available
+   */
+  mergeAIAndWebDataContacts: (
+    aiContacts: ExtractedContact[],
+    webDataContacts: FormattedWebDataContact[]
+  ): ExtractedContact[] => {
+    const mergedContacts: ExtractedContact[] = [];
+    const processedWebDataContacts = new Set<string>();
+
+    logger.info(
+      `Merging ${aiContacts.length} AI contacts with ${webDataContacts.length} webData contacts`
+    );
+
+    // First pass: Process AI contacts and merge with matching webData contacts
+    for (const aiContact of aiContacts) {
+      const normalizedAIName = ContactExtractionService.normalizeContactName(aiContact.name);
+
+      // Find matching webData contact
+      const matchingWebDataContact = webDataContacts.find((webContact) => {
+        const normalizedWebName = ContactExtractionService.normalizeContactName(webContact.name);
+        return ContactExtractionService.areContactNamesSimilar(normalizedAIName, normalizedWebName);
+      });
+
+      if (matchingWebDataContact) {
+        // Merge AI contact with webData contact details
+        const mergedContact = ContactExtractionService.mergeContactDetails(
+          aiContact,
+          matchingWebDataContact
+        );
+        mergedContacts.push(mergedContact);
+        processedWebDataContacts.add(matchingWebDataContact.name);
+        logger.debug(
+          `Merged AI contact "${aiContact.name}" with webData contact "${matchingWebDataContact.name}"`
+        );
+      } else {
+        // No matching webData contact, use AI contact as-is
+        mergedContacts.push(aiContact);
+        logger.debug(`Added AI-only contact: "${aiContact.name}"`);
+      }
+    }
+
+    // Second pass: Add webData contacts that weren't matched by AI contacts
+    for (const webDataContact of webDataContacts) {
+      if (!processedWebDataContacts.has(webDataContact.name)) {
+        const convertedContact =
+          ContactExtractionService.convertWebDataToExtractedContact(webDataContact);
+        mergedContacts.push(convertedContact);
+        logger.debug(`Added webData-only contact: "${webDataContact.name}"`);
+      }
+    }
+
+    logger.info(
+      `Merged result: ${mergedContacts.length} total contacts (${aiContacts.length} AI + ${webDataContacts.length - processedWebDataContacts.size} webData-only)`
+    );
+    return mergedContacts;
+  },
+
+  /**
+   * Merge AI contact details with webData contact details
+   * Prefers AI details but uses webData when AI has incomplete information
+   */
+  mergeContactDetails: (
+    aiContact: ExtractedContact,
+    webDataContact: FormattedWebDataContact
+  ): ExtractedContact => {
+    // Helper function to determine if a value is meaningful
+    const isValuePresent = (value: string | null | undefined): boolean => {
+      return value !== null && value !== undefined && value.trim() !== '';
+    };
+
+    // Helper function to check if AI has complete info
+    const aiHasCompleteInfo = (): boolean => {
+      return (
+        isValuePresent(aiContact.email) &&
+        isValuePresent(aiContact.title) &&
+        isValuePresent(aiContact.name)
+      );
+    };
+
+    // Helper function to check if webData has complete info
+    const webDataHasCompleteInfo = (): boolean => {
+      return (
+        isValuePresent(webDataContact.email) &&
+        isValuePresent(webDataContact.title) &&
+        isValuePresent(webDataContact.name)
+      );
+    };
+
+    // If webData has all info and AI doesn't, prefer webData base
+    if (webDataHasCompleteInfo() && !aiHasCompleteInfo()) {
+      logger.debug(
+        `Using webData as base for "${aiContact.name}" due to more complete information`
+      );
+      const convertedWebData =
+        ContactExtractionService.convertWebDataToExtractedContact(webDataContact);
+
+      // Merge in any additional AI details
+      return {
+        ...convertedWebData,
+        // Keep AI-specific fields that webData doesn't have
+        phone: aiContact.phone || convertedWebData.phone,
+        address: aiContact.address || convertedWebData.address,
+        websiteUrl: aiContact.websiteUrl || convertedWebData.websiteUrl,
+        sourceUrl: aiContact.sourceUrl || convertedWebData.sourceUrl,
+        contactType: aiContact.contactType, // Prefer AI's contact type determination
+        context: aiContact.context || convertedWebData.context,
+        confidence: aiContact.confidence, // Prefer AI's confidence assessment
+        isPriorityContact: aiContact.isPriorityContact || convertedWebData.isPriorityContact,
+      };
+    }
+
+    // Otherwise, use AI as base and enhance with webData where AI is missing info
+    return {
+      ...aiContact,
+      // Use webData email only if AI doesn't have one or AI has a generic email
+      email: ContactExtractionService.shouldPreferWebDataEmail(
+        aiContact.email,
+        webDataContact.email
+      )
+        ? (webDataContact.email ?? aiContact.email)
+        : aiContact.email,
+      // Use webData title if AI doesn't have one
+      title: aiContact.title || webDataContact.title || null,
+      // Use webData LinkedIn if AI doesn't have one
+      linkedinUrl: aiContact.linkedinUrl || webDataContact.linkedinUrl || null,
+      // Enhance context with webData department if available
+      context:
+        aiContact.context ||
+        (webDataContact.department ? `${webDataContact.department} Department` : null),
+      // Set priority if webData indicates high priority and AI hasn't already set it
+      isPriorityContact: aiContact.isPriorityContact || webDataContact.priority === 'high',
+    };
+  },
+
+  /**
+   * Determine if webData email should be preferred over AI email
+   */
+  shouldPreferWebDataEmail: (aiEmail: string | null, webDataEmail: string | null | undefined): boolean => {
+    if (!webDataEmail) return false;
+    if (!aiEmail) return true;
+
+    // Check if AI email is generic
+    const genericPatterns = [
+      /^info@/i,
+      /^contact@/i,
+      /^hello@/i,
+      /^general@/i,
+      /^office@/i,
+      /^main@/i,
+      /^admin@/i,
+      /^sales@/i,
+      /^support@/i,
+      /^marketing@/i,
+      /^hr@/i,
+      /^careers@/i,
+    ];
+
+    const aiEmailIsGeneric = genericPatterns.some((pattern) => pattern.test(aiEmail));
+
+    // Prefer webData email if AI email is generic
+    return aiEmailIsGeneric;
+  },
+
+  /**
+   * Convert webData contact to ExtractedContact format
+   */
+  convertWebDataToExtractedContact: (webDataContact: FormattedWebDataContact): ExtractedContact => {
+    return {
+      name: webDataContact.name,
+      email: webDataContact.email || null,
+      phone: null, // webData doesn't typically have phone numbers
+      title: webDataContact.title || null,
+      company: null, // Assume same company as the domain being analyzed
+      contactType: 'individual' as const,
+      context: webDataContact.department
+        ? `${webDataContact.department} Department`
+        : 'From webData',
+      isPriorityContact: webDataContact.priority === 'high',
+      address: null,
+      linkedinUrl: webDataContact.linkedinUrl || null,
+      websiteUrl: null,
+      sourceUrl: null,
+      confidence: 'high' as const, // webData is typically reliable
+    };
+  },
+
+  /**
+   * Normalize contact name for comparison
+   */
+  normalizeContactName: (name: string): string => {
+    return name.toLowerCase().trim().replace(/\s+/g, ' ');
+  },
+
+  /**
+   * Check if two contact names are similar enough to be considered the same person
+   */
+  areContactNamesSimilar: (name1: string, name2: string): boolean => {
+    if (name1 === name2) return true;
+
+    // Use string similarity for fuzzy matching
+    const similarity = compareTwoStrings(name1, name2);
+    return similarity > 0.85; // High threshold for name matching
   },
 
   /**
