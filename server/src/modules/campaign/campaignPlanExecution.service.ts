@@ -758,24 +758,67 @@ export class CampaignPlanExecutionService {
     nodeId: string
   ): Promise<Date | null> {
     try {
-      // Get the most recent transition that resulted in entering this node
+      // Get all transitions for this campaign
       const transitions = await campaignTransitionRepository.listByCampaignForTenant(
         tenantId,
         campaignId
       );
 
+      // Sort transitions by occurredAt in descending order (most recent first)
+      const sortedTransitions = transitions.sort(
+        (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()
+      );
+
       // Find the most recent transition where the reason indicates entering this node
-      // or if this is the start node, use the campaign start time
-      const nodeEntryTransition = transitions.find((t) => t.reason?.includes(`to ${nodeId}`));
+      // The reason format is: "Event: ${eventType} - transition from ${fromNodeId} to ${toNodeId}"
+      // or "Timeout: ${timeoutEventType} - transition from ${fromNodeId} to ${toNodeId}..."
+      const nodeEntryTransition = sortedTransitions.find((t) => {
+        if (!t.reason) return false;
+
+        // Check if this transition has the target node in the "to nodeId" format
+        const toPattern = new RegExp(`to ${nodeId}(\\s|\\(|$)`);
+        return toPattern.test(t.reason);
+      });
 
       if (nodeEntryTransition) {
+        logger.debug('Found node entry transition', {
+          tenantId,
+          campaignId,
+          nodeId,
+          transitionId: nodeEntryTransition.id,
+          reason: nodeEntryTransition.reason,
+          occurredAt: nodeEntryTransition.occurredAt.toISOString(),
+        });
         return nodeEntryTransition.occurredAt;
       }
 
       // If no transition found, this might be the start node
       // Get campaign start time as fallback
       const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
-      return campaign?.startedAt || null;
+
+      if (campaign?.startedAt) {
+        logger.debug('Using campaign start time as fallback for node start time', {
+          tenantId,
+          campaignId,
+          nodeId,
+          campaignStartedAt: campaign.startedAt.toISOString(),
+        });
+        return campaign.startedAt;
+      }
+
+      logger.warn(
+        'Could not determine node start time - no transitions found and no campaign start time',
+        {
+          tenantId,
+          campaignId,
+          nodeId,
+          transitionCount: transitions.length,
+          hasCampaign: !!campaign,
+          campaignStatus: campaign?.status,
+        }
+      );
+
+      return null;
     } catch (error) {
       logger.error('Failed to get current node start time', {
         tenantId,

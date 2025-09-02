@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { TimeoutExecutionService } from '../timeout-execution.service';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
-import { contactCampaignRepository, messageEventRepository } from '@/repositories';
+import {
+  contactCampaignRepository,
+  messageEventRepository,
+  campaignTransitionRepository,
+} from '@/repositories';
+import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
 import type { Job } from 'bullmq';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
@@ -11,9 +16,12 @@ jest.mock('@/repositories');
 jest.mock('@/modules/campaign/campaignPlanExecution.service');
 jest.mock('@/services/calendarClickValidation.service');
 
+const mockCampaignTransitionRepository = jest.mocked(campaignTransitionRepository);
+
 const mockContactCampaignRepository = jest.mocked(contactCampaignRepository);
 const mockMessageEventRepository = jest.mocked(messageEventRepository);
 const mockCampaignPlanExecutionService = jest.mocked(campaignPlanExecutionService);
+const mockCalendarClickValidationService = jest.mocked(calendarClickValidationService);
 
 describe('TimeoutExecutionService - Direct Transitions', () => {
   let timeoutExecutionService: TimeoutExecutionService;
@@ -60,6 +68,20 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
     jest.clearAllMocks();
     timeoutExecutionService = new TimeoutExecutionService();
 
+    // Mock transition repository to return empty array by default
+    mockCampaignTransitionRepository.listByCampaignForTenant.mockResolvedValue([]);
+
+    // Mock calendar click validation to return no clicks by default
+    mockCalendarClickValidationService.hasCalendarClicksInWindow.mockResolvedValue({
+      hasClicks: false,
+      clickCount: 0,
+      latestClick: undefined,
+      timeWindow: {
+        start: new Date(Date.now() - 3600000), // 1 hour ago
+        end: new Date(),
+      },
+    });
+
     mockJob = {
       id: 'test-job-id',
       data: {
@@ -82,6 +104,7 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
       contactId: 'test-contact',
       leadId: 'test-lead',
       planJson: mockCampaignPlan,
+      startedAt: new Date(Date.now() - 3600000), // 1 hour ago
     };
 
     mockContactCampaignRepository.findByIdForTenant.mockResolvedValue(mockCampaign as any);
@@ -101,6 +124,11 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
         scheduledActionId: 'action-id',
       },
     });
+
+    // Mock getCurrentNodeStartTime to return a valid start time
+    mockCampaignPlanExecutionService.getCurrentNodeStartTime.mockResolvedValue(
+      new Date(Date.now() - 3600000)
+    );
 
     // Execute
     const result = await timeoutExecutionService.processTimeout(mockJob);
@@ -137,6 +165,7 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
       contactId: 'test-contact',
       leadId: 'test-lead',
       planJson: mockCampaignPlan,
+      startedAt: new Date(Date.now() - 3600000), // 1 hour ago
     };
 
     mockContactCampaignRepository.findByIdForTenant.mockResolvedValue(mockCampaign as any);
@@ -148,6 +177,11 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
       reason: 'no_matching_timeout_transition',
       availableTransitions: 0,
     });
+
+    // Mock getCurrentNodeStartTime to return a valid start time
+    mockCampaignPlanExecutionService.getCurrentNodeStartTime.mockResolvedValue(
+      new Date(Date.now() - 3600000)
+    );
 
     // Execute
     const result = await timeoutExecutionService.processTimeout(mockJob);
