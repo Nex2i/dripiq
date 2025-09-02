@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { TimeoutExecutionService } from '../timeout-execution.service';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import {
+  campaignTransitionRepository,
   contactCampaignRepository,
   messageEventRepository,
 } from '@/repositories';
@@ -9,6 +10,7 @@ import {
 import type { Job } from 'bullmq';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
 
 // Mock dependencies
 jest.mock('@/repositories');

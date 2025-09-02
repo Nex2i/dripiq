@@ -4,7 +4,6 @@ import {
   contactCampaignRepository,
   campaignTransitionRepository,
 } from '@/repositories';
-import type { ContactCampaign } from '@/db/schema';
 import { CampaignExecutionPublisher } from '@/modules/messages';
 import type { ScheduledAction } from '@/db/schema';
 import { getQueue } from '@/libs/bullmq';
@@ -934,26 +933,6 @@ export class CampaignPlanExecutionService {
   }
 
   /**
-   * Cancels all pending scheduled actions for a campaign
-   */
-  async cancelCampaignActions(tenantId: string, campaignId: string): Promise<void> {
-    try {
-      // This would require a method to find pending actions by campaign
-      // and update their status to 'canceled'
-      logger.info('Canceling campaign actions', { tenantId, campaignId });
-
-      await scheduledActionRepository.cancelByCampaignForTenant(tenantId, campaignId);
-    } catch (error) {
-      logger.error('Failed to cancel campaign actions', {
-        tenantId,
-        campaignId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Cancels timeout jobs for a specific node when transitioning away from it
    */
   private async cancelNodeTimeoutJobs(
@@ -1043,49 +1022,14 @@ export class CampaignPlanExecutionService {
   }
 
   /**
-   * Gets campaign execution status with current state
-   */
-  async getCampaignExecutionStatus(
-    tenantId: string,
-    campaignId: string
-  ): Promise<{
-    campaign: ContactCampaign | undefined;
-    pendingActions: number;
-    sentMessages: number;
-    lastTransition?: Date;
-  }> {
-    try {
-      const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
-
-      // TODO: Add methods to count related records
-      // const pendingActions = await scheduledActionRepository.countPendingByCampaign(tenantId, campaignId);
-      // const sentMessages = await outboundMessageRepository.countByCampaign(tenantId, campaignId);
-
-      return {
-        campaign,
-        pendingActions: 0, // TODO: Implement count
-        sentMessages: 0, // TODO: Implement count
-        lastTransition: undefined, // TODO: Get from transitions
-      };
-    } catch (error) {
-      logger.error('Failed to get campaign execution status', {
-        tenantId,
-        campaignId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
    * Processes timeout-triggered transitions directly without creating synthetic events.
    * This bypasses timing constraints since timeouts already handle timing.
-   * 
+   *
    * Unlike processTransition, this method:
    * - Does not validate timing constraints (timing already handled by timeout job)
    * - Does not create synthetic events in the database
    * - Uses timeout-specific audit trail format
-   * 
+   *
    * @param params - Timeout transition parameters
    * @returns Promise<TimeoutTransitionResult> - Result of the timeout transition
    */
@@ -1144,20 +1088,20 @@ export class CampaignPlanExecutionService {
       const transition = candidateTransitions[0];
 
       // Validate that the target node exists in the plan
-      const targetNode = plan.nodes.find((n) => n.id === transition.to);
+      const targetNode = plan.nodes.find((n) => n.id === transition?.to);
       if (!targetNode) {
         logger.error('Target node not found in campaign plan', {
           currentNodeId,
-          targetNodeId: transition.to,
+          targetNodeId: transition?.to,
           timeoutEventType,
           availableNodes: plan.nodes.map((n) => n.id),
         });
-        throw new Error(`Target node not found in plan: ${transition.to}`);
+        throw new Error(`Target node not found in plan: ${transition?.to}`);
       }
 
       logger.info('Found matching timeout transition', {
         from: currentNodeId,
-        to: transition.to,
+        to: transition?.to,
         trigger: timeoutEventType,
         targetNodeAction: targetNode.action,
         bypassedTimingValidation: true,
@@ -1168,7 +1112,7 @@ export class CampaignPlanExecutionService {
 
       // Update campaign state
       await contactCampaignRepository.updateByIdForTenant(campaignId, tenantId, {
-        currentNodeId: transition.to,
+        currentNodeId: transition?.to,
         updatedAt: new Date(),
       });
 
@@ -1177,7 +1121,7 @@ export class CampaignPlanExecutionService {
         campaignId,
         fromStatus: null, // Node IDs are not campaign statuses
         toStatus: 'active', // Assume active unless it's a stop action
-        reason: `Timeout: ${timeoutEventType} - transition from ${currentNodeId} to ${transition.to}${originalJobId ? ` (job: ${originalJobId})` : ''}`,
+        reason: `Timeout: ${timeoutEventType} - transition from ${currentNodeId} to ${transition?.to}${originalJobId ? ` (job: ${originalJobId})` : ''}`,
         occurredAt: scheduledAt || new Date(),
       });
 
@@ -1188,7 +1132,7 @@ export class CampaignPlanExecutionService {
           tenantId,
           campaignId,
           fromNodeId: currentNodeId,
-          toNodeId: transition.to,
+          toNodeId: transition?.to,
           timeoutEventType,
         });
 
@@ -1197,7 +1141,7 @@ export class CampaignPlanExecutionService {
           campaignId,
           contactId,
           leadId,
-          transition.to,
+          transition?.to || '',
           plan
         );
 
@@ -1206,7 +1150,7 @@ export class CampaignPlanExecutionService {
           {
             tenantId,
             campaignId,
-            toNodeId: transition.to,
+            toNodeId: transition?.to,
             scheduled: nextActionResult.scheduled,
             actionType: nextActionResult.actionType,
             reason: nextActionResult.reason,
@@ -1219,7 +1163,7 @@ export class CampaignPlanExecutionService {
           tenantId,
           campaignId,
           fromNodeId: currentNodeId,
-          toNodeId: transition.to,
+          toNodeId: transition?.to,
           timeoutEventType,
           error: nextActionError instanceof Error ? nextActionError.message : 'Unknown error',
           stack: nextActionError instanceof Error ? nextActionError.stack : undefined,
@@ -1235,7 +1179,7 @@ export class CampaignPlanExecutionService {
       const result: TimeoutTransitionResult = {
         success: true,
         fromNodeId: currentNodeId,
-        toNodeId: transition.to,
+        toNodeId: transition?.to,
         timeoutEventType,
         transitionId: transitionRecord.id,
         nextAction: nextActionResult,
