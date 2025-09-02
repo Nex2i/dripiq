@@ -1,6 +1,7 @@
 import Firecrawl, { type SearchResultWeb } from '@mendable/firecrawl-js';
 import { createSignedJwt } from '../jwt';
 import { IUploadFile } from '../supabase.storage';
+import { logger } from '../logger';
 import { PageData } from './firecrawl';
 
 const firecrawlApp = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
@@ -64,37 +65,53 @@ const firecrawlClient = {
 
     const jwt = createSignedJwt(firecrawlApiKey);
 
-    const crawlResult = await firecrawlApp.startBatchScrape(urls, {
-      options: {
-        formats: ['markdown'],
-        onlyMainContent: false,
-        maxAge: 14400000,
-        excludeTags: ['#ad', 'header', 'footer'],
-      },
-      webhook: {
-        url: `${apiUrl}/api/firecrawl/webhook`,
-        events: ['completed', 'page', 'failed'],
-        metadata,
-        headers: {
-          'x-api-key': jwt,
+    try {
+      const crawlResult = await firecrawlApp.startBatchScrape(urls, {
+        options: {
+          formats: ['markdown'],
+          onlyMainContent: false,
+          maxAge: 14400000,
+          excludeTags: ['#ad', 'header', 'footer'],
         },
-      },
-    });
+        webhook: {
+          url: `${apiUrl}/api/firecrawl/webhook`,
+          events: ['completed', 'page', 'failed'],
+          metadata,
+          headers: {
+            'x-api-key': jwt,
+          },
+        },
+      });
 
-    return crawlResult;
+      return crawlResult;
+    } catch (error) {
+      logger.error('Error in batch scrape', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        urls,
+      });
+      throw new Error('Failed to initiate batch scrape');
+    }
   },
   getSiteMap: async (url: string): Promise<SearchResultWeb[]> => {
     if (!(await firecrawlClient.checkSiteExists(url))) {
       throw new Error('Site does not exist');
     }
 
-    const siteMap = await firecrawlApp.map(siteMapOptimizedUrl(url), {
-      sitemap: 'include',
-      includeSubdomains: false,
-      limit: 500,
-    });
+    try {
+      const siteMap = await firecrawlApp.map(siteMapOptimizedUrl(url), {
+        sitemap: 'include',
+        includeSubdomains: false,
+        limit: 500,
+      });
 
-    return siteMap.links ?? [];
+      return siteMap.links ?? [];
+    } catch (error) {
+      logger.error('Error in get site map', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        url,
+      });
+      throw new Error('Failed to get site map');
+    }
   },
   createFirecrawlMarkdownFile(crawlId: string, pageData: PageData): IUploadFile {
     const { markdown, metadata } = pageData;
