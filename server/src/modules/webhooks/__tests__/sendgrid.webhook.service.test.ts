@@ -1101,6 +1101,86 @@ describe('SendGridWebhookService', () => {
       expect(mockCampaignPlanExecutionService.processTransition).not.toHaveBeenCalled();
     });
 
+    it('should normalize event types for campaign transitions (open -> opened)', async () => {
+      // Setup mocks for open event normalization test
+      const mockOpenEvent: SendGridEvent = {
+        email: 'test@example.com',
+        timestamp: 1234567890,
+        event: 'open',
+        sg_event_id: 'sg-event-123',
+        sg_message_id: 'sg-message-123',
+        tenant_id: 'tenant-123',
+        outbound_message_id: 'message-123',
+        useragent: 'test-agent',
+        ip: '192.168.1.1',
+      };
+
+      mockValidator.verifyWebhookRequest.mockReturnValue({
+        signature: 'valid-signature',
+        timestamp: '1234567890',
+        payload: JSON.stringify([mockOpenEvent]),
+        isValid: true,
+      });
+
+      const mockWebhookDelivery = {
+        id: 'webhook-123',
+        tenantId: 'tenant-123',
+      };
+      mockWebhookDeliveryRepository.createForTenant.mockResolvedValue(mockWebhookDelivery);
+
+      const mockMessageEvent = {
+        id: 'message-event-123',
+        messageId: 'message-123',
+        type: 'open',
+      };
+      mockMessageEventRepository.createForTenant.mockResolvedValue(mockMessageEvent);
+      mockMessageEventRepository.findByIdsForTenant.mockResolvedValue([mockMessageEvent]);
+
+      const mockOutboundMessage = {
+        id: 'message-123',
+        campaignId: 'campaign-123',
+      };
+      mockOutboundMessageRepository.findByIdsForTenant.mockResolvedValue([mockOutboundMessage]);
+
+      const mockCampaign = {
+        id: 'campaign-123',
+        status: 'active',
+        currentNodeId: 'node-123',
+        contactId: 'contact-123',
+        leadId: 'lead-123',
+        planJson: { nodes: [], startNodeId: 'node-123' },
+      };
+      mockContactCampaignRepository.findByIdsForTenant.mockResolvedValue([mockCampaign]);
+
+      mockCampaignPlanExecutionService.processTransition.mockResolvedValue({
+        success: true,
+        fromNodeId: 'node-123',
+        toNodeId: 'node-456',
+      });
+
+      // Execute webhook processing
+      const result = await webhookService.processWebhook(
+        { 'x-twilio-email-event-webhook-signature': 'valid-signature' },
+        JSON.stringify([mockOpenEvent])
+      );
+
+      // Verify result
+      expect(result.success).toBe(true);
+      expect(result.successfulEvents).toBe(1);
+
+      // Verify campaign transition was called with normalized event type
+      expect(mockCampaignPlanExecutionService.processTransition).toHaveBeenCalledWith({
+        tenantId: 'tenant-123',
+        campaignId: 'campaign-123',
+        contactId: 'contact-123',
+        leadId: 'lead-123',
+        eventType: 'opened', // Should be normalized from 'open' to 'opened'
+        currentNodeId: 'node-123',
+        plan: { nodes: [], startNodeId: 'node-123' },
+        eventRef: 'message-event-123',
+      });
+    });
+
     it('should handle campaign transition errors gracefully', async () => {
       // Setup mocks for campaign transition error scenario
       mockValidator.verifyWebhookRequest.mockReturnValue({

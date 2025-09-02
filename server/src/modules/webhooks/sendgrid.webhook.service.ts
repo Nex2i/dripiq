@@ -964,13 +964,31 @@ export class SendGridWebhookService {
       return false;
     }
 
+    // Normalize event type for campaign transitions
+    // SendGrid webhooks and campaign plans use slightly different event type names
+    const eventTypeNormalizationMap: Record<string, string> = {
+      'open': 'opened',
+      'click': 'clicked', // In case campaign plans use 'clicked' instead of 'click'
+      // Add other mappings as needed
+    };
+    
+    const normalizedEventType = eventTypeNormalizationMap[messageEvent.type] || messageEvent.type;
+
+    logger.info('Processing campaign transition with normalized event type', {
+      tenantId,
+      campaignId: campaign.id,
+      originalEventType: messageEvent.type,
+      normalizedEventType,
+      currentNodeId: campaign.currentNodeId,
+    });
+
     // Trigger transition processing
     await campaignPlanExecutionService.processTransition({
       tenantId,
       campaignId: campaign.id,
       contactId: campaign.contactId,
       leadId: campaign.leadId,
-      eventType: messageEvent.type,
+      eventType: normalizedEventType,
       currentNodeId: campaign.currentNodeId,
       plan: campaign.planJson as CampaignPlanOutput,
       eventRef: messageEvent.id,
@@ -979,7 +997,8 @@ export class SendGridWebhookService {
     logger.info('Campaign transition processed successfully', {
       tenantId,
       campaignId: campaign.id,
-      eventType: messageEvent.type,
+      originalEventType: messageEvent.type,
+      normalizedEventType,
       currentNodeId: campaign.currentNodeId,
     });
 
