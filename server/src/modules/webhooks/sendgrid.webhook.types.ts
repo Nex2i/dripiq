@@ -4,18 +4,20 @@
  * https://docs.sendgrid.com/for-developers/tracking-events/event
  */
 
+import { SENDGRID_EVENT_TYPES as SENDGRID_CONSTANTS } from '@/constants/campaign-events';
+
 // SendGrid Event Types
 export type SendGridEventType =
-  | 'delivered'
-  | 'bounce'
-  | 'deferred'
-  | 'dropped'
-  | 'open'
-  | 'click'
-  | 'spam_report'
-  | 'unsubscribe'
-  | 'group_unsubscribe'
-  | 'group_resubscribe';
+  | typeof SENDGRID_CONSTANTS.DELIVERED
+  | typeof SENDGRID_CONSTANTS.BOUNCE
+  | typeof SENDGRID_CONSTANTS.DEFERRED
+  | typeof SENDGRID_CONSTANTS.DROPPED
+  | typeof SENDGRID_CONSTANTS.OPEN
+  | typeof SENDGRID_CONSTANTS.CLICK
+  | typeof SENDGRID_CONSTANTS.SPAM_REPORT
+  | typeof SENDGRID_CONSTANTS.UNSUBSCRIBE
+  | typeof SENDGRID_CONSTANTS.GROUP_UNSUBSCRIBE
+  | typeof SENDGRID_CONSTANTS.GROUP_RESUBSCRIBE;
 
 // SendGrid Bounce Types
 export type SendGridBounceType = 'hard' | 'soft';
@@ -53,7 +55,7 @@ export interface SendGridEventBase {
 
 // Delivery Event
 export interface SendGridDeliveredEvent extends SendGridEventBase {
-  event: 'delivered';
+  event: typeof SENDGRID_CONSTANTS.DELIVERED;
   response: string;
 }
 
@@ -80,14 +82,14 @@ export interface SendGridDroppedEvent extends SendGridEventBase {
 
 // Open Event
 export interface SendGridOpenEvent extends SendGridEventBase {
-  event: 'open';
+  event: typeof SENDGRID_CONSTANTS.OPEN;
   useragent: string;
   ip: string;
 }
 
 // Click Event
 export interface SendGridClickEvent extends SendGridEventBase {
-  event: 'click';
+  event: typeof SENDGRID_CONSTANTS.CLICK;
   url: string;
   useragent: string;
   ip: string;
@@ -207,16 +209,16 @@ export class SendGridWebhookError extends Error {
 
 // Validation schemas
 export const SENDGRID_EVENT_TYPES: SendGridEventType[] = [
-  'delivered',
-  'bounce',
-  'deferred',
-  'dropped',
-  'open',
-  'click',
-  'spam_report',
-  'unsubscribe',
-  'group_unsubscribe',
-  'group_resubscribe',
+  SENDGRID_CONSTANTS.DELIVERED,
+  SENDGRID_CONSTANTS.BOUNCE,
+  SENDGRID_CONSTANTS.DEFERRED,
+  SENDGRID_CONSTANTS.DROPPED,
+  SENDGRID_CONSTANTS.OPEN,
+  SENDGRID_CONSTANTS.CLICK,
+  SENDGRID_CONSTANTS.SPAM_REPORT,
+  SENDGRID_CONSTANTS.UNSUBSCRIBE,
+  SENDGRID_CONSTANTS.GROUP_UNSUBSCRIBE,
+  SENDGRID_CONSTANTS.GROUP_RESUBSCRIBE,
 ];
 
 // Known SendGrid events that we don't record but should not trigger warnings

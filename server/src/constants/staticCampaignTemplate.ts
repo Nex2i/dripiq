@@ -1,4 +1,5 @@
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { CAMPAIGN_EVENT_TYPES } from './campaign-events';
 
 /**
  * Constants for simplified daily email campaign
@@ -10,8 +11,8 @@ export const CAMPAIGN_CONSTANTS = {
 
   // Event types (only no_click used in MVP)
   EVENTS: {
-    CLICKED: 'clicked',
-    NO_CLICK: 'no_click',
+    CLICKED: CAMPAIGN_EVENT_TYPES.CLICKED,
+    NO_CLICK: CAMPAIGN_EVENT_TYPES.NO_CLICK,
   } as const,
 
   // Common node IDs

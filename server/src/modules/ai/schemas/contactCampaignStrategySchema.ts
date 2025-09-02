@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CAMPAIGN_EVENT_TYPES } from '@/constants/campaign-events';
 
 /** ========= Primitives ========= */
 const IsoDuration = z
@@ -23,12 +24,12 @@ const Action = z.enum(['send', 'wait', 'stop']).describe('Node action type: send
 
 const EventType = z
   .enum([
-    'delivered',
-    'opened',
-    'clicked',
+    CAMPAIGN_EVENT_TYPES.DELIVERED,
+    CAMPAIGN_EVENT_TYPES.OPENED,
+    CAMPAIGN_EVENT_TYPES.CLICKED,
     // synthetic
-    'no_open',
-    'no_click',
+    CAMPAIGN_EVENT_TYPES.NO_OPEN,
+    CAMPAIGN_EVENT_TYPES.NO_CLICK,
   ])
   .describe('Events that can trigger transitions.');
 

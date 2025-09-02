@@ -11,6 +11,10 @@ import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExe
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
 import {
+  normalizeEventTypeForCampaign,
+  IGNORED_TRANSITION_EVENTS,
+} from '@/constants/campaign-events';
+import {
   SendGridEvent,
   SendGridEventType,
   SendGridWebhookPayload,
@@ -823,7 +827,7 @@ export class SendGridWebhookService {
     webhookDeliveryId: string
   ): Promise<void> {
     // Events that should not trigger campaign transitions
-    const ignoredEventTypes: SendGridEventType[] = ['click'];
+    const ignoredEventTypes: SendGridEventType[] = [...IGNORED_TRANSITION_EVENTS];
 
     const successfulEvents = events.filter(
       (e) => e.success && !e.skipped && e.messageId && !ignoredEventTypes.includes(e.eventType)
@@ -964,13 +968,25 @@ export class SendGridWebhookService {
       return false;
     }
 
+    // Normalize event type for campaign transitions
+    // SendGrid webhooks and campaign plans use slightly different event type names
+    const normalizedEventType = normalizeEventTypeForCampaign(messageEvent.type);
+
+    logger.info('Processing campaign transition with normalized event type', {
+      tenantId,
+      campaignId: campaign.id,
+      originalEventType: messageEvent.type,
+      normalizedEventType,
+      currentNodeId: campaign.currentNodeId,
+    });
+
     // Trigger transition processing
     await campaignPlanExecutionService.processTransition({
       tenantId,
       campaignId: campaign.id,
       contactId: campaign.contactId,
       leadId: campaign.leadId,
-      eventType: messageEvent.type,
+      eventType: normalizedEventType,
       currentNodeId: campaign.currentNodeId,
       plan: campaign.planJson as CampaignPlanOutput,
       eventRef: messageEvent.id,
@@ -979,7 +995,8 @@ export class SendGridWebhookService {
     logger.info('Campaign transition processed successfully', {
       tenantId,
       campaignId: campaign.id,
-      eventType: messageEvent.type,
+      originalEventType: messageEvent.type,
+      normalizedEventType,
       currentNodeId: campaign.currentNodeId,
     });
 

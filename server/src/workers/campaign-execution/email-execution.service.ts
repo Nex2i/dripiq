@@ -22,9 +22,9 @@ import type { ContactCampaign, EmailSenderIdentity, LeadPointOfContact } from '@
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
 import { JOB_NAMES } from '@/constants/queues';
+import { CAMPAIGN_EVENT_TYPES, TIMEOUT_EVENT_TYPES } from '@/constants/campaign-events';
 
-// Timeout event types that should trigger timeout jobs
-const TIMEOUT_EVENT_TYPES = ['no_open', 'no_click'] as const;
+// Type for timeout events (imported from constants)
 type TimeoutEventType = (typeof TIMEOUT_EVENT_TYPES)[number];
 
 export interface EmailExecutionParams {
@@ -449,7 +449,10 @@ export class EmailExecutionService {
 
     // Only schedule default timeout jobs for event types that actually have transitions in the plan
     // This prevents scheduling no_click timeouts when the plan only has no_open transitions
-    if (!scheduledTimeouts.has('no_open') && timeoutEventTypesInTransitions.has('no_open')) {
+    if (
+      !scheduledTimeouts.has(CAMPAIGN_EVENT_TYPES.NO_OPEN) &&
+      timeoutEventTypesInTransitions.has(CAMPAIGN_EVENT_TYPES.NO_OPEN)
+    ) {
       const noOpenDelay = defaults?.no_open_after || DEFAULT_NO_OPEN_TIMEOUT;
       try {
         const noOpenDelayMs = parseIsoDuration(noOpenDelay);
@@ -457,7 +460,7 @@ export class EmailExecutionService {
           campaignId,
           nodeId,
           messageId,
-          eventType: 'no_open',
+          eventType: CAMPAIGN_EVENT_TYPES.NO_OPEN,
           scheduledAt: new Date(Date.now() + noOpenDelayMs),
         });
 
@@ -481,7 +484,10 @@ export class EmailExecutionService {
       }
     }
 
-    if (!scheduledTimeouts.has('no_click') && timeoutEventTypesInTransitions.has('no_click')) {
+    if (
+      !scheduledTimeouts.has(CAMPAIGN_EVENT_TYPES.NO_CLICK) &&
+      timeoutEventTypesInTransitions.has(CAMPAIGN_EVENT_TYPES.NO_CLICK)
+    ) {
       const noClickDelay = defaults?.no_click_after || DEFAULT_NO_CLICK_TIMEOUT;
       try {
         const noClickDelayMs = parseIsoDuration(noClickDelay);
@@ -489,7 +495,7 @@ export class EmailExecutionService {
           campaignId,
           nodeId,
           messageId,
-          eventType: 'no_click',
+          eventType: CAMPAIGN_EVENT_TYPES.NO_CLICK,
           scheduledAt: new Date(Date.now() + noClickDelayMs),
         });
 
