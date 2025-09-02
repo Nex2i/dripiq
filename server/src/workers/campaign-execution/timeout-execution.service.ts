@@ -4,6 +4,7 @@ import { contactCampaignRepository, messageEventRepository } from '@/repositorie
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
 import { CAMPAIGN_CONSTANTS } from '@/constants/staticCampaignTemplate';
+import { CAMPAIGN_EVENT_TYPES } from '@/constants/campaign-events';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 
@@ -72,7 +73,7 @@ export class TimeoutExecutionService {
       }
 
       // Special handling for no_click events - check calendar clicks
-      if (eventType === CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK) {
+      if (eventType === CAMPAIGN_EVENT_TYPES.NO_CLICK) {
         const calendarClickResult = await this.handleNoClickCalendarValidation(
           job,
           tenantId,
@@ -256,7 +257,7 @@ export class TimeoutExecutionService {
           campaignId,
           contactId: campaign.contactId,
           leadId: campaign.leadId,
-          eventType: 'click',
+          eventType: CAMPAIGN_EVENT_TYPES.CLICKED,
           currentNodeId: nodeId,
           plan: campaignPlan,
           eventRef: calendarClickResult.latestClick!.id, // Use actual calendar click ID
@@ -265,7 +266,7 @@ export class TimeoutExecutionService {
         logger.info('[CampaignExecutionWorker] Campaign click transition processed successfully', {
           tenantId,
           campaignId,
-          eventType: 'click',
+          eventType: CAMPAIGN_EVENT_TYPES.CLICKED,
           currentNodeId: nodeId,
           calendarClickId: calendarClickResult.latestClick!.id,
         });

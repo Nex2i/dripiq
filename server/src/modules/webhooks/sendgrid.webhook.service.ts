@@ -22,6 +22,12 @@ import {
   KNOWN_SENDGRID_EVENTS_NOT_RECORDED,
   ALL_KNOWN_SENDGRID_EVENTS,
 } from './sendgrid.webhook.types';
+import { 
+  normalizeEventTypeForCampaign,
+  shouldTriggerCampaignTransition,
+  SENDGRID_EVENT_TYPES as SENDGRID_EVENTS,
+  IGNORED_TRANSITION_EVENTS
+} from '@/constants/campaign-events';
 
 /**
  * SendGrid Webhook Service
@@ -823,7 +829,7 @@ export class SendGridWebhookService {
     webhookDeliveryId: string
   ): Promise<void> {
     // Events that should not trigger campaign transitions
-    const ignoredEventTypes: SendGridEventType[] = ['click'];
+    const ignoredEventTypes: SendGridEventType[] = [...IGNORED_TRANSITION_EVENTS];
 
     const successfulEvents = events.filter(
       (e) => e.success && !e.skipped && e.messageId && !ignoredEventTypes.includes(e.eventType)
@@ -966,13 +972,7 @@ export class SendGridWebhookService {
 
     // Normalize event type for campaign transitions
     // SendGrid webhooks and campaign plans use slightly different event type names
-    const eventTypeNormalizationMap: Record<string, string> = {
-      'open': 'opened',
-      'click': 'clicked', // In case campaign plans use 'clicked' instead of 'click'
-      // Add other mappings as needed
-    };
-    
-    const normalizedEventType = eventTypeNormalizationMap[messageEvent.type] || messageEvent.type;
+    const normalizedEventType = normalizeEventTypeForCampaign(messageEvent.type);
 
     logger.info('Processing campaign transition with normalized event type', {
       tenantId,

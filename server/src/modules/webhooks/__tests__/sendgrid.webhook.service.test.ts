@@ -1174,7 +1174,7 @@ describe('SendGridWebhookService', () => {
         campaignId: 'campaign-123',
         contactId: 'contact-123',
         leadId: 'lead-123',
-        eventType: 'opened', // Should be normalized from 'open' to 'opened'
+        eventType: 'opened', // Should be normalized from 'open' to 'opened' using constants
         currentNodeId: 'node-123',
         plan: { nodes: [], startNodeId: 'node-123' },
         eventRef: 'message-event-123',
