@@ -4,9 +4,8 @@ import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExe
 import {
   contactCampaignRepository,
   messageEventRepository,
-  campaignTransitionRepository,
 } from '@/repositories';
-import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
+
 import type { Job } from 'bullmq';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';

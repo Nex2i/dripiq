@@ -1078,8 +1078,16 @@ export class CampaignPlanExecutionService {
   }
 
   /**
-   * Processes timeout-triggered transitions directly without creating synthetic events
-   * This bypasses timing constraints since timeouts already handle timing
+   * Processes timeout-triggered transitions directly without creating synthetic events.
+   * This bypasses timing constraints since timeouts already handle timing.
+   * 
+   * Unlike processTransition, this method:
+   * - Does not validate timing constraints (timing already handled by timeout job)
+   * - Does not create synthetic events in the database
+   * - Uses timeout-specific audit trail format
+   * 
+   * @param params - Timeout transition parameters
+   * @returns Promise<TimeoutTransitionResult> - Result of the timeout transition
    */
   async processTimeoutTransition(
     params: ProcessTimeoutTransitionParams
@@ -1118,10 +1126,11 @@ export class CampaignPlanExecutionService {
         currentNode.transitions?.filter((t) => t.on === timeoutEventType) || [];
 
       if (candidateTransitions.length === 0) {
-        logger.info('No timeout transitions found for event type', {
+        logger.warn('No timeout transitions found for event type', {
           currentNodeId,
           timeoutEventType,
           availableTransitions: currentNode.transitions?.map((t) => ({ on: t.on, to: t.to })),
+          nodeAction: currentNode.action,
         });
         return {
           success: false,
@@ -1134,14 +1143,23 @@ export class CampaignPlanExecutionService {
       // Skip timing validation since timeouts already handled the timing
       const transition = candidateTransitions[0];
 
-      if (!transition) {
-        throw new Error(`No matching timeout transition found for event type: ${timeoutEventType}`);
+      // Validate that the target node exists in the plan
+      const targetNode = plan.nodes.find((n) => n.id === transition.to);
+      if (!targetNode) {
+        logger.error('Target node not found in campaign plan', {
+          currentNodeId,
+          targetNodeId: transition.to,
+          timeoutEventType,
+          availableNodes: plan.nodes.map((n) => n.id),
+        });
+        throw new Error(`Target node not found in plan: ${transition.to}`);
       }
 
       logger.info('Found matching timeout transition', {
         from: currentNodeId,
         to: transition.to,
         trigger: timeoutEventType,
+        targetNodeAction: targetNode.action,
         bypassedTimingValidation: true,
       });
 

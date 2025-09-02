@@ -242,7 +242,7 @@ export class TimeoutExecutionService {
       if (campaign.planJson) {
         const campaignPlan = campaign.planJson as CampaignPlanOutput;
 
-        await campaignPlanExecutionService.processTransition({
+        const clickTransitionResult = await campaignPlanExecutionService.processTransition({
           tenantId,
           campaignId,
           contactId: campaign.contactId,
@@ -252,12 +252,14 @@ export class TimeoutExecutionService {
           plan: campaignPlan,
         });
 
-        logger.info('[CampaignExecutionWorker] Campaign click transition processed successfully', {
+        logger.info('[CampaignExecutionWorker] Campaign click transition processed', {
           tenantId,
           campaignId,
           eventType: CAMPAIGN_EVENT_TYPES.CLICKED,
           currentNodeId: nodeId,
           calendarClickId: calendarClickResult.latestClick!.id,
+          transitionSuccess: clickTransitionResult.success,
+          reason: clickTransitionResult.reason,
         });
       }
 
