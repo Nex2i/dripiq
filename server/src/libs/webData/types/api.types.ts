@@ -15,11 +15,26 @@ export interface CoreSignalEmployeeSearchQuery {
       must: Array<{
         term?: {
           is_decision_maker?: number;
+          is_working?: number;
+          [key: string]: any;
         };
         nested?: {
           path: string;
           query: {
-            match_phrase: {
+            bool?: {
+              must: Array<{
+                term?: {
+                  [key: string]: any;
+                };
+                match?: {
+                  [key: string]: string;
+                };
+                match_phrase?: {
+                  [key: string]: string;
+                };
+              }>;
+            };
+            match_phrase?: {
               [key: string]: string;
             };
           };
@@ -233,4 +248,5 @@ export interface CoreSignalRequestOptions {
   cacheTtl?: number;
   limit?: number;
   isDecisionMaker?: boolean;
+  isCurrentEmployer?: boolean;
 }

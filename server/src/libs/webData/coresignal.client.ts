@@ -125,11 +125,11 @@ export class CoreSignalClient {
     data: any = {},
     options: CoreSignalRequestOptions = {}
   ): Promise<T> {
-    const { useCache = true, cacheTtl = this.defaultCacheTtl } = options;
+    const { useCache = false, cacheTtl = this.defaultCacheTtl } = options;
     const cacheKey = this.generateCacheKey(endpoint, data);
 
     // Try to get from cache first
-    if (useCache) {
+    if (!useCache) {
       const cachedResult = await this.cacheClient.getJson<T>(cacheKey);
       if (cachedResult) {
         logger.debug('CoreSignal v2 cache hit', { endpoint, cacheKey });
@@ -142,7 +142,7 @@ export class CoreSignalClient {
     const response: AxiosResponse<T> = await this.httpClient.post(endpoint, data);
 
     // Cache the result
-    if (useCache) {
+    if (!useCache) {
       await this.cacheClient.setJson(cacheKey, response.data, cacheTtl);
     }
 
@@ -188,7 +188,7 @@ export class CoreSignalClient {
     options: CoreSignalRequestOptions = {}
   ): Promise<CoreSignalEmployeeSearchResponse> {
     try {
-      const { isDecisionMaker = true } = options;
+      const { isDecisionMaker = true, isCurrentEmployer = true } = options;
 
       const searchQuery: CoreSignalEmployeeSearchQuery = {
         query: {
@@ -203,12 +203,32 @@ export class CoreSignalClient {
                     },
                   ]
                 : []),
+              ...(isCurrentEmployer
+                ? [
+                    {
+                      term: {
+                        is_working: 1,
+                      },
+                    },
+                  ]
+                : []),
               {
                 nested: {
                   path: 'experience',
                   query: {
-                    match_phrase: {
-                      'experience.company_website.domain_only': domain,
+                    bool: {
+                      must: [
+                        {
+                          term: {
+                            'experience.active_experience': 1,
+                          },
+                        },
+                        {
+                          match: {
+                            'experience.company_website.domain_only': domain,
+                          },
+                        },
+                      ],
                     },
                   },
                 },
