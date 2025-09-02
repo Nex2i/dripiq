@@ -14,7 +14,7 @@ const smartFilterSiteMapSchema = z.object({
 type SiteType = 'lead_site' | 'organization_site';
 
 export const SiteScrapeService = {
-  scrapeSite: async (url: string, metadata: Record<string, any>, siteType: SiteType) => {
+  scrapeSite: async (url: string, metadata: Record<string, string>, siteType: SiteType) => {
     let siteMap = await firecrawlClient.getSiteMap(url.cleanWebsiteUrl());
 
     siteMap = SiteScrapeService.filterUrls(siteMap);

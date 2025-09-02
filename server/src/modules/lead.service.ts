@@ -597,7 +597,7 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
         metadata: {
           createdBy: ownerId,
           createdAt: new Date().toISOString(),
-          batchCreation: true,
+          batchCreation: 'true',
         },
       });
 

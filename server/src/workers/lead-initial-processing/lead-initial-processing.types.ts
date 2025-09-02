@@ -2,7 +2,7 @@ export interface LeadInitialProcessingJobPayload {
   tenantId: string;
   leadId: string;
   leadUrl: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string>;
 }
 
 export interface LeadInitialProcessingJobResult {

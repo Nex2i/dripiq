@@ -1,118 +1,98 @@
-import Firecrawl, { type SearchResultWeb } from '@mendable/firecrawl-js';
+import Firecrawl, { type SearchResultWeb, SdkError } from '@mendable/firecrawl-js';
 import { createSignedJwt } from '../jwt';
 import { IUploadFile } from '../supabase.storage';
 import { logger } from '../logger';
 import { PageData } from './firecrawl';
 
-const firecrawlApp = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
+class FirecrawlClient {
+  private firecrawlApp: Firecrawl;
+  private apiUrl: string;
+  private firecrawlApiKey: string;
 
-const apiUrl = process.env.API_URL;
-const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
+  constructor() {
+    if (!process.env.FIRECRAWL_API_KEY) {
+      throw new Error('FIRECRAWL_API_KEY is not set');
+    }
 
-if (!firecrawlApiKey) {
-  throw new Error('FIRECRAWL_API_KEY is not set');
-}
+    this.firecrawlApp = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
+    this.apiUrl = process.env.API_URL!;
+    this.firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
+  }
 
-const firecrawlClient = {
-  crawlEntireDomain: async (url: string, metadata: Record<string, any> = {}) => {
-    const jwt = createSignedJwt(firecrawlApiKey);
+  /**
+   * Wraps an async function with Firecrawl error handling
+   */
+  private async wrapWithErrorHandling<TResult>(
+    operation: string,
+    fn: () => Promise<TResult>,
+    context?: Record<string, any>
+  ): Promise<TResult> {
+    try {
+      return await fn();
+    } catch (error) {
+      handleFirecrawlError(error, operation, context);
+    }
+  }
 
-    const crawlResult = await firecrawlApp.startCrawl(url, {
-      limit: 50,
-      allowExternalLinks: false,
-      allowSubdomains: false,
-      // deduplicateSimilarURLs: true,
-      ignoreQueryParameters: true,
-      // regexOnFullURL: true,
-      // allowBackwardLinks: true,
-      // ignoreSitemap: true,
-      // maxDepth: 3,
-      excludePaths: [
-        '^/blog(?:/.*)?$',
-        '^/support(?:/.*)?$',
-        '^/privacy(?:-policy)?(?:/.*)?$',
-        '^/terms(?:-of-(service|use|conditions))?(?:/.*)?$',
-        '^/(careers?|jobs)(?:/.*)?$',
-      ],
-      scrapeOptions: {
-        formats: ['markdown'],
-        onlyMainContent: true,
-        maxAge: 14400000,
-        excludeTags: ['#ad', '#footer'],
-      },
-      webhook: {
-        url: `${apiUrl}/api/firecrawl/webhook`,
-        events: ['completed', 'page', 'failed'],
-        metadata,
-        headers: {
-          'x-api-key': jwt,
-        },
-      },
-    });
-
-    return crawlResult;
-  },
-  batchScrapeUrls: async (urls: string[], metadata: Record<string, any> = {}) => {
+  async batchScrapeUrls(urls: string[], metadata: Record<string, string> = {}) {
     if (urls.length === 0) {
       return;
     }
 
     if (urls.length === 1) {
-      if (!(await firecrawlClient.checkSiteExists(urls[0]))) {
+      if (!(await this.checkSiteExists(urls[0]))) {
         throw new Error('Site does not exist');
       }
     }
 
-    const jwt = createSignedJwt(firecrawlApiKey);
+    return this.wrapWithErrorHandling(
+      'batch scrape URLs',
+      async () => {
+        const jwt = createSignedJwt(this.firecrawlApiKey);
 
-    try {
-      const crawlResult = await firecrawlApp.startBatchScrape(urls, {
-        options: {
-          formats: ['markdown'],
-          onlyMainContent: false,
-          maxAge: 14400000,
-          excludeTags: ['#ad', 'header', 'footer'],
-        },
-        webhook: {
-          url: `${apiUrl}/api/firecrawl/webhook`,
-          events: ['completed', 'page', 'failed'],
-          metadata,
-          headers: {
-            'x-api-key': jwt,
+        const crawlResult = await this.firecrawlApp.startBatchScrape(urls, {
+          options: {
+            formats: ['markdown'],
+            onlyMainContent: false,
+            maxAge: 14400000, // 4 hours in milliseconds
+            excludeTags: ['#ad', 'header', 'footer'],
           },
-        },
-      });
+          webhook: {
+            url: `${this.apiUrl}/api/firecrawl/webhook`,
+            events: ['completed', 'page', 'failed'],
+            metadata,
+            headers: {
+              'x-api-key': jwt,
+            },
+          },
+        });
 
-      return crawlResult;
-    } catch (error) {
-      logger.error('Error in batch scrape', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        urls,
-      });
-      throw new Error('Failed to initiate batch scrape');
-    }
-  },
-  getSiteMap: async (url: string): Promise<SearchResultWeb[]> => {
-    if (!(await firecrawlClient.checkSiteExists(url))) {
+        return crawlResult;
+      },
+      { urls, metadata }
+    );
+  }
+
+  async getSiteMap(url: string): Promise<SearchResultWeb[]> {
+    if (!(await this.checkSiteExists(url))) {
       throw new Error('Site does not exist');
     }
 
-    try {
-      const siteMap = await firecrawlApp.map(siteMapOptimizedUrl(url), {
-        sitemap: 'include',
-        includeSubdomains: false,
-        limit: 500,
-      });
+    return this.wrapWithErrorHandling(
+      'get site map',
+      async () => {
+        const siteMap = await this.firecrawlApp.map(siteMapOptimizedUrl(url), {
+          sitemap: 'include',
+          includeSubdomains: false,
+          limit: 500,
+        });
 
-      return siteMap.links ?? [];
-    } catch (error) {
-      logger.error('Error in get site map', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        url,
-      });
-      throw new Error('Failed to get site map');
-    }
-  },
+        return siteMap.links ?? [];
+      },
+      { url }
+    );
+  }
+
   createFirecrawlMarkdownFile(crawlId: string, pageData: PageData): IUploadFile {
     const { markdown, metadata } = pageData;
     const { url } = metadata;
@@ -130,15 +110,17 @@ const firecrawlClient = {
       fileName: `${slug}.md`,
       slug: `${url.getFullDomain()}/${slug}`,
     };
-  },
-  cleanMetadata: (metadata: Record<string, any>) => {
+  }
+
+  cleanMetadata(metadata: Record<string, any>) {
     return {
       title: metadata.title,
       url: metadata.url,
       description: metadata.description,
     };
-  },
-  checkSiteExists: async (url?: string | null): Promise<boolean> => {
+  }
+
+  async checkSiteExists(url?: string | null): Promise<boolean> {
     if (!url) {
       return false;
     }
@@ -172,8 +154,13 @@ const firecrawlClient = {
     } catch (_) {
       return false;
     }
-  },
-};
+  }
+}
+
+// Create singleton instance
+const firecrawlClient = new FirecrawlClient();
+
+export default firecrawlClient;
 
 function siteMapOptimizedUrl(url: string): string {
   // Remove protocol (http, https, etc.)
@@ -188,4 +175,37 @@ function siteMapOptimizedUrl(url: string): string {
   return domain;
 }
 
-export default firecrawlClient;
+// Reusable error handling utility for Firecrawl SDK operations
+function handleFirecrawlError(
+  error: unknown,
+  operation: string,
+  context?: Record<string, any>
+): never {
+  let statusCode: number | undefined;
+  let errorMessage = 'Unknown error';
+  let errorCode: string | undefined;
+  let errorDetails: unknown;
+
+  if (error instanceof SdkError) {
+    statusCode = error.status;
+    errorMessage = error.message;
+    errorCode = error.code;
+    errorDetails = error.details;
+  } else if (error instanceof Error) {
+    errorMessage = error.message;
+  }
+
+  logger.error(`Error in ${operation}`, {
+    error: errorMessage,
+    statusCode,
+    errorCode,
+    errorDetails,
+    ...context,
+  });
+
+  const errorMsg = statusCode
+    ? `Failed to ${operation} (HTTP ${statusCode}): ${errorMessage}`
+    : `Failed to ${operation}: ${errorMessage}`;
+
+  throw new Error(errorMsg);
+}
