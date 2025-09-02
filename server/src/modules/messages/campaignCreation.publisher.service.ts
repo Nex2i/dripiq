@@ -26,8 +26,6 @@ export class CampaignCreationPublisher {
         backoff: { type: 'exponential', delay: 2000 },
         removeOnComplete: 10,
         removeOnFail: 5,
-        // Add delay to prevent overwhelming the AI service
-        delay: Math.random() * 5000, // Random delay 0-5 seconds
       });
     } catch (error) {
       logger.error('Failed to publish campaign creation job', {
@@ -46,7 +44,7 @@ export class CampaignCreationPublisher {
         leadId: payloads[0]?.leadId,
       });
 
-      const jobs = payloads.map((payload, index) => ({
+      const jobs = payloads.map((payload) => ({
         name: JOB_NAMES.campaign_creation.create,
         data: payload,
         opts: {
@@ -54,8 +52,6 @@ export class CampaignCreationPublisher {
           backoff: { type: 'exponential', delay: 2000 },
           removeOnComplete: 10,
           removeOnFail: 5,
-          // Stagger job execution to prevent overwhelming AI service
-          delay: index * 1000, // 1 second between each job
         },
       }));
 

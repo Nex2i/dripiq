@@ -33,7 +33,6 @@ export class CampaignExecutionPublisher {
         backoff: { type: 'exponential', delay: 2000 },
         removeOnComplete: 10,
         removeOnFail: 5,
-        delay: Math.random() * 2000, // Random delay 0-2 seconds
       });
 
       logger.info('Campaign execution job published successfully', {

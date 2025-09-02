@@ -248,28 +248,22 @@ async function processLeadInitialProcessing(
 const leadInitialProcessingWorker = getWorker<
   LeadInitialProcessingJobPayload,
   LeadInitialProcessingJobResult
->(
-  QUEUE_NAMES.lead_initial_processing,
-  async (job: Job<LeadInitialProcessingJobPayload>) => {
-    if (job.name !== JOB_NAMES.lead_initial_processing.process) {
-      logger.warn('[LeadInitialProcessingWorker] Skipping unexpected job name', {
-        jobId: job.id,
-        jobName: job.name,
-      });
-      return {
-        success: false,
-        leadId: job.data.leadId,
-        error: 'Unexpected job name',
-        errorCode: 'UNKNOWN',
-        skippedScraping: false,
-      };
-    }
-
-    return processLeadInitialProcessing(job);
-  },
-  {
-    concurrency: 3, // Allow multiple leads to be processed concurrently
+>(QUEUE_NAMES.lead_initial_processing, async (job: Job<LeadInitialProcessingJobPayload>) => {
+  if (job.name !== JOB_NAMES.lead_initial_processing.process) {
+    logger.warn('[LeadInitialProcessingWorker] Skipping unexpected job name', {
+      jobId: job.id,
+      jobName: job.name,
+    });
+    return {
+      success: false,
+      leadId: job.data.leadId,
+      error: 'Unexpected job name',
+      errorCode: 'UNKNOWN',
+      skippedScraping: false,
+    };
   }
-);
+
+  return processLeadInitialProcessing(job);
+});
 
 export default leadInitialProcessingWorker;

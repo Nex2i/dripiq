@@ -120,9 +120,6 @@ const leadAnalysisWorker = getWorker<LeadAnalysisJobPayload, LeadAnalysisJobResu
     }
 
     return processLeadAnalysis(job);
-  },
-  {
-    concurrency: 2, // Limit concurrency for AI-intensive operations
   }
 );
 
