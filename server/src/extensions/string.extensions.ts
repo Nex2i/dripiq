@@ -52,6 +52,7 @@ String.prototype.isNullOrEmpty = function (): boolean {
 };
 
 String.prototype.getUrlSlug = function (): string {
+  if (this.isNullOrEmpty()) return '';
   let url = this.toString();
 
   // Handle empty or invalid URLs
@@ -94,6 +95,7 @@ String.prototype.getUrlSlug = function (): string {
 };
 
 String.prototype.getFullDomain = function (): string {
+  if (this.isNullOrEmpty()) return '';
   let url = this.toString();
 
   // Handle empty or invalid URLs
@@ -112,6 +114,7 @@ String.prototype.getFullDomain = function (): string {
 };
 
 String.prototype.getDomain = function (): string {
+  if (this.isNullOrEmpty()) return '';
   let url = this.toString();
   url = url.replace(/^https?:\/\//, '');
   url = url.replace(/^www\./, '');
@@ -120,6 +123,7 @@ String.prototype.getDomain = function (): string {
 };
 
 String.prototype.cleanWebsiteUrl = function (): string {
+  if (this.isNullOrEmpty()) return '';
   let url = this.toString().trim();
 
   // Add https:// if missing
@@ -144,6 +148,7 @@ String.prototype.cleanWebsiteUrl = function (): string {
 };
 
 String.prototype.getEmailDomain = function (): string {
+  if (this.isNullOrEmpty()) return '';
   const email = this.toString().trim();
   if (!email || !email.includes('@')) return '';
 
@@ -154,6 +159,7 @@ String.prototype.getEmailDomain = function (): string {
 };
 
 String.prototype.cleanForDomain = function (): string {
+  if (this.isNullOrEmpty()) return '';
   return this.toString()
     .trim()
     .toLowerCase()

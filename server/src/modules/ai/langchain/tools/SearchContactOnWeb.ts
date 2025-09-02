@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 export const SearchContactOnWebTool = new DynamicStructuredTool({
   name: 'SearchContactOnWeb',
-  description: 'Search for contact information on the web',
+  description:
+    'Search for contact information on the web, example would be "{contact_name} {contact_city} {contact_website} email"',
   schema: z.object({
     url: z.string().describe('The URL to search for contact information'),
   }),
