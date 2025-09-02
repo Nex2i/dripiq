@@ -1,6 +1,7 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { siteEmbeddingRepository } from '@/repositories';
+import { logger } from '@/libs/logger';
 
 export const RetrieveFullPageTool = new DynamicStructuredTool({
   name: 'RetrieveFullPageTool',
@@ -21,9 +22,16 @@ export const RetrieveFullPageTool = new DynamicStructuredTool({
 
       const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
 
-      const fullMarkdown = embeddings.map((embedding) => embedding.content).join('\n');
+      const fullMarkdown = embeddings
+        .sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0))
+        .map((embedding) => embedding.content)
+        .join('\n');
 
       if (!fullMarkdown) {
+        logger.error('No content found for URL', {
+          url: cleanUrl,
+          embeddingCount: embeddings.length,
+        });
         return `No content found for URL: ${cleanUrl}`;
       }
 

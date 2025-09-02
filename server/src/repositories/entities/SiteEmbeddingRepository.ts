@@ -24,6 +24,9 @@ export interface EmbeddingWithDomain extends SiteEmbedding {
   };
 }
 
+// Input type for creating site embeddings, excluding auto-generated fields
+export type SiteEmbeddingInput = Omit<SiteEmbedding, 'id' | 'createdAt' | 'updatedAt'>;
+
 export class SiteEmbeddingRepository extends BaseRepository<
   typeof siteEmbeddings,
   SiteEmbedding,
@@ -34,10 +37,22 @@ export class SiteEmbeddingRepository extends BaseRepository<
   }
 
   /**
+   * Create a single record
+   */
+  async create(data: SiteEmbeddingInput): Promise<SiteEmbedding> {
+    const dataToInsert = {
+      ...data,
+      url: data.url.cleanWebsiteUrl(),
+    };
+    const [result] = await this.db.insert(this.table).values(dataToInsert).returning();
+    return result as SiteEmbedding;
+  }
+
+  /**
    * Find embeddings by URL
    */
   async findByUrl(url: string): Promise<SiteEmbedding[]> {
-    const cleanUrl = url.getFullDomain();
+    const cleanUrl = url.cleanWebsiteUrl();
     return (await this.db
       .select()
       .from(this.table)

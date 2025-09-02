@@ -56,7 +56,7 @@ export const EmbeddingsService = {
 
     const embeddingRecord = await siteEmbeddingRepository.create({
       domainId,
-      url: metadata.url.cleanWebsiteUrl(),
+      url: metadata.url,
       slug,
       title: metadata.title,
       content: chunk,
