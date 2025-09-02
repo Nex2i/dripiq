@@ -65,6 +65,7 @@ export class ContactExtractionAgent {
     // First, fetch webData contacts to include in the prompt
     logger.info('Fetching webData contacts for extraction', { domain });
     const webDataSummary = await fetchWebDataContacts(domain);
+    logger.info('WebData contacts fetched', { domain, webDataSummary });
     const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
 
     const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
