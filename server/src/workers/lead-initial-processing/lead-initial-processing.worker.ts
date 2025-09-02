@@ -42,16 +42,12 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.UNPROCESSED, LEAD_STATUS.PROCESSED] // For resync, we might be starting from PROCESSED status
     );
 
-    // Check if site was recently scraped - use different thresholds for resync vs initial
+        // Check if site was recently scraped (within 2 weeks)
     const domain = leadUrl.getFullDomain();
     const lastScrapeDate = await EmbeddingsService.getDateOfLastDomainScrape(domain);
+    const recentScrapeThreshold = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 2 weeks ago
 
-    // For resync: 1 day threshold, for initial processing: 2 weeks threshold
-    const recentScrapeThreshold = isResync
-      ? new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago for resync
-      : new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 2 weeks ago for initial
-
-    if (lastScrapeDate && lastScrapeDate > recentScrapeThreshold && !isResync) {
+    if (lastScrapeDate && lastScrapeDate > recentScrapeThreshold) {
       logger.info(
         `[LeadInitialProcessingWorker] Site was recently scraped, skipping scraping and triggering analysis directly`,
         {
