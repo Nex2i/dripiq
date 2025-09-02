@@ -405,14 +405,52 @@ export class CampaignPlanExecutionService {
     });
 
     // Schedule next action if target node requires it
-    const nextActionResult = await this.scheduleNextAction(
-      tenantId,
-      campaignId,
-      contactId,
-      leadId,
-      transition.to,
-      plan
-    );
+    let nextActionResult: NextActionResult;
+    try {
+      logger.info('[CampaignPlanExecutionService] About to schedule next action', {
+        tenantId,
+        campaignId,
+        fromNodeId: currentNodeId,
+        toNodeId: transition.to,
+        eventType,
+      });
+
+      nextActionResult = await this.scheduleNextAction(
+        tenantId,
+        campaignId,
+        contactId,
+        leadId,
+        transition.to,
+        plan
+      );
+
+      logger.info('[CampaignPlanExecutionService] Next action scheduling completed', {
+        tenantId,
+        campaignId,
+        toNodeId: transition.to,
+        scheduled: nextActionResult.scheduled,
+        actionType: nextActionResult.actionType,
+        reason: nextActionResult.reason,
+        scheduledAt: nextActionResult.scheduledAt?.toISOString(),
+        scheduledActionId: nextActionResult.scheduledActionId,
+      });
+    } catch (nextActionError) {
+      logger.error('[CampaignPlanExecutionService] Failed to schedule next action', {
+        tenantId,
+        campaignId,
+        fromNodeId: currentNodeId,
+        toNodeId: transition.to,
+        eventType,
+        error: nextActionError instanceof Error ? nextActionError.message : 'Unknown error',
+        stack: nextActionError instanceof Error ? nextActionError.stack : undefined,
+      });
+      
+      // Continue with transition but mark next action as failed
+      nextActionResult = {
+        scheduled: false,
+        reason: 'scheduling_failed',
+      };
+    }
 
     const result: TransitionResult = {
       success: true,
@@ -438,15 +476,36 @@ export class CampaignPlanExecutionService {
     nodeId: string,
     plan: CampaignPlanOutput
   ): Promise<NextActionResult> {
+    logger.info('[CampaignPlanExecutionService] Scheduling next action', {
+      tenantId,
+      campaignId,
+      contactId,
+      leadId,
+      nodeId,
+      totalNodesInPlan: plan.nodes.length,
+      availableNodeIds: plan.nodes.map(n => n.id),
+    });
+
     const node = plan.nodes.find((n) => n.id === nodeId);
     if (!node) {
+      logger.error('[CampaignPlanExecutionService] Target node not found in plan', {
+        tenantId,
+        campaignId,
+        nodeId,
+        availableNodes: plan.nodes.map(n => ({ id: n.id, action: n.action })),
+      });
       return { scheduled: false, reason: 'node_not_found' };
     }
 
-    logger.debug('Evaluating next action for node', {
+    logger.info('[CampaignPlanExecutionService] Evaluating next action for node', {
+      tenantId,
+      campaignId,
       nodeId,
       action: node.action,
       channel: node.channel,
+      hasSubject: !!node.subject,
+      hasBody: !!node.body,
+      hasSchedule: !!node.schedule,
     });
 
     if (node.action === 'send') {
@@ -493,68 +552,141 @@ export class CampaignPlanExecutionService {
     node: CampaignPlanNode,
     plan: CampaignPlanOutput
   ): Promise<NextActionResult> {
+    logger.info('[CampaignPlanExecutionService] Starting send action scheduling', {
+      tenantId,
+      campaignId,
+      contactId,
+      leadId,
+      nodeId,
+      nodeAction: node.action,
+      nodeChannel: node.channel,
+    });
+
     // Type guard to ensure this is a send node
     if (node.action !== 'send') {
+      logger.error('[CampaignPlanExecutionService] Expected send node but got different action', {
+        tenantId,
+        campaignId,
+        nodeId,
+        expectedAction: 'send',
+        actualAction: node.action,
+      });
       throw new Error(`Expected send node, got ${node.action}`);
     }
 
-    // Calculate delay from node schedule
-    const delay = this.calculateDelay(node.schedule?.delay || 'PT0S');
-    const scheduledAt = new Date(Date.now() + delay);
+    try {
+      // Calculate delay from node schedule
+      const delay = this.calculateDelay(node.schedule?.delay || 'PT0S');
+      const scheduledAt = new Date(Date.now() + delay);
 
-    // Apply quiet hours if configured
-    const adjustedTime = this.applyQuietHours(scheduledAt, plan.timezone, plan.quietHours);
-
-    // Create scheduled action
-    const scheduledAction = await scheduledActionRepository.createForTenant(tenantId, {
-      campaignId,
-      actionType: 'send',
-      scheduledAt: adjustedTime,
-      status: 'pending',
-      payload: {
+      logger.info('[CampaignPlanExecutionService] Calculated scheduling delay', {
+        tenantId,
+        campaignId,
         nodeId,
-        subject: node.subject,
-        body: node.body,
-        channel: node.channel,
-      },
-    });
+        scheduleDelay: node.schedule?.delay || 'PT0S',
+        delayMs: delay,
+        originalScheduledAt: scheduledAt.toISOString(),
+      });
 
-    // Enqueue execution job
-    const executionQueue = getQueue(QUEUE_NAMES.campaign_execution);
-    await executionQueue.add(
-      JOB_NAMES.campaign_execution.initialize,
-      {
+      // Apply quiet hours if configured
+      const adjustedTime = this.applyQuietHours(scheduledAt, plan.timezone, plan.quietHours);
+
+      logger.info('[CampaignPlanExecutionService] Applied quiet hours adjustment', {
+        tenantId,
+        campaignId,
+        nodeId,
+        originalTime: scheduledAt.toISOString(),
+        adjustedTime: adjustedTime.toISOString(),
+        timezone: plan.timezone,
+        hasQuietHours: !!plan.quietHours,
+      });
+
+      // Create scheduled action
+      const scheduledAction = await scheduledActionRepository.createForTenant(tenantId, {
+        campaignId,
+        actionType: 'send',
+        scheduledAt: adjustedTime,
+        status: 'pending',
+        payload: {
+          nodeId,
+          subject: node.subject,
+          body: node.body,
+          channel: node.channel,
+        },
+      });
+
+      logger.info('[CampaignPlanExecutionService] Created scheduled action record', {
+        tenantId,
+        campaignId,
+        nodeId,
+        scheduledActionId: scheduledAction.id,
+        scheduledAt: adjustedTime.toISOString(),
+      });
+
+      // Enqueue execution job
+      const executionQueue = getQueue(QUEUE_NAMES.campaign_execution);
+      const jobId = `send:${campaignId}:${nodeId}:${Date.now()}`;
+      const jobDelay = Math.max(0, adjustedTime.getTime() - Date.now());
+
+      logger.info('[CampaignPlanExecutionService] Preparing to enqueue execution job', {
+        tenantId,
+        campaignId,
+        nodeId,
+        jobId,
+        jobDelay,
+        queueName: QUEUE_NAMES.campaign_execution,
+        jobName: JOB_NAMES.campaign_execution.initialize,
+      });
+
+      const job = await executionQueue.add(
+        JOB_NAMES.campaign_execution.initialize,
+        {
+          tenantId,
+          campaignId,
+          contactId,
+          leadId,
+          nodeId,
+          actionType: 'send',
+          metadata: {
+            triggeredBy: 'transition',
+            originalScheduledAt: scheduledAt.toISOString(),
+            adjustedScheduledAt: adjustedTime.toISOString(),
+          },
+        },
+        {
+          delay: jobDelay,
+          jobId: jobId,
+        }
+      );
+
+      logger.info('[CampaignPlanExecutionService] Send action scheduled successfully', {
+        tenantId,
+        campaignId,
+        nodeId,
+        scheduledAt: adjustedTime.toISOString(),
+        delay: delay,
+        jobId: job.id,
+        scheduledActionId: scheduledAction.id,
+      });
+
+      return {
+        scheduled: true,
+        actionType: 'send',
+        scheduledAt: adjustedTime,
+        scheduledActionId: scheduledAction.id,
+      };
+    } catch (error) {
+      logger.error('[CampaignPlanExecutionService] Failed to schedule send action', {
         tenantId,
         campaignId,
         contactId,
         leadId,
         nodeId,
-        actionType: 'send',
-        metadata: {
-          triggeredBy: 'transition',
-          originalScheduledAt: scheduledAt.toISOString(),
-          adjustedScheduledAt: adjustedTime.toISOString(),
-        },
-      },
-      {
-        delay: Math.max(0, adjustedTime.getTime() - Date.now()),
-        jobId: `send:${campaignId}:${nodeId}:${Date.now()}`,
-      }
-    );
-
-    logger.info('Send action scheduled', {
-      campaignId,
-      nodeId,
-      scheduledAt: adjustedTime.toISOString(),
-      delay: delay,
-    });
-
-    return {
-      scheduled: true,
-      actionType: 'send',
-      scheduledAt: adjustedTime,
-      scheduledActionId: scheduledAction.id,
-    };
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
   }
 
   /**
