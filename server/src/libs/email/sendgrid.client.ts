@@ -45,7 +45,13 @@ class SendgridClient {
       const [resp] = await sgMail.send(msg as MailDataRequired, false); // no built-in retry; you handle backoff in worker
       return this.extractProviderIds(resp);
     } catch (error) {
-      logger.error('Error sending email:', error);
+      logger.error(
+        `Error sending email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        {
+          error,
+          msg,
+        }
+      );
       throw error;
     }
   }
