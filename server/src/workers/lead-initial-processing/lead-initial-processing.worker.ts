@@ -239,6 +239,7 @@ async function processLeadInitialProcessing(
       jobId: job.id,
       tenantId,
       leadId,
+      errorCode,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
