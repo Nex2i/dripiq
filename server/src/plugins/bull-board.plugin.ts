@@ -8,23 +8,18 @@ import { QUEUE_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 
 export default fp(async function bullBoardPlugin(app) {
-  // Create queue instances for monitoring
-  const leadAnalysisQueue = getQueue(QUEUE_NAMES.lead_analysis);
-  const campaignCreationQueue = getQueue(QUEUE_NAMES.campaign_creation);
-  const campaignExecutionQueue = getQueue(QUEUE_NAMES.campaign_execution);
-  const leadInitialProcessingQueue = getQueue(QUEUE_NAMES.lead_initial_processing);
+  // Create queue instances for monitoring - dynamically register all queues
+  const queueAdapters = Object.values(QUEUE_NAMES).map((queueName) => {
+    const queue = getQueue(queueName);
+    return new BullMQAdapter(queue);
+  });
 
   // Create the Fastify adapter for Bull-Board
   const serverAdapter = new FastifyAdapter();
 
-  // Create the Bull-Board instance with the queues
+  // Create the Bull-Board instance with all queues
   createBullBoard({
-    queues: [
-      new BullMQAdapter(leadAnalysisQueue),
-      new BullMQAdapter(campaignCreationQueue),
-      new BullMQAdapter(campaignExecutionQueue),
-      new BullMQAdapter(leadInitialProcessingQueue),
-    ],
+    queues: queueAdapters,
     serverAdapter,
   });
 

@@ -94,12 +94,7 @@ async function processLeadAnalysis(
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return {
-      success: false,
-      contactsFound: 0,
-      campaignJobsCreated: 0,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+    throw error;
   }
 }
 
@@ -111,12 +106,7 @@ const leadAnalysisWorker = getWorker<LeadAnalysisJobPayload, LeadAnalysisJobResu
         jobId: job.id,
         jobName: job.name,
       });
-      return {
-        success: false,
-        contactsFound: 0,
-        campaignJobsCreated: 0,
-        error: 'Unexpected job name',
-      };
+      throw new Error('Unexpected job name');
     }
 
     return processLeadAnalysis(job);

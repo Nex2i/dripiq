@@ -218,10 +218,7 @@ export class EmailExecutionService {
       const result = await EmailProcessor.sendCampaignEmail(emailData);
 
       if (!result.success) {
-        return {
-          success: false,
-          error: result.error,
-        };
+        throw new Error(result.error);
       }
 
       logger.info('[EmailExecutionService] Email sent successfully via EmailProcessor', {
@@ -303,10 +300,7 @@ export class EmailExecutionService {
         });
       }
 
-      return {
-        success: false,
-        error: errorMessage,
-      };
+      throw error;
     }
   }
 

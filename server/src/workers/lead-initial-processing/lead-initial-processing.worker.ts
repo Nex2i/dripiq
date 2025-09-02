@@ -213,7 +213,7 @@ async function processLeadInitialProcessing(
       await updateLeadStatuses(
         tenantId,
         leadId,
-        [LEAD_STATUS.UNPROCESSED],
+        [LEAD_STATUS.UNPROCESSED, LEAD_STATUS.INITIAL_PROCESSING_FAILED],
         [LEAD_STATUS.INITIAL_PROCESSING, LEAD_STATUS.SYNCING_SITE]
       );
     } catch (statusError) {
@@ -235,13 +235,16 @@ async function processLeadInitialProcessing(
       errorCode = 'SMART_FILTER_FAILED';
     }
 
-    return {
-      success: false,
+    logger.error('[LeadInitialProcessingWorker] Initial processing failed', {
+      jobId: job.id,
+      tenantId,
       leadId,
-      error: errorMessage,
       errorCode,
-      skippedScraping: false,
-    };
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    throw error;
   }
 }
 

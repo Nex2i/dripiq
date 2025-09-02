@@ -79,12 +79,7 @@ async function processCampaignCreation(
       });
     }
 
-    return {
-      success: false,
-      contactId,
-      leadId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+    throw error;
   }
 }
 
@@ -96,12 +91,7 @@ const campaignCreationWorker = getWorker<CampaignCreationJobPayload, CampaignCre
         jobId: job.id,
         jobName: job.name,
       });
-      return {
-        success: false,
-        contactId: job.data.contactId,
-        leadId: job.data.leadId,
-        error: 'Unexpected job name',
-      };
+      throw new Error('Unexpected job name');
     }
 
     return processCampaignCreation(job);
