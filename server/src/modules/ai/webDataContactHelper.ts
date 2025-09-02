@@ -6,6 +6,7 @@ import {
 } from '@/libs/webData/interfaces/webData.interface';
 import { logger } from '@/libs/logger';
 import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
 
 export interface FormattedWebDataContact {
   name: string;
@@ -192,14 +193,14 @@ export function convertWebDataToExtractedContact(
     company: null, // webData contacts are from the same company
     contactType: 'individual' as const,
     context: webDataContact.department
-      ? `${webDataContact.department} Department`
-      : 'WebData Employee',
-    isPriorityContact: webDataContact.priority === 'high',
+      ? `${webDataContact.department} ${CONTACT_CONTEXT.DEPARTMENT_SUFFIX}`
+      : CONTACT_CONTEXT.WEBDATA_EMPLOYEE,
+    isPriorityContact: webDataContact.priority === CONTACT_CONFIDENCE.HIGH,
     address: null,
     linkedinUrl: webDataContact.linkedinUrl || null,
     websiteUrl: null,
     sourceUrl: null,
-    confidence: 'high' as const, // webData is typically high confidence
+    confidence: CONTACT_CONFIDENCE.HIGH, // webData is typically high confidence
   };
 }
 

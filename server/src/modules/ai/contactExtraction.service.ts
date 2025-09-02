@@ -6,6 +6,19 @@ import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { createContact } from '../lead.service';
 import { contactExtractionAgent } from './langchain';
 import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
+
+/**
+ * Helper function to identify if a contact is from webData
+ */
+const isWebDataContact = (contact: ExtractedContact): boolean => {
+  return (
+    contact.context === CONTACT_CONTEXT.WEBDATA_EMPLOYEE ||
+    (!!contact.context &&
+      contact.context.includes(CONTACT_CONTEXT.DEPARTMENT_SUFFIX) &&
+      contact.confidence === CONTACT_CONFIDENCE.HIGH)
+  );
+};
 
 export const ContactExtractionService = {
   /**
@@ -31,22 +44,8 @@ export const ContactExtractionService = {
       const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
 
       // Separate webData contacts from AI-only contacts based on context
-      const webDataContacts = contacts.filter(
-        (contact) =>
-          contact.context === 'WebData Employee' ||
-          (contact.context &&
-            contact.context.includes('Department') &&
-            contact.confidence === 'high')
-      );
-      const aiOnlyContacts = contacts.filter(
-        (contact) =>
-          contact.context !== 'WebData Employee' &&
-          !(
-            contact.context &&
-            contact.context.includes('Department') &&
-            contact.confidence === 'high'
-          )
-      );
+      const webDataContacts = contacts.filter(isWebDataContact);
+      const aiOnlyContacts = contacts.filter((contact) => !isWebDataContact(contact));
 
       logger.info(
         `Contact breakdown for ${domain}: ${webDataContacts.length} webData, ${aiOnlyContacts.length} AI-only, ${contacts.length} total`
