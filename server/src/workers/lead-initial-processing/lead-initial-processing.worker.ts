@@ -18,7 +18,13 @@ import type {
 async function processLeadInitialProcessing(
   job: Job<LeadInitialProcessingJobPayload>
 ): Promise<LeadInitialProcessingJobResult> {
-  const { tenantId, leadId, leadUrl, metadata = {} } = job.data;
+  const {
+    tenantId,
+    leadId,
+    leadUrl,
+    metadata = {},
+    firecrawlJobId: existingFirecrawlJobId,
+  } = job.data;
 
   try {
     logger.info('[LeadInitialProcessingWorker] Starting initial processing', {
@@ -165,22 +171,43 @@ async function processLeadInitialProcessing(
       [LEAD_STATUS.INITIAL_PROCESSING]
     );
 
-    // Initiate batch scraping
-    try {
-      await firecrawlClient.batchScrapeUrls(smartFilteredUrls, batchMetadata);
-      logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
-        jobId: job.id,
-        leadId,
-        urlCount: smartFilteredUrls.length,
-      });
-    } catch (error) {
-      logger.error('[LeadInitialProcessingWorker] Failed to initiate batch scrape', {
-        jobId: job.id,
-        leadId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw new Error(
-        `Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`
+    // Initiate batch scraping (only if not already created)
+    let firecrawlJobId = existingFirecrawlJobId;
+    if (!existingFirecrawlJobId) {
+      try {
+        const crawlResult = await firecrawlClient.batchScrapeUrls(smartFilteredUrls, batchMetadata);
+        firecrawlJobId = crawlResult?.id;
+
+        logger.info('[LeadInitialProcessingWorker] Batch scrape initiated', {
+          jobId: job.id,
+          leadId,
+          urlCount: smartFilteredUrls.length,
+          firecrawlJobId,
+        });
+
+        // Update the job data to include the firecrawl job ID for retries
+        await job.updateData({
+          ...job.data,
+          firecrawlJobId,
+        });
+      } catch (error) {
+        logger.error('[LeadInitialProcessingWorker] Failed to initiate batch scrape', {
+          jobId: job.id,
+          leadId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        throw new Error(
+          `Failed to initiate batch scrape: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    } else {
+      logger.info(
+        '[LeadInitialProcessingWorker] Firecrawl job already exists, skipping batch scrape initiation',
+        {
+          jobId: job.id,
+          leadId,
+          existingFirecrawlJobId,
+        }
       );
     }
 
@@ -197,6 +224,7 @@ async function processLeadInitialProcessing(
       sitemapUrls: siteMap.map((url) => url.url),
       filteredUrls: smartFilteredUrls,
       batchScrapeJobId: undefined, // batchScrapeJobId is handled internally by the service
+      firecrawlJobId,
       skippedScraping: false,
     };
   } catch (error) {

@@ -3,6 +3,7 @@ export interface LeadInitialProcessingJobPayload {
   leadId: string;
   leadUrl: string;
   metadata?: Record<string, string>;
+  firecrawlJobId?: string; // Track firecrawl job ID to prevent duplicates
 }
 
 export interface LeadInitialProcessingJobResult {
@@ -11,6 +12,7 @@ export interface LeadInitialProcessingJobResult {
   sitemapUrls?: string[];
   filteredUrls?: string[];
   batchScrapeJobId?: string;
+  firecrawlJobId?: string; // Return the firecrawl job ID for tracking
   skippedScraping?: boolean;
   error?: string;
   errorCode?:
