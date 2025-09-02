@@ -184,14 +184,7 @@ export class CampaignExecutionService {
         stack: error instanceof Error ? error.stack : undefined,
       });
 
-      return {
-        success: false,
-        nodeId,
-        campaignId,
-        contactId,
-        actionType,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+      throw error;
     }
   }
 }

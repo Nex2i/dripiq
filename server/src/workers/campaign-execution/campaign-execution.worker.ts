@@ -51,10 +51,7 @@ const campaignExecutionWorker = getWorker<
         ],
         jobData: JSON.stringify(job.data),
       });
-      return {
-        success: false,
-        error: `Unexpected job name: ${job.name}`,
-      };
+      throw new Error(`Unexpected job name: ${job.name}`);
     }
   }
 );

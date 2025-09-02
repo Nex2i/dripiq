@@ -30,10 +30,9 @@ export class TimeoutExecutionService {
         }
       );
 
-      return {
-        success: false,
-        reason: `Invalid timeout job payload: missing ${!jobData.eventType ? 'eventType' : 'messageId'}`,
-      };
+      throw new Error(
+        `Invalid timeout job payload: missing ${!jobData.eventType ? 'eventType' : 'messageId'}`
+      );
     }
 
     const { campaignId, nodeId, messageId, eventType, tenantId } = jobData;
@@ -146,10 +145,7 @@ export class TimeoutExecutionService {
         stack: error instanceof Error ? error.stack : undefined,
       });
 
-      return {
-        success: false,
-        reason: error instanceof Error ? error.message : 'Unknown error',
-      };
+      throw error;
     }
   }
 }

@@ -252,24 +252,8 @@ async function processLeadInitialProcessing(
       });
     }
 
-    // Determine error code
-    let errorCode: LeadInitialProcessingJobResult['errorCode'] = 'UNKNOWN';
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    if (errorMessage.includes('sitemap')) {
-      errorCode = 'SITEMAP_FETCH_FAILED';
-    } else if (errorMessage.includes('batch scrape')) {
-      errorCode = 'BATCH_SCRAPE_FAILED';
-    } else if (errorMessage.includes('filter')) {
-      errorCode = 'SMART_FILTER_FAILED';
-    }
-
-    return {
-      success: false,
-      leadId,
-      error: errorMessage,
-      errorCode,
-      skippedScraping: false,
-    };
+    // Re-throw the error so BullMQ can handle retries properly
+    throw error;
   }
 }
 
