@@ -210,67 +210,74 @@ export function convertWebDataToExtractedContact(
 export function mergeContactSources(
   webDataSummary: WebDataContactSummary,
   aiContacts: ExtractedContact[]
-): ExtractedContact[] {
-  logger.info('Starting contact merge process', {
+): {
+  webDataContacts: ExtractedContact[];
+  enrichedContacts: ExtractedContact[];
+  aiOnlyContacts: ExtractedContact[];
+} {
+  logger.info('Starting webData-first contact merge process', {
     webDataCount: webDataSummary.contacts.length,
     aiContactCount: aiContacts.length,
   });
 
-  // Convert webData contacts to ExtractedContact format
+  // Convert webData contacts to ExtractedContact format - these are always preserved
   const webDataAsExtracted = webDataSummary.contacts.map(convertWebDataToExtractedContact);
 
-  // Create a map of AI contacts by normalized name for efficient lookup
-  const aiContactsByName = new Map<string, ExtractedContact>();
-  aiContacts.forEach((contact) => {
-    const normalizedName = contact.name.toLowerCase().trim();
-    aiContactsByName.set(normalizedName, contact);
-  });
-
-  // Start with AI contacts as the base (they have priority)
-  const mergedContacts: ExtractedContact[] = [...aiContacts];
+  // Track processed names to avoid duplicates
   const processedNames = new Set<string>();
+  const enrichedContacts: ExtractedContact[] = [];
+  const aiOnlyContacts: ExtractedContact[] = [];
 
-  // Track which AI contact names we've seen
-  aiContacts.forEach((contact) => {
-    processedNames.add(contact.name.toLowerCase().trim());
-  });
-
-  // Process webData contacts
+  // First, process all webData contacts and enrich them with AI data
   for (const webDataContact of webDataAsExtracted) {
     const normalizedName = webDataContact.name.toLowerCase().trim();
+    processedNames.add(normalizedName);
 
-    // Check if we have an AI contact with similar name
+    // Find matching AI contact for enrichment
     const matchingAiContact = findMatchingContactByName(webDataContact, aiContacts);
 
     if (matchingAiContact) {
-      // Merge the contacts, preferring AI data but filling gaps with webData
-      const mergedContact = mergeContactDetails(webDataContact, matchingAiContact);
-
-      // Replace the AI contact in our merged list
-      const aiIndex = mergedContacts.findIndex(
-        (c) => c.name.toLowerCase().trim() === matchingAiContact.name.toLowerCase().trim()
-      );
-      if (aiIndex >= 0) {
-        mergedContacts[aiIndex] = mergedContact;
-        logger.debug(`Merged webData contact with AI contact: ${mergedContact.name}`);
-      }
+      // Enrich webData contact with AI data
+      const enrichedContact = mergeContactDetails(webDataContact, matchingAiContact);
+      enrichedContacts.push(enrichedContact);
+      logger.debug(`Enriched webData contact with AI data: ${enrichedContact.name}`);
     } else {
-      // No matching AI contact, add the webData contact if name not already processed
-      if (!processedNames.has(normalizedName)) {
-        mergedContacts.push(webDataContact);
+      // No AI enrichment available, keep webData contact as-is
+      enrichedContacts.push(webDataContact);
+      logger.debug(`Preserved webData-only contact: ${webDataContact.name}`);
+    }
+  }
+
+  // Then, add AI-only contacts that don't match any webData contacts
+  for (const aiContact of aiContacts) {
+    const normalizedName = aiContact.name.toLowerCase().trim();
+
+    if (!processedNames.has(normalizedName)) {
+      // Check if this AI contact is similar to any webData contact we haven't matched yet
+      const matchingWebDataContact = findMatchingContactByName(aiContact, webDataAsExtracted);
+
+      if (!matchingWebDataContact) {
+        // This is a truly new AI contact
+        aiOnlyContacts.push(aiContact);
         processedNames.add(normalizedName);
-        logger.debug(`Added webData-only contact: ${webDataContact.name}`);
+        logger.debug(`Added AI-only contact: ${aiContact.name}`);
       }
     }
   }
 
-  logger.info('Contact merge completed', {
+  logger.info('WebData-first contact merge completed', {
     originalWebData: webDataSummary.contacts.length,
     originalAI: aiContacts.length,
-    mergedTotal: mergedContacts.length,
+    webDataPreserved: webDataAsExtracted.length,
+    enrichedContacts: enrichedContacts.length,
+    aiOnlyContacts: aiOnlyContacts.length,
   });
 
-  return mergedContacts;
+  return {
+    webDataContacts: webDataAsExtracted,
+    enrichedContacts,
+    aiOnlyContacts,
+  };
 }
 
 /**

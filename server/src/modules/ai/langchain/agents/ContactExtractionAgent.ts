@@ -86,46 +86,52 @@ export class ContactExtractionAgent {
 
       const aiParsedResult = parseWithSchema(finalResponse, domain);
 
-      // Merge AI contacts with webData contacts
-      const mergedContacts = mergeContactSources(webDataSummary, aiParsedResult.contacts);
+      // Merge AI contacts with webData contacts - webData first approach
+      const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
+
+      // Combine contacts: enriched webData contacts first, then AI-only contacts
+      const finalContacts = [...mergeResult.enrichedContacts, ...mergeResult.aiOnlyContacts];
 
       // Update priority contact index after merging
       let updatedPriorityContactId = aiParsedResult.priorityContactId;
       if (updatedPriorityContactId !== null && aiParsedResult.contacts.length > 0) {
         const originalPriorityContact = aiParsedResult.contacts[updatedPriorityContactId];
         if (originalPriorityContact) {
-          // Find the priority contact in the merged list
-          const mergedIndex = mergedContacts.findIndex(
+          // Find the priority contact in the final list
+          const finalIndex = finalContacts.findIndex(
             (contact) =>
               contact.name.toLowerCase().trim() ===
               originalPriorityContact.name.toLowerCase().trim()
           );
-          updatedPriorityContactId = mergedIndex >= 0 ? mergedIndex : null;
+          updatedPriorityContactId = finalIndex >= 0 ? finalIndex : null;
         }
       }
 
       // If no priority contact found from AI, try to find one from high-priority webData contacts
       if (updatedPriorityContactId === null) {
-        const highPriorityIndex = mergedContacts.findIndex((contact) => contact.isPriorityContact);
-        if (highPriorityIndex >= 0 && mergedContacts[highPriorityIndex]) {
+        const highPriorityIndex = finalContacts.findIndex((contact) => contact.isPriorityContact);
+        if (highPriorityIndex >= 0 && finalContacts[highPriorityIndex]) {
           updatedPriorityContactId = highPriorityIndex;
           logger.info(
-            `Set priority contact from webData: ${mergedContacts[highPriorityIndex].name}`
+            `Set priority contact from webData: ${finalContacts[highPriorityIndex].name}`
           );
         }
       }
 
       const finalParsedResult: ContactExtractionOutput = {
-        contacts: mergedContacts,
+        contacts: finalContacts,
         priorityContactId: updatedPriorityContactId,
-        summary: `${aiParsedResult.summary} Merged ${webDataSummary.contacts.length} webData contacts with ${aiParsedResult.contacts.length} AI-extracted contacts.`,
+        summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
       };
 
       logger.info('Contact extraction and merge completed', {
         domain,
         originalAI: aiParsedResult.contacts.length,
         originalWebData: webDataSummary.contacts.length,
-        mergedTotal: mergedContacts.length,
+        webDataPreserved: mergeResult.webDataContacts.length,
+        enrichedContacts: mergeResult.enrichedContacts.length,
+        aiOnlyContacts: mergeResult.aiOnlyContacts.length,
+        finalTotal: finalContacts.length,
         priorityContactIndex: updatedPriorityContactId,
       });
 

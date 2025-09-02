@@ -27,33 +27,60 @@ export const ContactExtractionService = {
         };
       }
 
-      // Soft-cap to 5 for processing order, but keep original for dedup/priority alignment
       const contacts = extractionResult.finalResponseParsed.contacts;
       const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
 
-      // Deduplicate contacts before processing
-      const { deduplicatedContacts, updatedPriorityIndex } =
-        ContactExtractionService.deduplicateContacts(contacts, priorityContactIndex);
-
-      logger.info(
-        `Found ${contacts.length} contacts, deduplicated to ${deduplicatedContacts.length} for domain: ${domain}`
+      // Separate webData contacts from AI-only contacts based on context
+      const webDataContacts = contacts.filter(
+        (contact) =>
+          contact.context === 'WebData Employee' ||
+          (contact.context &&
+            contact.context.includes('Department') &&
+            contact.confidence === 'high')
+      );
+      const aiOnlyContacts = contacts.filter(
+        (contact) =>
+          contact.context !== 'WebData Employee' &&
+          !(
+            contact.context &&
+            contact.context.includes('Department') &&
+            contact.confidence === 'high'
+          )
       );
 
-      // Enforce soft cap of 5 for processing order, preserving model-provided order
-      const toProcess = deduplicatedContacts.slice(0, 5);
+      logger.info(
+        `Contact breakdown for ${domain}: ${webDataContacts.length} webData, ${aiOnlyContacts.length} AI-only, ${contacts.length} total`
+      );
 
       // Get existing contacts for the lead
       const existingContacts = await ContactExtractionService.getExistingContacts(leadId);
-
-      // Enforce hard cap of 6 total contacts for a lead by trimming creations
       const remainingSlots = Math.max(0, 6 - existingContacts.length);
-      const cappedToProcess = remainingSlots > 0 ? toProcess.slice(0, remainingSlots) : [];
 
-      // Compute priority index within the truncated list
+      // Always process webData contacts first (no limits for webData)
+      const webDataToProcess = webDataContacts;
+
+      // Apply limits only to AI-only contacts
+      const remainingSlotsForAI = Math.max(0, remainingSlots - webDataToProcess.length);
+      const aiOnlyToProcess = aiOnlyContacts.slice(0, Math.min(5, remainingSlotsForAI)); // Soft cap of 5 for AI-only
+
+      // Combine for final processing: webData first, then AI-only
+      const allToProcess = [...webDataToProcess, ...aiOnlyToProcess];
+
+      // Deduplicate the final list
+      const { deduplicatedContacts, updatedPriorityIndex } =
+        ContactExtractionService.deduplicateContacts(allToProcess, priorityContactIndex);
+
+      logger.info(
+        `Processing contacts for ${domain}: ${webDataToProcess.length} webData (always processed), ${aiOnlyToProcess.length} AI-only (after limits), ${deduplicatedContacts.length} after deduplication`
+      );
+
+      const cappedToProcess = deduplicatedContacts;
+
+      // Compute priority index within the final list
       const newPriorityIndex =
         updatedPriorityIndex !== null &&
         updatedPriorityIndex !== undefined &&
-        updatedPriorityIndex < toProcess.length
+        updatedPriorityIndex < cappedToProcess.length
           ? updatedPriorityIndex
           : null;
 
@@ -261,12 +288,23 @@ export const ContactExtractionService = {
             continue;
           }
         } else {
-          // If we reached hard cap, skip creating new contact
-          if (totalExisting >= 6) {
+          // Check if this is a webData contact (should always be saved)
+          const isWebDataContact =
+            extractedContact.context === 'WebData Employee' ||
+            (extractedContact.context &&
+              extractedContact.context.includes('Department') &&
+              extractedContact.confidence === 'high');
+
+          // If we reached hard cap and this is NOT a webData contact, skip
+          if (totalExisting >= 6 && !isWebDataContact) {
             logger.info(
-              `Skipping creation of new contact due to hard cap (6) reached for leadId: ${leadId}`
+              `Skipping creation of AI-only contact due to hard cap (6) reached for leadId: ${leadId}: ${extractedContact.name}`
             );
             continue;
+          } else if (isWebDataContact) {
+            logger.info(
+              `Creating webData contact (bypassing hard cap if needed) for leadId: ${leadId}: ${extractedContact.name}`
+            );
           }
 
           const createdContact = await createContact(tenantId, leadId, leadContact);
