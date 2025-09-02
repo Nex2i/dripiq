@@ -318,8 +318,7 @@ export class CampaignPlanExecutionService {
    * Processes an event-driven transition in the campaign plan
    */
   async processTransition(params: ProcessTransitionParams): Promise<TransitionResult> {
-    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan } =
-      params;
+    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan } = params;
 
     logger.info('Processing campaign transition', {
       tenantId,
@@ -1039,9 +1038,20 @@ export class CampaignPlanExecutionService {
    * Processes timeout-triggered transitions directly without creating synthetic events
    * This bypasses timing constraints since timeouts already handle timing
    */
-  async processTimeoutTransition(params: ProcessTimeoutTransitionParams): Promise<TimeoutTransitionResult> {
-    const { tenantId, campaignId, contactId, leadId, timeoutEventType, currentNodeId, plan, originalJobId, scheduledAt } =
-      params;
+  async processTimeoutTransition(
+    params: ProcessTimeoutTransitionParams
+  ): Promise<TimeoutTransitionResult> {
+    const {
+      tenantId,
+      campaignId,
+      contactId,
+      leadId,
+      timeoutEventType,
+      currentNodeId,
+      plan,
+      originalJobId,
+      scheduledAt,
+    } = params;
 
     logger.info('Processing timeout transition directly', {
       tenantId,
@@ -1061,7 +1071,8 @@ export class CampaignPlanExecutionService {
       }
 
       // Find matching transitions by timeout event type
-      const candidateTransitions = currentNode.transitions?.filter((t) => t.on === timeoutEventType) || [];
+      const candidateTransitions =
+        currentNode.transitions?.filter((t) => t.on === timeoutEventType) || [];
 
       if (candidateTransitions.length === 0) {
         logger.info('No timeout transitions found for event type', {
@@ -1079,6 +1090,10 @@ export class CampaignPlanExecutionService {
       // For timeout transitions, use the first matching transition
       // Skip timing validation since timeouts already handled the timing
       const transition = candidateTransitions[0];
+
+      if (!transition) {
+        throw new Error(`No matching timeout transition found for event type: ${timeoutEventType}`);
+      }
 
       logger.info('Found matching timeout transition', {
         from: currentNodeId,
@@ -1125,16 +1140,19 @@ export class CampaignPlanExecutionService {
           plan
         );
 
-        logger.info('[CampaignPlanExecutionService] Next action scheduling completed from timeout', {
-          tenantId,
-          campaignId,
-          toNodeId: transition.to,
-          scheduled: nextActionResult.scheduled,
-          actionType: nextActionResult.actionType,
-          reason: nextActionResult.reason,
-          scheduledAt: nextActionResult.scheduledAt?.toISOString(),
-          scheduledActionId: nextActionResult.scheduledActionId,
-        });
+        logger.info(
+          '[CampaignPlanExecutionService] Next action scheduling completed from timeout',
+          {
+            tenantId,
+            campaignId,
+            toNodeId: transition.to,
+            scheduled: nextActionResult.scheduled,
+            actionType: nextActionResult.actionType,
+            reason: nextActionResult.reason,
+            scheduledAt: nextActionResult.scheduledAt?.toISOString(),
+            scheduledActionId: nextActionResult.scheduledActionId,
+          }
+        );
       } catch (nextActionError) {
         logger.error('[CampaignPlanExecutionService] Failed to schedule next action from timeout', {
           tenantId,

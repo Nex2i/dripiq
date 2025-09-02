@@ -1022,7 +1022,6 @@ describe('SendGridWebhookService', () => {
         eventType: 'delivered',
         currentNodeId: 'node-123',
         plan: { nodes: [], startNodeId: 'node-123' },
-
       });
     });
 
@@ -1217,7 +1216,6 @@ describe('SendGridWebhookService', () => {
         eventType: 'opened', // Should be normalized from 'open' to 'opened' using constants
         currentNodeId: 'node-123',
         plan: { nodes: [], startNodeId: 'node-123' },
-
       });
     });
 

@@ -86,7 +86,7 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
 
     mockContactCampaignRepository.findByIdForTenant.mockResolvedValue(mockCampaign as any);
     mockMessageEventRepository.findByMessageAndType.mockResolvedValue(null);
-    
+
     // Mock successful timeout transition
     mockCampaignPlanExecutionService.processTimeoutTransition.mockResolvedValue({
       success: true,
@@ -141,7 +141,7 @@ describe('TimeoutExecutionService - Direct Transitions', () => {
 
     mockContactCampaignRepository.findByIdForTenant.mockResolvedValue(mockCampaign as any);
     mockMessageEventRepository.findByMessageAndType.mockResolvedValue(null);
-    
+
     // Mock failed timeout transition
     mockCampaignPlanExecutionService.processTimeoutTransition.mockResolvedValue({
       success: false,
