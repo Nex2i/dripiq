@@ -80,7 +80,7 @@ export class TimeoutExecutionService {
           nodeId,
           messageId
         );
-        
+
         if (calendarClickResult) {
           return calendarClickResult;
         }
