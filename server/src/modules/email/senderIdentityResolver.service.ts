@@ -67,7 +67,7 @@ export class SenderIdentityResolverService {
       const fallbackDomain = await this.generateFallbackDomain(tenantId);
 
       return {
-        fromEmail: `${NOREPLY_PREFIX}${fallbackDomain}${DRIPIQ_DOMAIN_SUFFIX}`,
+        fromEmail: `${NOREPLY_PREFIX}${fallbackDomain.getDomain()}${DRIPIQ_DOMAIN_SUFFIX}`,
         fromName: userName,
         replyTo: userEmail,
       };
