@@ -87,28 +87,6 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
 
     return await query;
   }
-
-  /**
-   * Get the latest calendar click for a contact
-   */
-  async findLatestByContact(
-    tenantId: string,
-    contactId: string,
-    leadId: string,
-    campaignId?: string
-  ): Promise<CalendarLinkClick | undefined> {
-    const clicks = await this.findByContactInTimeWindow(
-      tenantId,
-      contactId,
-      leadId,
-      new Date(0), // From beginning of time
-      new Date(), // To now
-      campaignId,
-      1 // Limit to 1 result
-    );
-
-    return clicks.length > 0 ? clicks[0] : undefined;
-  }
 }
 
 export const calendarLinkClickRepository = new CalendarLinkClickRepository();
