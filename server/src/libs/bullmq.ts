@@ -78,7 +78,7 @@ export const getQueueEvents = (name: string, queueEventsOptions?: QueueEventsOpt
 };
 
 const defaultWorkerOptions: Partial<WorkerOptions> = {
-  concurrency: 5,
+  concurrency: 50,
   lockDuration: 1000 * 60 * 5, // 5 minutes default
   lockRenewTime: 1000 * 60 * 2.5, // 2.5 minutes default
   maxStalledCount: 2, // Allow 2 stalls before failure
