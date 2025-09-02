@@ -324,6 +324,49 @@ function mergeContactDetails(
     return webDataValue;
   };
 
+  // Special email merging logic to preserve high-quality webData emails
+  const mergeEmail = (aiEmail: string | null, webDataEmail: string | null) => {
+    // If webData has an email, prefer it unless AI email is clearly more specific
+    if (webDataEmail && webDataEmail.trim() !== '') {
+      // If AI doesn't have an email, keep webData email
+      if (!aiEmail || aiEmail.trim() === '') {
+        return webDataEmail;
+      }
+
+      // Check if AI email is generic (should not override webData)
+      const genericEmailPatterns = [
+        /^info@/i,
+        /^contact@/i,
+        /^hello@/i,
+        /^sales@/i,
+        /^office@/i,
+        /^support@/i,
+        /^admin@/i,
+        /^marketing@/i,
+        /^hr@/i,
+        /^careers@/i,
+      ];
+
+      const aiEmailLower = aiEmail.toLowerCase().trim();
+      const isGenericAiEmail = genericEmailPatterns.some((pattern) => pattern.test(aiEmailLower));
+
+      // If AI email is generic, keep webData email
+      if (isGenericAiEmail) {
+        logger.debug(
+          `Preserving webData email over generic AI email: ${webDataEmail} vs ${aiEmail}`
+        );
+        return webDataEmail;
+      }
+
+      // If AI email appears more specific (contains person's name or similar), use it
+      // Otherwise, keep the webData email as it's likely more accurate
+      return webDataEmail;
+    }
+
+    // If webData doesn't have an email, use AI email (even if generic)
+    return aiEmail;
+  };
+
   // For completeness check: if one source has "complete" info, prefer it
   const aiCompleteness = calculateContactCompleteness(aiContact);
   const webDataCompleteness = calculateContactCompleteness(webDataContact);
@@ -334,13 +377,15 @@ function mergeContactDetails(
     return { ...webDataContact, isPriorityContact: aiContact.isPriorityContact }; // Keep AI priority flag
   } else if (aiCompleteness - webDataCompleteness >= 2) {
     logger.debug(`Using AI contact entirely due to completeness: ${aiContact.name}`);
-    return aiContact;
+    // Even when using AI contact for completeness, preserve webData email if it exists and AI email is generic/missing
+    const finalEmail = mergeEmail(aiContact.email, webDataContact.email);
+    return { ...aiContact, email: finalEmail };
   }
 
-  // Otherwise merge field by field, preferring AI
+  // Otherwise merge field by field, preferring AI (except for emails which have special logic)
   return {
     name: mergeField(aiContact.name, webDataContact.name),
-    email: mergeField(aiContact.email, webDataContact.email),
+    email: mergeEmail(aiContact.email, webDataContact.email),
     phone: mergeField(aiContact.phone, webDataContact.phone),
     title: mergeField(aiContact.title, webDataContact.title),
     company: mergeField(aiContact.company, webDataContact.company),
