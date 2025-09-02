@@ -8,10 +8,10 @@ export const CAMPAIGN_CONSTANTS = {
   MINIMUM_DELAY: 'PT10S', // Minimum 10 seconds delay to prevent immediate execution
   DAILY_EMAIL_DELAY: 'PT24H', // 24 hours between emails
 
-  // Event types (only no_open used in MVP)
+  // Event types (only no_click used in MVP)
   EVENTS: {
-    OPENED: 'opened',
-    NO_OPEN: 'no_open',
+    CLICKED: 'clicked',
+    NO_CLICK: 'no_click',
   } as const,
 
   // Common node IDs
@@ -21,20 +21,20 @@ export const CAMPAIGN_CONSTANTS = {
 
   // Default timers
   DEFAULT_TIMERS: {
-    NO_OPEN_AFTER: 'PT24H', // 24 hours for no_open events
+    NO_CLICK_AFTER: 'PT24H', // 24 hours for no_click events
   } as const,
 } as const;
 
 /**
- * Simplified static campaign template - Daily email sequence with no_open only.
+ * Simplified static campaign template - Daily email sequence with no_click only.
  *
- * Each email sends the next email after 24 hours if not opened.
+ * Each email sends the next email after 24 hours if not clicked.
  * Opens are tracked but don't affect the campaign flow (MVP approach).
  *
  * Features:
- * - 10 emails total, sent daily if no engagement
+ * - 10 emails total, sent daily if no click engagement
  * - Simple linear progression: Email 1 → Email 2 → ... → Email 10 → Stop
- * - No click tracking or complex branching
+ * - No open tracking or complex branching
  * - Consistent 24-hour delays
  */
 export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
@@ -52,7 +52,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
   },
   defaults: {
     timers: {
-      no_open_after: CAMPAIGN_CONSTANTS.DEFAULT_TIMERS.NO_OPEN_AFTER,
+      no_click_after: CAMPAIGN_CONSTANTS.DEFAULT_TIMERS.NO_CLICK_AFTER,
     },
   },
   startNodeId: 'email_1',
@@ -66,7 +66,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_2',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -82,7 +82,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_3',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -98,7 +98,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_4',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -114,7 +114,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_5',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -130,7 +130,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_6',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -146,7 +146,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_7',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -162,7 +162,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_8',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -178,7 +178,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_9',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -194,7 +194,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: 'email_10',
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -210,7 +210,7 @@ export const STATIC_CAMPAIGN_TEMPLATE: Omit<CampaignPlanOutput, 'nodes'> & {
       schedule: { delay: CAMPAIGN_CONSTANTS.MINIMUM_DELAY },
       transitions: [
         {
-          on: CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN,
+          on: CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK,
           to: CAMPAIGN_CONSTANTS.NODES.STOP,
           after: CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY,
         },
@@ -275,22 +275,22 @@ export function validateCampaignTemplate(): {
     }
   }
 
-  // Validate no_open transitions
+  // Validate no_click transitions
   for (const emailNode of emailNodes) {
     if (emailNode.id === 'email_10') continue; // Last email can go to stop
 
-    const noOpenTransition = emailNode.transitions?.find(
-      (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN
+    const noClickTransition = emailNode.transitions?.find(
+      (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK
     );
 
-    if (!noOpenTransition) {
-      errors.push(`${emailNode.id} missing no_open transition`);
+    if (!noClickTransition) {
+      errors.push(`${emailNode.id} missing no_click transition`);
     } else if (
-      'after' in noOpenTransition &&
-      noOpenTransition.after !== CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY
+      'after' in noClickTransition &&
+      noClickTransition.after !== CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY
     ) {
       errors.push(
-        `${emailNode.id} has incorrect delay: ${noOpenTransition.after} (expected ${CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY})`
+        `${emailNode.id} has incorrect delay: ${noClickTransition.after} (expected ${CAMPAIGN_CONSTANTS.DAILY_EMAIL_DELAY})`
       );
     }
   }
@@ -333,12 +333,12 @@ export function analyzeEmailSequence(): {
       sequence.push(currentNode);
     }
 
-    const noOpenTransition = node.transitions?.find(
-      (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_OPEN
+    const noClickTransition = node.transitions?.find(
+      (t) => t.on === CAMPAIGN_CONSTANTS.EVENTS.NO_CLICK
     );
 
-    if (noOpenTransition) {
-      currentNode = noOpenTransition.to;
+    if (noClickTransition) {
+      currentNode = noClickTransition.to;
     } else {
       break;
     }
