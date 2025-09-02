@@ -1,4 +1,5 @@
 import type { CampaignPlanOutput } from '../modules/ai/schemas/contactCampaignStrategySchema';
+import type { NextActionResult } from './campaign-transition.types';
 
 export interface ProcessTimeoutTransitionParams {
   tenantId: string;
@@ -22,13 +23,4 @@ export interface TimeoutTransitionResult {
   reason?: string;
   availableTransitions?: number;
   skipped?: boolean;
-}
-
-export interface NextActionResult {
-  scheduled: boolean;
-  actionType?: 'send' | 'wait' | 'stop';
-  scheduledAt?: Date;
-  scheduledActionId?: string;
-  nodeId?: string;
-  reason?: string;
 }

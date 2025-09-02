@@ -250,7 +250,6 @@ export class TimeoutExecutionService {
           eventType: CAMPAIGN_EVENT_TYPES.CLICKED,
           currentNodeId: nodeId,
           plan: campaignPlan,
-          eventRef: calendarClickResult.latestClick!.id, // Use actual calendar click ID
         });
 
         logger.info('[CampaignExecutionWorker] Campaign click transition processed successfully', {

@@ -989,7 +989,7 @@ export class SendGridWebhookService {
       eventType: normalizedEventType,
       currentNodeId: campaign.currentNodeId,
       plan: campaign.planJson as CampaignPlanOutput,
-      eventRef: messageEvent.id,
+
     });
 
     logger.info('Campaign transition processed successfully', {

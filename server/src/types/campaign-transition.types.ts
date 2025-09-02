@@ -8,7 +8,6 @@ export interface ProcessTransitionParams {
   eventType: string;
   currentNodeId: string;
   plan: CampaignPlanOutput;
-  eventRef?: string;
 }
 
 export interface TransitionResult {

@@ -318,7 +318,7 @@ export class CampaignPlanExecutionService {
    * Processes an event-driven transition in the campaign plan
    */
   async processTransition(params: ProcessTransitionParams): Promise<TransitionResult> {
-    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan, eventRef } =
+    const { tenantId, campaignId, contactId, leadId, eventType, currentNodeId, plan } =
       params;
 
     logger.info('Processing campaign transition', {
@@ -360,8 +360,7 @@ export class CampaignPlanExecutionService {
         tenantId,
         campaignId,
         currentNodeId,
-        new Date(),
-        eventRef
+        new Date()
       );
 
       if (isValid) {
@@ -797,8 +796,7 @@ export class CampaignPlanExecutionService {
     tenantId: string,
     campaignId: string,
     currentNodeId: string,
-    eventTime: Date = new Date(),
-    _eventRef?: string
+    eventTime: Date = new Date()
   ): Promise<boolean> {
     try {
       // Get when the current node was entered

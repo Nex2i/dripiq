@@ -1,64 +1,23 @@
-# Migration Plan: Direct Timeout Transitions
+# Migration Plan: Direct Timeout Transitions (MVP)
 
 ## Overview
 This migration removes synthetic event creation from timeout processing and implements direct timeout transitions, eliminating timing validation conflicts and improving system performance.
 
-## Migration Strategy
+## MVP Migration Strategy (Immediate Deployment)
 
-### Phase 1: Deploy New Code (Zero Downtime)
-- ✅ New `processTimeoutTransition` method added
+### ✅ Completed Changes
+- ✅ New `processTimeoutTransition` method implemented
 - ✅ `TimeoutExecutionService` updated to use direct transitions
-- ✅ Old `processTransition` method remains for backward compatibility
+- ✅ Removed synthetic event creation from timeout processing
+- ✅ Cleaned up `eventRef` parameter from transition methods
+- ✅ Updated all callers to not pass `eventRef`
 - ✅ Tests updated to verify new behavior
 
-### Phase 2: Monitoring Period (1-2 weeks)
-1. **Monitor timeout job processing**
-   - Verify direct transitions work correctly
-   - Check that follow-up emails are scheduled properly
-   - Monitor for any errors in timeout processing
-
-2. **Key metrics to watch:**
-   - Timeout job success rates
-   - Follow-up email scheduling rates
-   - Campaign progression rates
-   - Error rates in campaign execution
-
-### Phase 3: Data Analysis
-1. **Compare synthetic events before/after:**
-   ```sql
-   -- Count synthetic events created before migration
-   SELECT COUNT(*) FROM message_events 
-   WHERE data->>'synthetic' = 'true' 
-   AND created_at < 'MIGRATION_DATE';
-   
-   -- Verify no new synthetic events after migration
-   SELECT COUNT(*) FROM message_events 
-   WHERE data->>'synthetic' = 'true' 
-   AND created_at > 'MIGRATION_DATE';
-   ```
-
-2. **Verify transition records:**
-   ```sql
-   -- Check transition records show timeout origins
-   SELECT reason, COUNT(*) 
-   FROM campaign_transitions 
-   WHERE reason LIKE 'Timeout:%' 
-   AND occurred_at > 'MIGRATION_DATE'
-   GROUP BY reason;
-   ```
-
-### Phase 4: Cleanup (After 2-4 weeks)
-1. **Remove old synthetic event code** (if monitoring shows success)
-2. **Update existing tests** that expect synthetic events
-3. **Clean up unused imports and dependencies**
-
-## Rollback Plan
-
-If issues are discovered:
-
-1. **Immediate rollback:** Revert `TimeoutExecutionService` to create synthetic events
-2. **Keep new method:** Leave `processTimeoutTransition` for future use
-3. **Investigate issues:** Analyze what went wrong before re-attempting
+### Immediate Benefits
+- **No more timing validation conflicts** - Timeouts bypass timing constraints
+- **Cleaner data model** - No synthetic events in message_events table  
+- **Better performance** - Fewer database writes per timeout
+- **Simpler codebase** - Removed synthetic event complexity
 
 ## Benefits After Migration
 
