@@ -4,6 +4,7 @@ import { formatPhoneForStorage } from '@/libs/phoneFormatter';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import { unsubscribeService } from '@/modules/unsubscribe';
+import { CampaignCreationPublisher } from './messages';
 
 /**
  * Gets a contact by ID, ensuring it belongs to the specified tenant and lead.
@@ -80,6 +81,18 @@ export const updateContact = async (
 
     if (!updatedContact) {
       throw new Error('Failed to update contact');
+    }
+
+    const wasEmailAdded = !existingContact.email && contactData.email;
+
+    if (wasEmailAdded) {
+      // Trigger campaign creation for this contact
+      await CampaignCreationPublisher.publish({
+        tenantId,
+        leadId,
+        contactId,
+        metadata: { automatedCreation: true, reason: 'email_added' },
+      });
     }
 
     logger.info(`Updated contact ${contactId} for lead ${leadId}`);

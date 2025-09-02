@@ -4,6 +4,7 @@ import { QUEUE_NAMES, JOB_NAMES } from '@/constants/queues';
 import { logger } from '@/libs/logger';
 import { generateContactStrategy } from '@/modules/ai/contactStrategy.service';
 import type { CampaignCreationJobPayload } from '@/modules/messages/campaignCreation.publisher.service';
+import { leadPointOfContactRepository } from '@/repositories';
 
 export type CampaignCreationJobResult = {
   success: boolean;
@@ -27,6 +28,23 @@ async function processCampaignCreation(
       contactId,
       automated: metadata?.automatedCreation,
     });
+
+    const contact = await leadPointOfContactRepository.findById(contactId);
+
+    if (contact && contact.strategyStatus === 'generating') {
+      logger.info('[CampaignCreationWorker] Contact strategy already generating, skipping', {
+        jobId: job.id,
+        tenantId,
+        leadId,
+        contactId,
+      });
+      return {
+        success: true,
+        contactId,
+        leadId,
+        error: 'Contact strategy already generating',
+      };
+    }
 
     // Generate contact strategy and create campaign
     const strategyResult = await generateContactStrategy({

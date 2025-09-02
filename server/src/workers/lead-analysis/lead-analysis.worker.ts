@@ -42,8 +42,9 @@ async function processLeadAnalysis(
     });
 
     // Create campaign creation jobs for each contact found
-    const campaignJobs: CampaignCreationJobPayload[] = analysisResult.contactsFound.map(
-      (contact) => ({
+    const campaignJobs: CampaignCreationJobPayload[] = analysisResult.contactsFound
+      .filter((contact) => !contact.email?.isNullOrEmpty())
+      .map((contact) => ({
         tenantId,
         leadId,
         contactId: contact.id,
@@ -53,8 +54,7 @@ async function processLeadAnalysis(
           automatedCreation: true,
           parentJobId: job.id,
         },
-      })
-    );
+      }));
 
     let campaignJobsCreated = 0;
     if (campaignJobs.length > 0) {
