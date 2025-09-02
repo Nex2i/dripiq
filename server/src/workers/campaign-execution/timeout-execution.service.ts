@@ -12,6 +12,7 @@ export interface TimeoutJobResult {
   skipped?: boolean;
   reason?: string;
   syntheticEventId?: string;
+  calendarClickId?: string;
 }
 
 export class TimeoutExecutionService {
@@ -246,34 +247,7 @@ export class TimeoutExecutionService {
         }
       );
 
-      // Create a synthetic click event instead of no_click
-      const syntheticClickEvent = await messageEventRepository.createForTenant(tenantId, {
-        messageId,
-        type: 'click',
-        eventAt: new Date(),
-        data: {
-          synthetic: true,
-          triggeredBy: 'calendar_click_validation',
-          originalJobId: job.id?.toString(),
-          calendarClickId: calendarClickResult.latestClick?.id,
-          calendarClickCount: calendarClickResult.clickCount,
-          scheduledAt: job.opts?.delay ? new Date(Date.now() - (job.opts.delay as number)) : new Date(),
-          actualFiredAt: new Date(),
-        },
-      });
-
-      logger.info(
-        '[CampaignExecutionWorker] Created synthetic click event from calendar validation',
-        {
-          eventId: syntheticClickEvent.id,
-          eventType: 'click',
-          messageId,
-          calendarClickId: calendarClickResult.latestClick?.id,
-          jobId: job.id,
-        }
-      );
-
-      // Trigger campaign transition with click event instead of no_click
+      // Trigger campaign transition using the actual calendar click
       if (campaign.planJson) {
         const campaignPlan = campaign.planJson as CampaignPlanOutput;
 
@@ -282,10 +256,10 @@ export class TimeoutExecutionService {
           campaignId,
           contactId: campaign.contactId,
           leadId: campaign.leadId,
-          eventType: 'click', // Use click instead of no_click
+          eventType: 'click',
           currentNodeId: nodeId,
           plan: campaignPlan,
-          eventRef: syntheticClickEvent.id,
+          eventRef: calendarClickResult.latestClick!.id, // Use actual calendar click ID
         });
 
         logger.info('[CampaignExecutionWorker] Campaign click transition processed successfully', {
@@ -293,13 +267,14 @@ export class TimeoutExecutionService {
           campaignId,
           eventType: 'click',
           currentNodeId: nodeId,
+          calendarClickId: calendarClickResult.latestClick!.id,
         });
       }
 
       return {
         success: true,
-        syntheticEventId: syntheticClickEvent.id,
         reason: 'calendar_click_found',
+        calendarClickId: calendarClickResult.latestClick!.id,
       };
     } catch (error) {
       logger.error('[CampaignExecutionWorker] Error in calendar click validation', {
