@@ -618,7 +618,7 @@ export class CampaignPlanExecutionService {
   /**
    * Gets the start time of the current node by finding the most recent transition to it
    */
-  private async getCurrentNodeStartTime(
+  async getCurrentNodeStartTime(
     tenantId: string,
     campaignId: string,
     nodeId: string

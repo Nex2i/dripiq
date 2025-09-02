@@ -76,22 +76,38 @@ export class TimeoutExecutionService {
         const campaign = await contactCampaignRepository.findByIdForTenant(campaignId, tenantId);
         
         if (campaign) {
-          // Check for calendar clicks since the node started
-          // We need to determine the time window - for now, use a reasonable default
-          // In a more sophisticated implementation, this could be based on the campaign plan timing
-          const timeWindowMs = 24 * 60 * 60 * 1000; // 24 hours - should match campaign timing constraints
+          // Check for calendar clicks since this node started
+          // Use the campaign execution service to get the proper node start time
+          const nodeStartTime = await campaignPlanExecutionService.getCurrentNodeStartTime(
+            tenantId, 
+            campaignId, 
+            nodeId
+          );
           
-          const calendarClickResult = await calendarClickValidationService.hasCalendarClicksInWindow({
-            tenantId,
-            campaignId,
-            contactId: campaign.contactId,
-            leadId: campaign.leadId,
-            timeWindowMs,
-            referenceTime: new Date(),
-          });
+          if (!nodeStartTime) {
+            logger.warn('[CampaignExecutionWorker] Could not determine node start time for calendar click validation', {
+              tenantId,
+              campaignId,
+              nodeId,
+              jobId: job.id,
+            });
+            // If we can't determine when the node started, skip calendar validation
+            // and proceed with normal no_click timeout
+          } else {
+            // Check for any calendar clicks since the node started
+            const timeSinceNodeStart = new Date().getTime() - nodeStartTime.getTime();
+            
+            const calendarClickResult = await calendarClickValidationService.hasCalendarClicksInWindow({
+              tenantId,
+              campaignId,
+              contactId: campaign.contactId,
+              leadId: campaign.leadId,
+              timeWindowMs: timeSinceNodeStart,
+              referenceTime: new Date(),
+            });
 
-          if (calendarClickResult.hasClicks) {
-            logger.info('[CampaignExecutionWorker] Calendar clicks found, triggering click transition instead of no_click', {
+            if (calendarClickResult.hasClicks) {
+              logger.info('[CampaignExecutionWorker] Calendar clicks found, triggering click transition instead of no_click', {
               messageId,
               eventType,
               campaignId,
@@ -156,16 +172,18 @@ export class TimeoutExecutionService {
               syntheticEventId: syntheticClickEvent.id,
               reason: 'calendar_click_found',
             };
-          } else {
-            logger.debug('[CampaignExecutionWorker] No calendar clicks found, proceeding with no_click timeout', {
-              messageId,
-              eventType,
-              campaignId,
-              contactId: campaign.contactId,
-              leadId: campaign.leadId,
-              timeWindowMs,
-              jobId: job.id,
-            });
+            } else {
+              logger.debug('[CampaignExecutionWorker] No calendar clicks found, proceeding with no_click timeout', {
+                messageId,
+                eventType,
+                campaignId,
+                contactId: campaign.contactId,
+                leadId: campaign.leadId,
+                nodeStartTime: nodeStartTime.toISOString(),
+                timeSinceNodeStart,
+                jobId: job.id,
+              });
+            }
           }
         }
       }
