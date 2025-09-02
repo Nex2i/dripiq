@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
-import { LeadAnalyzerService } from '@/modules/ai/leadAnalyzer.service';
 import { LeadInitialProcessingPublisher } from '@/modules/messages/leadInitialProcessing.publisher.service';
 import { defaultRouteResponse } from '@/types/response';
 import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
@@ -563,14 +562,42 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         const authenticatedRequest = request as AuthenticatedRequest;
         const { id } = request.params;
 
-        await LeadAnalyzerService.indexSite(authenticatedRequest.tenantId, id);
+        // Get the lead to extract URL for processing
+        const lead = await getLeadById(authenticatedRequest.tenantId, id);
 
-        reply.send({ message: 'Lead resync initiated', leadId: id });
+        // Queue resync processing using the initial processing job
+        await LeadInitialProcessingPublisher.publish({
+          tenantId: authenticatedRequest.tenantId,
+          leadId: id,
+          leadUrl: lead.url,
+          metadata: {
+            isResync: 'true',
+            triggeredBy: authenticatedRequest.user?.id,
+            triggeredAt: new Date().toISOString(),
+          },
+        });
+
+        reply.send({
+          message: 'Lead resync queued successfully',
+          leadId: id,
+          processing: {
+            status: 'queued',
+            message: 'Resync has been queued and will be processed shortly.',
+          },
+        });
       } catch (error: any) {
-        logger.error(`Error resyncing lead: ${error.message}`);
+        logger.error(`Error queueing lead resync: ${error.message}`);
+
+        if (error.message?.includes('not found') || error.message?.includes('access denied')) {
+          reply.status(404).send({
+            message: 'Lead not found or access denied',
+            error: error.message,
+          });
+          return;
+        }
 
         reply.status(500).send({
-          message: 'Failed to resync lead',
+          message: 'Failed to queue lead resync',
           error: error.message,
         });
       }
