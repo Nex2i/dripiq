@@ -60,6 +60,8 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
     campaignId?: string,
     limit?: number
   ): Promise<CalendarLinkClick[]> {
+    limit = limit ?? 10;
+
     let whereConditions = and(
       eq(this.table.tenantId, tenantId),
       eq(this.table.contactId, contactId),
@@ -72,10 +74,7 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
     if (campaignId) {
       whereConditions = and(
         whereConditions,
-        or(
-          eq(this.table.campaignId, campaignId),
-          isNull(this.table.campaignId)
-        )
+        or(eq(this.table.campaignId, campaignId), isNull(this.table.campaignId))
       );
     }
 
@@ -83,11 +82,8 @@ export class CalendarLinkClickRepository extends TenantAwareRepository<
       .select()
       .from(this.table)
       .where(whereConditions)
-      .orderBy(desc(this.table.clickedAt)); // Most recent first
-
-    if (limit) {
-      query = query.limit(limit);
-    }
+      .orderBy(desc(this.table.clickedAt))
+      .limit(limit); // Most recent first
 
     return await query;
   }

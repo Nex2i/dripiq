@@ -23,7 +23,7 @@ export interface CalendarClickValidationResult {
 
 /**
  * Calendar Click Validation Service
- * 
+ *
  * Handles validation of calendar link clicks for campaign flow control.
  * Used to determine if no_click timeouts should be canceled based on
  * actual calendar link clicks from the calendar_link_clicks table.
@@ -32,8 +32,17 @@ export class CalendarClickValidationService {
   /**
    * Check if there are calendar clicks within a specified time window
    */
-  async hasCalendarClicksInWindow(params: CalendarClickWindow): Promise<CalendarClickValidationResult> {
-    const { tenantId, campaignId, contactId, leadId, timeWindowMs, referenceTime = new Date() } = params;
+  async hasCalendarClicksInWindow(
+    params: CalendarClickWindow
+  ): Promise<CalendarClickValidationResult> {
+    const {
+      tenantId,
+      campaignId,
+      contactId,
+      leadId,
+      timeWindowMs,
+      referenceTime = new Date(),
+    } = params;
 
     try {
       const windowStart = new Date(referenceTime.getTime() - timeWindowMs);
@@ -104,55 +113,6 @@ export class CalendarClickValidationService {
   }
 
   /**
-   * Get the latest calendar click for a contact
-   */
-  async getLatestCalendarClick(
-    tenantId: string,
-    contactId: string,
-    leadId: string,
-    campaignId?: string
-  ): Promise<CalendarLinkClick | null> {
-    try {
-      logger.debug('Getting latest calendar click', {
-        tenantId,
-        contactId,
-        leadId,
-        campaignId,
-      });
-
-      const latestClick = await calendarLinkClickRepository.findLatestByContact(
-        tenantId,
-        contactId,
-        leadId,
-        campaignId
-      );
-
-      logger.debug('Latest calendar click result', {
-        tenantId,
-        contactId,
-        leadId,
-        campaignId,
-        hasLatestClick: !!latestClick,
-        latestClickId: latestClick?.id,
-        clickedAt: latestClick?.clickedAt?.toISOString(),
-      });
-
-      return latestClick || null;
-    } catch (error) {
-      logger.error('Error getting latest calendar click', {
-        tenantId,
-        contactId,
-        leadId,
-        campaignId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
-      return null;
-    }
-  }
-
-  /**
    * Private method to query calendar clicks within a time window
    */
   private async getCalendarClicksInWindow(
@@ -190,11 +150,10 @@ export class CalendarClickValidationService {
         contactId,
         leadId,
         clickCount: clicks.length,
-        clickIds: clicks.map(c => c.id),
+        clickIds: clicks.map((c) => c.id),
       });
 
       return clicks;
-      
     } catch (error) {
       logger.error('Error querying calendar clicks', {
         tenantId,

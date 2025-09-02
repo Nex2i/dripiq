@@ -824,7 +824,7 @@ export class SendGridWebhookService {
   ): Promise<void> {
     // Events that should not trigger campaign transitions
     const ignoredEventTypes: SendGridEventType[] = ['click'];
-    
+
     const successfulEvents = events.filter(
       (e) => e.success && !e.skipped && e.messageId && !ignoredEventTypes.includes(e.eventType)
     );
