@@ -155,6 +155,7 @@
 /* Base styles */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 4rem; /* Account for sticky header height (h-16 = 4rem) */
 }
 
 body {
