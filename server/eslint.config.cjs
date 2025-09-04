@@ -44,6 +44,7 @@ module.exports = [
         Request: true,
         URL: true,
         URLSearchParams: true,
+        Buffer: true,
       },
     },
     plugins: {

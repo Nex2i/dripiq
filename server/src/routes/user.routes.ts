@@ -6,7 +6,7 @@ import { UserService } from '@/modules/user.service';
 import { emailSenderIdentityRepository, userTenantRepository } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
-import { EmailProcessor, type CampaignEmailData } from '@/services/email';
+import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
 import { SenderIdentityResolverService } from '@/modules/email/senderIdentityResolver.service';
 import type { IUser } from '@/plugins/authentication.plugin';
 import {
@@ -283,8 +283,6 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           body,
           recipientEmail,
           recipientName: 'Test Contact',
-          senderIdentity,
-          senderConfig,
           calendarInfo,
           categories: ['test-email'],
           skipMessageRecord: true,
@@ -292,7 +290,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         };
 
         // Send email using EmailProcessor
-        const result = await EmailProcessor.sendCampaignEmail(emailData);
+        const result = await EmailProcessor.sendCampaignEmail(userId, emailData);
 
         if (!result.success) {
           throw new Error(result.error || 'Email sending failed');
