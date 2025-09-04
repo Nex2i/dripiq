@@ -5,17 +5,20 @@ import { IEmailStrategy } from './IEmailStrategy';
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
+const REDIRECT_URI = process.env.FRONTEND_ORIGIN;
 
 if (!CLIENT_ID) {
+  logger.error('Missing Google Client ID');
   throw new Error('Missing Google Client ID');
 }
 
 if (!CLIENT_SECRET) {
+  logger.error('Missing Google Client Secret');
   throw new Error('Missing Google Client Secret');
 }
 
 if (!REDIRECT_URI) {
+  logger.error('Missing Google Redirect URI');
   throw new Error('Missing Google Redirect URI');
 }
 
