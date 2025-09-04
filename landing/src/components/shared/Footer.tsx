@@ -4,15 +4,11 @@ import Logo from './Logo'
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   const footerLinks = {
     Product: [
       { name: 'Features', href: '/#features' },
       { name: 'Pricing', href: '/pricing' },
-      { name: 'Integrations', href: '/#integrations' },
+      { name: 'Integrations', href: '/#features' },
     ],
     Company: [
       { name: 'About', href: '/about' },
@@ -47,7 +43,6 @@ export default function Footer() {
             <div className="mt-6">
               <a
                 href="https://app.dripiq.ai/signup"
-                onClick={scrollToTop}
                 className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors"
               >
                 Get Started Free
@@ -67,7 +62,6 @@ export default function Footer() {
                         href={link.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={scrollToTop}
                         className="text-surface-400 hover:text-white transition-colors text-sm"
                       >
                         {link.name}
@@ -75,7 +69,6 @@ export default function Footer() {
                     ) : (
                       <Link
                         to={link.href}
-                        onClick={scrollToTop}
                         className="text-surface-400 hover:text-white transition-colors text-sm"
                       >
                         {link.name}
@@ -99,7 +92,6 @@ export default function Footer() {
                 href="https://twitter.com/dripiq"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={scrollToTop}
                 className="text-surface-400 hover:text-white transition-colors"
                 aria-label="Follow us on Twitter"
               >
@@ -115,7 +107,6 @@ export default function Footer() {
                 href="https://linkedin.com/company/dripiq"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={scrollToTop}
                 className="text-surface-400 hover:text-white transition-colors"
                 aria-label="Follow us on LinkedIn"
               >
