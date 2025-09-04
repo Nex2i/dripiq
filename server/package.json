@@ -71,6 +71,7 @@
     "drizzle-orm": "^0.36.4",
     "fastify": "^5.3.3",
     "fastify-plugin": "^5.0.1",
+    "google-auth-library": "^10.3.0",
     "googleapis": "^159.0.0",
     "humanloop": "^0.8.20",
     "ioredis": "^5.7.0",

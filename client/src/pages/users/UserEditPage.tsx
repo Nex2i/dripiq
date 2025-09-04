@@ -12,6 +12,7 @@ import {
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 import TestEmailComponent from '../../components/TestEmailComponent'
 import EmailSignatureEditor from '../../components/EmailSignatureEditor'
+import ConnectGoogleButton from '../../components/ConnectGoogleButton'
 
 export default function UserEditPage() {
   const params = useParams({ strict: false }) as { userId?: string }
@@ -43,6 +44,10 @@ export default function UserEditPage() {
   const [country, setCountry] = useState('USA')
   const [senderError, setSenderError] = useState<string | null>(null)
   const [pasteValue, setPasteValue] = useState('')
+
+  // Google connection state
+  const [googleConnected, setGoogleConnected] = useState(false)
+  const [googleError, setGoogleError] = useState<string | null>(null)
 
   // Validate calendar link using utility
   const validateCalendarLink = (url: string): string => {
@@ -182,6 +187,17 @@ export default function UserEditPage() {
     } catch (e: any) {
       setSenderError(e?.message || 'Failed to verify')
     }
+  }
+
+  const handleGoogleSuccess = (userData: any) => {
+    setGoogleConnected(true)
+    setGoogleError(null)
+    console.log('Google connection successful:', userData)
+  }
+
+  const handleGoogleError = (error: string) => {
+    setGoogleError(error)
+    setGoogleConnected(false)
   }
 
   if (loading) {
@@ -472,6 +488,41 @@ export default function UserEditPage() {
                   ? 'Creating...'
                   : 'Create & Send Verification'}
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Google Connection Card */}
+        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200/60 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            Google Integration
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Connect your Google account to enable additional features.
+          </p>
+
+          {googleError && (
+            <div className="mb-4 p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
+              {googleError}
+            </div>
+          )}
+
+          {googleConnected ? (
+            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-800 text-sm">
+              <span className="inline-block">✓</span>
+              <span>Google account connected successfully!</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                Connect your Google account to access Gmail and other Google
+                services through our platform.
+              </p>
+              <ConnectGoogleButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                className="w-fit"
+              />
             </div>
           )}
         </div>
