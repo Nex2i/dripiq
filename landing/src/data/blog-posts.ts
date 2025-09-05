@@ -377,7 +377,8 @@ For even better results, consider using an AI-powered platform like dripIq to au
   },
   {
     slug: 'psychology-lead-reengagement-timing',
-    title: 'The Psychology Behind Lead Re-engagement: Why Timing Matters More Than Message',
+    title:
+      'The Psychology Behind Lead Re-engagement: Why Timing Matters More Than Message',
     excerpt:
       'Discover the psychological principles that drive successful lead re-engagement. Learn why timing beats messaging and how to leverage behavioral triggers for maximum impact.',
     content: `
@@ -424,7 +425,7 @@ People remember and act on information they've encountered recently. This create
 Humans are psychologically wired to avoid losses more than they seek gains. Frame your re-engagement around what prospects might be missing rather than what they could gain.
 
 **Example Messaging Framework:**
-```
+\`\`\`
 Subject: [Company Name] - Opportunity Cost Analysis
 
 Hi [Name],
@@ -442,7 +443,7 @@ Worth a quick conversation?
 
 Best,
 [Your name]
-```
+\`\`\`
 
 ### 3. Social Proof Amplification
 
@@ -517,7 +518,7 @@ Use AI and automation to monitor behavioral signals that indicate readiness to e
 - Job posting patterns
 
 **Implementation with dripIq:**
-```javascript
+\`\`\`javascript
 // Example trigger configuration
 const triggerEvents = {
   websiteRevisit: {
@@ -533,7 +534,7 @@ const triggerEvents = {
     template: 'growth-opportunity'
   }
 }
-```
+\`\`\`
 
 ### 2. Competitive Intelligence Timing
 
@@ -586,7 +587,7 @@ Align re-engagement with broader economic patterns:
 4. **Seasonal Timing**: Peak vs. off-peak periods
 
 **Sample Test Setup:**
-```
+\`\`\`
 Hypothesis: Re-engaging within 24 hours of funding announcements 
 increases response rates by 40%
 
@@ -595,7 +596,7 @@ Test Group: 24-hour trigger-based re-engagement
 Sample Size: 200 leads per group
 Duration: 90 days
 Success Metric: Response rate and meeting conversion
-```
+\`\`\`
 
 ## Common Timing Mistakes
 
@@ -835,7 +836,7 @@ Companies with well-integrated CRM systems see:
 - Pardot for B2B marketing automation
 
 **Third-Party Integration Essentials:**
-```javascript
+\`\`\`javascript
 // Example: Automated lead scoring integration
 const leadScoringIntegration = {
   trigger: 'new_lead_created',
@@ -848,7 +849,7 @@ const leadScoringIntegration = {
   data_sync: 'real_time',
   fallback: 'manual_review_queue'
 }
-```
+\`\`\`
 
 **Custom Field Mapping Strategy:**
 - Standardize naming conventions across all systems
@@ -865,7 +866,7 @@ const leadScoringIntegration = {
 - Revenue reporting across platforms
 
 **API Integration Examples:**
-```python
+\`\`\`python
 # HubSpot to third-party tool sync
 import hubspot
 from third_party_tool import api as third_party
@@ -885,7 +886,7 @@ def sync_contact_data(contact_id):
         'industry': enriched_data.industry,
         'technology_stack': enriched_data.technologies
     })
-```
+\`\`\`
 
 ### Microsoft Dynamics 365 Integration
 
@@ -906,7 +907,7 @@ def sync_contact_data(contact_id):
 ### Data Mapping and Standardization
 
 **Field Mapping Strategy:**
-```yaml
+\`\`\`yaml
 # Example field mapping configuration
 contact_mapping:
   hubspot_field: salesforce_field
@@ -921,7 +922,7 @@ custom_fields:
   hs_lead_status: Lead_Status__c
   hs_persona: Buyer_Persona__c
   hs_buying_stage: Sales_Stage__c
-```
+\`\`\`
 
 **Data Quality Rules:**
 1. **Validation at Entry**: Implement validation rules at the point of data capture
@@ -948,7 +949,7 @@ custom_fields:
 ### Lead Management Automation
 
 **Intelligent Lead Routing:**
-```
+\`\`\`
 Trigger: New lead created
 Conditions: 
   - Lead score > 75
@@ -959,7 +960,7 @@ Actions:
   - Send immediate alert
   - Schedule follow-up task
   - Add to high-priority sequence
-```
+\`\`\`
 
 **Lead Nurturing Sequences:**
 - Behavioral trigger-based campaigns
@@ -970,7 +971,7 @@ Actions:
 ### Opportunity Management
 
 **Deal Progression Automation:**
-```
+\`\`\`
 Stage: Proposal Sent
 Automated Actions:
   - Set follow-up reminder (3 days)
@@ -978,7 +979,7 @@ Automated Actions:
   - Notify sales manager
   - Track proposal engagement
   - Trigger competitive analysis
-```
+\`\`\`
 
 **Revenue Intelligence:**
 - Predictive deal scoring
@@ -999,7 +1000,7 @@ Automated Actions:
 ### API Management and Governance
 
 **Rate Limiting Strategies:**
-```python
+\`\`\`python
 # Example rate limiting implementation
 class APIRateManager:
     def __init__(self, requests_per_minute=100):
@@ -1015,7 +1016,7 @@ class APIRateManager:
         ]
         
         return len(self.request_times) < self.requests_per_minute
-```
+\`\`\`
 
 **Error Handling and Retry Logic:**
 - Exponential backoff for failed requests
@@ -1026,7 +1027,7 @@ class APIRateManager:
 ### Webhook Implementation
 
 **Real-Time Event Processing:**
-```javascript
+\`\`\`javascript
 // Webhook endpoint for CRM updates
 app.post('/webhook/crm-update', (req, res) => {
   const { event_type, record_id, changes } = req.body;
@@ -1045,7 +1046,7 @@ app.post('/webhook/crm-update', (req, res) => {
   
   res.status(200).send('Processed');
 });
-```
+\`\`\`
 
 ### Custom Middleware Development
 
@@ -1102,7 +1103,7 @@ app.post('/webhook/crm-update', (req, res) => {
 - Revenue per salesperson increases
 
 **ROI Calculation Framework:**
-```
+\`\`\`
 Integration ROI = (Benefits - Costs) / Costs × 100
 
 Benefits:
@@ -1116,12 +1117,12 @@ Costs:
 - Ongoing maintenance and support
 - Training and change management
 - Tool subscription costs
-```
+\`\`\`
 
 ### Monitoring and Alerting
 
 **Proactive Monitoring Setup:**
-```yaml
+\`\`\`yaml
 # Example monitoring configuration
 monitors:
   - name: "CRM Sync Health"
@@ -1138,7 +1139,7 @@ monitors:
     type: "custom_metric"
     threshold: 95%
     frequency: "daily"
-```
+\`\`\`
 
 ## Common Integration Pitfalls and Solutions
 
@@ -1335,8 +1336,7 @@ dripIq makes CRM integration simple with pre-built connectors, intelligent autom
     tags: ['CRM Integration', 'Sales Stack', 'ROI Optimization'],
     ogImage: 'https://dripiq.ai/blog/crm-integration-best-practices-roi.jpg',
     seo: {
-      title:
-        'CRM Integration Best Practices 2024: Maximize Sales Stack ROI',
+      title: 'CRM Integration Best Practices 2024: Maximize Sales Stack ROI',
       description:
         'Stop wasting money on disconnected sales tools. Learn proven CRM integration strategies that boost productivity and maximize your sales stack ROI.',
       keywords: [
@@ -1409,7 +1409,7 @@ Both approaches miss the mark. The highest-performing sales organizations use au
 - Low-value transactional outreach
 
 **Example:**
-```
+\`\`\`
 Subject: Increase Your Sales by 40%
 
 Hi there,
@@ -1421,7 +1421,7 @@ Click here to learn more.
 
 Best regards,
 Sales Team
-```
+\`\`\`
 
 ### Level 2: Template Personalization (20-40% Personalization)
 
@@ -1438,7 +1438,7 @@ Sales Team
 - Webinar invitations
 
 **Example:**
-```
+\`\`\`
 Subject: {{Company}} + AI Sales Automation
 
 Hi {{FirstName}},
@@ -1452,7 +1452,7 @@ about how {{Company}} could benefit?
 
 Best regards,
 {{SalesRep}}
-```
+\`\`\`
 
 ### Level 3: Smart Personalization (40-70% Personalization)
 
@@ -1469,7 +1469,7 @@ Best regards,
 - Complex B2B sales
 
 **Example:**
-```
+\`\`\`
 Subject: {{Company}}'s expansion into {{NewMarket}}
 
 Hi {{FirstName}},
@@ -1490,7 +1490,7 @@ Best regards,
 {{SalesRep}}
 P.S. I also noticed you're speaking at {{UpcomingEvent}} 
 - great topic choice!
-```
+\`\`\`
 
 ### Level 4: Hyper-Personalization (70-90% Personalization)
 
@@ -1546,7 +1546,7 @@ P.S. I also noticed you're speaking at {{UpcomingEvent}}
 
 ### Integration Architecture for Scale
 
-```javascript
+\`\`\`javascript
 // Example: AI-powered personalization workflow
 const personalizationEngine = {
   triggers: [
@@ -1587,7 +1587,7 @@ const personalizationEngine = {
     }
   }
 }
-```
+\`\`\`
 
 ## Personalization Strategies by Sales Stage
 
@@ -1603,11 +1603,11 @@ const personalizationEngine = {
 - Broad audience targeting
 
 **Example Sequence:**
-```
+\`\`\`
 Email 1: Industry Report - "5 Trends Reshaping {{Industry}}"
 Email 2: Case Study - "How {{SimilarCompany}} Overcame {{CommonChallenge}}"
 Email 3: Tool Offer - "Free {{Industry}} ROI Calculator"
-```
+\`\`\`
 
 ### Middle of Funnel: Consideration Stage
 
@@ -1621,12 +1621,12 @@ Email 3: Tool Offer - "Free {{Industry}} ROI Calculator"
 - Behavioral trigger responses
 
 **Example Sequence:**
-```
+\`\`\`
 Trigger: Downloaded pricing guide
 Email: "{{FirstName}}, questions about pricing for {{Company}}?"
 Content: Custom ROI analysis for their company size
 CTA: "15-minute consultation to discuss your specific needs"
-```
+\`\`\`
 
 ### Bottom of Funnel: Decision Stage
 
@@ -1640,19 +1640,19 @@ CTA: "15-minute consultation to discuss your specific needs"
 - Objection handling
 
 **Example Approach:**
-```
+\`\`\`
 Research: Company's recent challenges, initiatives, key stakeholders
 Message: Address specific business outcomes and ROI
 Proof: Connect with similar customer for reference call
 Follow-up: Custom proposal with implementation timeline
-```
+\`\`\`
 
 ## Advanced Personalization Techniques
 
 ### 1. Behavioral Trigger Automation
 
 **Website Behavior Triggers:**
-```javascript
+\`\`\`javascript
 const behavioralTriggers = {
   pricingPageVisit: {
     delay: '2 hours',
@@ -1672,7 +1672,7 @@ const behavioralTriggers = {
     personalization: ['visited_pages', 'content_interests']
   }
 }
-```
+\`\`\`
 
 ### 2. Account-Based Personalization
 
@@ -1683,7 +1683,7 @@ const behavioralTriggers = {
 - Influencer: Industry trends and peer success
 
 **Coordinated Messaging Strategy:**
-```
+\`\`\`
 Stakeholder: CFO
 Message Focus: Cost savings and ROI
 Content: Financial impact case study
@@ -1693,12 +1693,12 @@ Stakeholder: IT Director
 Message Focus: Integration and security
 Content: Technical implementation guide
 Timing: After CFO engagement
-```
+\`\`\`
 
 ### 3. Dynamic Content Personalization
 
 **Industry-Specific Messaging:**
-```javascript
+\`\`\`javascript
 const industryPersonalization = {
   healthcare: {
     painPoints: ['regulatory_compliance', 'patient_data_security'],
@@ -1712,7 +1712,7 @@ const industryPersonalization = {
     caseStudies: ['bank_efficiency', 'fintech_growth']
   }
 }
-```
+\`\`\`
 
 ### 4. Predictive Personalization
 
@@ -1746,7 +1746,7 @@ const industryPersonalization = {
 
 ### ROI Analysis Framework
 
-```
+\`\`\`
 Personalization ROI = (Revenue Gain - Time Investment) / Time Investment
 
 Variables:
@@ -1755,7 +1755,7 @@ Variables:
 - Deal size impact
 - Sales cycle reduction
 - Time cost per personalization level
-```
+\`\`\`
 
 ### A/B Testing for Optimization
 
@@ -1772,13 +1772,13 @@ Variables:
 **Problem**: Treating enterprise prospects like small business leads
 
 **Solution**: Implement tiered personalization based on account value
-```javascript
+\`\`\`javascript
 const personalizationTiers = {
   enterprise: { minPersonalization: 70, maxAutomation: 30 },
   midMarket: { minPersonalization: 40, maxAutomation: 60 },
   smallBusiness: { minPersonalization: 20, maxAutomation: 80 }
 }
-```
+\`\`\`
 
 ### Mistake 2: Over-Personalizing Low-Value Prospects
 
@@ -1813,11 +1813,11 @@ const personalizationTiers = {
 4. Identify highest-value personalization opportunities
 
 **Prospect Segmentation:**
-```
+\`\`\`
 Tier 1: Enterprise (>$100K potential) - 70% personalization
 Tier 2: Mid-market ($10K-$100K) - 40% personalization  
 Tier 3: Small business (<$10K) - 20% personalization
-```
+\`\`\`
 
 ### Phase 2: Technology Setup (Week 3-4)
 
@@ -1959,10 +1959,10 @@ dripIq makes it easy to find and maintain the perfect balance with AI-powered pe
     publishedAt: '2024-01-16',
     readTime: '13 min read',
     tags: ['Sales Automation', 'Personalization', 'Sales Strategy'],
-    ogImage: 'https://dripiq.ai/blog/sales-automation-vs-personalization-balance.jpg',
+    ogImage:
+      'https://dripiq.ai/blog/sales-automation-vs-personalization-balance.jpg',
     seo: {
-      title:
-        'Sales Automation vs Personalization: Finding the Perfect Balance',
+      title: 'Sales Automation vs Personalization: Finding the Perfect Balance',
       description:
         'Scale your sales without losing the human touch. Learn how to balance automation efficiency with personalized engagement for maximum conversion rates.',
       keywords: [
@@ -1976,7 +1976,8 @@ dripIq makes it easy to find and maintain the perfect balance with AI-powered pe
   },
   {
     slug: 'cost-of-ignored-leads-revenue-analysis',
-    title: 'The Cost of Ignored Leads: How Much Revenue Are You Leaving on the Table?',
+    title:
+      'The Cost of Ignored Leads: How Much Revenue Are You Leaving on the Table?',
     excerpt:
       'Every ignored lead represents lost revenue. Discover the hidden costs of poor lead management and learn how to calculate the true impact on your bottom line.',
     content: `
@@ -2002,7 +2003,7 @@ For a typical B2B company generating 1,000 leads per month with a $50,000 averag
 
 ### The Lead Lifecycle Reality
 
-```
+\`\`\`
 Lead Generation: 1,000 leads/month
 ├── Immediate Response: 300 leads (30%)
 │   └── Conversion Rate: 15% = 45 deals
@@ -2014,13 +2015,13 @@ Lead Generation: 1,000 leads/month
 Total Converted: 61 deals
 Potential with Proper Follow-up: 125+ deals
 Lost Revenue: $3.2M annually
-```
+\`\`\`
 
 ## Calculating Your Ignored Lead Cost
 
 ### The Revenue Loss Formula
 
-```
+\`\`\`
 Ignored Lead Cost = (Number of Ignored Leads × Average Deal Value × Potential Conversion Rate) - Current Revenue from Ignored Leads
 
 Example:
@@ -2031,7 +2032,7 @@ Example:
 
 Monthly Cost = (500 × $50,000 × 0.08) - $0 = $2,000,000
 Annual Cost = $2,000,000 × 12 = $24,000,000
-```
+\`\`\`
 
 ### Industry-Specific Impact Analysis
 
@@ -2108,13 +2109,13 @@ No systematic approach for identifying, prioritizing, and re-engaging dormant le
 ### Indirect Cost Factors
 
 **Marketing Investment Waste:**
-```
+\`\`\`
 Cost Analysis:
 - Lead generation cost: $200 per lead
 - 500 ignored leads per month
 - Monthly wasted marketing spend: $100,000
 - Annual marketing waste: $1,200,000
-```
+\`\`\`
 
 **Sales Team Efficiency Loss:**
 - Time spent generating new leads vs. converting existing ones
@@ -2173,71 +2174,71 @@ Cost Analysis:
 ### The Multi-Touch Recovery Sequence
 
 **Touch 1: The Strategic Pause Approach**
-```
+\`\`\`
 Timeline: 30-60 days after last contact
 Channel: Email
 Message: "I noticed [trigger event] at [Company]..."
 Goal: Re-establish relevance and timing
-```
+\`\`\`
 
 **Touch 2: Value-First Reconnection**
-```
+\`\`\`
 Timeline: 1 week after Touch 1
 Channel: LinkedIn + Email
 Message: Industry insight or valuable resource
 Goal: Provide immediate value without asking
-```
+\`\`\`
 
 **Touch 3: Social Proof Amplification**
-```
+\`\`\`
 Timeline: 1 week after Touch 2  
 Channel: Email with case study
 Message: "How [Similar Company] solved [Specific Problem]"
 Goal: Demonstrate peer success and outcomes
-```
+\`\`\`
 
 **Touch 4: Direct Outreach**
-```
+\`\`\`
 Timeline: 1 week after Touch 3
 Channel: Phone + Email
 Message: "Quick question about [Company Priority]"
 Goal: Direct conversation and needs assessment
-```
+\`\`\`
 
 ### Advanced Re-engagement Techniques
 
 **1. The Competitive Intelligence Approach**
-```
+\`\`\`
 Research: Identify competitor weaknesses or changes
 Message: "I saw [Competitor] announced [Change]. 
 How is this affecting [Company]'s [Specific Area]?"
 Value: Provide competitive insights and alternatives
-```
+\`\`\`
 
 **2. The Industry Expertise Method**
-```
+\`\`\`
 Research: Find industry trends affecting their business
 Message: "Based on the new [Regulation/Trend], 
 [Similar Companies] are [Taking Action]. 
 How is [Company] preparing?"
 Value: Position as industry expert and advisor
-```
+\`\`\`
 
 **3. The Problem Evolution Strategy**
-```
+\`\`\`
 Research: How their original problem may have evolved
 Message: "When we last spoke, you mentioned [Problem]. 
 With [Recent Development], this has likely become 
 more [Critical/Complex]. How are you addressing it now?"
 Value: Show understanding of evolving business needs
-```
+\`\`\`
 
 ## Technology Solutions for Lead Recovery
 
 ### AI-Powered Lead Re-engagement
 
 **Predictive Lead Scoring:**
-```javascript
+\`\`\`javascript
 const leadScoringModel = {
   behavioralSignals: {
     websiteActivity: { weight: 0.25, recentThreshold: 30 },
@@ -2252,10 +2253,10 @@ const leadScoringModel = {
     technology: { weight: 0.05, stackCompatibility: true }
   }
 }
-```
+\`\`\`
 
 **Automated Trigger Detection:**
-```javascript
+\`\`\`javascript
 const triggerEvents = {
   companyNews: {
     sources: ['news_api', 'google_alerts', 'linkedin'],
@@ -2275,7 +2276,7 @@ const triggerEvents = {
     industryDisruption: { keywords: ['regulation', 'technology'] }
   }
 }
-```
+\`\`\`
 
 ### CRM Enhancement for Lead Recovery
 
@@ -2315,14 +2316,14 @@ const triggerEvents = {
 
 ### ROI Calculation Framework
 
-```
+\`\`\`
 Lead Recovery ROI = (Revenue from Recovered Leads - Recovery Program Costs) / Recovery Program Costs × 100
 
 Example:
 - Monthly recovered revenue: $500,000
 - Recovery program costs: $50,000
 - Monthly ROI: ($500,000 - $50,000) / $50,000 × 100 = 900%
-```
+\`\`\`
 
 ### Performance Benchmarking
 
@@ -2492,10 +2493,10 @@ Don't let another month of potential revenue slip away. dripIq's AI-powered lead
     publishedAt: '2024-01-14',
     readTime: '11 min read',
     tags: ['Lead Management', 'Revenue Recovery', 'Sales ROI'],
-    ogImage: 'https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis.jpg',
+    ogImage:
+      'https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis.jpg',
     seo: {
-      title:
-        'Cost of Ignored Leads: How Much Revenue Are You Losing?',
+      title: 'Cost of Ignored Leads: How Much Revenue Are You Losing?',
       description:
         'Every ignored lead represents lost revenue. Calculate the hidden costs of poor lead management and learn how to recover millions in missed opportunities.',
       keywords: [
@@ -2723,10 +2724,10 @@ dripIq's AI-powered platform automatically optimizes your email deliverability w
     publishedAt: '2024-01-12',
     readTime: '16 min read',
     tags: ['Email Deliverability', 'Sales Email', 'Email Marketing'],
-    ogImage: 'https://dripiq.ai/blog/email-deliverability-2024-sales-strategies.jpg',
+    ogImage:
+      'https://dripiq.ai/blog/email-deliverability-2024-sales-strategies.jpg',
     seo: {
-      title:
-        'Email Deliverability 2024: Advanced Strategies for Sales Teams',
+      title: 'Email Deliverability 2024: Advanced Strategies for Sales Teams',
       description:
         'Master email deliverability in 2024. Learn advanced strategies to ensure your sales emails reach the inbox and drive results, not spam folders.',
       keywords: [
@@ -3044,10 +3045,10 @@ dripIq's AI-powered lead scoring transforms unpredictable lead generation into a
     publishedAt: '2024-01-10',
     readTime: '15 min read',
     tags: ['AI Lead Scoring', 'Sales Pipeline', 'Predictive Analytics'],
-    ogImage: 'https://dripiq.ai/blog/ai-driven-lead-scoring-predictable-pipeline.jpg',
+    ogImage:
+      'https://dripiq.ai/blog/ai-driven-lead-scoring-predictable-pipeline.jpg',
     seo: {
-      title:
-        'AI-Driven Lead Scoring: Building a Predictable Sales Pipeline',
+      title: 'AI-Driven Lead Scoring: Building a Predictable Sales Pipeline',
       description:
         'Stop guessing which leads will convert. Learn how AI-driven lead scoring creates predictable revenue and helps sales teams focus on high-potential prospects.',
       keywords: [
@@ -3063,8 +3064,8 @@ dripIq's AI-powered lead scoring transforms unpredictable lead generation into a
     slug: 'multi-channel-outreach-mastery-beyond-email',
     title: 'Multi-Channel Outreach Mastery: Beyond Email in Modern Sales',
     excerpt:
-      'Email alone isn\'t enough anymore. Master the art of multi-channel sales outreach to reach prospects where they are and dramatically increase response rates.',
-    content: \`
+      "Email alone isn't enough anymore. Master the art of multi-channel sales outreach to reach prospects where they are and dramatically increase response rates.",
+    content: `
 # Multi-Channel Outreach Mastery: Beyond Email in Modern Sales
 
 The average B2B decision-maker receives 120+ sales emails per day. Your perfectly crafted email is drowning in an ocean of similar messages from competitors.
@@ -3514,17 +3515,17 @@ Stop limiting yourself to email alone. Multi-channel outreach isn't just about u
 dripIq's AI-powered platform makes multi-channel outreach simple and effective, automatically orchestrating campaigns across all channels for maximum impact.
 
 [Start your free trial](${APP_URLS.SIGNUP}) and discover how multi-channel mastery can transform your sales results.
-\`,
+`,
     author: 'Rachel Martinez, Multi-Channel Sales Expert',
     publishedAt: '2024-01-08',
     readTime: '14 min read',
     tags: ['Multi-Channel Outreach', 'Sales Communication', 'LinkedIn Sales'],
-    ogImage: 'https://dripiq.ai/blog/multi-channel-outreach-mastery-beyond-email.jpg',
+    ogImage:
+      'https://dripiq.ai/blog/multi-channel-outreach-mastery-beyond-email.jpg',
     seo: {
-      title:
-        'Multi-Channel Outreach Mastery: Beyond Email in Modern Sales',
+      title: 'Multi-Channel Outreach Mastery: Beyond Email in Modern Sales',
       description:
-        'Email alone isn\'t enough. Master multi-channel sales outreach to reach prospects where they are and dramatically increase response rates.',
+        "Email alone isn't enough. Master multi-channel sales outreach to reach prospects where they are and dramatically increase response rates.",
       keywords: [
         'multi-channel outreach',
         'sales communication',
@@ -3538,8 +3539,8 @@ dripIq's AI-powered platform makes multi-channel outreach simple and effective, 
     slug: 'sales-performance-metrics-2024',
     title: 'Sales Team Performance Metrics That Actually Matter in 2024',
     excerpt:
-      'Stop tracking vanity metrics that don\'t drive results. Discover the essential sales performance metrics that actually predict success and improve team performance.',
-    content: \`
+      "Stop tracking vanity metrics that don't drive results. Discover the essential sales performance metrics that actually predict success and improve team performance.",
+    content: `
 # Sales Team Performance Metrics That Actually Matter in 2024
 
 Most sales teams are drowning in data but starving for insights. They track dozens of metrics but can't tell you which ones actually predict success or drive performance improvements.
@@ -4067,15 +4068,14 @@ Stop wasting time on metrics that don't drive results. Focus on the performance 
 dripIq's advanced analytics help you measure what matters most—the metrics that actually predict success and drive performance improvements.
 
 [Start your free trial](${APP_URLS.SIGNUP}) and discover how data-driven performance measurement can transform your sales team results.
-\`,
+`,
     author: 'Michael Chen, Sales Operations Analytics Expert',
     publishedAt: '2024-01-06',
     readTime: '13 min read',
     tags: ['Sales Metrics', 'Performance Management', 'Sales Analytics'],
     ogImage: 'https://dripiq.ai/blog/sales-performance-metrics-2024.jpg',
     seo: {
-      title:
-        'Sales Performance Metrics That Actually Matter in 2024',
+      title: 'Sales Performance Metrics That Actually Matter in 2024',
       description:
         'Stop tracking vanity metrics. Discover the essential sales performance metrics that predict success and improve team performance in 2024.',
       keywords: [
@@ -4091,8 +4091,8 @@ dripIq's advanced analytics help you measure what matters most—the metrics tha
     slug: 'cold-to-close-lead-nurturing-framework',
     title: 'From Cold to Close: A Complete Lead Nurturing Framework',
     excerpt:
-      'Transform cold prospects into loyal customers with a systematic lead nurturing approach. Learn the complete framework for guiding leads through every stage of the buyer\'s journey.',
-    content: \`
+      "Transform cold prospects into loyal customers with a systematic lead nurturing approach. Learn the complete framework for guiding leads through every stage of the buyer's journey.",
+    content: `
 # From Cold to Close: A Complete Lead Nurturing Framework
 
 The average B2B buyer is 67% through their purchase decision before they ever engage with sales. Yet most companies treat lead nurturing as an afterthought—sending generic email sequences and hoping for the best.
@@ -4677,15 +4677,15 @@ Stop letting valuable leads go cold due to poor nurturing. A systematic approach
 dripIq's AI-powered platform makes sophisticated lead nurturing accessible to any organization, automatically guiding prospects through their buyer's journey with relevant, timely, and personalized communications.
 
 [Start your free trial](${APP_URLS.SIGNUP}) and see how intelligent lead nurturing can transform your cold prospects into closed deals.
-\`,
+`,
     author: 'Sarah Johnson, Lead Nurturing Strategist',
     publishedAt: '2024-01-04',
     readTime: '17 min read',
     tags: ['Lead Nurturing', 'Marketing Automation', 'Buyer Journey'],
-    ogImage: 'https://dripiq.ai/blog/cold-to-close-lead-nurturing-framework.jpg',
+    ogImage:
+      'https://dripiq.ai/blog/cold-to-close-lead-nurturing-framework.jpg',
     seo: {
-      title:
-        'From Cold to Close: Complete Lead Nurturing Framework 2024',
+      title: 'From Cold to Close: Complete Lead Nurturing Framework 2024',
       description:
         'Transform cold prospects into loyal customers with a systematic lead nurturing approach. Learn the complete framework for guiding leads through every stage.',
       keywords: [
