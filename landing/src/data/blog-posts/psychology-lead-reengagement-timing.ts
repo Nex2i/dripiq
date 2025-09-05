@@ -359,7 +359,7 @@ While manual timing strategies can improve results, AI-powered platforms like dr
 Transform your lead re-engagement with intelligent timing. [Start your free trial](${APP_URLS.SIGNUP}) and see how AI-powered timing can increase your response rates by 300%+.
     `,
   author: 'Dr. Sarah Chen, Sales Psychology Expert',
-  publishedAt: '2024-01-20',
+  publishedAt: '2025-03-10',
   readTime: '12 min read',
   tags: ['Sales Psychology', 'Lead Re-engagement', 'Timing Strategy'],
   ogImage: 'https://dripiq.ai/blog/psychology-lead-reengagement-timing.jpg',

@@ -304,7 +304,7 @@ dripIq's AI-powered lead scoring transforms unpredictable lead generation into a
 [Start your free trial](${APP_URLS.SIGNUP}) and see how AI-driven lead scoring can make your sales pipeline predictable and profitable.
     `,
   author: 'Dr. Lisa Chang, AI and Revenue Operations Expert',
-  publishedAt: '2024-01-10',
+  publishedAt: '2025-08-14',
   readTime: '15 min read',
   tags: ['AI Lead Scoring', 'Sales Pipeline', 'Predictive Analytics'],
   ogImage:

@@ -241,13 +241,12 @@ For even better results, consider using an AI-powered platform like dripIq to au
 [Start your free trial](${APP_URLS.SIGNUP}) and see how AI can help you convert cold leads with 300% better response rates.
     `,
   author: 'Mike Rodriguez, Conversion Specialist',
-  publishedAt: '2024-01-05',
+  publishedAt: '2025-01-15',
   readTime: '15 min read',
   tags: ['Cold Leads', 'Conversion Tactics', 'Sales Strategy'],
   ogImage: 'https://dripiq.ai/blog/cold-leads-conversion.jpg',
   seo: {
-    title:
-      'Cold Lead Conversion: 5 Tactics That Increase Response Rates 300%',
+    title: 'Cold Lead Conversion: 5 Tactics That Increase Response Rates 300%',
     description:
       'Transform cold leads into customers with these 5 data-driven conversion tactics. Learn proven strategies that increase response rates by 300%.',
     keywords: [

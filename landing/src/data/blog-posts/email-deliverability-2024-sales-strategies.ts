@@ -214,7 +214,7 @@ dripIq's AI-powered platform automatically optimizes your email deliverability w
 [Start your free trial](${APP_URLS.SIGNUP}) and see how proper deliverability management can transform your sales outreach results.
     `,
   author: 'Alex Rivera, Email Deliverability Specialist',
-  publishedAt: '2024-01-12',
+  publishedAt: '2025-07-08',
   readTime: '16 min read',
   tags: ['Email Deliverability', 'Sales Email', 'Email Marketing'],
   ogImage:

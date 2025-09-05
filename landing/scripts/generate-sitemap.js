@@ -53,19 +53,19 @@ async function getBlogPosts() {
     // Get all blog post files from the blog-posts directory
     const blogPostsDir = resolve(__dirname, '../src/data/blog-posts')
     const files = await fs.readdir(blogPostsDir)
-    
+
     // Filter for TypeScript files (excluding index.ts)
-    const blogPostFiles = files.filter(file => 
-      file.endsWith('.ts') && file !== 'index.ts'
+    const blogPostFiles = files.filter(
+      (file) => file.endsWith('.ts') && file !== 'index.ts',
     )
 
     const slugs = []
-    
+
     // Extract slugs from each blog post file
     for (const file of blogPostFiles) {
       const filePath = resolve(blogPostsDir, file)
       const content = await fs.readFile(filePath, 'utf-8')
-      
+
       // Extract slug using regex
       const slugMatch = content.match(/slug:\s*['"`]([^'"`]+)['"`]/)
       if (slugMatch) {
