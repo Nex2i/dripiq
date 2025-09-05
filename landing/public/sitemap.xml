@@ -31,6 +31,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://dripiq.ai/blog/ai-driven-lead-scoring-predictable-pipeline</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://dripiq.ai/blog/ai-sales-automation-guide</loc>
     <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
@@ -43,7 +49,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://dripiq.ai/blog/psychology-lead-reengagement-timing</loc>
+    <loc>https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis</loc>
     <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -55,25 +61,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://dripiq.ai/blog/sales-automation-vs-personalization-balance</loc>
-    <lastmod>2025-09-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis</loc>
-    <lastmod>2025-09-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://dripiq.ai/blog/email-deliverability-2024-sales-strategies</loc>
-    <lastmod>2025-09-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://dripiq.ai/blog/ai-driven-lead-scoring-predictable-pipeline</loc>
     <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -85,13 +73,13 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://dripiq.ai/blog/sales-performance-metrics-2024</loc>
+    <loc>https://dripiq.ai/blog/psychology-lead-reengagement-timing</loc>
     <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://dripiq.ai/blog/cold-to-close-lead-nurturing-framework</loc>
+    <loc>https://dripiq.ai/blog/sales-automation-vs-personalization-balance</loc>
     <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
