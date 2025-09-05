@@ -82,13 +82,12 @@ dripIq makes it easy to get started with AI sales automation. Our platform speci
 Ready to transform your sales process with AI? [Start your free trial today](${APP_URLS.SIGNUP}) and see how dripIq can help you turn lost leads into warm prospects.
     `,
   author: 'dripIq Team',
-  publishedAt: '2024-01-15',
+  publishedAt: '2025-02-15',
   readTime: '8 min read',
   tags: ['AI', 'Sales Automation', 'Lead Generation'],
   ogImage: 'https://dripiq.ai/blog/ai-sales-automation-guide.jpg',
   seo: {
-    title:
-      'AI Sales Automation Guide 2024 | Complete Implementation Strategy',
+    title: 'AI Sales Automation Guide 2024 | Complete Implementation Strategy',
     description:
       'Master AI sales automation with our comprehensive guide. Learn implementation strategies, best practices, and how to transform your sales process with artificial intelligence.',
     keywords: [

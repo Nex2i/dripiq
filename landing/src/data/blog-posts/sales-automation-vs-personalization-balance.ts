@@ -609,7 +609,7 @@ dripIq makes it easy to find and maintain the perfect balance with AI-powered pe
 [Start your free trial](${APP_URLS.SIGNUP}) and discover how balanced sales automation can transform your results.
     `,
   author: 'Jennifer Walsh, Sales Methodology Expert',
-  publishedAt: '2024-01-16',
+  publishedAt: '2025-05-20',
   readTime: '13 min read',
   tags: ['Sales Automation', 'Personalization', 'Sales Strategy'],
   ogImage:

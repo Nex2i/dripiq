@@ -517,11 +517,10 @@ Don't let another month of potential revenue slip away. dripIq's AI-powered lead
 [Start your free trial](${APP_URLS.SIGNUP}) and discover how much revenue you can recover from your ignored leads.
     `,
   author: 'David Park, Revenue Operations Director',
-  publishedAt: '2024-01-14',
+  publishedAt: '2025-06-12',
   readTime: '11 min read',
   tags: ['Lead Management', 'Revenue Recovery', 'Sales ROI'],
-  ogImage:
-    'https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis.jpg',
+  ogImage: 'https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis.jpg',
   seo: {
     title: 'Cost of Ignored Leads: How Much Revenue Are You Losing?',
     description:

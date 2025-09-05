@@ -579,7 +579,7 @@ dripIq makes multi-channel outreach simple with AI-powered orchestration, unifie
 [Start your free trial](${APP_URLS.SIGNUP}) and discover how multi-channel mastery can transform your sales results.
     `,
   author: 'Rachel Martinez, Multi-Channel Sales Expert',
-  publishedAt: '2024-01-08',
+  publishedAt: '2025-08-28',
   readTime: '18 min read',
   tags: ['Multi-Channel Outreach', 'Sales Strategy', 'Lead Generation'],
   ogImage:
