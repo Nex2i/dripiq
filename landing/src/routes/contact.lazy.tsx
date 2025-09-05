@@ -103,8 +103,8 @@ const ContactPage = () => {
                   Do you offer custom integrations?
                 </h3>
                 <p className="text-surface-600">
-                  Yes! Our enterprise plans include custom workflows with
-                  your existing sales stack and CRM systems.
+                  Yes! Our enterprise plans include custom workflows with your
+                  existing sales stack and CRM systems.
                 </p>
               </div>
               <div>
