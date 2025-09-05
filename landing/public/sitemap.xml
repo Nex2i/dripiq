@@ -2,43 +2,97 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://dripiq.ai/</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/about</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/contact</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/pricing</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/blog/</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/blog/ai-sales-automation-guide</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/what-is-dripiq-ai-lead-reengagement</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/ai-lead-scoring-how-dripiq-predicts-replies</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/multichannel-sequences-that-reengage-cold-leads</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/crm-integration-clean-data-better-reengagement</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/lead-reengagement-roi-benchmarks-and-kpis</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/getting-started-dripiq-30-minute-setup</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/personalization-at-scale-templates-variables-dynamic-content</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/deliverability-and-compliance-for-ai-cold-outreach</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/reengagement-playbooks-7-campaigns-that-consistently-win</loc>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/blog/cold-leads-conversion-tactics</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

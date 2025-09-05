@@ -118,6 +118,440 @@ Ready to transform your sales process with AI? [Start your free trial today](${A
     },
   },
   {
+    slug: 'what-is-dripiq-ai-lead-reengagement',
+    title: 'What is dripIq? The AI Platform for Lead Re‑Engagement',
+    excerpt:
+      'Understand how dripIq helps revenue teams revive cold leads with AI-powered sequencing, timing, and personalization—without adding manual work.',
+    content: `
+# What is dripIq? The AI Platform for Lead Re‑Engagement
+
+Most CRMs are full of dormant records—good prospects who went quiet. dripIq focuses on turning those dormant leads into conversations using AI that scores intent, personalizes every touch, and sequences outreach across channels automatically.
+
+## Why leads go cold
+
+- Timing was wrong when you first connected
+- The champion moved roles or priorities shifted
+- Messaging missed the problem-to-outcome narrative
+- You stopped after 2–3 touches instead of 6–10
+
+## How dripIq helps
+
+- AI lead scoring predicts who is most likely to reply next
+- Multi‑channel sequences (email, phone, LinkedIn) orchestrated automatically
+- Dynamic content personalizes tone, proof, and CTA for each contact
+- Optimal send‑time prediction for higher open and reply rates
+- Analytics tie replies and revenue back to campaigns
+
+## Core capabilities
+
+- Lead re‑engagement playbooks built from proven patterns
+- Audience segmentation using firmographics, behavior, and CRM fields
+- Safety rails for brand voice, compliance, and frequency capping
+- Native CRM sync so data stays clean and up to date
+
+## Where dripIq fits in your stack
+
+dripIq complements your existing CRM and outreach tools. Use it to mine the cold pile and to revive pipeline that stalled after first contact.
+
+## Get started fast
+
+Connect your CRM, select a playbook, and launch your first re‑engagement in under 30 minutes.
+
+[Start your free trial](${APP_URLS.SIGNUP}) and turn quiet records into active conversations.
+    `,
+    author: 'dripIq Team',
+    publishedAt: '2024-01-22',
+    readTime: '7 min read',
+    tags: ['dripIq', 'Lead Re-Engagement', 'AI'],
+    ogImage: 'https://dripiq.ai/blog/what-is-dripiq-ai-lead-reengagement.jpg',
+    seo: {
+      title: 'What is dripIq? AI Lead Re‑Engagement Platform Explained',
+      description:
+        'Learn how dripIq revives cold leads with AI scoring, multi‑channel sequencing, and dynamic personalization that turns dormant records into revenue.',
+      keywords: [
+        'dripIq',
+        'AI lead re-engagement',
+        'revive cold leads',
+        'sales automation platform',
+        'B2B pipeline acceleration',
+      ],
+    },
+  },
+  {
+    slug: 'ai-lead-scoring-how-dripiq-predicts-replies',
+    title: 'AI Lead Scoring: How dripIq Predicts Who Will Reply Next',
+    excerpt:
+      'See how dripIq prioritizes dormant records using behavioral, firmographic, and timing signals to predict reply likelihood and next best action.',
+    content: `
+# AI Lead Scoring: How dripIq Predicts Who Will Reply Next
+
+Not all cold leads are equal. dripIq analyzes historic interactions, intent signals, and look‑alike patterns to forecast reply probability and recommend the next best action.
+
+## Signals that matter
+
+- Profile fit: industry, size, buyer role, tech stack
+- Engagement breadcrumbs: opens, clicks, page visits, webinar attendance
+- Timing signals: fiscal cycles, hiring spikes, product launches
+- Social proof match: peers by industry and problem cluster
+
+## From score to action
+
+- High: prioritize with high‑intent messaging and short cycles
+- Medium: value‑first content and social proof
+- Low: nurture with longer spacing and educational content
+
+## Why this works
+
+Predictive models surface patterns humans miss at scale. The result: fewer touches to book meetings and higher quality conversations.
+
+Ready to put your cold pile in the right order? [Start your free trial](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Data Team',
+    publishedAt: '2024-02-01',
+    readTime: '6 min read',
+    tags: ['AI', 'Lead Scoring', 'Sales Intelligence'],
+    ogImage:
+      'https://dripiq.ai/blog/ai-lead-scoring-how-dripiq-predicts-replies.jpg',
+    seo: {
+      title:
+        'AI Lead Scoring by dripIq | Predict Replies and Prioritize Outreach',
+      description:
+        'Understand dripIq’s AI lead scoring model and the signals used to prioritize dormant records and trigger the next best action.',
+      keywords: [
+        'AI lead scoring',
+        'predictive lead scoring',
+        'reply prediction',
+        'next best action',
+        'sales prioritization',
+      ],
+    },
+  },
+  {
+    slug: 'multichannel-sequences-that-reengage-cold-leads',
+    title: 'Multi‑Channel Sequences That Re‑Engage Cold Leads',
+    excerpt:
+      'Design email, phone, and LinkedIn sequences that revive stalled conversations using AI timing, content rotation, and frequency control.',
+    content: `
+# Multi‑Channel Sequences That Re‑Engage Cold Leads
+
+Single‑channel outreach burns out quickly. dripIq coordinates email, phone, and LinkedIn touches with smart spacing and content variation to increase reply rates.
+
+## The anatomy of a winning sequence
+
+- Day 1: Value‑first email with credible proof
+- Day 3: Soft LinkedIn touch (view + follow)
+- Day 6: Short email with 1 outcome and 1 question
+- Day 9: Call with voicemail (if appropriate)
+- Day 14: Case‑study email tailored to segment
+- Day 21: Breakup note with resource or template
+
+## AI optimizations
+
+- Send‑time prediction per contact
+- Content rotation to avoid repetition
+- Channel selection based on past engagement
+- Automatic pause on out‑of‑office and replies
+
+Launch your first sequence in minutes—then let the AI do the heavy lifting. [Try it now](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Team',
+    publishedAt: '2024-02-08',
+    readTime: '7 min read',
+    tags: ['Sequences', 'Cold Outreach', 'Sales Automation'],
+    ogImage:
+      'https://dripiq.ai/blog/multichannel-sequences-that-reengage-cold-leads.jpg',
+    seo: {
+      title: 'Multi‑Channel Outreach Sequences for Lead Re‑Engagement | dripIq',
+      description:
+        'Build AI‑optimized email, phone, and LinkedIn sequences that re‑engage cold leads with better timing, content, and channel selection.',
+      keywords: [
+        'multi-channel sequences',
+        'lead re-engagement sequences',
+        'email linkedin phone cadence',
+        'cold outreach timing',
+      ],
+    },
+  },
+  {
+    slug: 'crm-integration-clean-data-better-reengagement',
+    title: 'Plug Into Your CRM: Clean Data, Better Re‑Engagement',
+    excerpt:
+      'Learn how dripIq syncs with your CRM to segment audiences, prevent duplicates, and keep activity data accurate for closed‑loop reporting.',
+    content: `
+# Plug Into Your CRM: Clean Data, Better Re‑Engagement
+
+Re‑engagement only works when your data is trustworthy. dripIq bi‑directionally syncs with your CRM to create precise segments and track outcomes without spreadsheets.
+
+## What syncs
+
+- Leads/contacts, accounts, and opportunities
+- Custom fields used for segmentation
+- Campaign membership and statuses
+- Activities, replies, bounces, and unsubscribes
+
+## Data hygiene by design
+
+- De‑dupe safeguards and frequency caps
+- Auto‑pause on status changes or lifecycle progression
+- Field validation to protect your reporting
+
+## Reporting that revenue leaders trust
+
+Attribution ties replies, meetings, and pipeline back to the sequences and playbooks that drove them.
+
+Connect and sync in minutes. [Get started](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Team',
+    publishedAt: '2024-02-15',
+    readTime: '6 min read',
+    tags: ['CRM', 'Data Hygiene', 'Attribution'],
+    ogImage:
+      'https://dripiq.ai/blog/crm-integration-clean-data-better-reengagement.jpg',
+    seo: {
+      title: 'CRM Integration for Lead Re‑Engagement | Clean Data with dripIq',
+      description:
+        'See how dripIq integrates with your CRM to power accurate segmentation, clean data, and closed‑loop attribution for re‑engagement campaigns.',
+      keywords: [
+        'CRM integration',
+        'data hygiene',
+        'sales attribution',
+        'bi-directional sync',
+      ],
+    },
+  },
+  {
+    slug: 'lead-reengagement-roi-benchmarks-and-kpis',
+    title: 'Proving ROI: Benchmarks and KPIs for Lead Re‑Engagement',
+    excerpt:
+      'Use realistic benchmarks and a simple measurement framework to quantify the revenue impact of reviving cold leads with dripIq.',
+    content: `
+# Proving ROI: Benchmarks and KPIs for Lead Re‑Engagement
+
+Reviving cold leads is one of the highest‑ROI motions in revenue. Here’s how to set targets and track impact.
+
+## Useful benchmarks
+
+- 2–4× reply rate vs. manual re‑engagement
+- 20–40% meeting‑from‑reply rate
+- 10–25% opportunity‑from‑meeting rate
+- Payback in 1–2 quarters for typical SDR teams
+
+## KPIs to watch
+
+- Reply rate by segment and channel
+- Meetings booked and conversion to pipeline
+- Cycle time from dormant to meeting
+- Revenue per re‑engaged account
+
+## Tie it together
+
+Use dripIq’s analytics to attribute meetings and pipeline to specific sequences and playbooks.
+
+[Start your free trial](${APP_URLS.SIGNUP}) and put these numbers to work.
+    `,
+    author: 'dripIq Team',
+    publishedAt: '2024-02-22',
+    readTime: '8 min read',
+    tags: ['ROI', 'Benchmarks', 'Sales Metrics'],
+    ogImage:
+      'https://dripiq.ai/blog/lead-reengagement-roi-benchmarks-and-kpis.jpg',
+    seo: {
+      title: 'Lead Re‑Engagement ROI Benchmarks & KPIs | dripIq',
+      description:
+        'Benchmarks and a KPI framework to measure reply rate, meetings, pipeline, and revenue from AI‑powered lead re‑engagement.',
+      keywords: [
+        'lead re-engagement ROI',
+        'sales benchmarks',
+        'pipeline metrics',
+        'B2B sales KPIs',
+      ],
+    },
+  },
+  {
+    slug: 'getting-started-dripiq-30-minute-setup',
+    title: 'Getting Started with dripIq: A 30‑Minute Setup Guide',
+    excerpt:
+      'A fast path to value—connect your CRM, pick a playbook, and launch your first AI‑powered re‑engagement sequence in half an hour.',
+    content: `
+# Getting Started with dripIq: A 30‑Minute Setup Guide
+
+You do not need weeks to see value. Follow this quick start.
+
+## Step 1: Connect your CRM
+
+Authenticate and select objects and fields to sync.
+
+## Step 2: Choose a playbook
+
+Pick a re‑engagement pattern that matches your segment (e.g., lapsed inbound, stalled opps, no‑show demos).
+
+## Step 3: Personalize guardrails
+
+Set brand voice, tone, and compliance preferences.
+
+## Step 4: Launch and monitor
+
+Start with a small slice, review replies, then scale to the full audience.
+
+You can be live today. [Create your account](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Success Team',
+    publishedAt: '2024-03-01',
+    readTime: '5 min read',
+    tags: ['Onboarding', 'Setup', 'Playbooks'],
+    ogImage:
+      'https://dripiq.ai/blog/getting-started-dripiq-30-minute-setup.jpg',
+    seo: {
+      title: 'dripIq Quick Start Guide | Launch in 30 Minutes',
+      description:
+        'Connect your CRM, select a playbook, and go live with AI‑powered re‑engagement in 30 minutes using dripIq.',
+      keywords: [
+        'dripIq setup',
+        'quick start guide',
+        're-engagement playbook',
+        'sales onboarding',
+      ],
+    },
+  },
+  {
+    slug: 'personalization-at-scale-templates-variables-dynamic-content',
+    title:
+      'Personalization at Scale: Templates, Variables, and Dynamic Content',
+    excerpt:
+      'Move beyond mail‑merge. Learn how dripIq personalizes tone, value props, and proof for each contact without manual editing.',
+    content: `
+# Personalization at Scale: Templates, Variables, and Dynamic Content
+
+Generic messages get generic results. dripIq assembles every message dynamically using segment rules, contact data, and proof assets.
+
+## What gets personalized
+
+- Opening line and value proposition
+- Social proof by industry and size
+- Call‑to‑action aligned to buyer journey stage
+- Signature elements (SDR vs. AE tone)
+
+## Guardrails that protect your brand
+
+- Voice and tone constraints
+- Banned phrases and compliance filters
+- Review and approve modes for new patterns
+
+Scale relevance without scaling headcount. [Try dripIq](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Team',
+    publishedAt: '2024-03-08',
+    readTime: '7 min read',
+    tags: ['Personalization', 'AI Content', 'Sequences'],
+    ogImage:
+      'https://dripiq.ai/blog/personalization-at-scale-templates-variables-dynamic-content.jpg',
+    seo: {
+      title: 'Personalized Sales Outreach at Scale with dripIq',
+      description:
+        'Learn how dripIq uses dynamic templates and guardrails to personalize outreach beyond mail‑merge while protecting brand voice and compliance.',
+      keywords: [
+        'personalized outreach',
+        'dynamic templates',
+        'AI sales content',
+        'brand guardrails',
+      ],
+    },
+  },
+  {
+    slug: 'deliverability-and-compliance-for-ai-cold-outreach',
+    title: 'Deliverability & Compliance for AI‑Powered Cold Outreach',
+    excerpt:
+      'Achieve high inbox placement and stay compliant with sane frequency capping, domain warmup guidance, and opt‑out management.',
+    content: `
+# Deliverability & Compliance for AI‑Powered Cold Outreach
+
+Great messaging means nothing if it never lands in the inbox. dripIq bakes in deliverability and compliance best practices so you can scale responsibly.
+
+## Deliverability fundamentals
+
+- Domain and IP warmup guidance
+- Authentication (SPF, DKIM, DMARC) checks
+- List quality and bounce protection
+- Send‑time distribution and throttling
+
+## Compliance safeguards
+
+- Clear opt‑out flows and auto‑suppression
+- Per‑contact frequency caps and quiet hours
+- Regional rules awareness
+
+Outreach that is safe, respectful, and effective. [Get started](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Compliance Team',
+    publishedAt: '2024-03-15',
+    readTime: '6 min read',
+    tags: ['Deliverability', 'Compliance', 'Email'],
+    ogImage:
+      'https://dripiq.ai/blog/deliverability-and-compliance-for-ai-cold-outreach.jpg',
+    seo: {
+      title: 'Email Deliverability and Compliance Best Practices | dripIq',
+      description:
+        'Improve inbox placement and maintain compliance with dripIq’s built‑in warmup guidance, frequency caps, and suppression management.',
+      keywords: [
+        'email deliverability',
+        'sales compliance',
+        'opt-out management',
+        'domain warmup',
+      ],
+    },
+  },
+  {
+    slug: 'reengagement-playbooks-7-campaigns-that-consistently-win',
+    title: 'Re‑Engagement Playbooks: 7 Campaigns That Consistently Win',
+    excerpt:
+      'Steal these proven playbooks—lapsed inbound, no‑show demos, closed‑lost revisit, champion change, and more—prebuilt inside dripIq.',
+    content: `
+# Re‑Engagement Playbooks: 7 Campaigns That Consistently Win
+
+These battle‑tested campaigns come prebuilt in dripIq to make activation easy.
+
+## 1) Lapsed inbound
+Value‑first content + short ask.
+
+## 2) No‑show demo
+Offer a quick recap and a low‑friction reschedule.
+
+## 3) Stalled opportunity
+Share peer proof and a new angle.
+
+## 4) Champion changed roles
+Reconnect with context and identify the new stakeholder map.
+
+## 5) Closed‑lost revisit
+Time‑based check‑in paired with product or market update.
+
+## 6) Event follow‑up
+Tie outreach to sessions attended and topics of interest.
+
+## 7) Renewal/expansion wake‑up
+Surface usage insights and quick wins.
+
+Launch any of these in minutes. [Start your free trial](${APP_URLS.SIGNUP}).
+    `,
+    author: 'dripIq Team',
+    publishedAt: '2024-03-22',
+    readTime: '9 min read',
+    tags: ['Playbooks', 'Sales Strategy', 'Lead Re-Engagement'],
+    ogImage:
+      'https://dripiq.ai/blog/reengagement-playbooks-7-campaigns-that-consistently-win.jpg',
+    seo: {
+      title: 'Lead Re‑Engagement Playbooks That Work | dripIq',
+      description:
+        'Seven proven re‑engagement campaigns—prebuilt in dripIq—to revive cold leads and stalled opportunities quickly.',
+      keywords: [
+        'lead re-engagement playbooks',
+        'sales campaigns',
+        'stalled opportunity outreach',
+        'no-show follow-up',
+      ],
+    },
+  },
+  {
     slug: 'cold-leads-conversion-tactics',
     title:
       'How to Convert Cold Leads: 5 Data-Driven Tactics That Increase Response Rates by 300%',
