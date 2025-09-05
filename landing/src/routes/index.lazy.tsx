@@ -9,7 +9,7 @@ const HomePage = () => {
     <>
       <SEOHead
         title="dripIq - AI-Powered Sales Re-engagement Platform"
-        description="Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform that turns cold leads into warm prospects."
+        description="Automated, intelligent follow-up for your lost leads. AI-powered CRM re-engagement platform that turns cold leads into warm prospects."
         canonical="https://dripiq.ai/"
         structuredData={{
           '@context': 'https://schema.org',
