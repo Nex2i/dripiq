@@ -72,9 +72,6 @@ export default function CTA() {
               TechCorp
             </div>
             <div className="text-surface-500 font-semibold text-lg">
-              SalesForce Pro
-            </div>
-            <div className="text-surface-500 font-semibold text-lg">
               Growth Co
             </div>
             <div className="text-surface-500 font-semibold text-lg">
@@ -83,22 +80,6 @@ export default function CTA() {
           </div>
         </div>
 
-        {/* Security badge */}
-        <div className="mt-12 flex justify-center">
-          <div className="flex items-center space-x-4 px-6 py-3 bg-surface-800/50 rounded-lg border border-surface-700">
-            <div className="w-8 h-8 bg-success-500 rounded-full flex items-center justify-center">
-              <CheckCircle className="h-5 w-5 text-white" />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-semibold text-white">
-                SOC 2 Compliant
-              </div>
-              <div className="text-xs text-surface-400">
-                Enterprise-grade security
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )

@@ -1,4 +1,4 @@
-import { Brain, Zap, Target, BarChart3, Shield, Puzzle } from 'lucide-react'
+import { Brain, Zap, Target, BarChart3, Puzzle } from 'lucide-react'
 import { APP_URLS } from '@/constants/app'
 
 export default function Features() {
@@ -32,17 +32,10 @@ export default function Features() {
       gradient: 'from-success-500 to-success-600',
     },
     {
-      icon: Shield,
-      title: 'Enterprise Security',
-      description:
-        'Bank-level security with SOC 2 compliance, ensuring your customer data is always protected.',
-      gradient: 'from-warning-500 to-warning-600',
-    },
-    {
       icon: Puzzle,
       title: 'Seamless Integration',
       description:
-        'Native Salesforce integration with one-click setup. Works with your existing sales stack.',
+        'Easy integration with your existing CRM and sales tools. Works with your current sales stack.',
       gradient: 'from-accent-600 to-primary-500',
     },
   ]

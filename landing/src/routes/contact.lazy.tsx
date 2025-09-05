@@ -94,7 +94,7 @@ const ContactPage = () => {
                   How quickly can I get started?
                 </h3>
                 <p className="text-surface-600">
-                  Most teams are up and running within 24 hours. Our Salesforce
+                  Most teams are up and running within 24 hours. Our CRM
                   integration takes just a few clicks to set up.
                 </p>
               </div>
@@ -103,7 +103,7 @@ const ContactPage = () => {
                   Do you offer custom integrations?
                 </h3>
                 <p className="text-surface-600">
-                  Yes! Our enterprise plans include custom integrations with
+                  Yes! Our enterprise plans include custom workflows with
                   your existing sales stack and CRM systems.
                 </p>
               </div>

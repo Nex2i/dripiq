@@ -24,7 +24,7 @@ export default function Hero() {
               </h1>
               <p className="text-xl text-surface-600 mt-6 max-w-2xl mx-auto lg:mx-0">
                 dripIq uses AI to automatically identify dormant leads in your
-                Salesforce and orchestrate personalized re-engagement campaigns
+                CRM and orchestrate personalized re-engagement campaigns
                 that actually convert.
               </p>
             </div>
