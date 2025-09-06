@@ -9,6 +9,7 @@ import {
   integer,
   jsonb,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 import { DATABASE_SCHEMA } from '../config';
@@ -929,7 +930,10 @@ export const mailAccounts = appSchema.table(
     index('mail_accounts_email_idx').on(table.primaryEmail),
     index('mail_accounts_user_idx').on(table.userId),
     index('mail_accounts_tenant_idx').on(table.tenantId),
-    // Note: Partial unique index for primary mail accounts is created via migration
+    // Partial unique index to ensure only one primary mail account per user
+    uniqueIndex('mail_accounts_user_primary_uq')
+      .on(table.userId)
+      .where(sql`${table.isPrimary} = true`),
   ]
 );
 
