@@ -80,3 +80,10 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "max-age=86400"
+
+# Headers for .well-known directory
+[[headers]]
+  for = "/.well-known/*"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "max-age=3600"
