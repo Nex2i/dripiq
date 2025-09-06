@@ -141,17 +141,19 @@ export async function shutdownAll(server?: any, options: ShutdownOptions = {}): 
  */
 export function createGracefulShutdownHandler(
   server?: any,
-  options: ShutdownOptions = {}
+  options: ShutdownOptions = {},
+  processType?: string
 ) {
   return async (signal: string) => {
-    logger.info(`📴 Received ${signal}. Starting graceful shutdown...`);
+    const processInfo = processType ? ` (${processType})` : '';
+    logger.info(`📴 Received ${signal}. Starting graceful shutdown...${processInfo}`);
 
     try {
       await shutdownAll(server, options);
-      logger.info('✅ Graceful shutdown completed successfully');
+      logger.info(`✅ Graceful shutdown completed successfully${processInfo}`);
       process.exit(0);
     } catch (error) {
-      logger.error('❌ Error during graceful shutdown', {
+      logger.error(`❌ Error during graceful shutdown${processInfo}`, {
         error: error instanceof Error ? error.message : 'Unknown error',
         signal,
       });
@@ -165,9 +167,10 @@ export function createGracefulShutdownHandler(
  */
 export function setupGracefulShutdown(
   server?: any,
-  options: ShutdownOptions = {}
+  options: ShutdownOptions = {},
+  processType?: string
 ): void {
-  const shutdownHandler = createGracefulShutdownHandler(server, options);
+  const shutdownHandler = createGracefulShutdownHandler(server, options, processType);
 
   // Handle termination signals
   process.on('SIGTERM', () => shutdownHandler('SIGTERM'));

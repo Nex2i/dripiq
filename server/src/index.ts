@@ -24,7 +24,7 @@ const PORT: number = Number(process.env.PORT || 3001);
     setupGracefulShutdown(server, {
       timeout: 10000, // 10 seconds timeout for shutdown
       forceExit: true,
-    });
+    }, 'server');
 
   } catch (error) {
     logger.error('Error running server:', error);
