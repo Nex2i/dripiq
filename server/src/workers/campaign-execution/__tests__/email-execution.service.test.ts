@@ -23,9 +23,9 @@ jest.mock('@/modules/unsubscribe', () => ({
   },
 }));
 
-jest.mock('@/libs/email/sendgrid.client', () => ({
-  sendgridClient: {
-    send: jest.fn(),
+jest.mock('@/modules/email', () => ({
+  EmailProcessor: {
+    sendCampaignEmail: jest.fn(),
   },
 }));
 

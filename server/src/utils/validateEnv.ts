@@ -16,6 +16,7 @@ export const schema = {
     DB_SCHEMA: { type: 'string' },
     REDIS_URL: { type: 'string' },
     BULLMQ_PREFIX: { type: 'string' },
+    ENCRYPTION_KEY: { type: 'string' },
   },
   required: ['PORT', 'NODE_ENV', 'REDIS_URL'],
 } as const;

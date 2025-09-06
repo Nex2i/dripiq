@@ -17,7 +17,7 @@ import {
   DEFAULT_NO_CLICK_TIMEOUT,
   TIMEOUT_JOB_OPTIONS,
 } from '@/constants/timeout-jobs';
-import { EmailProcessor, type CampaignEmailData } from '@/services/email';
+import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
 import type { ContactCampaign, EmailSenderIdentity, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
@@ -172,27 +172,30 @@ export class EmailExecutionService {
 
       // Fetch calendar information if available
       let calendarInfo: CampaignEmailData['calendarInfo'];
-      try {
-        const lead = await leadRepository.findByIdForTenant(contact.leadId, tenantId);
-        if (lead?.ownerId) {
-          const user = await userRepository.findById(lead.ownerId);
-          if (user?.calendarLink && user?.calendarTieIn) {
-            calendarInfo = {
-              calendarLink: user.calendarLink,
-              calendarTieIn: user.calendarTieIn,
-              leadId: lead.id,
-            };
-          }
-        }
-      } catch (calendarError) {
-        logger.error('[EmailExecutionService] Failed to fetch calendar information', {
+      const lead = await leadRepository.findByIdForTenant(contact.leadId, tenantId);
+
+      if (!lead.ownerId) {
+        logger.error('[EmailExecutionService] User ID not found for campaign execution', {
           tenantId,
           campaignId,
           contactId,
           nodeId,
-          error: calendarError instanceof Error ? calendarError.message : 'Unknown error',
+          leadId: contact.leadId,
         });
-        // Continue without calendar info
+        throw new Error('User ID not found for campaign execution');
+      }
+
+      const userId = lead.ownerId;
+
+      const user = await userRepository.findById(lead.ownerId);
+      if (userId) {
+        if (user?.calendarLink && user?.calendarTieIn) {
+          calendarInfo = {
+            calendarLink: user.calendarLink,
+            calendarTieIn: user.calendarTieIn,
+            leadId: lead.id,
+          };
+        }
       }
 
       // Prepare data for EmailProcessor
@@ -205,8 +208,6 @@ export class EmailExecutionService {
         body: node.body,
         recipientEmail: contact.email,
         recipientName: contact.name,
-        senderIdentity,
-        senderConfig,
         calendarInfo,
         dedupeKey,
         categories: ['campaign'],
@@ -215,7 +216,7 @@ export class EmailExecutionService {
       };
 
       // Send email using EmailProcessor
-      const result = await EmailProcessor.sendCampaignEmail(emailData);
+      const result = await EmailProcessor.sendCampaignEmail(userId, emailData);
 
       if (!result.success) {
         throw new Error(result.error);

@@ -2,7 +2,7 @@ import type { Job } from 'bullmq';
 import { logger } from '@/libs/logger';
 import { contactCampaignRepository, messageEventRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
-import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
+import { calendarClickValidationService } from '@/modules/calendarClickValidation.service';
 import { CAMPAIGN_EVENT_TYPES } from '@/constants/campaign-events';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';

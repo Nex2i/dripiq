@@ -1,6 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
-import { sendgridClient } from '@/libs/email/sendgrid.client';
 import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
 import {
   formatEmailBodyForHtml,
@@ -8,8 +7,8 @@ import {
   containsHtml,
 } from '@/utils/emailFormatting';
 import { outboundMessageRepository } from '@/repositories';
-import type { SendBase } from '@/libs/email/sendgrid.types';
-import { EmailSenderIdentity } from '@/db';
+import type { EmailSendBase } from '@/libs/email/email.types';
+import { emailOrchestrator } from '@/libs/email/email.orchestrator';
 
 export interface CampaignEmailData {
   // Core email data
@@ -23,16 +22,6 @@ export interface CampaignEmailData {
   body: string;
   recipientEmail: string;
   recipientName: string;
-
-  // Sender info (pre-fetched, pre-validated)
-  senderIdentity: EmailSenderIdentity;
-
-  // Optional override for sender configuration (for domain validation fallback)
-  senderConfig?: {
-    fromEmail: string;
-    fromName: string;
-    replyTo?: string;
-  };
 
   // Calendar info (optional, pre-fetched)
   calendarInfo?: {
@@ -70,7 +59,10 @@ export class EmailProcessor {
    * @param data Complete email data with all dependencies resolved
    * @returns Result of the email sending operation
    */
-  static async sendCampaignEmail(data: CampaignEmailData): Promise<EmailProcessorResult> {
+  static async sendCampaignEmail(
+    userId: string,
+    data: CampaignEmailData
+  ): Promise<EmailProcessorResult> {
     const {
       tenantId,
       campaignId,
@@ -80,8 +72,6 @@ export class EmailProcessor {
       body,
       recipientEmail,
       recipientName,
-      senderIdentity,
-      senderConfig,
       calendarInfo,
       skipMessageRecord = false,
       categories = ['campaign'],
@@ -113,7 +103,7 @@ export class EmailProcessor {
       // Create outbound message ID (used for tracking even if not recording)
       const outboundMessageId = createId();
 
-      // Prepare email body with signature and calendar information
+      // Prepare email body and calendar information
       let emailBody = body;
 
       if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
@@ -172,7 +162,6 @@ export class EmailProcessor {
           campaignId,
           contactId,
           channel: 'email',
-          senderIdentityId: senderIdentity.id,
           dedupeKey,
           content: {
             subject,
@@ -187,65 +176,25 @@ export class EmailProcessor {
         });
       }
 
-      // Append email signature if available
-      if (senderIdentity.emailSignature?.trim()) {
-        const signature = senderIdentity.emailSignature.trim();
-
-        // Check if either the body or signature contains HTML
-        const bodyHasHtml = containsHtml(emailBody);
-        const signatureHasHtml = containsHtml(signature);
-
-        if (bodyHasHtml || signatureHasHtml) {
-          // HTML mode: convert plain text parts to HTML for consistency
-          const htmlBody = bodyHasHtml ? emailBody : emailBody.replace(/\n/g, '<br>');
-          const htmlSignature = signatureHasHtml ? signature : signature.replace(/\n/g, '<br>');
-          emailBody = `${htmlBody}<br><br>${htmlSignature}`;
-        } else {
-          // Plain text mode: use simple newlines
-          emailBody = `${emailBody}\n\n${signature}`;
-        }
-
-        logger.info('[EmailProcessor] Email signature appended', {
-          tenantId,
-          campaignId,
-          contactId,
-          nodeId,
-          senderIdentityId: senderIdentity.id,
-          signatureLength: signature.length,
-          signatureIsHtml: signatureHasHtml,
-          bodyIsHtml: bodyHasHtml,
-        });
-      }
-
       // Prepare SendGrid payload with both HTML and plain text versions
       const htmlBody = formatEmailBodyForHtml(emailBody);
       const textBody = formatEmailBodyForText(emailBody);
 
-      // Use senderConfig if provided (for domain validation fallback), otherwise use senderIdentity
-      const fromEmail = senderConfig?.fromEmail || senderIdentity.fromEmail;
-      const fromName = senderConfig?.fromName || senderIdentity.fromName;
-      const replyTo = senderConfig?.replyTo;
-
-      const sendPayload: SendBase = {
+      const sendPayload: Partial<EmailSendBase> = {
         tenantId,
         campaignId,
         nodeId,
         outboundMessageId,
         dedupeKey,
-        from: {
-          email: fromEmail,
-          name: fromName,
-        },
         to: recipientEmail,
         subject,
         html: htmlBody,
         text: textBody,
         categories: [...categories, `tenant:${tenantId}`],
-        reply_to: replyTo,
       };
 
       // Send email via SendGrid
-      logger.info('[EmailProcessor] Sending email via SendGrid', {
+      logger.info('[EmailProcessor] Sending email', {
         tenantId,
         campaignId,
         contactId,
@@ -253,12 +202,10 @@ export class EmailProcessor {
         outboundMessageId,
         subject,
         to: recipientEmail,
-        from: fromEmail,
-        replyTo: replyTo || 'none',
         skipMessageRecord,
       });
 
-      const providerIds = await sendgridClient.sendEmail(sendPayload);
+      const providerIds = await emailOrchestrator.sendEmail(userId, sendPayload);
 
       // Update outbound message with success if not skipping
       if (!skipMessageRecord) {

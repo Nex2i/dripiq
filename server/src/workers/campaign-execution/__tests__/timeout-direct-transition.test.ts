@@ -10,12 +10,12 @@ import {
 import type { Job } from 'bullmq';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
-import { calendarClickValidationService } from '@/services/calendarClickValidation.service';
+import { calendarClickValidationService } from '@/modules/calendarClickValidation.service';
 
 // Mock dependencies
 jest.mock('@/repositories');
 jest.mock('@/modules/campaign/campaignPlanExecution.service');
-jest.mock('@/services/calendarClickValidation.service');
+jest.mock('@/modules/calendarClickValidation.service');
 
 // Mock BullMQ to prevent Redis connection issues
 jest.mock('@/libs/bullmq', () => ({

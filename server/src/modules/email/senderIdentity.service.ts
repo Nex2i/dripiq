@@ -1,6 +1,6 @@
 import { emailSenderIdentityRepository, domainValidationRepository } from '@/repositories';
 import { EmailSenderIdentity, NewEmailSenderIdentity } from '@/db/schema';
-import { sendgridClient } from '@/libs/email/sendgrid.client';
+import { sendgridClient } from '@/libs/email/strategies/sendgrid.client';
 import { SendgridTokenHelper } from '@/libs/email/sendgridToken.helper';
 import { validateEmailSignature } from '@/utils/htmlSanitization';
 

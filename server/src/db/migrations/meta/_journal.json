@@ -260,6 +260,13 @@
       "when": 1756424898151,
       "tag": "0036_contact_campaign_status",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1757117629262,
+      "tag": "0037_mail_o_auth",
+      "breakpoints": true
     }
   ]
 }

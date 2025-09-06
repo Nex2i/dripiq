@@ -1,9 +1,9 @@
 import sgMail, { ClientResponse, MailDataRequired } from '@sendgrid/mail';
 import sgClient from '@sendgrid/client';
 import { ClientRequest } from '@sendgrid/client/src/request';
-import { logger } from '../logger';
-import { ProviderIds, SenderValidationVerdict } from './sendgrid.types';
-import { SendBase } from './sendgrid.types';
+import { logger } from '../../logger';
+import { ProviderIds, SenderValidationVerdict } from '../email.types';
+import { EmailSendBase } from '../email.types';
 
 class SendgridClient {
   constructor() {
@@ -11,7 +11,7 @@ class SendgridClient {
     sgClient.setApiKey(process.env.SENDGRID_API_KEY || '');
   }
 
-  async sendEmail(input: SendBase): Promise<ProviderIds> {
+  async sendEmail(input: EmailSendBase): Promise<ProviderIds> {
     const hasHtml = !!input.html;
     const hasText = !!input.text;
 
@@ -19,15 +19,10 @@ class SendgridClient {
       throw new Error('Email body is required: provide html or text');
     }
 
-    // Handle reply-to: default to from email if reply_to is null or whitespace
-    const replyToEmail =
-      input.reply_to && input.reply_to.trim() ? input.reply_to.trim() : input.from.email;
-
     const msg: Partial<MailDataRequired> = {
       from: input.from,
       to: input.to,
       subject: input.subject,
-      replyTo: replyToEmail,
       headers: input.headers,
       categories: input.categories,
       customArgs: this.buildCustomArgs(input),
