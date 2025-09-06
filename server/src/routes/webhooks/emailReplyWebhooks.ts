@@ -1,10 +1,5 @@
 import { Request, Response } from 'express';
 import { logger } from '@/libs/logger';
-import { GmailReplyTracker } from '@/libs/email/reply-tracking/GmailReplyTracker';
-import { OutlookReplyTracker } from '@/libs/email/reply-tracking/OutlookReplyTracker';
-import { db } from '@/db';
-import { webhookSubscriptions, mailAccounts, oauthTokens } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
 
 /**
  * Gmail Push Notification Webhook
@@ -12,75 +7,29 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function handleGmailNotification(req: Request, res: Response): Promise<void> {
   try {
-    logger.info('[EmailReplyWebhooks] Received Gmail notification', {
+    logger.info('[Gmail Webhook] Received notification', {
       headers: req.headers,
       body: req.body,
     });
 
-    // Verify this is a valid Pub/Sub message
-    if (!req.body.message) {
-      logger.warn('[EmailReplyWebhooks] Invalid Gmail notification - no message');
-      res.status(400).json({ error: 'Invalid notification format' });
-      return;
+    // Log the decoded message data if available
+    if (req.body.message?.data) {
+      try {
+        const decodedData = JSON.parse(Buffer.from(req.body.message.data, 'base64').toString('utf-8'));
+        logger.info('[Gmail Webhook] Decoded notification data', decodedData);
+      } catch (decodeError) {
+        logger.warn('[Gmail Webhook] Failed to decode message data', { error: decodeError });
+      }
     }
 
-    const { message } = req.body;
-    
-    // Decode the message data to get the email address
-    let emailAddress: string;
-    try {
-      const decodedData = JSON.parse(Buffer.from(message.data, 'base64').toString('utf-8'));
-      emailAddress = decodedData.emailAddress;
-    } catch (error) {
-      logger.error('[EmailReplyWebhooks] Failed to decode Gmail notification data', { error });
-      res.status(400).json({ error: 'Invalid message data' });
-      return;
-    }
-
-    // Find the mail account for this email address
-    const mailAccount = await db
-      .select({
-        id: mailAccounts.id,
-        userId: mailAccounts.userId,
-      })
-      .from(mailAccounts)
-      .where(and(
-        eq(mailAccounts.primaryEmail, emailAddress),
-        eq(mailAccounts.provider, 'google')
-      ))
-      .limit(1);
-
-    if (mailAccount.length === 0) {
-      logger.warn('[EmailReplyWebhooks] No mail account found for Gmail notification', { emailAddress });
-      res.status(404).json({ error: 'Mail account not found' });
-      return;
-    }
-
-    // Get the refresh token for this mail account
-    const tokenRecord = await db
-      .select({ refreshToken: oauthTokens.refreshToken })
-      .from(oauthTokens)
-      .where(and(
-        eq(oauthTokens.mailAccountId, mailAccount[0].id),
-        eq(oauthTokens.status, 'active')
-      ))
-      .limit(1);
-
-    if (tokenRecord.length === 0) {
-      logger.error('[EmailReplyWebhooks] No active refresh token found for mail account', {
-        mailAccountId: mailAccount[0].id,
-      });
-      res.status(500).json({ error: 'No active token found' });
-      return;
-    }
-
-    // Process the notification
-    const gmailTracker = new GmailReplyTracker(tokenRecord[0].refreshToken);
-    await gmailTracker.processPushNotification(req.body, mailAccount[0].id);
-
-    res.status(200).json({ success: true });
+    // For now, just acknowledge receipt
+    res.status(200).json({ 
+      success: true, 
+      message: 'Gmail notification received and logged',
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    logger.error('[EmailReplyWebhooks] Failed to handle Gmail notification', {
+    logger.error('[Gmail Webhook] Failed to handle notification', {
       error: error instanceof Error ? error.message : 'Unknown error',
       body: req.body,
     });
@@ -94,88 +43,47 @@ export async function handleGmailNotification(req: Request, res: Response): Prom
  */
 export async function handleOutlookNotification(req: Request, res: Response): Promise<void> {
   try {
-    logger.info('[EmailReplyWebhooks] Received Outlook notification', {
+    logger.info('[Outlook Webhook] Received notification', {
       headers: req.headers,
       body: req.body,
     });
 
     // Handle validation request from Microsoft Graph
     if (req.query.validationToken) {
-      logger.info('[EmailReplyWebhooks] Responding to Outlook webhook validation');
+      logger.info('[Outlook Webhook] Responding to validation request', {
+        validationToken: req.query.validationToken,
+      });
       res.status(200).send(req.query.validationToken);
       return;
     }
 
     // Process change notifications
-    if (!req.body.value || !Array.isArray(req.body.value)) {
-      logger.warn('[EmailReplyWebhooks] Invalid Outlook notification format');
-      res.status(400).json({ error: 'Invalid notification format' });
-      return;
-    }
+    if (req.body.value && Array.isArray(req.body.value)) {
+      logger.info('[Outlook Webhook] Processing change notifications', {
+        notificationCount: req.body.value.length,
+        notifications: req.body.value,
+      });
 
-    const notifications = req.body.value;
-
-    for (const notification of notifications) {
-      try {
-        // Validate the notification structure
-        if (!OutlookReplyTracker.validateWebhookNotification(notification)) {
-          logger.warn('[EmailReplyWebhooks] Invalid Outlook notification structure', { notification });
-          continue;
-        }
-
-        // Find the mail account for this subscription
-        const subscription = await db
-          .select({
-            mailAccountId: webhookSubscriptions.mailAccountId,
-            userId: webhookSubscriptions.userId,
-          })
-          .from(webhookSubscriptions)
-          .where(and(
-            eq(webhookSubscriptions.subscriptionId, notification.subscriptionId),
-            eq(webhookSubscriptions.provider, 'microsoft'),
-            eq(webhookSubscriptions.status, 'active')
-          ))
-          .limit(1);
-
-        if (subscription.length === 0) {
-          logger.warn('[EmailReplyWebhooks] No active subscription found for Outlook notification', {
-            subscriptionId: notification.subscriptionId,
-          });
-          continue;
-        }
-
-        // Get the refresh token for this mail account
-        const tokenRecord = await db
-          .select({ refreshToken: oauthTokens.refreshToken })
-          .from(oauthTokens)
-          .where(and(
-            eq(oauthTokens.mailAccountId, subscription[0].mailAccountId),
-            eq(oauthTokens.status, 'active')
-          ))
-          .limit(1);
-
-        if (tokenRecord.length === 0) {
-          logger.error('[EmailReplyWebhooks] No active refresh token found for mail account', {
-            mailAccountId: subscription[0].mailAccountId,
-          });
-          continue;
-        }
-
-        // Process the notification
-        const outlookTracker = new OutlookReplyTracker(tokenRecord[0].refreshToken);
-        await outlookTracker.processChangeNotification(notification, subscription[0].mailAccountId);
-      } catch (notificationError) {
-        logger.error('[EmailReplyWebhooks] Failed to process individual Outlook notification', {
-          error: notificationError instanceof Error ? notificationError.message : 'Unknown error',
-          notification,
+      // Log each notification
+      req.body.value.forEach((notification: any, index: number) => {
+        logger.info(`[Outlook Webhook] Notification ${index + 1}`, {
+          subscriptionId: notification.subscriptionId,
+          changeType: notification.changeType,
+          resource: notification.resource,
+          resourceData: notification.resourceData,
+          clientState: notification.clientState,
         });
-        // Continue processing other notifications
-      }
+      });
     }
 
-    res.status(200).json({ success: true });
+    res.status(200).json({ 
+      success: true, 
+      message: 'Outlook notification received and logged',
+      processedCount: req.body.value?.length || 0,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    logger.error('[EmailReplyWebhooks] Failed to handle Outlook notifications', {
+    logger.error('[Outlook Webhook] Failed to handle notification', {
       error: error instanceof Error ? error.message : 'Unknown error',
       body: req.body,
     });
@@ -184,17 +92,15 @@ export async function handleOutlookNotification(req: Request, res: Response): Pr
 }
 
 /**
- * Generic email reply webhook for testing or custom integrations
+ * Generic email reply webhook for testing
  */
 export async function handleGenericEmailReply(req: Request, res: Response): Promise<void> {
   try {
-    logger.info('[EmailReplyWebhooks] Received generic email reply', {
+    logger.info('[Generic Email Webhook] Received email data', {
       headers: req.headers,
       body: req.body,
     });
 
-    // This endpoint can be used for testing or custom email integrations
-    // Expected format matches InboundEmailData interface
     const {
       providerMessageId,
       fromEmail,
@@ -210,39 +116,47 @@ export async function handleGenericEmailReply(req: Request, res: Response): Prom
       receivedAt,
     } = req.body;
 
-    if (!providerMessageId || !fromEmail || !toEmail || !subject) {
-      res.status(400).json({ error: 'Missing required fields' });
-      return;
-    }
-
-    // Import here to avoid circular dependency
-    const { emailReplyTracker } = await import('@/libs/email/reply-tracking/EmailReplyTracker');
-
-    const result = await emailReplyTracker.processInboundEmail({
+    // Log structured email data
+    logger.info('[Generic Email Webhook] Email details', {
       providerMessageId,
       fromEmail,
       toEmail,
       subject,
-      bodyText,
-      bodyHtml,
       messageId,
       inReplyTo,
       references,
       conversationId,
       threadId,
-      receivedAt: receivedAt ? new Date(receivedAt) : new Date(),
-      raw: req.body,
+      receivedAt,
+      hasBodyText: !!bodyText,
+      hasBodyHtml: !!bodyHtml,
+      bodyTextLength: bodyText?.length || 0,
+      bodyHtmlLength: bodyHtml?.length || 0,
+    });
+
+    // Analyze if this looks like a reply
+    const isLikelyReply = !!(inReplyTo || references || subject?.toLowerCase().includes('re:'));
+    
+    logger.info('[Generic Email Webhook] Reply analysis', {
+      isLikelyReply,
+      hasInReplyTo: !!inReplyTo,
+      hasReferences: !!references,
+      subjectHasRe: subject?.toLowerCase().includes('re:') || false,
     });
 
     res.status(200).json({
       success: true,
-      inboundMessageId: result.inboundMessageId,
-      isReply: result.threadMatch.isReply,
-      matchMethod: result.threadMatch.matchMethod,
-      confidence: result.threadMatch.confidence,
+      message: 'Generic email received and logged',
+      analysis: {
+        isLikelyReply,
+        hasInReplyTo: !!inReplyTo,
+        hasReferences: !!references,
+        subjectHasRe: subject?.toLowerCase().includes('re:') || false,
+      },
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('[EmailReplyWebhooks] Failed to handle generic email reply', {
+    logger.error('[Generic Email Webhook] Failed to handle email', {
       error: error instanceof Error ? error.message : 'Unknown error',
       body: req.body,
     });
