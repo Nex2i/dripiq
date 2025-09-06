@@ -37,7 +37,6 @@
     "dev:prepare": "npm run install:all && npm run clear:dist && npm run db:deploy",
     "dev:both": "npm run dev:prepare && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run nodemon\" \"npm run dev:workers\"",
     "start:both": "npm run build && concurrently -n server,workers -c green,cyan --kill-others-on-fail \"npm run start\" \"npm run workers\"",
-    "test:shutdown": "tsx src/scripts/test-shutdown.ts",
     "check": "prettier --write . && eslint --fix"
   },
   "dependencies": {
