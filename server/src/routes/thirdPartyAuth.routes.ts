@@ -1,34 +1,18 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
-import { OAuth2Client } from 'google-auth-library';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import {
   googleAuthUrlResponseSchema,
   googleCallbackQuerySchema,
   googleCallbackResponseSchema,
-  googleDisconnectResponseSchema,
   errorResponseSchema,
 } from './apiSchema/thirdPartyAuth';
+import { thirdPartyAuthStateCache } from '@/cache/ThirdPartyAuthStateCache';
+import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
+import { getGoogleOAuth2Client } from '@/libs/thirdPartyAuth/GoogleAuth';
+import { newGoogleProviderService } from '@/modules/newGoogleProvider.service';
 
 const basePath = '/third-party';
-
-// Google OAuth2 client configuration
-const getGoogleOAuth2Client = () => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = `${process.env.API_URL}/api/third-party/google/callback`;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('Google OAuth credentials not configured');
-  }
-
-  return new OAuth2Client(clientId, clientSecret, redirectUri);
-};
-
-// Generate secure random state for CSRF protection
-const generateState = (): string => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
 
 export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: RouteOptions) {
   // Google OAuth authorization endpoint
@@ -44,10 +28,17 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
       summary: 'Initiate Google OAuth Flow',
       description: 'Generate Google OAuth authorization URL to start the authentication process',
     },
-    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
+    preHandler: [fastify.authPrehandler],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
+        const { tenantId, user } = request as AuthenticatedRequest;
+
         const oauth2Client = getGoogleOAuth2Client();
-        const state = generateState();
+        const state = await thirdPartyAuthStateCache.createAndSet({
+          tenantId,
+          userId: user.id,
+          isNewMailAccount: true,
+        });
 
         // Define the scopes we want to request
         const scopes = [
@@ -88,12 +79,8 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
     method: HttpMethods.GET,
     url: `${basePath}/google/callback`,
     schema: {
-      querystring: googleCallbackQuerySchema,
       response: {
-        200: googleCallbackResponseSchema,
         301: googleCallbackResponseSchema,
-        400: errorResponseSchema,
-        500: errorResponseSchema,
       },
       tags: ['Third Party Authentication'],
       summary: 'Handle Google OAuth Callback',
@@ -104,79 +91,26 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         Querystring: {
           code: string;
           state: string;
-          scope?: string;
         };
       }>,
       reply: FastifyReply
     ) => {
       try {
-        const { code, state, scope } = request.query;
+        const { code, state } = request.query;
 
-        logger.info('Received Google OAuth callback', {
-          code: code.substring(0, 10) + '...',
-          state,
-          scope,
-        });
+        const stateData = await thirdPartyAuthStateCache.state(state);
 
-        const oauth2Client = getGoogleOAuth2Client();
-
-        // Exchange authorization code for tokens
-        const { tokens } = await oauth2Client.getToken(code);
-        oauth2Client.setCredentials(tokens);
-
-        // Log tokens to console (as requested)
-        console.log('=== GOOGLE OAUTH TOKENS ===');
-        console.log('Access Token:', tokens.access_token);
-        console.log('Refresh Token:', tokens.refresh_token);
-        console.log('ID Token:', tokens.id_token);
-        console.log('Token Type:', tokens.token_type);
-        console.log('Expires In:', tokens.expiry_date);
-        console.log('Scope:', tokens.scope);
-        console.log('============================');
-
-        // Log tokens to server logger
-        logger.info('Google OAuth tokens received', {
-          hasAccessToken: !!tokens.access_token,
-          hasRefreshToken: !!tokens.refresh_token,
-          hasIdToken: !!tokens.id_token,
-          tokenType: tokens.token_type,
-          expiresAt: tokens.expiry_date,
-          scope: tokens.scope,
-          // Note: Not logging actual token values in structured logs for security
-        });
-
-        // Get user information
-        const ticket = await oauth2Client.verifyIdToken({
-          idToken: tokens.id_token!,
-          audience: process.env.GOOGLE_CLIENT_ID,
-        });
-
-        const payload = ticket.getPayload();
-
-        if (!payload) {
-          throw new Error('Failed to get user payload from ID token');
+        if (!stateData) {
+          throw new Error('Invalid state');
         }
 
-        // Log user data to console (as requested)
-        console.log('=== GOOGLE USER DATA ===');
-        console.log('User ID:', payload.sub);
-        console.log('Email:', payload.email);
-        console.log('Name:', payload.name);
-        console.log('Picture:', payload.picture);
-        console.log('Email Verified:', payload.email_verified);
-        console.log('Given Name:', payload.given_name);
-        console.log('Family Name:', payload.family_name);
-        console.log('Locale:', payload.locale);
-        console.log('========================');
+        const { tenantId, userId, isNewMailAccount } = stateData;
 
-        // Log user data to server logger
-        logger.info('Google user data retrieved', {
-          userId: payload.sub,
-          email: payload.email,
-          name: payload.name,
-          emailVerified: payload.email_verified,
-          hasProfile: !!payload.picture,
-        });
+        if (isNewMailAccount) {
+          await newGoogleProviderService.setupNewAccount(tenantId, userId, code);
+        }
+
+        await thirdPartyAuthStateCache.clear(state);
 
         // redirect to the frontend
         return reply.redirect(
@@ -185,50 +119,11 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         );
       } catch (error) {
         logger.error('Error in Google OAuth callback:', error);
-        return reply.status(500).send({
-          message: 'Failed to process Google OAuth callback',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    },
-  });
 
-  // Google disconnect endpoint
-  fastify.route({
-    method: HttpMethods.POST,
-    url: `${basePath}/google/disconnect`,
-    schema: {
-      response: {
-        200: googleDisconnectResponseSchema,
-        500: errorResponseSchema,
-      },
-      tags: ['Third Party Authentication'],
-      summary: 'Disconnect Google Account',
-      description: "Disconnect the user's Google account (placeholder for future implementation)",
-    },
-    handler: async (_request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        // This is a placeholder implementation
-        // In a real implementation, you would:
-        // 1. Revoke the stored tokens
-        // 2. Remove Google account association from user record
-        // 3. Clean up any Google-related data
-
-        logger.info('Google account disconnect requested');
-        console.log('=== GOOGLE DISCONNECT ===');
-        console.log('User requested to disconnect Google account');
-        console.log('========================');
-
-        return reply.status(200).send({
-          success: true,
-          message: 'Google account disconnected successfully',
-        });
-      } catch (error) {
-        logger.error('Error disconnecting Google account:', error);
-        return reply.status(500).send({
-          message: 'Failed to disconnect Google account',
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
+        return reply.redirect(
+          process.env.FRONTEND_ORIGIN + '/profile?google-auth-success=false',
+          301
+        );
       }
     },
   });

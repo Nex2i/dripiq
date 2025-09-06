@@ -28,12 +28,6 @@ export const googleCallbackResponseSchema = Type.Object({
   ),
 });
 
-// Google disconnect response schema
-export const googleDisconnectResponseSchema = Type.Object({
-  success: Type.Boolean(),
-  message: Type.String(),
-});
-
 // Error response schema
 export const errorResponseSchema = Type.Object({
   message: Type.String(),

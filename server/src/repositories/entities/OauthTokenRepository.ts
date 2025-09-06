@@ -12,12 +12,9 @@ export type OauthTokenWithDetails = OauthToken & {
     tenantId: string;
   };
 };
-
-export type DecryptedOauthToken = Omit<OauthToken, 'refreshTokenEnc'> & {
-  refreshToken: string;
-};
-
-export type NewOauthTokenEncrypted = Omit<NewOauthToken, 'refreshTokenEnc'> & {
+// Have this have the encrpt optional and the refreshToken added
+export type CreateOauthTokenPayload = Omit<NewOauthToken, 'refreshTokenEnc'> & {
+  refreshTokenEnc?: string;
   refreshToken: string;
 };
 
@@ -33,6 +30,16 @@ export class OauthTokenRepository extends BaseRepository<
 > {
   constructor() {
     super(oauthTokens);
+  }
+
+  async createOAuth(oauthToken: CreateOauthTokenPayload): Promise<OauthToken> {
+    oauthToken.refreshTokenEnc = encrypt(oauthToken.refreshToken);
+    const result = await this.db
+      .insert(this.table)
+      .values({ ...oauthToken } as NewOauthToken)
+      .returning();
+
+    return result[0] as OauthToken;
   }
 
   /**

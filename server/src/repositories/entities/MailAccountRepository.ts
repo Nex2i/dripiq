@@ -2,6 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import { mailAccounts, MailAccount, NewMailAccount } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 import { NotFoundError } from '@/exceptions/error';
+import { logger } from '@/libs/logger';
 
 export type MailAccountWithDetails = MailAccount & {
   user?: { id: string; email: string; name: string | null };
@@ -38,5 +39,18 @@ export class MailAccountRepository extends TenantAwareRepository<
     }
 
     return result[0];
+  }
+
+  async create(mailAccount: NewMailAccount): Promise<MailAccount> {
+    try {
+      const result = await this.db.insert(this.table).values(mailAccount).returning();
+      return result[0] as MailAccount;
+    } catch (error) {
+      logger.error('Failed to create mail account', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        mailAccount,
+      });
+      throw error;
+    }
   }
 }

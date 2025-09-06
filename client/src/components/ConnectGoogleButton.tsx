@@ -1,14 +1,13 @@
+import { googleService } from '@/services/google.service'
 import { useState } from 'react'
 
 interface ConnectGoogleButtonProps {
-  onSuccess?: (userData: any) => void
   onError?: (error: string) => void
   className?: string
   disabled?: boolean
 }
 
 export default function ConnectGoogleButton({
-  onSuccess,
   onError,
   className = '',
   disabled = false,
@@ -22,31 +21,13 @@ export default function ConnectGoogleButton({
       setIsLoading(true)
 
       // Get the authorization URL from our backend
-      const response = await fetch(
-        import.meta.env.VITE_API_BASE_URL + '/api/third-party/google/authorize',
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to get Google authorization URL')
-      }
-
-      const data = await response.json()
-
-      if (!data.authUrl) {
-        throw new Error('No authorization URL received')
-      }
+      const { authUrl, state } = await googleService.getGoogleAuthUrl()
 
       // Store the state for later verification
-      sessionStorage.setItem('google_oauth_state', data.state)
+      sessionStorage.setItem('google_oauth_state', state)
 
       // Redirect to Google OAuth
-      window.location.href = data.authUrl
+      window.location.href = authUrl
     } catch (error) {
       console.error('Error initiating Google OAuth:', error)
       const errorMessage =
