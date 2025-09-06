@@ -69,6 +69,28 @@ export class MailAccountRepository extends TenantAwareRepository<
   }
 
   /**
+   * Find first mail account by provider type
+   * Used for webhook processing when we need any account of a specific provider
+   */
+  async findFirstByProvider(provider: 'google' | 'microsoft'): Promise<MailAccount | null> {
+    try {
+      const result = await this.db
+        .select()
+        .from(this.table)
+        .where(eq(this.table.provider, provider))
+        .limit(1);
+
+      return result[0] || null;
+    } catch (error) {
+      logger.error('Failed to find mail account by provider', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        provider,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Switch primary provider for a user
    * Sets the specified provider as primary and all others as non-primary
    */
