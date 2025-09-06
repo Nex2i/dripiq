@@ -1109,9 +1109,6 @@ export const mailAccountsRelations = relations(mailAccounts, ({ one, many }) => 
     references: [tenants.id],
   }),
   oauthTokens: many(oauthTokens),
-  sendAliases: many(sendAliases),
-  emailJobs: many(emailJobs),
-  messages: many(messages),
 }));
 
 export const oauthTokensRelations = relations(oauthTokens, ({ one }) => ({
@@ -1121,30 +1118,9 @@ export const oauthTokensRelations = relations(oauthTokens, ({ one }) => ({
   }),
 }));
 
-export const sendAliasesRelations = relations(sendAliases, ({ one }) => ({
-  mailAccount: one(mailAccounts, {
-    fields: [sendAliases.mailAccountId],
-    references: [mailAccounts.id],
-  }),
-}));
-
-export const emailJobsRelations = relations(emailJobs, ({ one }) => ({
-  mailAccount: one(mailAccounts, {
-    fields: [emailJobs.mailAccountId],
-    references: [mailAccounts.id],
-  }),
-}));
-
-export const messagesRelations = relations(messages, ({ one }) => ({
-  mailAccount: one(mailAccounts, {
-    fields: [messages.mailAccountId],
-    references: [mailAccounts.id],
-  }),
-}));
 
 // ---- Email Provider Connection Enums
 export const providerEnum = appSchema.enum('provider', ['google', 'microsoft']);
-export const jobStatusEnum = appSchema.enum('job_status', ['queued', 'sent', 'error']);
 export const tokenStatusEnum = appSchema.enum('token_status', ['active', 'revoked']);
 
 // ---- Mail Accounts (connected email providers per user)
@@ -1214,69 +1190,6 @@ export const oauthTokens = appSchema.table('oauth_tokens', {
   index('oauth_tokens_active_idx').on(table.mailAccountId, table.status),
 ]);
 
-// ---- Send Aliases (allowed From addresses for this mailbox)
-export const sendAliases = appSchema.table('send_aliases', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  mailAccountId: text('mail_account_id')
-    .notNull()
-    .references(() => mailAccounts.id, { onDelete: 'cascade' }),
-  email: text('email').notNull(),
-  isDefault: boolean('is_default').notNull().default(false),
-  verified: boolean('verified').notNull().default(false),
-  
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  unique('send_aliases_uq').on(table.mailAccountId, table.email),
-  index('send_aliases_default_idx').on(table.mailAccountId, table.isDefault),
-]);
-
-// ---- Email Jobs (scheduled email sending)
-export const emailJobs = appSchema.table('email_jobs', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  mailAccountId: text('mail_account_id')
-    .notNull()
-    .references(() => mailAccounts.id, { onDelete: 'cascade' }),
-
-  runAt: timestamp('run_at').notNull(),
-  payload: jsonb('payload').notNull(), // {to, subject, text/html, headers…}
-  status: jobStatusEnum('status').notNull().default('queued'),
-  attempts: integer('attempts').notNull().default(0),
-  lastError: text('last_error'),
-
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  index('email_jobs_due_idx').on(table.status, table.runAt),
-  index('email_jobs_account_idx').on(table.mailAccountId),
-]);
-
-// ---- Messages (email send log)
-export const messages = appSchema.table('messages', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  mailAccountId: text('mail_account_id')
-    .notNull()
-    .references(() => mailAccounts.id, { onDelete: 'cascade' }),
-
-  providerMessageId: text('provider_message_id'),
-  to: text('to').notNull(),
-  subject: text('subject'),
-  headers: jsonb('headers').notNull().default({}),
-  responseStatus: integer('response_status'),
-  sentAt: timestamp('sent_at').notNull().defaultNow(),
-  
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-}, (table) => [
-  index('messages_acct_time_idx').on(table.mailAccountId, table.sentAt),
-  index('messages_provider_id_idx').on(table.providerMessageId),
-]);
 
 // Export types
 export type NewUser = typeof users.$inferInsert;
@@ -1340,9 +1253,3 @@ export type MailAccount = typeof mailAccounts.$inferSelect;
 export type NewMailAccount = typeof mailAccounts.$inferInsert;
 export type OauthToken = typeof oauthTokens.$inferSelect;
 export type NewOauthToken = typeof oauthTokens.$inferInsert;
-export type SendAlias = typeof sendAliases.$inferSelect;
-export type NewSendAlias = typeof sendAliases.$inferInsert;
-export type EmailJob = typeof emailJobs.$inferSelect;
-export type NewEmailJob = typeof emailJobs.$inferInsert;
-export type Message = typeof messages.$inferSelect;
-export type NewMessage = typeof messages.$inferInsert;
