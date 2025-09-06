@@ -31,51 +31,25 @@ export default function EmailProvider({
 
   const switchPrimaryMutation = useMutation({
     mutationFn: (providerId: string) => getUsersService().switchPrimaryProvider(providerId),
-    onMutate: async (providerId: string) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: userQueryKeys.emailProviders() })
+    onSuccess: (_data, providerId) => {
+      // Update cache directly with the new state - no refetch needed
+      const currentData = queryClient.getQueryData(userQueryKeys.emailProviders()) as { providers: EmailProvider[] } | undefined
       
-      // Snapshot the previous value
-      const previousProviders = queryClient.getQueryData(userQueryKeys.emailProviders())
-      
-      // Optimistically update the cache
-      if (previousProviders && typeof previousProviders === 'object' && 'providers' in previousProviders) {
-        const typedProviders = previousProviders as { providers: EmailProvider[] }
-        const updatedProviders = typedProviders.providers.map((provider) => ({
+      if (currentData?.providers) {
+        const updatedProviders = currentData.providers.map((provider) => ({
           ...provider,
           isPrimary: provider.id === providerId
         }))
         
         queryClient.setQueryData(userQueryKeys.emailProviders(), { providers: updatedProviders })
       }
-      
-      return { previousProviders }
     },
-    onSuccess: (data) => {
-      // Update the cache with the server response to ensure consistency
-      queryClient.setQueryData(userQueryKeys.emailProviders(), (old: any) => {
-        if (old && 'providers' in old) {
-          const updatedProviders = old.providers.map((provider: EmailProvider) => ({
-            ...provider,
-            isPrimary: provider.id === data.provider.id
-          }))
-          return { providers: updatedProviders }
-        }
-        return old
-      })
-    },
-    onError: (error, _providerId, context) => {
-      // Rollback on error
-      if (context?.previousProviders) {
-        queryClient.setQueryData(userQueryKeys.emailProviders(), context.previousProviders)
-      }
-      
-      const errorMessage = error instanceof Error ? error.message : 'Failed to switch primary provider'
+    onError: (error) => {
       if (onError) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to switch primary provider'
         onError(errorMessage)
       }
-      
-      // Only refetch on error to get the correct state
+      // Only refetch on error to get correct state
       queryClient.invalidateQueries({ queryKey: userQueryKeys.emailProviders() })
     },
   })

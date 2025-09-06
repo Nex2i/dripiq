@@ -171,10 +171,8 @@ class UsersService {
     }
     const result = await res.json()
 
-    // Invalidate email providers cache to refetch updated data
-    if (this.queryClient) {
-      this.queryClient.invalidateQueries({ queryKey: userQueryKeys.emailProviders() })
-    }
+    // Note: Cache invalidation is handled by the calling component's mutation
+    // to avoid duplicate refetches and provide better UX with optimistic updates
 
     return result
   }
