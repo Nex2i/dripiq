@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 import { getNetworkAddress } from '@/utils/network';
+import { setupGracefulShutdown } from '@/libs/shutdown';
 import App from './app';
 import { logger } from './libs/logger';
-import { setupGracefulShutdown } from '@/libs/shutdown';
 
 dotenv.config();
 const PORT: number = Number(process.env.PORT || 3001);
