@@ -10,6 +10,7 @@ export const userQueryKeys = {
   details: () => [...userQueryKeys.all, 'detail'] as const,
   detail: (id: string) => [...userQueryKeys.details(), id] as const,
   me: () => [...userQueryKeys.all, 'me'] as const,
+  emailProviders: () => [...userQueryKeys.all, 'email-providers'] as const,
 }
 
 export interface SimpleUser {
@@ -18,6 +19,14 @@ export interface SimpleUser {
   name: string | null
   calendarLink?: string | null
   calendarTieIn: string
+}
+
+export interface EmailProvider {
+  provider: string
+  primaryEmail: string
+  displayName: string
+  isConnected: boolean
+  connectedAt: string
 }
 
 class UsersService {
@@ -124,6 +133,22 @@ class UsersService {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.message || 'Failed to send test email')
+    }
+    return res.json()
+  }
+
+  async getEmailProviders(): Promise<{ providers: EmailProvider[] }> {
+    const authHeaders = await authService.getAuthHeaders()
+    const res = await fetch(`${this.baseUrl}/me/email-providers`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.message || 'Failed to fetch email providers')
     }
     return res.json()
   }

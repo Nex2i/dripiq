@@ -3,7 +3,11 @@ import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { UserService } from '@/modules/user.service';
-import { emailSenderIdentityRepository, userTenantRepository } from '@/repositories';
+import {
+  emailSenderIdentityRepository,
+  userTenantRepository,
+  mailAccountRepository,
+} from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
@@ -158,6 +162,40 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       } catch (error: any) {
         logger.error(`Error updating user profile: ${error.message}`);
         reply.status(500).send({ message: 'Failed to update user profile', error: error.message });
+      }
+    },
+  });
+
+  // Get connected email providers for current user
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/me/email-providers`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Users'],
+      summary: 'Get connected email providers',
+      description: 'Get list of connected email providers for the authenticated user.',
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const userId = ((request as any).user as IUser).id as string;
+
+        // Get all mail accounts for this user in the current tenant
+        const mailAccounts = await mailAccountRepository.findAccountsByUserId(userId);
+
+        const providers = mailAccounts.map((account) => ({
+          id: account.id,
+          provider: account.provider,
+          primaryEmail: account.primaryEmail,
+          displayName: account.displayName || '',
+          isConnected: !account.disconnectedAt && !account.reauthRequired,
+          connectedAt: account.connectedAt.toISOString(),
+        }));
+
+        reply.send({ providers });
+      } catch (error: any) {
+        logger.error(`Error getting email providers: ${error.message}`);
+        reply.status(500).send({ message: 'Failed to get email providers', error: error.message });
       }
     },
   });

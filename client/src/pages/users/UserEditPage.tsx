@@ -6,7 +6,7 @@ import { UrlValidator } from '../../utils/urlValidation'
 
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 import TestEmailComponent from '../../components/TestEmailComponent'
-import ConnectGoogleButton from '../../components/ConnectGoogleButton'
+import EmailProvider from '../../components/EmailProvider'
 
 export default function UserEditPage() {
   const params = useParams({ strict: false }) as { userId?: string }
@@ -241,23 +241,8 @@ export default function UserEditPage() {
           </div>
         </div>
 
-        {/* Google Connection Card */}
-        <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200/60 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">
-            Email Integration
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Connect your Google account to enable email sending.
-          </p>
-
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-              Connect your Google account to access Gmail and other email
-              services through our platform.
-            </p>
-            <ConnectGoogleButton className="w-fit" />
-          </div>
-        </div>
+        {/* Email Provider Card */}
+        <EmailProvider onError={(error) => setError(error)} />
 
         {/* Test Email Card - only show for non-admin mode */}
         {!isAdminMode && (
