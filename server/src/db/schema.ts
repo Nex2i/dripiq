@@ -650,19 +650,103 @@ export const inboundMessages = appSchema.table(
     contactId: text('contact_id').references(() => leadPointOfContacts.id, {
       onDelete: 'set null',
     }),
+    outboundMessageId: text('outbound_message_id').references(() => outboundMessages.id, {
+      onDelete: 'set null',
+    }),
+    threadId: text('thread_id'),
     channel: channelEnum('channel').notNull(),
     providerMessageId: text('provider_message_id'),
+    fromEmail: text('from_email'),
+    toEmail: text('to_email'),
+    messageId: text('message_id'), // RFC 2822 Message-ID header
+    inReplyTo: text('in_reply_to'), // RFC 2822 In-Reply-To header
+    references: text('references'), // RFC 2822 References header
+    conversationId: text('conversation_id'), // Provider-specific conversation ID
     receivedAt: timestamp('received_at').notNull().defaultNow(),
     subject: text('subject'),
     bodyText: text('body_text'),
     bodyHtml: text('body_html'),
     raw: jsonb('raw'),
+    processed: boolean('processed').notNull().default(false),
+    processedAt: timestamp('processed_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('inbound_messages_received_at_idx').on(table.receivedAt),
     index('inbound_messages_provider_id_idx').on(table.providerMessageId),
+    index('inbound_messages_thread_idx').on(table.threadId),
+    index('inbound_messages_outbound_idx').on(table.outboundMessageId),
+    index('inbound_messages_message_id_idx').on(table.messageId),
+    index('inbound_messages_conversation_idx').on(table.conversationId),
+  ]
+);
+
+// Email Thread Tracking - track conversation threads
+export const emailThreads = appSchema.table(
+  'email_threads',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    campaignId: text('campaign_id')
+      .notNull()
+      .references(() => contactCampaigns.id, { onDelete: 'cascade' }),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    originalMessageId: text('original_message_id')
+      .notNull()
+      .references(() => outboundMessages.id, { onDelete: 'cascade' }),
+    providerThreadId: text('provider_thread_id'), // Gmail thread ID or Outlook conversation ID
+    messageId: text('message_id'), // RFC 2822 Message-ID of the original message
+    lastReplyAt: timestamp('last_reply_at'),
+    replyCount: integer('reply_count').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('email_threads_tenant_campaign_idx').on(table.tenantId, table.campaignId),
+    index('email_threads_provider_thread_idx').on(table.providerThreadId),
+    index('email_threads_message_id_idx').on(table.messageId),
+    unique('email_threads_original_message_unique').on(table.originalMessageId),
+  ]
+);
+
+// Webhook Subscriptions - track active webhook subscriptions
+export const webhookSubscriptions = appSchema.table(
+  'webhook_subscriptions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    mailAccountId: text('mail_account_id')
+      .notNull()
+      .references(() => mailAccounts.id, { onDelete: 'cascade' }),
+    provider: providerEnum('provider').notNull(),
+    subscriptionId: text('subscription_id').notNull(), // Provider's subscription ID
+    resourceId: text('resource_id'), // Gmail history ID or Graph resource ID
+    webhookUrl: text('webhook_url').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    status: text('status').notNull().default('active'), // active|expired|failed|cancelled
+    lastRenewalAt: timestamp('last_renewal_at'),
+    failureCount: integer('failure_count').notNull().default(0),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('webhook_subscriptions_user_idx').on(table.userId),
+    index('webhook_subscriptions_mail_account_idx').on(table.mailAccountId),
+    index('webhook_subscriptions_expires_at_idx').on(table.expiresAt),
+    index('webhook_subscriptions_status_idx').on(table.status),
+    unique('webhook_subscriptions_provider_unique').on(table.mailAccountId, table.provider),
   ]
 );
 
