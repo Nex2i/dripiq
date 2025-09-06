@@ -46,9 +46,7 @@ export default function ProviderCard({
             </div>
             {isConnected && connectedProvider && (
               <p className="text-sm text-[var(--color-text-muted)]">
-                Connected as{' '}
-                {connectedProvider.displayName ||
-                  connectedProvider.primaryEmail}
+                Connected as {connectedProvider.primaryEmail}
               </p>
             )}
           </div>
@@ -66,7 +64,9 @@ export default function ProviderCard({
                 onChange={handlePrimaryChange}
                 disabled={isChangingPrimary}
                 className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2 ${
-                  isChangingPrimary ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  isChangingPrimary
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'cursor-pointer'
                 }`}
               />
               <label
