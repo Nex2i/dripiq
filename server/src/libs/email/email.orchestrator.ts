@@ -14,14 +14,17 @@ class EmailOrchestrator {
 
     switch (primaryMailAccount.provider) {
       case 'google':
-        const mailRefreshToken = await oauthTokenRepository.getRefreshTokenByMailAccountId(
-          primaryMailAccount.id
-        );
-        return new GmailMailClient(mailRefreshToken);
+        return await this.getGmailMailClient(primaryMailAccount.id);
       case 'microsoft':
         // TODO: Implement Microsoft Mail Client
         throw new Error('Microsoft Mail Client not implemented');
     }
+  }
+
+  private async getGmailMailClient(primaryMailAccountId: string): Promise<GmailMailClient> {
+    const mailRefreshToken =
+      await oauthTokenRepository.getRefreshTokenByMailAccountId(primaryMailAccountId);
+    return new GmailMailClient(mailRefreshToken);
   }
 }
 

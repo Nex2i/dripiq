@@ -1,8 +1,8 @@
-import { MailAccount, NewMailAccount, NewOauthToken } from '@/db/schema';
+import { TokenPayload } from 'google-auth-library';
+import { MailAccount, NewMailAccount } from '@/db/schema';
 import { getGoogleOAuth2Client } from '@/libs/thirdPartyAuth/GoogleAuth';
 import { mailAccountRepository, oauthTokenRepository } from '@/repositories';
 import { CreateOauthTokenPayload } from '@/repositories/entities/OauthTokenRepository';
-import { TokenPayload } from 'google-auth-library';
 
 class NewGoogleProviderService {
   async setupNewAccount(tenantId: string, userId: string, code: string): Promise<void> {

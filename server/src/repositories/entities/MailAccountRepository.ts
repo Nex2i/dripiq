@@ -1,8 +1,8 @@
 import { eq, and } from 'drizzle-orm';
 import { mailAccounts, MailAccount, NewMailAccount } from '@/db/schema';
-import { TenantAwareRepository } from '../base/TenantAwareRepository';
 import { NotFoundError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
+import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export type MailAccountWithDetails = MailAccount & {
   user?: { id: string; email: string; name: string | null };

@@ -1,8 +1,8 @@
 import { eq, and } from 'drizzle-orm';
-import { oauthTokens, OauthToken, NewOauthToken, mailAccounts, tenants } from '@/db/schema';
+import { oauthTokens, OauthToken, NewOauthToken } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
-import { BaseRepository } from '../base/BaseRepository';
 import { encrypt, decrypt } from '@/utils/crypto';
+import { BaseRepository } from '../base/BaseRepository';
 
 export type OauthTokenWithDetails = OauthToken & {
   mailAccount?: {

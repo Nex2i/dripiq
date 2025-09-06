@@ -1,16 +1,15 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
-import {
-  googleAuthUrlResponseSchema,
-  googleCallbackQuerySchema,
-  googleCallbackResponseSchema,
-  errorResponseSchema,
-} from './apiSchema/thirdPartyAuth';
 import { thirdPartyAuthStateCache } from '@/cache/ThirdPartyAuthStateCache';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 import { getGoogleOAuth2Client } from '@/libs/thirdPartyAuth/GoogleAuth';
 import { newGoogleProviderService } from '@/modules/newGoogleProvider.service';
+import {
+  googleAuthUrlResponseSchema,
+  googleCallbackResponseSchema,
+  errorResponseSchema,
+} from './apiSchema/thirdPartyAuth';
 
 const basePath = '/third-party';
 
