@@ -52,27 +52,31 @@ export default function ProviderCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 h-full">
           {/* Primary provider radio button - only show for connected providers */}
           {isConnected && onPrimaryChange && (
-            <div className="flex items-center">
+            <div
+              id={`primary-${connectedProvider?.id}-radio`}
+              className="flex items-center h-full cursor-pointer select-none"
+              onClick={handlePrimaryChange}
+            >
               <input
                 type="radio"
                 id={`primary-${connectedProvider?.id}`}
                 name="primary-provider"
                 checked={isPrimary}
                 onChange={handlePrimaryChange}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer"
               />
               <label
                 htmlFor={`primary-${connectedProvider?.id}`}
-                className="ml-2 text-sm font-medium text-[var(--color-text-secondary)] cursor-pointer select-none"
+                className="ml-2 text-sm font-medium text-[var(--color-text-secondary)] cursor-pointer"
               >
                 Primary
               </label>
             </div>
           )}
-          
+
           {children}
         </div>
       </div>
