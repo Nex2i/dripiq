@@ -15,7 +15,7 @@ import { calendarClickValidationService } from '@/modules/calendarClickValidatio
 // Mock dependencies
 jest.mock('@/repositories');
 jest.mock('@/modules/campaign/campaignPlanExecution.service');
-jest.mock('@/services/calendarClickValidation.service');
+jest.mock('@/modules/calendarClickValidation.service');
 
 // Mock BullMQ to prevent Redis connection issues
 jest.mock('@/libs/bullmq', () => ({
