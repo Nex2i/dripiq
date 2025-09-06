@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getUsersService, userQueryKeys } from '../services/users.service'
 import type { EmailProvider } from '../services/users.service'
 import ProviderCard from './ProviderCard'
@@ -16,6 +16,8 @@ export default function EmailProvider({
   className = '',
   onError,
 }: EmailProviderProps) {
+  const queryClient = useQueryClient()
+  
   const {
     data: providersData,
     isLoading,
@@ -27,10 +29,53 @@ export default function EmailProvider({
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
+  const switchPrimaryMutation = useMutation({
+    mutationFn: (providerId: string) => getUsersService().switchPrimaryProvider(providerId),
+    onMutate: async (providerId: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: userQueryKeys.emailProviders() })
+      
+      // Snapshot the previous value
+      const previousProviders = queryClient.getQueryData(userQueryKeys.emailProviders())
+      
+      // Optimistically update the cache
+      if (previousProviders && typeof previousProviders === 'object' && 'providers' in previousProviders) {
+        const typedProviders = previousProviders as { providers: EmailProvider[] }
+        const updatedProviders = typedProviders.providers.map((provider) => ({
+          ...provider,
+          isPrimary: provider.id === providerId
+        }))
+        
+        queryClient.setQueryData(userQueryKeys.emailProviders(), { providers: updatedProviders })
+      }
+      
+      return { previousProviders }
+    },
+    onError: (error, _providerId, context) => {
+      // Rollback on error
+      if (context?.previousProviders) {
+        queryClient.setQueryData(userQueryKeys.emailProviders(), context.previousProviders)
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to switch primary provider'
+      if (onError) {
+        onError(errorMessage)
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: userQueryKeys.emailProviders() })
+    },
+  })
+
   const getProviderStatus = (providerName: string): EmailProvider | null => {
     return (
       providersData?.providers.find((p) => p.provider === providerName) || null
     )
+  }
+
+  const handlePrimaryChange = (providerId: string) => {
+    switchPrimaryMutation.mutate(providerId)
   }
 
   if (isLoading) {
@@ -91,6 +136,8 @@ export default function EmailProvider({
           displayName="Google"
           icon={<GoogleIcon />}
           connectedProvider={googleProvider}
+          onPrimaryChange={handlePrimaryChange}
+          allProviders={providersData?.providers || []}
         >
           <GoogleProviderButton
             isConnected={googleProvider?.isConnected || false}
@@ -102,6 +149,8 @@ export default function EmailProvider({
           displayName="Microsoft Outlook"
           icon={<MicrosoftIcon />}
           connectedProvider={microsoftProvider}
+          onPrimaryChange={handlePrimaryChange}
+          allProviders={providersData?.providers || []}
         >
           <MicrosoftProviderButton
             isConnected={microsoftProvider?.isConnected || false}

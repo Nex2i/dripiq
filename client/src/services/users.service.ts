@@ -22,9 +22,11 @@ export interface SimpleUser {
 }
 
 export interface EmailProvider {
+  id: string
   provider: string
   primaryEmail: string
   displayName: string
+  isPrimary: boolean
   isConnected: boolean
   connectedAt: string
 }
@@ -151,6 +153,30 @@ class UsersService {
       throw new Error(err.message || 'Failed to fetch email providers')
     }
     return res.json()
+  }
+
+  async switchPrimaryProvider(providerId: string): Promise<{ message: string; provider: EmailProvider }> {
+    const authHeaders = await authService.getAuthHeaders()
+    const res = await fetch(`${this.baseUrl}/me/email-providers/primary`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ providerId }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.message || 'Failed to switch primary provider')
+    }
+    const result = await res.json()
+
+    // Invalidate email providers cache to refetch updated data
+    if (this.queryClient) {
+      this.queryClient.invalidateQueries({ queryKey: userQueryKeys.emailProviders() })
+    }
+
+    return result
   }
 }
 

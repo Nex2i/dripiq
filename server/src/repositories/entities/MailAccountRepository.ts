@@ -43,7 +43,16 @@ export class MailAccountRepository extends TenantAwareRepository<
 
   async create(mailAccount: NewMailAccount): Promise<MailAccount> {
     try {
-      const result = await this.db.insert(this.table).values(mailAccount).returning();
+      // Check if user already has any mail accounts
+      const existingAccounts = await this.findAccountsByUserId(mailAccount.userId);
+
+      // Set isPrimary to true for first account, false for subsequent ones
+      const accountToCreate = {
+        ...mailAccount,
+        isPrimary: existingAccounts.length === 0,
+      };
+
+      const result = await this.db.insert(this.table).values(accountToCreate).returning();
       return result[0] as MailAccount;
     } catch (error) {
       logger.error('Failed to create mail account', {
@@ -57,5 +66,46 @@ export class MailAccountRepository extends TenantAwareRepository<
   async findAccountsByUserId(userId: string): Promise<MailAccount[]> {
     const results = await this.db.select().from(this.table).where(eq(this.table.userId, userId));
     return results;
+  }
+
+  /**
+   * Switch primary provider for a user
+   * Sets the specified provider as primary and all others as non-primary
+   */
+  async switchPrimaryProvider(userId: string, providerId: string): Promise<MailAccount> {
+    try {
+      // Start a transaction to ensure atomicity
+      const result = await this.db.transaction(async (tx) => {
+        // First, set all user's mail accounts to non-primary
+        await tx
+          .update(this.table)
+          .set({ isPrimary: false, updatedAt: new Date() })
+          .where(eq(this.table.userId, userId));
+
+        // Then, set the specified account as primary
+        const updatedAccount = await tx
+          .update(this.table)
+          .set({ isPrimary: true, updatedAt: new Date() })
+          .where(and(eq(this.table.userId, userId), eq(this.table.id, providerId)))
+          .returning();
+
+        if (!updatedAccount || updatedAccount.length === 0) {
+          throw new NotFoundError(
+            `Mail account not found with id: ${providerId} for user: ${userId}`
+          );
+        }
+
+        return updatedAccount[0];
+      });
+
+      return result as MailAccount;
+    } catch (error) {
+      logger.error('Failed to switch primary provider', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userId,
+        providerId,
+      });
+      throw error;
+    }
   }
 }

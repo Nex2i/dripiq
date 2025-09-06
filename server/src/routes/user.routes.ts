@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify';
 import { createId } from '@paralleldrive/cuid2';
+import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { UserService } from '@/modules/user.service';
@@ -188,6 +189,7 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           provider: account.provider,
           primaryEmail: account.primaryEmail,
           displayName: account.displayName || '',
+          isPrimary: account.isPrimary,
           isConnected: !account.disconnectedAt && !account.reauthRequired,
           connectedAt: account.connectedAt.toISOString(),
         }));
@@ -196,6 +198,80 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       } catch (error: any) {
         logger.error(`Error getting email providers: ${error.message}`);
         reply.status(500).send({ message: 'Failed to get email providers', error: error.message });
+      }
+    },
+  });
+
+  // Switch primary email provider
+  fastify.route({
+    method: HttpMethods.PUT,
+    url: `${basePath}/me/email-providers/primary`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      body: Type.Object({
+        providerId: Type.String({ description: 'ID of the mail account to set as primary' }),
+      }),
+      response: {
+        200: Type.Object({
+          message: Type.String(),
+          provider: Type.Object({
+            id: Type.String(),
+            provider: Type.String(),
+            primaryEmail: Type.String(),
+            displayName: Type.String(),
+            isPrimary: Type.Boolean(),
+            isConnected: Type.Boolean(),
+            connectedAt: Type.String(),
+          }),
+        }),
+      },
+      tags: ['Users'],
+      summary: 'Switch primary email provider',
+      description: 'Set a connected email provider as the primary provider for sending emails.',
+    },
+    handler: async (
+      request: FastifyRequest<{ Body: { providerId: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { providerId } = request.body;
+        const userId = ((request as any).user as IUser).id as string;
+
+        // Verify the provider exists and is connected
+        const existingAccount = await mailAccountRepository.findById(providerId);
+        if (!existingAccount || existingAccount.userId !== userId) {
+          return reply.status(404).send({ message: 'Mail account not found' });
+        }
+
+        if (existingAccount.disconnectedAt || existingAccount.reauthRequired) {
+          return reply.status(400).send({ message: 'Cannot set disconnected provider as primary' });
+        }
+
+        // Switch the primary provider
+        const updatedAccount = await mailAccountRepository.switchPrimaryProvider(
+          userId,
+          providerId
+        );
+
+        const providerResponse = {
+          id: updatedAccount.id,
+          provider: updatedAccount.provider,
+          primaryEmail: updatedAccount.primaryEmail,
+          displayName: updatedAccount.displayName || '',
+          isPrimary: updatedAccount.isPrimary,
+          isConnected: !updatedAccount.disconnectedAt && !updatedAccount.reauthRequired,
+          connectedAt: updatedAccount.connectedAt.toISOString(),
+        };
+
+        reply.send({
+          message: 'Primary provider switched successfully',
+          provider: providerResponse,
+        });
+      } catch (error: any) {
+        logger.error(`Error switching primary provider: ${error.message}`);
+        reply
+          .status(500)
+          .send({ message: 'Failed to switch primary provider', error: error.message });
       }
     },
   });

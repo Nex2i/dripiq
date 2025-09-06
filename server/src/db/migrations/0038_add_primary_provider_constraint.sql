@@ -1,0 +1,2 @@
+-- Add unique partial index to ensure only one primary mail account per user
+CREATE UNIQUE INDEX CONCURRENTLY "mail_accounts_user_primary_uq" ON "dripiq_app"."mail_accounts" ("user_id") WHERE "is_primary" = true;--> statement-breakpoint

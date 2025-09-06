@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   text,
   timestamp,
@@ -929,6 +929,7 @@ export const mailAccounts = appSchema.table(
     index('mail_accounts_email_idx').on(table.primaryEmail),
     index('mail_accounts_user_idx').on(table.userId),
     index('mail_accounts_tenant_idx').on(table.tenantId),
+    // Note: Partial unique index for primary mail accounts is created via migration
   ]
 );
 
