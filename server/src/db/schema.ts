@@ -902,6 +902,7 @@ export const mailAccounts = appSchema.table(
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
 
+    isPrimary: boolean('is_primary').notNull().default(true),
     provider: providerEnum('provider').notNull(),
     providerUserId: text('provider_user_id').notNull(), // Google OIDC sub, or AAD oid
     tenantIdProvider: text('tenant_id_provider'), // Microsoft tenant if applicable
@@ -1198,6 +1199,7 @@ export const oauthTokensRelations = relations(oauthTokens, ({ one }) => ({
 }));
 
 // Export types
+export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
