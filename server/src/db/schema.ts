@@ -141,12 +141,14 @@ export const userTenants = appSchema.table(
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   tenants: many(userTenants),
+  mailAccounts: many(mailAccounts),
 }));
 
 export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(userTenants),
   leads: many(leads),
   products: many(products),
+  mailAccounts: many(mailAccounts),
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [tenants.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],
@@ -1096,8 +1098,100 @@ export const calendarLinkClicksRelations = relations(calendarLinkClicks, ({ one 
   }),
 }));
 
+// Email Provider Connection Relations
+export const mailAccountsRelations = relations(mailAccounts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [mailAccounts.userId],
+    references: [users.id],
+  }),
+  tenant: one(tenants, {
+    fields: [mailAccounts.tenantId],
+    references: [tenants.id],
+  }),
+  oauthTokens: many(oauthTokens),
+}));
+
+export const oauthTokensRelations = relations(oauthTokens, ({ one }) => ({
+  mailAccount: one(mailAccounts, {
+    fields: [oauthTokens.mailAccountId],
+    references: [mailAccounts.id],
+  }),
+}));
+
+
+// ---- Email Provider Connection Enums
+export const providerEnum = appSchema.enum('provider', ['google', 'microsoft']);
+export const tokenStatusEnum = appSchema.enum('token_status', ['active', 'revoked']);
+
+// ---- Mail Accounts (connected email providers per user)
+export const mailAccounts = appSchema.table('mail_accounts', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+
+  provider: providerEnum('provider').notNull(),
+  providerUserId: text('provider_user_id').notNull(), // Google OIDC sub, or AAD oid
+  tenantIdProvider: text('tenant_id_provider'), // Microsoft tenant if applicable
+
+  primaryEmail: text('primary_email').notNull(),
+  displayName: text('display_name'),
+
+  // requested/approved scopes for auditing
+  scopes: text('scopes').array().notNull().default([]),
+
+  connectedAt: timestamp('connected_at').notNull().defaultNow(),
+  disconnectedAt: timestamp('disconnected_at'),
+  reauthRequired: boolean('reauth_required').notNull().default(false),
+
+  // free-form per-provider details (e.g., alias policy, CAE flags)
+  metadata: jsonb('metadata').notNull().default({}),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => [
+  unique('mail_accounts_provider_identity_uq').on(table.provider, table.providerUserId),
+  unique('mail_accounts_user_provider_uq').on(table.userId, table.provider),
+  index('mail_accounts_email_idx').on(table.primaryEmail),
+  index('mail_accounts_user_idx').on(table.userId),
+  index('mail_accounts_tenant_idx').on(table.tenantId),
+]);
+
+// ---- OAuth Tokens (store ONLY refresh tokens; rotate on refresh)
+// Access control: tokens are only fetchable by the userId who owns the mail account
+export const oauthTokens = appSchema.table('oauth_tokens', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  mailAccountId: text('mail_account_id')
+    .notNull()
+    .references(() => mailAccounts.id, { onDelete: 'cascade' }),
+
+  // encrypt before insert; store ciphertext here
+  refreshTokenEnc: text('refresh_token_enc').notNull(),
+
+  tokenVersion: integer('token_version').notNull().default(1), // bump on rotation
+  status: tokenStatusEnum('status').notNull().default('active'),
+
+  addedAt: timestamp('added_at').notNull().defaultNow(),
+  rotatedAt: timestamp('rotated_at'),
+  // optional bookkeeping: when you predict an inactivity cutoff (MS sliding window or Google testing)
+  inactiveAfter: timestamp('inactive_after'),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => [
+  index('oauth_tokens_account_idx').on(table.mailAccountId),
+  index('oauth_tokens_active_idx').on(table.mailAccountId, table.status),
+]);
+
+
 // Export types
-export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
@@ -1155,3 +1249,7 @@ export type DomainValidation = typeof domainValidation.$inferSelect;
 export type NewDomainValidation = typeof domainValidation.$inferInsert;
 export type CalendarLinkClick = typeof calendarLinkClicks.$inferSelect;
 export type NewCalendarLinkClick = typeof calendarLinkClicks.$inferInsert;
+export type MailAccount = typeof mailAccounts.$inferSelect;
+export type NewMailAccount = typeof mailAccounts.$inferInsert;
+export type OauthToken = typeof oauthTokens.$inferSelect;
+export type NewOauthToken = typeof oauthTokens.$inferInsert;
