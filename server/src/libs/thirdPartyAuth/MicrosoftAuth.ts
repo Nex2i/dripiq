@@ -104,3 +104,14 @@ export class MicrosoftOAuth2Client {
 export const getMicrosoftOAuth2Client = () => {
   return new MicrosoftOAuth2Client();
 };
+
+export const microsoftScopes = [
+  'https://graph.microsoft.com/email',
+  'https://graph.microsoft.com/Mail.Read',
+  'https://graph.microsoft.com/Mail.Send',
+  'https://graph.microsoft.com/User.Read',
+  'https://graph.microsoft.com/Calendars.ReadWrite',
+  'https://graph.microsoft.com/profile',
+  'offline_access',
+  'openid',
+];

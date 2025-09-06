@@ -12,3 +12,10 @@ export const getGoogleOAuth2Client = () => {
 
   return new OAuth2Client(clientId, clientSecret, redirectUri);
 };
+
+export const googleScopes = [
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/gmail.send',
+  'openid',
+];

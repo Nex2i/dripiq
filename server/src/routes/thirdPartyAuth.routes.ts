@@ -3,8 +3,8 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { thirdPartyAuthStateCache } from '@/cache/ThirdPartyAuthStateCache';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
-import { getGoogleOAuth2Client } from '@/libs/thirdPartyAuth/GoogleAuth';
-import { getMicrosoftOAuth2Client } from '@/libs/thirdPartyAuth/MicrosoftAuth';
+import { getGoogleOAuth2Client, googleScopes } from '@/libs/thirdPartyAuth/GoogleAuth';
+import { getMicrosoftOAuth2Client, microsoftScopes } from '@/libs/thirdPartyAuth/MicrosoftAuth';
 import { newGoogleProviderService } from '@/modules/newGoogleProvider.service';
 import { newMicrosoftProviderService } from '@/modules/newMicrosoftProvider.service';
 import {
@@ -43,24 +43,16 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           isNewMailAccount: true,
         });
 
-        // Define the scopes we want to request
-        const scopes = [
-          'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/userinfo.profile',
-          'https://www.googleapis.com/auth/gmail.send',
-          'openid',
-        ];
-
         const authUrl = oauth2Client.generateAuthUrl({
           access_type: 'offline',
-          scope: scopes,
+          scope: googleScopes,
           state: state,
           prompt: 'consent',
         });
 
         logger.info('Generated Google OAuth authorization URL', {
           state,
-          scopes,
+          googleScopes,
         });
 
         return reply.status(200).send({
@@ -156,19 +148,11 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           isNewMailAccount: true,
         });
 
-        // Define the scopes we want to request
-        const scopes = [
-          'https://graph.microsoft.com/Mail.Send',
-          'https://graph.microsoft.com/User.Read',
-          'offline_access',
-          'openid',
-        ];
-
-        const authUrl = oauth2Client.generateAuthUrl(scopes, state);
+        const authUrl = oauth2Client.generateAuthUrl(microsoftScopes, state);
 
         logger.info('Generated Microsoft OAuth authorization URL', {
           state,
-          scopes,
+          microsoftScopes,
         });
 
         return reply.status(200).send({
