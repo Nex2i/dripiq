@@ -3,10 +3,253 @@ import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { defaultRouteResponse } from '@/types/response';
 import { logger } from '@/libs/logger';
+import { gmail_v1, google } from 'googleapis';
+import { Client } from '@microsoft/microsoft-graph-client';
+import { getMicrosoftOAuth2Client } from '@/libs/thirdPartyAuth/MicrosoftAuth';
+import { db } from '@/db';
+import { mailAccounts, oauthTokens } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 const basePath = '/webhooks/email-reply';
 
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const API_URL = process.env.API_URL || 'http://localhost:3000';
+
 export default async function EmailReplyWebhookRoutes(fastify: FastifyInstance, _opts: RouteOptions) {
+  /**
+   * Setup Gmail Push Notifications
+   */
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/gmail/setup`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      description: 'Setup Gmail push notifications for email reply tracking',
+      tags: ['Email Reply', 'Gmail'],
+      summary: 'Setup Gmail push notifications',
+      response: {
+        ...defaultRouteResponse(),
+        200: Type.Object({
+          success: Type.Boolean(),
+          message: Type.String(),
+          historyId: Type.Optional(Type.String()),
+          expiration: Type.Optional(Type.String()),
+        }),
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { userId } = request as any;
+
+        // Get user's Gmail account
+        const mailAccount = await db
+          .select({ id: mailAccounts.id })
+          .from(mailAccounts)
+          .where(and(
+            eq(mailAccounts.userId, userId),
+            eq(mailAccounts.provider, 'google')
+          ))
+          .limit(1);
+
+        if (mailAccount.length === 0) {
+          return reply.status(404).send({
+            success: false,
+            message: 'No Gmail account found for user',
+          });
+        }
+
+        // Get refresh token
+        const tokenRecord = await db
+          .select({ refreshToken: oauthTokens.refreshToken })
+          .from(oauthTokens)
+          .where(and(
+            eq(oauthTokens.mailAccountId, mailAccount[0].id),
+            eq(oauthTokens.status, 'active')
+          ))
+          .limit(1);
+
+        if (tokenRecord.length === 0) {
+          return reply.status(404).send({
+            success: false,
+            message: 'No active Gmail token found',
+          });
+        }
+
+        // Setup Gmail client
+        const googleAuth = new google.auth.OAuth2({
+          clientId: CLIENT_ID,
+          clientSecret: CLIENT_SECRET,
+        });
+        googleAuth.setCredentials({ refresh_token: tokenRecord[0].refreshToken });
+        const gmail = google.gmail({ version: 'v1', auth: googleAuth });
+
+        // Get current history ID
+        const profile = await gmail.users.getProfile({ userId: 'me' });
+        const historyId = profile.data.historyId!;
+
+        // Setup watch request
+        const topicName = `projects/${process.env.GOOGLE_CLOUD_PROJECT_ID}/topics/gmail-notifications`;
+        const watchResponse = await gmail.users.watch({
+          userId: 'me',
+          requestBody: {
+            topicName,
+            labelIds: ['INBOX'],
+            labelFilterAction: 'include',
+          },
+        });
+
+        console.log('Gmail push notifications setup:', {
+          userId,
+          historyId,
+          expiration: watchResponse.data.expiration,
+          topicName,
+          webhookUrl: `${API_URL}/api${basePath}/gmail/notifications`,
+        });
+
+        logger.info('Gmail push notifications setup successfully', {
+          userId,
+          mailAccountId: mailAccount[0].id,
+          historyId,
+          expiration: watchResponse.data.expiration,
+        });
+
+        return reply.status(200).send({
+          success: true,
+          message: 'Gmail push notifications setup successfully',
+          historyId,
+          expiration: watchResponse.data.expiration,
+        });
+      } catch (error) {
+        console.error('Gmail setup error:', error);
+        logger.error('Failed to setup Gmail push notifications', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          success: false,
+          message: 'Failed to setup Gmail push notifications',
+        });
+      }
+    },
+  });
+
+  /**
+   * Setup Outlook Change Notifications
+   */
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/outlook/setup`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      description: 'Setup Outlook change notifications for email reply tracking',
+      tags: ['Email Reply', 'Outlook'],
+      summary: 'Setup Outlook change notifications',
+      response: {
+        ...defaultRouteResponse(),
+        200: Type.Object({
+          success: Type.Boolean(),
+          message: Type.String(),
+          subscriptionId: Type.Optional(Type.String()),
+          expiration: Type.Optional(Type.String()),
+        }),
+      },
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { userId } = request as any;
+
+        // Get user's Outlook account
+        const mailAccount = await db
+          .select({ id: mailAccounts.id })
+          .from(mailAccounts)
+          .where(and(
+            eq(mailAccounts.userId, userId),
+            eq(mailAccounts.provider, 'microsoft')
+          ))
+          .limit(1);
+
+        if (mailAccount.length === 0) {
+          return reply.status(404).send({
+            success: false,
+            message: 'No Outlook account found for user',
+          });
+        }
+
+        // Get refresh token
+        const tokenRecord = await db
+          .select({ refreshToken: oauthTokens.refreshToken })
+          .from(oauthTokens)
+          .where(and(
+            eq(oauthTokens.mailAccountId, mailAccount[0].id),
+            eq(oauthTokens.status, 'active')
+          ))
+          .limit(1);
+
+        if (tokenRecord.length === 0) {
+          return reply.status(404).send({
+            success: false,
+            message: 'No active Outlook token found',
+          });
+        }
+
+        // Setup Graph client
+        const graphClient = Client.init({
+          authProvider: async (done) => {
+            try {
+              const oauth2Client = getMicrosoftOAuth2Client();
+              const tokenResponse = await oauth2Client.refreshToken(tokenRecord[0].refreshToken);
+              done(null, tokenResponse.access_token);
+            } catch (error) {
+              done(error, null);
+            }
+          },
+        });
+
+        // Calculate expiration time (maximum 4230 minutes for mailbox resources)
+        const expirationDateTime = new Date(Date.now() + (4230 * 60 * 1000));
+
+        // Create the subscription
+        const subscription = await graphClient.api('/subscriptions').post({
+          changeType: 'created',
+          notificationUrl: `${API_URL}/api${basePath}/outlook/notifications`,
+          resource: '/me/mailFolders/inbox/messages',
+          expirationDateTime: expirationDateTime.toISOString(),
+          clientState: `${mailAccount[0].id}-${Date.now()}`,
+        });
+
+        console.log('Outlook change notifications setup:', {
+          userId,
+          subscriptionId: subscription.id,
+          expiration: expirationDateTime,
+          webhookUrl: `${API_URL}/api${basePath}/outlook/notifications`,
+        });
+
+        logger.info('Outlook change notifications setup successfully', {
+          userId,
+          mailAccountId: mailAccount[0].id,
+          subscriptionId: subscription.id,
+          expiration: expirationDateTime,
+        });
+
+        return reply.status(200).send({
+          success: true,
+          message: 'Outlook change notifications setup successfully',
+          subscriptionId: subscription.id,
+          expiration: expirationDateTime.toISOString(),
+        });
+      } catch (error) {
+        console.error('Outlook setup error:', error);
+        logger.error('Failed to setup Outlook change notifications', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return reply.status(500).send({
+          success: false,
+          message: 'Failed to setup Outlook change notifications',
+        });
+      }
+    },
+  });
+
   /**
    * Gmail Push Notification Webhook
    * Receives notifications from Google Cloud Pub/Sub when new emails arrive
