@@ -122,9 +122,15 @@ export const getWorker = <T = any, R = any, N extends string = string>(
 
 export const shutdownQueues = async () => {
   try {
-    await sharedRedisConnection?.quit();
+    if (sharedRedisConnection && sharedRedisConnection.status !== 'end') {
+      await sharedRedisConnection.quit();
+    }
   } catch (err) {
-    logger.error('Error during Redis shutdown', { err: String(err) });
+    // Only log if it's not a "connection already closed" error
+    const errorMessage = String(err);
+    if (!errorMessage.includes('Connection is closed') && !errorMessage.includes('Connection is already closed')) {
+      logger.error('Error during Redis shutdown', { err: errorMessage });
+    }
   } finally {
     sharedRedisConnection = null;
   }

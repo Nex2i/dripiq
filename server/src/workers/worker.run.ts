@@ -13,6 +13,7 @@
 
 import { logger } from '@/libs/logger';
 import { createRedisConnection } from '@/libs/bullmq';
+import { shutdownDatabaseConnections, shutdownRedisConnections } from '@/libs/shutdown';
 import {
   leadInitialProcessingWorker,
   leadAnalysisWorker,
@@ -69,7 +70,7 @@ async function startWorkers() {
 
 // Graceful shutdown handler
 async function gracefulShutdown(signal: string) {
-  logger.info(`📴 Received ${signal}. Starting graceful shutdown...`);
+  logger.info(`📴 Received ${signal}. Starting graceful shutdown... (workers)`);
 
   try {
     // Close all workers
@@ -87,10 +88,16 @@ async function gracefulShutdown(signal: string) {
       })
     );
 
-    logger.info('✅ All workers shut down gracefully');
+    // Close Redis connections
+    await shutdownRedisConnections();
+
+    // Close database connections
+    await shutdownDatabaseConnections();
+
+    logger.info('✅ All workers and connections shut down gracefully (workers)');
     process.exit(0);
   } catch (error) {
-    logger.error('❌ Error during graceful shutdown', {
+    logger.error('❌ Error during graceful shutdown (workers)', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
     process.exit(1);

@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import dotenv from 'dotenv';
 import * as schema from './schema';
+import { logger } from '@/libs/logger';
 
 dotenv.config();
 
@@ -31,6 +32,23 @@ const client = postgres({
 });
 
 const db = drizzle(client, { schema });
+
+// Database connection cleanup function
+export const shutdownDatabase = async (timeoutMs = 5000): Promise<void> => {
+  try {
+    logger.info('🔌 Shutting down database connections...');
+    
+    // End all connections with timeout
+    await client.end({ timeout: Math.floor(timeoutMs / 1000) });
+    
+    logger.info('✅ Database connections closed successfully');
+  } catch (error) {
+    logger.error('❌ Error closing database connections', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw error;
+  }
+};
 
 export { db, client };
 export * from './schema';
