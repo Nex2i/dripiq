@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "mail_accounts_user_primary_uq" ON "dripiq_app"."mail_accounts" USING btree ("user_id") WHERE "dripiq_app"."mail_accounts"."is_primary" = true;
