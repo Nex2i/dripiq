@@ -51,6 +51,19 @@ export default function EmailProvider({
       
       return { previousProviders }
     },
+    onSuccess: (data) => {
+      // Update the cache with the server response to ensure consistency
+      queryClient.setQueryData(userQueryKeys.emailProviders(), (old: any) => {
+        if (old && 'providers' in old) {
+          const updatedProviders = old.providers.map((provider: EmailProvider) => ({
+            ...provider,
+            isPrimary: provider.id === data.provider.id
+          }))
+          return { providers: updatedProviders }
+        }
+        return old
+      })
+    },
     onError: (error, _providerId, context) => {
       // Rollback on error
       if (context?.previousProviders) {
@@ -61,9 +74,8 @@ export default function EmailProvider({
       if (onError) {
         onError(errorMessage)
       }
-    },
-    onSettled: () => {
-      // Always refetch after error or success
+      
+      // Only refetch on error to get the correct state
       queryClient.invalidateQueries({ queryKey: userQueryKeys.emailProviders() })
     },
   })
@@ -75,6 +87,10 @@ export default function EmailProvider({
   }
 
   const handlePrimaryChange = (providerId: string) => {
+    // Prevent multiple requests if one is already in progress
+    if (switchPrimaryMutation.isPending) {
+      return
+    }
     switchPrimaryMutation.mutate(providerId)
   }
 
@@ -138,6 +154,7 @@ export default function EmailProvider({
           connectedProvider={googleProvider}
           onPrimaryChange={handlePrimaryChange}
           allProviders={providersData?.providers || []}
+          isChangingPrimary={switchPrimaryMutation.isPending}
         >
           <GoogleProviderButton
             isConnected={googleProvider?.isConnected || false}
@@ -151,6 +168,7 @@ export default function EmailProvider({
           connectedProvider={microsoftProvider}
           onPrimaryChange={handlePrimaryChange}
           allProviders={providersData?.providers || []}
+          isChangingPrimary={switchPrimaryMutation.isPending}
         >
           <MicrosoftProviderButton
             isConnected={microsoftProvider?.isConnected || false}

@@ -7,6 +7,7 @@ interface ProviderCardProps {
   children: React.ReactNode // The provider-specific button component
   onPrimaryChange?: (providerId: string) => void
   allProviders?: EmailProvider[]
+  isChangingPrimary?: boolean
 }
 
 export default function ProviderCard({
@@ -16,6 +17,7 @@ export default function ProviderCard({
   children,
   onPrimaryChange,
   allProviders: _allProviders = [],
+  isChangingPrimary = false,
 }: ProviderCardProps) {
   const isConnected = connectedProvider?.isConnected || false
   const isPrimary = connectedProvider?.isPrimary || false
@@ -55,22 +57,21 @@ export default function ProviderCard({
         <div className="flex items-center gap-3 h-full">
           {/* Primary provider radio button - only show for connected providers */}
           {isConnected && onPrimaryChange && (
-            <div
-              id={`primary-${connectedProvider?.id}-radio`}
-              className="flex items-center h-full cursor-pointer select-none"
-              onClick={handlePrimaryChange}
-            >
+            <div className="flex items-center">
               <input
                 type="radio"
                 id={`primary-${connectedProvider?.id}`}
                 name="primary-provider"
                 checked={isPrimary}
                 onChange={handlePrimaryChange}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer"
+                disabled={isChangingPrimary}
+                className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2 ${
+                  isChangingPrimary ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               />
               <label
                 htmlFor={`primary-${connectedProvider?.id}`}
-                className="ml-2 text-sm font-medium text-[var(--color-text-secondary)] cursor-pointer"
+                className="ml-2 text-sm font-medium text-[var(--color-text-secondary)] cursor-pointer select-none"
               >
                 Primary
               </label>
