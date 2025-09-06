@@ -13,7 +13,7 @@ const PricingPage = () => {
         'Up to 100 leads per month',
         'Basic AI re-engagement',
         'Email support',
-        'Salesforce integration',
+        'CRM integration',
       ],
       cta: 'Start Free',
       href: APP_URLS.SIGNUP,
@@ -46,7 +46,7 @@ const PricingPage = () => {
         'Dedicated success manager',
         'White-label options',
         'API access',
-        'Custom integrations',
+        'Custom workflows',
       ],
       cta: 'Contact Sales',
       href: '/contact',
@@ -134,7 +134,7 @@ const PricingPage = () => {
           </h2>
           <p className="text-surface-600 mb-8 max-w-2xl mx-auto">
             We work with enterprise teams to create custom AI models and
-            integrations that fit your unique sales process.
+            workflows that fit your unique sales process.
           </p>
           <a
             href="/contact"

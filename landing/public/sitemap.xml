@@ -2,49 +2,85 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://dripiq.ai/</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/about</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/contact</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/pricing</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/blog/</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://dripiq.ai/blog/ai-sales-automation-guide</loc>
-    <lastmod>2025-09-04</lastmod>
+    <loc>https://dripiq.ai/blog/ai-driven-lead-scoring-predictable-pipeline</loc>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://dripiq.ai/blog/salesforce-lead-re-engagement-strategies</loc>
-    <lastmod>2025-09-04</lastmod>
+    <loc>https://dripiq.ai/blog/ai-sales-automation-guide</loc>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://dripiq.ai/blog/cold-leads-conversion-tactics</loc>
-    <lastmod>2025-09-04</lastmod>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/cost-of-ignored-leads-revenue-analysis</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/crm-integration-best-practices-roi</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/email-deliverability-2024-sales-strategies</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/multi-channel-outreach-mastery-beyond-email</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/psychology-lead-reengagement-timing</loc>
+    <lastmod>2025-09-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://dripiq.ai/blog/sales-automation-vs-personalization-balance</loc>
+    <lastmod>2025-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

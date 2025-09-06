@@ -46,23 +46,32 @@ const STATIC_ROUTES = [
 ]
 
 /**
- * Dynamically import blog posts from the data file
+ * Dynamically import blog posts from the data files
  */
 async function getBlogPosts() {
   try {
-    // Import the blog posts data
-    const blogDataPath = resolve(__dirname, '../src/data/blog-posts.ts')
-    const blogDataContent = await fs.readFile(blogDataPath, 'utf-8')
+    // Get all blog post files from the blog-posts directory
+    const blogPostsDir = resolve(__dirname, '../src/data/blog-posts')
+    const files = await fs.readdir(blogPostsDir)
 
-    // Extract blog post slugs using regex
-    const slugMatches =
-      blogDataContent.match(/slug:\s*['"`]([^'"`]+)['"`]/g) || []
-    const slugs = slugMatches
-      .map((match) => {
-        const slugMatch = match.match(/slug:\s*['"`]([^'"`]+)['"`]/)
-        return slugMatch ? slugMatch[1] : null
-      })
-      .filter(Boolean)
+    // Filter for TypeScript files (excluding index.ts)
+    const blogPostFiles = files.filter(
+      (file) => file.endsWith('.ts') && file !== 'index.ts',
+    )
+
+    const slugs = []
+
+    // Extract slugs from each blog post file
+    for (const file of blogPostFiles) {
+      const filePath = resolve(blogPostsDir, file)
+      const content = await fs.readFile(filePath, 'utf-8')
+
+      // Extract slug using regex
+      const slugMatch = content.match(/slug:\s*['"`]([^'"`]+)['"`]/)
+      if (slugMatch) {
+        slugs.push(slugMatch[1])
+      }
+    }
 
     return slugs.map((slug) => ({
       path: `/blog/${slug}`,

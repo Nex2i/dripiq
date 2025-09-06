@@ -1,7 +1,7 @@
 {
   "name": "dripIq - AI-Powered Sales Re-engagement Platform",
   "short_name": "dripIq",
-  "description": "Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform.",
+  "description": "Automated, intelligent follow-up for your lost leads. AI-powered CRM re-engagement platform.",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#5eead4",

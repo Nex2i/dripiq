@@ -12,14 +12,14 @@ interface SEOProps {
 
 export default function SEOHead({
   title = 'dripIq - AI-Powered Sales Re-engagement Platform',
-  description = 'Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform.',
+  description = 'Automated, intelligent follow-up for your lost leads. AI-powered CRM re-engagement platform.',
   canonical = 'https://dripiq.ai/',
   ogImage = 'https://dripiq.ai/android-chrome-512x512.png',
   ogType = 'website',
   keywords = [
     'AI sales',
     'lead re-engagement',
-    'Salesforce automation',
+    'CRM automation',
     'CRM',
     'sales automation',
   ],

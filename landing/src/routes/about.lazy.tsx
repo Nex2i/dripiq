@@ -32,7 +32,7 @@ const AboutPage = () => {
               automated re-engagement can transform your sales pipeline.
             </p>
             <p className="text-surface-600">
-              Our AI-powered platform integrates seamlessly with Salesforce to
+              Our AI-powered platform integrates seamlessly with your CRM to
               identify dormant leads and orchestrate personalized re-engagement
               campaigns that actually convert.
             </p>
