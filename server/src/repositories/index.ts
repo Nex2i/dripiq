@@ -31,6 +31,8 @@ import { LeadTransactionRepository } from './transactions/LeadTransactionReposit
 import { UserInvitationTransactionRepository } from './transactions/UserInvitationTransactionRepository';
 import { TenantSetupTransactionRepository } from './transactions/TenantSetupTransactionRepository';
 import { CalendarLinkClickRepository } from './entities/CalendarLinkClickRepository';
+import { MailAccountRepository } from './entities/MailAccountRepository';
+import { OauthTokenRepository } from './entities/OauthTokenRepository';
 
 // Base repositories
 export { BaseRepository } from './base/BaseRepository';
@@ -66,6 +68,8 @@ export { ContactChannelRepository } from './entities/ContactChannelRepository';
 export { CampaignTransitionRepository } from './entities/CampaignTransitionRepository';
 export { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepository';
 export { CalendarLinkClickRepository } from './entities/CalendarLinkClickRepository';
+export { MailAccountRepository } from './entities/MailAccountRepository';
+export { OauthTokenRepository } from './entities/OauthTokenRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -82,6 +86,8 @@ export type {
   EmbeddingSearchOptions,
   EmbeddingWithDomain,
 } from './entities/SiteEmbeddingRepository';
+export type { MailAccountWithDetails } from './entities/MailAccountRepository';
+export type { OauthTokenWithDetails } from './entities/OauthTokenRepository';
 
 // Export types from transaction repositories
 export type {
@@ -135,6 +141,8 @@ const contactChannelRepository = new ContactChannelRepository();
 const campaignTransitionRepository = new CampaignTransitionRepository();
 const contactUnsubscribeRepository = new ContactUnsubscribeRepository();
 const calendarLinkClickRepository = new CalendarLinkClickRepository();
+const mailAccountRepository = new MailAccountRepository();
+const oauthTokenRepository = new OauthTokenRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -173,6 +181,8 @@ export const repositories = {
   campaignTransition: campaignTransitionRepository,
   contactUnsubscribe: contactUnsubscribeRepository,
   calendarLinkClick: calendarLinkClickRepository,
+  mailAccount: mailAccountRepository,
+  oauthToken: oauthTokenRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -211,6 +221,8 @@ export {
   campaignTransitionRepository,
   contactUnsubscribeRepository,
   calendarLinkClickRepository,
+  mailAccountRepository,
+  oauthTokenRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,

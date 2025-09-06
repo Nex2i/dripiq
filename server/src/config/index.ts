@@ -20,6 +20,7 @@ export const {
   BULLMQ_PREFIX,
   BULL_BOARD_USERNAME,
   BULL_BOARD_PASSWORD,
+  ENCRYPTION_KEY,
 } = process.env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
