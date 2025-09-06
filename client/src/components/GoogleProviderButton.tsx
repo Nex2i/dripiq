@@ -51,20 +51,20 @@ export default function GoogleProviderButton({
       className={`
         inline-flex items-center justify-center gap-2 px-4 py-2 
         rounded-lg text-sm font-medium transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+        focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:ring-offset-2
         ${
           isConnected
-            ? 'bg-green-50 text-green-700 border border-green-200 cursor-not-allowed'
+            ? 'bg-[var(--color-success-50)] text-[var(--color-success-700)] border border-[var(--color-success-200)] cursor-not-allowed'
             : isConnecting
-              ? 'bg-gray-50 text-gray-500 border border-gray-200 cursor-not-allowed'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              ? 'bg-[var(--color-bg-muted)] text-[var(--color-text-muted)] border border-[var(--color-border-default)] cursor-not-allowed'
+              : 'bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)] hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)]'
         }
       `}
       type="button"
     >
       {isConnecting ? (
         <>
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-border-default)] border-t-[var(--color-text-secondary)]" />
           <span>Connecting...</span>
         </>
       ) : isConnected ? (

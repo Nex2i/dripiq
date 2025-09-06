@@ -1,4 +1,8 @@
-export default function GoogleIcon({ className = "h-5 w-5" }: { className?: string }) {
+export default function GoogleIcon({
+  className = 'h-5 w-5',
+}: {
+  className?: string
+}) {
   return (
     <svg
       className={className}

@@ -1,7 +1,6 @@
 import type { EmailProvider } from '../services/users.service'
 
 interface ProviderCardProps {
-  name: string
   displayName: string
   icon: React.ReactNode
   connectedProvider: EmailProvider | null
@@ -9,7 +8,6 @@ interface ProviderCardProps {
 }
 
 export default function ProviderCard({
-  name,
   displayName,
   icon,
   connectedProvider,
@@ -18,21 +16,24 @@ export default function ProviderCard({
   const isConnected = connectedProvider?.isConnected || false
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4">
+    <div className="border border-[var(--color-border-default)] rounded-lg p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {icon}
           <div>
-            <h3 className="font-medium text-gray-900">{displayName}</h3>
+            <h3 className="font-medium text-[var(--color-text-primary)]">
+              {displayName}
+            </h3>
             {isConnected && connectedProvider && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--color-text-muted)]">
                 Connected as{' '}
-                {connectedProvider.displayName || connectedProvider.primaryEmail}
+                {connectedProvider.displayName ||
+                  connectedProvider.primaryEmail}
               </p>
             )}
           </div>
         </div>
-        
+
         {children}
       </div>
     </div>
