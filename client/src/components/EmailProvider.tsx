@@ -4,6 +4,8 @@ import type { EmailProvider } from '../services/users.service'
 import ProviderCard from './ProviderCard'
 import GoogleProviderButton from './GoogleProviderButton'
 import GoogleIcon from './GoogleIcon'
+import MicrosoftProviderButton from './MicrosoftProviderButton'
+import MicrosoftIcon from './MicrosoftIcon'
 
 interface EmailProviderProps {
   className?: string
@@ -71,6 +73,7 @@ export default function EmailProvider({
   }
 
   const googleProvider = getProviderStatus('google')
+  const microsoftProvider = getProviderStatus('microsoft')
 
   return (
     <div
@@ -91,6 +94,17 @@ export default function EmailProvider({
         >
           <GoogleProviderButton
             isConnected={googleProvider?.isConnected || false}
+            onError={onError}
+          />
+        </ProviderCard>
+
+        <ProviderCard
+          displayName="Microsoft Outlook"
+          icon={<MicrosoftIcon />}
+          connectedProvider={microsoftProvider}
+        >
+          <MicrosoftProviderButton
+            isConnected={microsoftProvider?.isConnected || false}
             onError={onError}
           />
         </ProviderCard>
