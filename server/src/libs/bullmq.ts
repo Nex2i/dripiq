@@ -128,7 +128,10 @@ export const shutdownQueues = async () => {
   } catch (err) {
     // Only log if it's not a "connection already closed" error
     const errorMessage = String(err);
-    if (!errorMessage.includes('Connection is closed') && !errorMessage.includes('Connection is already closed')) {
+    if (
+      !errorMessage.includes('Connection is closed') &&
+      !errorMessage.includes('Connection is already closed')
+    ) {
       logger.error('Error during Redis shutdown', { err: errorMessage });
     }
   } finally {

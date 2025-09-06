@@ -1,6 +1,6 @@
 /**
  * Centralized Shutdown Utilities
- * 
+ *
  * This module provides utilities for gracefully shutting down various
  * components of the application including database connections, Redis
  * connections, and HTTP servers.
@@ -22,7 +22,7 @@ export interface ShutdownOptions {
  */
 export async function shutdownDatabaseConnections(options: ShutdownOptions = {}): Promise<void> {
   const { timeout = 5000 } = options;
-  
+
   try {
     logger.info('🔄 Shutting down database connections...');
     await shutdownDatabase(timeout);
@@ -56,7 +56,7 @@ export async function shutdownRedisConnections(): Promise<void> {
  */
 export async function shutdownHttpServer(server: any): Promise<void> {
   if (!server) return;
-  
+
   try {
     logger.info('🛑 Closing HTTP server...');
     await server.close();
@@ -74,7 +74,7 @@ export async function shutdownHttpServer(server: any): Promise<void> {
  */
 export async function shutdownAll(server?: any, options: ShutdownOptions = {}): Promise<void> {
   const { timeout = 10000, forceExit = true } = options;
-  
+
   const shutdownPromise = async () => {
     const errors: Error[] = [];
 
@@ -103,7 +103,7 @@ export async function shutdownAll(server?: any, options: ShutdownOptions = {}): 
 
     if (errors.length > 0) {
       logger.error(`❌ ${errors.length} error(s) occurred during shutdown`, {
-        errors: errors.map(e => e.message),
+        errors: errors.map((e) => e.message),
       });
       throw new Error(`Shutdown completed with ${errors.length} error(s)`);
     }
@@ -124,7 +124,7 @@ export async function shutdownAll(server?: any, options: ShutdownOptions = {}): 
         error: error instanceof Error ? error.message : 'Unknown error',
         timeout,
       });
-      
+
       if (forceExit) {
         logger.warn('⚠️ Force exiting due to shutdown timeout');
         process.exit(1);

@@ -37,10 +37,10 @@ const db = drizzle(client, { schema });
 export const shutdownDatabase = async (timeoutMs = 5000): Promise<void> => {
   try {
     logger.info('🔌 Shutting down database connections...');
-    
+
     // End all connections with timeout
     await client.end({ timeout: Math.floor(timeoutMs / 1000) });
-    
+
     logger.info('✅ Database connections closed successfully');
   } catch (error) {
     logger.error('❌ Error closing database connections', {
