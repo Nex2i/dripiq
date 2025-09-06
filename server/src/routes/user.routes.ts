@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest, RouteOptions } from 'fastify';
 import { createId } from '@paralleldrive/cuid2';
-import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { UserService } from '@/modules/user.service';
@@ -19,6 +18,9 @@ import {
   UserIdParamsSchema,
   TestEmailRequestSchema,
   TestEmailResponseSchema,
+  GetEmailProvidersResponseSchema,
+  SwitchPrimaryProviderRequestSchema,
+  SwitchPrimaryProviderResponseSchema,
 } from './apiSchema/users';
 
 const basePath = '';
@@ -173,6 +175,9 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/me/email-providers`,
     preHandler: [fastify.authPrehandler],
     schema: {
+      response: {
+        200: GetEmailProvidersResponseSchema,
+      },
       tags: ['Users'],
       summary: 'Get connected email providers',
       description: 'Get list of connected email providers for the authenticated user.',
@@ -208,29 +213,16 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
     url: `${basePath}/me/email-providers/primary`,
     preHandler: [fastify.authPrehandler],
     schema: {
-      body: Type.Object({
-        providerId: Type.String({ description: 'ID of the mail account to set as primary' }),
-      }),
+      body: SwitchPrimaryProviderRequestSchema,
       response: {
-        200: Type.Object({
-          message: Type.String(),
-          provider: Type.Object({
-            id: Type.String(),
-            provider: Type.String(),
-            primaryEmail: Type.String(),
-            displayName: Type.String(),
-            isPrimary: Type.Boolean(),
-            isConnected: Type.Boolean(),
-            connectedAt: Type.String(),
-          }),
-        }),
+        200: SwitchPrimaryProviderResponseSchema,
       },
       tags: ['Users'],
       summary: 'Switch primary email provider',
       description: 'Set a connected email provider as the primary provider for sending emails.',
     },
     handler: async (
-      request: FastifyRequest<{ Body: { providerId: string } }>,
+      request: FastifyRequest<{ Body: typeof SwitchPrimaryProviderRequestSchema.static }>,
       reply: FastifyReply
     ) => {
       try {
