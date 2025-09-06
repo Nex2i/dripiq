@@ -53,4 +53,9 @@ export class MailAccountRepository extends TenantAwareRepository<
       throw error;
     }
   }
+
+  async findAccountsByUserId(userId: string): Promise<MailAccount[]> {
+    const results = await this.db.select().from(this.table).where(eq(this.table.userId, userId));
+    return results;
+  }
 }

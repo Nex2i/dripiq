@@ -175,36 +175,16 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       tags: ['Users'],
       summary: 'Get connected email providers',
       description: 'Get list of connected email providers for the authenticated user.',
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            providers: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  provider: { type: 'string' },
-                  primaryEmail: { type: 'string' },
-                  displayName: { type: 'string' },
-                  isConnected: { type: 'boolean' },
-                  connectedAt: { type: 'string' },
-                },
-              },
-            },
-          },
-        },
-      },
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const userId = ((request as any).user as IUser).id as string;
-        const tenantId = (request as any).tenantId as string;
 
         // Get all mail accounts for this user in the current tenant
-        const mailAccounts = await mailAccountRepository.findByUserIdForTenant(userId, tenantId);
+        const mailAccounts = await mailAccountRepository.findAccountsByUserId(userId);
 
         const providers = mailAccounts.map((account) => ({
+          id: account.id,
           provider: account.provider,
           primaryEmail: account.primaryEmail,
           displayName: account.displayName || '',
