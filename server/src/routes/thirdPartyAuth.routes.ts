@@ -178,14 +178,6 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           hasProfile: !!payload.picture,
         });
 
-        const userData = {
-          id: payload.sub!,
-          email: payload.email!,
-          name: payload.name,
-          picture: payload.picture,
-          verified_email: payload.email_verified,
-        };
-
         // redirect to the frontend
         return reply.redirect(
           process.env.FRONTEND_ORIGIN + '/profile?google-auth-success=true',
