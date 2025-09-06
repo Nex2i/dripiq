@@ -22,12 +22,15 @@ export default function ConnectGoogleButton({
       setIsLoading(true)
 
       // Get the authorization URL from our backend
-      const response = await fetch('/auth/third-party/google/authorize', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        import.meta.env.VITE_API_BASE_URL + '/api/third-party/google/authorize',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         },
-      })
+      )
 
       if (!response.ok) {
         throw new Error('Failed to get Google authorization URL')

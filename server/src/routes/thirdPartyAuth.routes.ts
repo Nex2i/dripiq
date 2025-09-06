@@ -10,14 +10,13 @@ import {
   errorResponseSchema,
 } from './apiSchema/thirdPartyAuth';
 
-const basePath = '/auth/third-party';
+const basePath = '/third-party';
 
 // Google OAuth2 client configuration
 const getGoogleOAuth2Client = () => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri =
-    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:8080/auth/third-party/google/callback';
+  const redirectUri = `${process.env.API_URL}/api/third-party/google/callback`;
 
   if (!clientId || !clientSecret) {
     throw new Error('Google OAuth credentials not configured');
@@ -54,6 +53,7 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         const scopes = [
           'https://www.googleapis.com/auth/userinfo.email',
           'https://www.googleapis.com/auth/userinfo.profile',
+          'https://www.googleapis.com/auth/gmail.send',
           'openid',
         ];
 
@@ -67,7 +67,6 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         logger.info('Generated Google OAuth authorization URL', {
           state,
           scopes,
-          redirectUri: oauth2Client.redirectUri,
         });
 
         return reply.status(200).send({
@@ -92,6 +91,7 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
       querystring: googleCallbackQuerySchema,
       response: {
         200: googleCallbackResponseSchema,
+        301: googleCallbackResponseSchema,
         400: errorResponseSchema,
         500: errorResponseSchema,
       },
@@ -186,11 +186,11 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           verified_email: payload.email_verified,
         };
 
-        return reply.status(200).send({
-          success: true,
-          message: 'Google OAuth authentication successful',
-          userData,
-        });
+        // redirect to the frontend
+        return reply.redirect(
+          process.env.FRONTEND_ORIGIN + '/profile?google-auth-success=true',
+          301
+        );
       } catch (error) {
         logger.error('Error in Google OAuth callback:', error);
         return reply.status(500).send({
