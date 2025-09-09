@@ -115,6 +115,13 @@ const unsubscribeSuccessRoute = createRoute({
   }),
 })
 
+// Protected index route - redirect to dashboard
+const protectedIndexRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/',
+  component: () => <Navigate to="/dashboard" />,
+})
+
 // Dashboard route - protected
 const dashboardRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -270,6 +277,7 @@ const settingsRouteTree = settingsRoute.addChildren([
 ])
 
 const protectedRouteTree = protectedRoute.addChildren([
+  protectedIndexRoute,
   dashboardRoute,
   profileRoute,
   leadsRoute,
