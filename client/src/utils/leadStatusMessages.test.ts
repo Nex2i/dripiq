@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { getStatusMessage, getProcessingProgress } from './leadStatusMessages'
 import { LEAD_STATUS } from '../constants/leadStatus.constants'
 import type { LeadStatus } from '../types/lead.types'
+import type { LeadStatusValue } from '../constants/leadStatus.constants'
 
 describe('leadStatusMessages', () => {
   const createMockStatus = (
-    status: string,
+    status: LeadStatusValue,
     createdAt = new Date(),
   ): LeadStatus => ({
     id: 'mock-id',
-    leadId: 'mock-lead-id',
     status,
     createdAt: createdAt.toISOString(),
     updatedAt: createdAt.toISOString(),
@@ -66,7 +66,7 @@ describe('leadStatusMessages', () => {
       expect(message).toEqual({
         title: '✅ Analysis Complete!',
         description:
-          'The website has been fully analyzed! Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for your outreach campaigns.',
+          'Your lead has been fully researched and analyzed. Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for you to create outreach campaigns.',
         isProcessing: false,
       })
     })
@@ -131,7 +131,7 @@ describe('leadStatusMessages', () => {
     })
 
     it('should handle unknown status gracefully', () => {
-      const statuses = [createMockStatus('UNKNOWN_STATUS')]
+      const statuses = [createMockStatus('UNKNOWN_STATUS' as LeadStatusValue)]
       const progress = getProcessingProgress(statuses)
 
       expect(progress).toEqual({
