@@ -133,10 +133,15 @@ const PricingPage = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-surface-900 mb-6">
             Token-Based <span className="gradient-text">Pricing</span>
           </h1>
-          <p className="text-xl text-surface-600 max-w-3xl mx-auto">
+          <p className="text-xl text-surface-600 max-w-3xl mx-auto mb-4">
             Pay only for the leads you engage. 1 token = 1 lead. 
             Choose monthly plans or flexible token bundles that roll over.
           </p>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-lg font-semibold text-green-800 text-center">
+              💰 Every sale closed through DripIQ averages $250 in value
+            </p>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-5 md:grid-cols-2 gap-6 mb-16">
@@ -150,8 +155,8 @@ const PricingPage = () => {
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-primary-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
                     Most Popular
                   </span>
                 </div>
@@ -272,6 +277,7 @@ const PricingPage = () => {
               <p>• Token bundles roll over indefinitely - perfect for irregular usage</p>
               <p>• 1 token = 1 lead engagement across all AI re-engagement features</p>
               <p>• All plans include full access to our AI re-engagement platform</p>
+              <p className="text-green-700 font-medium">• Average sale value: $250 per closed deal through DripIQ</p>
             </div>
           </div>
         </div>
