@@ -155,7 +155,9 @@ class UsersService {
     return res.json()
   }
 
-  async switchPrimaryProvider(providerId: string): Promise<{ message: string; provider: EmailProvider }> {
+  async switchPrimaryProvider(
+    providerId: string,
+  ): Promise<{ message: string; provider: EmailProvider }> {
     const authHeaders = await authService.getAuthHeaders()
     const res = await fetch(`${this.baseUrl}/me/email-providers/primary`, {
       method: 'PUT',

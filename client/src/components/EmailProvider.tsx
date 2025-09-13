@@ -17,7 +17,7 @@ export default function EmailProvider({
   onError,
 }: EmailProviderProps) {
   const queryClient = useQueryClient()
-  
+
   const {
     data: providersData,
     isLoading,
@@ -30,27 +30,37 @@ export default function EmailProvider({
   })
 
   const switchPrimaryMutation = useMutation({
-    mutationFn: (providerId: string) => getUsersService().switchPrimaryProvider(providerId),
+    mutationFn: (providerId: string) =>
+      getUsersService().switchPrimaryProvider(providerId),
     onSuccess: (_data, providerId) => {
       // Update cache directly with the new state - no refetch needed
-      const currentData = queryClient.getQueryData(userQueryKeys.emailProviders()) as { providers: EmailProvider[] } | undefined
-      
+      const currentData = queryClient.getQueryData(
+        userQueryKeys.emailProviders(),
+      ) as { providers: EmailProvider[] } | undefined
+
       if (currentData?.providers) {
         const updatedProviders = currentData.providers.map((provider) => ({
           ...provider,
-          isPrimary: provider.id === providerId
+          isPrimary: provider.id === providerId,
         }))
-        
-        queryClient.setQueryData(userQueryKeys.emailProviders(), { providers: updatedProviders })
+
+        queryClient.setQueryData(userQueryKeys.emailProviders(), {
+          providers: updatedProviders,
+        })
       }
     },
     onError: (error) => {
       if (onError) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to switch primary provider'
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to switch primary provider'
         onError(errorMessage)
       }
       // Only refetch on error to get correct state
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.emailProviders() })
+      queryClient.invalidateQueries({
+        queryKey: userQueryKeys.emailProviders(),
+      })
     },
   })
 
