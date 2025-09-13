@@ -1,4 +1,5 @@
 import { eq, and, gte, sql, desc, count } from 'drizzle-orm';
+import { dashboardCache } from '@/cache/dashboardCache';
 import { db } from '../db';
 import {
   leads,
@@ -10,7 +11,7 @@ import {
 } from '../db/schema';
 import { logger } from '../libs/logger';
 
-interface DashboardMetrics {
+export interface DashboardMetrics {
   leads: {
     total: number;
     thisWeek: number;
@@ -62,7 +63,22 @@ export class DashboardService {
       // Calculate date boundaries
       const now = new Date();
       const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      oneWeekAgo.setHours(0, 0, 0, 0); // Round to midnight
       const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      oneMonthAgo.setHours(0, 0, 0, 0); // Round to midnight
+
+      const query = {
+        oneWeekAgo,
+        oneMonthAgo,
+      };
+
+      const cachedMetrics = await dashboardCache.getMetrics(tenantId, query);
+
+      if (cachedMetrics) {
+        return cachedMetrics.metrics as DashboardMetrics;
+      }
+
+      logger.info('No cached metrics found, executing queries');
 
       // Execute all queries in parallel for better performance
       const [
@@ -81,7 +97,7 @@ export class DashboardService {
         this.getRecentActivity(tenantId),
       ]);
 
-      return {
+      const metrics = {
         leads: leadsMetrics,
         campaigns: campaignsMetrics,
         emails: emailsMetrics,
@@ -89,6 +105,10 @@ export class DashboardService {
         calendar: calendarMetrics,
         recentActivity,
       };
+
+      await dashboardCache.setMetrics(tenantId, metrics, query);
+
+      return metrics;
     } catch (error) {
       logger.error('Error getting dashboard metrics:', error);
       throw new Error('Failed to retrieve dashboard metrics');
