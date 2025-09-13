@@ -20,11 +20,7 @@ export default function Footer() {
       { name: 'API Docs', href: '/docs' },
       { name: 'Status', href: 'https://status.dripiq.ai' },
     ],
-    Legal: [
-      { name: 'Privacy Policy', href: PRIVACY_POLICY_URL },
-      { name: 'Terms of Service', href: '/terms' },
-      { name: 'Cookie Policy', href: '/cookies' },
-    ],
+    Legal: [{ name: 'Privacy Policy', href: PRIVACY_POLICY_URL }],
   }
 
   return (
