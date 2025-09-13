@@ -29,6 +29,32 @@ We **do not** knowingly collect sensitive personal data (e.g., race, health, pro
 
 ---
 
+### 3.1 Google User Data
+
+If you connect a Google account, we may access the following:
+- Basic profile info (name, email) for sign-in and identity verification.
+- Gmail send access to enable email outreach functionality.
+
+**Use:** Solely to provide and improve the Service.  
+**Storage:** Encrypted, retained per Tenant until deletion request.  
+**Sharing:** Never sold or shared with third parties. Shared only with listed sub-processors for processing under our instructions.  
+**Deletion:** Users can revoke access via Google Security settings at any time, or request deletion by contacting privacy@dripiq.com.
+
+---
+
+### 3.2 Microsoft User Data
+
+If you connect a Microsoft account, we may access the following:
+- Basic profile info (name, email) for sign-in and identity verification.
+- Outlook send access to enable email outreach functionality.
+
+**Use:** Solely to provide and improve the Service.  
+**Storage:** Encrypted, retained per Tenant until deletion request.  
+**Sharing:** Never sold or shared with third parties. Shared only with listed sub-processors for processing under our instructions.  
+**Deletion:** Users can revoke access via Microsoft Account settings at any time, or request deletion by contacting privacy@dripiq.com.
+
+---
+
 ### 4. How We Use the Data
 
 1. **Provide & Improve the Service**
