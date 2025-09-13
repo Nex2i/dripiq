@@ -76,7 +76,7 @@ export function getStatusMessage(statuses: LeadStatus[]): StatusMessage | null {
       return {
         title: '✅ Analysis Complete!',
         description:
-          'The website has been fully analyzed! Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for your outreach campaigns.',
+          'Your lead has been fully researched and analyzed. Check the tabs below for AI-generated business summaries, extracted contacts, and insights ready for you to create outreach campaigns.',
         isProcessing: false,
       }
 

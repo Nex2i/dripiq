@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { PRIVACY_POLICY_URL } from '@/constants/routes'
 import Logo from './Logo'
 
 export default function Footer() {
@@ -20,7 +21,7 @@ export default function Footer() {
       { name: 'Status', href: 'https://status.dripiq.ai' },
     ],
     Legal: [
-      { name: 'Privacy Policy', href: '/privacy' },
+      { name: 'Privacy Policy', href: PRIVACY_POLICY_URL },
       { name: 'Terms of Service', href: '/terms' },
       { name: 'Cookie Policy', href: '/cookies' },
     ],

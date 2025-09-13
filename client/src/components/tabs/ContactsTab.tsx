@@ -130,13 +130,11 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
     onSuccess: (result) => {
       // Strategy generation now returns success response, not the full strategy
       console.log('Strategy generated successfully:', result.message)
-      setQualifyingContactId(null)
       // Invalidate lead query to refresh contact data
       queryClient.invalidateQueries({ queryKey: ['lead', leadId] })
     },
     onError: (error) => {
       console.error('Failed to generate contact strategy:', error)
-      setQualifyingContactId(null)
       // You might want to show a toast notification here
     },
   })
@@ -179,10 +177,12 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
 
   const handleGenerateContactStrategy = (contactId: string) => {
     generateContactStrategyMutation.mutate(contactId)
+    setQualifyingContactId(contactId)
   }
 
   const handleViewContactStrategy = (contactId: string) => {
     getContactStrategyMutation.mutate(contactId)
+    setQualifyingContactId(contactId)
   }
 
   // Helper function to determine strategy button state

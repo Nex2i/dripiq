@@ -554,6 +554,9 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
               <p className="text-[var(--color-primary-100)] mt-1">
                 {contactName} at {companyName}
               </p>
+              <p className="text-[var(--color-primary-100)] mt-1">
+                {leadId} {contactId}
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               {isEditMode ? (
