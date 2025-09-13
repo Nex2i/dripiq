@@ -134,12 +134,12 @@ const PricingPage = () => {
             Token-Based <span className="gradient-text">Pricing</span>
           </h1>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto mb-4">
-            Pay only for the leads you engage. 1 token = 1 lead. 
-            Choose monthly plans or flexible token bundles that roll over.
+            Pay only for the leads you engage. 1 token = 1 lead. Choose monthly
+            plans or flexible token bundles that roll over.
           </p>
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
             <p className="text-lg font-semibold text-green-800 text-center">
-              💰 We charge $250 for every sale closed through DripIQ
+              💰 We charge $250 for every sale closed brought in by DripIQ
             </p>
           </div>
         </div>
@@ -155,8 +155,8 @@ const PricingPage = () => {
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <span className="bg-primary-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10 flex justify-center w-full">
+                  <span className="bg-primary-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg whitespace-nowrap">
                     Most Popular
                   </span>
                 </div>
@@ -211,8 +211,9 @@ const PricingPage = () => {
               Token Bundles
             </h2>
             <p className="text-lg text-surface-600 max-w-2xl mx-auto">
-              Need more flexibility? Buy token bundles that roll over month to month. 
-              Perfect for irregular campaigns or supplementing your monthly plan.
+              Need more flexibility? Buy token bundles that roll over month to
+              month. Perfect for irregular campaigns or supplementing your
+              monthly plan.
             </p>
           </div>
 
@@ -240,19 +241,27 @@ const PricingPage = () => {
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
                     <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0" />
-                    <span className="text-surface-700">{bundle.tokens} tokens included</span>
+                    <span className="text-surface-700">
+                      {bundle.tokens} tokens included
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0" />
-                    <span className="text-surface-700">Tokens roll over monthly</span>
+                    <span className="text-surface-700">
+                      Tokens roll over monthly
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0" />
-                    <span className="text-surface-700">Use anytime, no expiration</span>
+                    <span className="text-surface-700">
+                      Use anytime, no expiration
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0" />
-                    <span className="text-surface-700">Perfect for campaign bursts</span>
+                    <span className="text-surface-700">
+                      Perfect for campaign bursts
+                    </span>
                   </li>
                 </ul>
 
@@ -273,11 +282,24 @@ const PricingPage = () => {
               Important: Token Usage Policy
             </h3>
             <div className="max-w-3xl mx-auto text-surface-700 space-y-2">
-              <p>• Monthly plan tokens do not roll over - use them or lose them each month</p>
-              <p>• Token bundles roll over indefinitely - perfect for irregular usage</p>
-              <p>• 1 token = 1 lead engagement across all AI re-engagement features</p>
-              <p>• All plans include full access to our AI re-engagement platform</p>
-              <p className="text-green-700 font-medium">• Success fee: $250 charged per sale closed through DripIQ</p>
+              <p>
+                • Monthly plan tokens do not roll over - use them or lose them
+                each month
+              </p>
+              <p>
+                • Token bundles roll over indefinitely - perfect for irregular
+                usage
+              </p>
+              <p>
+                • 1 token = 1 lead engagement across all AI re-engagement
+                features
+              </p>
+              <p>
+                • All plans include full access to our AI re-engagement platform
+              </p>
+              <p className="text-green-700 font-medium">
+                • Success fee: $250 charged per sale closed brought in by DripIQ
+              </p>
             </div>
           </div>
         </div>
