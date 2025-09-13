@@ -29,17 +29,11 @@ import NotFoundPage from './pages/NotFoundPage'
 import UserEditPage from './pages/users/UserEditPage'
 import UnsubscribePage from './pages/UnsubscribePage'
 
-// Import demo components directly
-import FormSimpleDemo from './pages/demo/demo.form.simple'
-import FormAddressDemo from './pages/demo/demo.form.address'
-import StoreDemo from './pages/demo/demo.store'
-import TableDemo from './pages/demo/demo.table'
-import TanStackQueryDemo from './pages/demo/demo.tanstack-query'
-
 // Import layout components
 import TanStackQueryLayout from './integrations/tanstack-query/layout'
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider'
 import { AuthDebugMenu } from './components/AuthDebugMenu'
+import { LEADS_URL } from './constants/navigation'
 
 // Root route with header
 const rootRoute = createRootRoute({
@@ -80,17 +74,6 @@ const authRoute = createRoute({
   ),
 })
 
-// Home route - public (redirect to landing page)
-const landingRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  component: () => {
-    // Redirect to the landing page URL
-    window.location.href = import.meta.env.VITE_APP_URL
-    return null
-  },
-})
-
 // Setup password route - public (for invited users who don't have passwords yet)
 const setupPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -119,7 +102,7 @@ const unsubscribeSuccessRoute = createRoute({
 const protectedIndexRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/',
-  component: () => <Navigate to="/dashboard" />,
+  component: () => <Navigate to="/dashboard" replace />,
 })
 
 // Dashboard route - protected
@@ -156,19 +139,19 @@ const authSetupPasswordRoute = createRoute({
 
 const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
-  path: '/leads',
+  path: LEADS_URL,
   component: () => <LeadsPage />,
 })
 
 const newLeadRoute = createRoute({
   getParentRoute: () => protectedRoute,
-  path: '/leads/new',
+  path: `${LEADS_URL}/new`,
   component: () => <NewLeadPage />,
 })
 
 const leadDetailRoute = createRoute({
   getParentRoute: () => protectedRoute,
-  path: '/leads/$leadId',
+  path: `${LEADS_URL}/$leadId`,
   component: () => <LeadDetailPage />,
 })
 
@@ -182,7 +165,7 @@ const settingsRoute = createRoute({
 const settingsIndexRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: '/',
-  component: () => <Navigate to="/settings/organization" />,
+  component: () => <Navigate to="/settings/organization" replace />,
 })
 
 const settingsUsersRoute = createRoute({
@@ -227,37 +210,6 @@ const settingsProductsRoute = createRoute({
   component: () => <ProductsPage />,
 })
 
-// Create all protected demo routes directly
-const formSimpleRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/demo/form/simple',
-  component: () => <FormSimpleDemo />,
-})
-
-const formAddressRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/demo/form/address',
-  component: () => <FormAddressDemo />,
-})
-
-const storeRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/demo/store',
-  component: () => <StoreDemo />,
-})
-
-const tableRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/demo/table',
-  component: () => <TableDemo />,
-})
-
-const tanStackQueryRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/demo/tanstack-query',
-  component: () => <TanStackQueryDemo />,
-})
-
 // Catch-all 404 route
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -284,11 +236,6 @@ const protectedRouteTree = protectedRoute.addChildren([
   newLeadRoute,
   leadDetailRoute,
   settingsRouteTree,
-  formSimpleRoute,
-  formAddressRoute,
-  storeRoute,
-  tableRoute,
-  tanStackQueryRoute,
 ])
 
 const authRouteTree = authRoute.addChildren([
@@ -299,7 +246,6 @@ const authRouteTree = authRoute.addChildren([
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([
-  landingRoute,
   setupPasswordRoute,
   privacyPolicyRoute,
   unsubscribeSuccessRoute,

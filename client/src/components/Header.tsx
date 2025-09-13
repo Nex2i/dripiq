@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import Logo from './Logo'
 import { useState, useRef, useEffect } from 'react'
 import { Settings, User } from 'lucide-react'
-import { HOME_URL } from '../constants/navigation'
+import { HOME_URL, LEADS_URL } from '../constants/navigation'
 
 export default function Header() {
   const { user, logout } = useAuth()
@@ -82,7 +82,7 @@ export default function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-6">
                 <button
-                  onClick={() => navigate({ to: HOME_URL })}
+                  onClick={() => navigate({ to: LEADS_URL })}
                   className="text-[var(--color-surface-950)] hover:text-[var(--color-primary-600)] px-3 py-2 text-sm font-medium bg-transparent border-none cursor-pointer transition-all duration-200 rounded-lg hover:bg-[var(--color-primary-50)] hover:shadow-sm transform hover:-translate-y-0.5"
                 >
                   Leads
