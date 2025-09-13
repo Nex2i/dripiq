@@ -130,7 +130,7 @@ For questions about this Policy or our privacy practices, please contact:
 
 **DripIQ, Inc.**
 Attn: Privacy Office
-123 Example Street, Denver, CO 80202 USA
+1621 Central Ave, Cheyenne, WY 82001-4531
 📧 [privacy@dripiq.com](mailto:privacy@dripiq.com)
 
 ---
