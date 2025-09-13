@@ -139,7 +139,7 @@ const PricingPage = () => {
           </p>
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
             <p className="text-lg font-semibold text-green-800 text-center">
-              💰 Every sale closed through DripIQ averages $250 in value
+              💰 We charge $250 for every sale closed through DripIQ
             </p>
           </div>
         </div>
@@ -277,7 +277,7 @@ const PricingPage = () => {
               <p>• Token bundles roll over indefinitely - perfect for irregular usage</p>
               <p>• 1 token = 1 lead engagement across all AI re-engagement features</p>
               <p>• All plans include full access to our AI re-engagement platform</p>
-              <p className="text-green-700 font-medium">• Average sale value: $250 per closed deal through DripIQ</p>
+              <p className="text-green-700 font-medium">• Success fee: $250 charged per sale closed through DripIQ</p>
             </div>
           </div>
         </div>
