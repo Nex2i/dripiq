@@ -103,7 +103,7 @@ export default function EmailProvider({
         className={`bg-[var(--color-bg-primary)] rounded-xl shadow-sm ring-1 ring-[var(--color-border-default)] p-6 ${className}`}
       >
         <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">
-          Email Integration
+          Email & Calendar Integration
         </h2>
         <div className="text-sm text-[var(--color-error-600)] mb-4">
           Failed to load email providers.
@@ -126,10 +126,11 @@ export default function EmailProvider({
       className={`bg-[var(--color-bg-primary)] rounded-xl shadow-sm ring-1 ring-[var(--color-border-default)] p-6 ${className}`}
     >
       <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">
-        Email Integration
+        Email & Calendar Integration
       </h2>
       <p className="text-sm text-[var(--color-text-muted)] mb-4">
-        Connect your email providers to enable email sending.
+        Connect your email providers to enable email sending and calendar
+        integration.
       </p>
 
       <div className="space-y-3">
