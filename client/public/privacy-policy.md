@@ -34,6 +34,7 @@ We **do not** knowingly collect sensitive personal data (e.g., race, health, pro
 If you connect a Google account, we may access the following:
 - Basic profile info (name, email) for sign-in and identity verification.
 - Gmail send access to enable email outreach functionality.
+- Calendar read and write access.
 
 **Use:** Solely to provide and improve the Service.  
 **Storage:** Encrypted, retained per Tenant until deletion request.  
@@ -47,6 +48,7 @@ If you connect a Google account, we may access the following:
 If you connect a Microsoft account, we may access the following:
 - Basic profile info (name, email) for sign-in and identity verification.
 - Outlook send access to enable email outreach functionality.
+- Calendar read and write access.
 
 **Use:** Solely to provide and improve the Service.  
 **Storage:** Encrypted, retained per Tenant until deletion request.  
