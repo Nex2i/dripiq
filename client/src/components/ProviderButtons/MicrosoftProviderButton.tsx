@@ -1,19 +1,20 @@
 import { useState } from 'react'
-import { googleService } from '../services/google.service'
+import { microsoftService } from '../../services/microsoft.service'
+import MicrosoftIcon from '../MicrosoftIcon'
 
-interface GoogleProviderButtonProps {
+interface MicrosoftProviderButtonProps {
   isConnected: boolean
   isDisabled?: boolean
   onError?: (error: string) => void
   onConnecting?: (isConnecting: boolean) => void
 }
 
-export default function GoogleProviderButton({
+export default function MicrosoftProviderButton({
   isConnected,
   isDisabled = false,
   onError,
   onConnecting,
-}: GoogleProviderButtonProps) {
+}: MicrosoftProviderButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
 
   const handleConnect = async () => {
@@ -24,17 +25,19 @@ export default function GoogleProviderButton({
       onConnecting?.(true)
 
       // Get the authorization URL from our backend
-      const { authUrl, state } = await googleService.getGoogleAuthUrl()
+      const { authUrl, state } = await microsoftService.getMicrosoftAuthUrl()
 
       // Store the state for later verification
-      sessionStorage.setItem('google_oauth_state', state)
+      sessionStorage.setItem('microsoft_oauth_state', state)
 
-      // Redirect to Google OAuth
+      // Redirect to Microsoft OAuth
       window.location.href = authUrl
     } catch (error) {
-      console.error('Error initiating Google OAuth:', error)
+      console.error('Error initiating Microsoft OAuth:', error)
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to connect with Google'
+        error instanceof Error
+          ? error.message
+          : 'Failed to connect with Outlook'
       onError?.(errorMessage)
     } finally {
       setIsConnecting(false)
@@ -85,7 +88,10 @@ export default function GoogleProviderButton({
           <span>Connected</span>
         </>
       ) : (
-        <span>Connect</span>
+        <>
+          <MicrosoftIcon />
+          <span>Connect to Microsoft</span>
+        </>
       )}
     </button>
   )

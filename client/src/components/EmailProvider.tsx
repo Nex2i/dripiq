@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getUsersService, userQueryKeys } from '../services/users.service'
 import type { EmailProvider } from '../services/users.service'
 import ProviderCard from './ProviderCard'
-import GoogleProviderButton from './GoogleProviderButton'
+import GoogleProviderButton from './ProviderButtons/GoogleProviderButton'
 import GoogleIcon from './GoogleIcon'
-import MicrosoftProviderButton from './MicrosoftProviderButton'
+import MicrosoftProviderButton from './ProviderButtons/MicrosoftProviderButton'
 import MicrosoftIcon from './MicrosoftIcon'
 
 interface EmailProviderProps {

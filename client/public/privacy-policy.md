@@ -32,6 +32,7 @@ We **do not** knowingly collect sensitive personal data (e.g., race, health, pro
 ### 3.1 Google User Data
 
 If you connect a Google account, we may access the following:
+
 - Basic profile info (name, email) for sign-in and identity verification.
 - Gmail send access to enable email outreach functionality.
 - Calendar read and write access.
@@ -46,6 +47,7 @@ If you connect a Google account, we may access the following:
 ### 3.2 Microsoft User Data
 
 If you connect a Microsoft account, we may access the following:
+
 - Basic profile info (name, email) for sign-in and identity verification.
 - Outlook send access to enable email outreach functionality.
 - Calendar read and write access.

@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { microsoftService } from '../services/microsoft.service'
-import MicrosoftIcon from './MicrosoftIcon'
+import { googleService } from '../../services/google.service'
+import GoogleIcon from '../GoogleIcon'
 
-interface MicrosoftProviderButtonProps {
+interface GoogleProviderButtonProps {
   isConnected: boolean
   isDisabled?: boolean
   onError?: (error: string) => void
   onConnecting?: (isConnecting: boolean) => void
 }
 
-export default function MicrosoftProviderButton({
+export default function GoogleProviderButton({
   isConnected,
   isDisabled = false,
   onError,
   onConnecting,
-}: MicrosoftProviderButtonProps) {
+}: GoogleProviderButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
 
   const handleConnect = async () => {
@@ -25,19 +25,17 @@ export default function MicrosoftProviderButton({
       onConnecting?.(true)
 
       // Get the authorization URL from our backend
-      const { authUrl, state } = await microsoftService.getMicrosoftAuthUrl()
+      const { authUrl, state } = await googleService.getGoogleAuthUrl()
 
       // Store the state for later verification
-      sessionStorage.setItem('microsoft_oauth_state', state)
+      sessionStorage.setItem('google_oauth_state', state)
 
-      // Redirect to Microsoft OAuth
+      // Redirect to Google OAuth
       window.location.href = authUrl
     } catch (error) {
-      console.error('Error initiating Microsoft OAuth:', error)
+      console.error('Error initiating Google OAuth:', error)
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to connect with Outlook'
+        error instanceof Error ? error.message : 'Failed to connect with Google'
       onError?.(errorMessage)
     } finally {
       setIsConnecting(false)
@@ -89,8 +87,8 @@ export default function MicrosoftProviderButton({
         </>
       ) : (
         <>
-          <MicrosoftIcon />
-          <span>Connect to Outlook</span>
+          <GoogleIcon />
+          <span>Connect to Google</span>
         </>
       )}
     </button>
