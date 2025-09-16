@@ -7,21 +7,21 @@ export default function Features() {
       icon: Brain,
       title: 'AI-Powered Lead Scoring',
       description:
-        'Our machine learning algorithms analyze lead behavior patterns to identify the best candidates for re-engagement.',
+        'Our machine learning algorithms analyze prospects to identify high-value cold leads, net new opportunities, and winnable closed lost deals.',
       gradient: 'from-primary-500 to-primary-600',
     },
     {
       icon: Zap,
       title: 'Automated Outreach',
       description:
-        'Set up personalized email sequences that adapt based on lead responses and engagement levels.',
+        'Set up personalized cold email sequences, net new prospect campaigns, and closed lost recovery flows that adapt to responses.',
       gradient: 'from-accent-500 to-accent-600',
     },
     {
       icon: Target,
       title: 'Smart Targeting',
       description:
-        'Target leads based on their stage in the sales funnel, industry, company size, and previous interactions.',
+        'Target prospects with precision - from cold lead generation to net new discovery to closed lost recovery campaigns.',
       gradient: 'from-primary-600 to-accent-500',
     },
     {
@@ -49,8 +49,9 @@ export default function Features() {
             <span className="gradient-text">Modern Sales Teams</span>
           </h2>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto">
-            Everything you need to turn your dormant leads into active prospects
-            with AI-powered automation and intelligent insights.
+            Everything you need to generate cold leads, discover net new
+            prospects, and recover closed lost opportunities with AI-powered
+            automation.
           </p>
         </div>
 
@@ -91,7 +92,7 @@ export default function Features() {
           </h3>
           <p className="text-surface-600 mb-8 max-w-2xl mx-auto">
             Join thousands of sales professionals who have transformed their
-            lead re-engagement strategy with dripIq's AI-powered platform.
+            lead generation strategy with dripIq's AI-powered platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
