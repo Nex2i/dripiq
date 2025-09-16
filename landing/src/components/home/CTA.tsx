@@ -2,12 +2,7 @@ import { ArrowRight, CheckCircle } from 'lucide-react'
 import { APP_URLS } from '@/constants/app'
 
 export default function CTA() {
-  const benefits = [
-    'Free 14-day trial',
-    'No credit card required',
-    'Setup in under 5 minutes',
-    'Cancel anytime',
-  ]
+  const benefits = ['Setup in under 5 minutes']
 
   return (
     <section className="py-20 bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900 relative overflow-hidden">
@@ -32,7 +27,7 @@ export default function CTA() {
         </div>
 
         {/* Benefits list */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="flex justify-center mb-12">
           {benefits.map((benefit) => (
             <div
               key={benefit}
