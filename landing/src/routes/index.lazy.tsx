@@ -9,7 +9,7 @@ const HomePage = () => {
     <>
       <SEOHead
         title="dripIq - AI-Powered Sales Re-engagement Platform"
-        description="Automated, intelligent follow-up for your lost leads. AI-powered CRM re-engagement platform that turns cold leads into warm prospects."
+        description="Automated lead generation and nurturing for cold leads, net new prospects, and closed lost opportunities. AI-powered CRM platform that transforms your entire lead pipeline."
         canonical="https://dripiq.ai/"
         structuredData={{
           '@context': 'https://schema.org',
@@ -18,7 +18,7 @@ const HomePage = () => {
           applicationCategory: 'BusinessApplication',
           operatingSystem: 'Web',
           description:
-            'AI-powered sales re-engagement platform for automated follow-up with lost leads',
+            'AI-powered lead generation platform for cold outreach, net new prospects, and closed lost recovery',
           url: 'https://dripiq.ai/',
           screenshot: 'https://dripiq.ai/app-screenshot.jpg',
           offers: {

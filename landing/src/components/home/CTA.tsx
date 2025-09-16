@@ -27,7 +27,7 @@ export default function CTA() {
           </h2>
           <p className="text-xl text-surface-300 max-w-3xl mx-auto">
             Join hundreds of sales teams who have increased their conversion
-            rates by 35% with dripIq's AI-powered lead re-engagement platform.
+            rates by 35% with dripIq's AI-powered lead generation platform.
           </p>
         </div>
 

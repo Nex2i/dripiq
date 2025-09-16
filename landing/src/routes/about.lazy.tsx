@@ -7,7 +7,7 @@ const AboutPage = () => {
     <>
       <SEOHead
         title="About dripIq - AI Sales Automation Leaders"
-        description="Learn about dripIq's mission to revolutionize sales re-engagement through AI-powered automation. Discover our story and team."
+        description="Learn about dripIq's mission to revolutionize lead generation through AI-powered cold outreach, net new discovery, and closed lost recovery. Discover our story and team."
         canonical="https://dripiq.ai/about"
       />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -16,8 +16,9 @@ const AboutPage = () => {
             About <span className="gradient-text">dripIq</span>
           </h1>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto">
-            We're revolutionizing how sales teams re-engage with lost leads
-            through AI-powered automation and intelligent follow-up strategies.
+            We're revolutionizing how sales teams generate leads through
+            AI-powered cold outreach, net new prospect discovery, and closed
+            lost recovery.
           </p>
         </div>
 
@@ -27,14 +28,15 @@ const AboutPage = () => {
               Our Mission
             </h2>
             <p className="text-surface-600 mb-4">
-              Every sales team loses leads. But what if those "lost" leads could
-              become your biggest wins? At dripIq, we believe that intelligent,
-              automated re-engagement can transform your sales pipeline.
+              Every sales team needs a steady flow of quality leads. At dripIq,
+              we believe that intelligent, automated lead generation - from cold
+              outreach to closed lost recovery - can transform your sales
+              pipeline.
             </p>
             <p className="text-surface-600">
               Our AI-powered platform integrates seamlessly with your CRM to
-              identify dormant leads and orchestrate personalized re-engagement
-              campaigns that actually convert.
+              generate cold leads, discover net new prospects, and recover
+              closed lost opportunities with campaigns that actually convert.
             </p>
           </div>
           <div className="bg-gradient-to-br from-primary-50 to-accent-50 rounded-2xl p-8">
@@ -48,7 +50,7 @@ const AboutPage = () => {
                     Smart Targeting
                   </h3>
                   <p className="text-surface-600 text-sm">
-                    AI identifies the best leads to re-engage
+                    AI identifies high-value cold leads and prospects
                   </p>
                 </div>
               </div>
@@ -74,7 +76,7 @@ const AboutPage = () => {
                     Proven Results
                   </h3>
                   <p className="text-surface-600 text-sm">
-                    Turn cold leads into warm prospects
+                    Generate leads that convert to revenue
                   </p>
                 </div>
               </div>
@@ -88,7 +90,7 @@ const AboutPage = () => {
           </h2>
           <p className="text-surface-600 mb-8 max-w-2xl mx-auto">
             Join hundreds of sales teams who have transformed their lead
-            re-engagement with dripIq's AI-powered platform.
+            generation with dripIq's AI-powered platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
