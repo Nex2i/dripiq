@@ -149,7 +149,7 @@ const PricingPage = () => {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative rounded-2xl p-6 ${
+              className={`relative rounded-2xl p-6 flex flex-col h-full ${
                 plan.popular
                   ? 'border-2 border-primary-500 bg-primary-50 shadow-xl'
                   : 'border border-surface-200 bg-white shadow-lg'
@@ -183,7 +183,7 @@ const PricingPage = () => {
                 <p className="text-sm text-surface-600">{plan.description}</p>
               </div>
 
-              <ul className="space-y-2 mb-8">
+              <ul className="space-y-2 mb-8 flex-grow">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start">
                     <Check className="h-4 w-4 text-primary-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -194,7 +194,7 @@ const PricingPage = () => {
 
               <a
                 href={plan.href}
-                className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors ${
+                className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors mt-auto ${
                   plan.popular
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
                     : 'bg-surface-100 text-surface-900 hover:bg-surface-200'
@@ -222,7 +222,7 @@ const PricingPage = () => {
             {tokenBundles.map((bundle) => (
               <div
                 key={bundle.name}
-                className="border border-surface-200 bg-white shadow-lg rounded-2xl p-8"
+                className="border border-surface-200 bg-white shadow-lg rounded-2xl p-8 flex flex-col h-full"
               >
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold text-surface-900 mb-2">
@@ -239,7 +239,7 @@ const PricingPage = () => {
                   <p className="text-surface-600">{bundle.description}</p>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-grow">
                   <li className="flex items-center">
                     <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0" />
                     <span className="text-surface-700">
@@ -268,7 +268,7 @@ const PricingPage = () => {
 
                 <a
                   href={APP_URLS.SIGNUP}
-                  className="block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors bg-surface-100 text-surface-900 hover:bg-surface-200"
+                  className="block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors bg-surface-100 text-surface-900 hover:bg-surface-200 mt-auto"
                 >
                   Purchase Bundle
                 </a>
