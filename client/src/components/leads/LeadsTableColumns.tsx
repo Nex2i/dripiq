@@ -51,7 +51,7 @@ export function useLeadsColumns({
   const getOwnerDisplay = (lead: Lead) => {
     // Only show verified users in options
     const verifiedUsers = Array.isArray(users)
-      ? users.filter((u) => u.hasVerifiedSenderIdentity)
+      ? users.filter((u) => u.hasConnectedPrimaryMailAccount)
       : []
 
     // Find the owner user from the verified users list first, fallback to all users for name display

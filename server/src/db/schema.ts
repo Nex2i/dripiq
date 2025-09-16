@@ -398,34 +398,6 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   leadProducts: many(leadProducts),
 }));
 
-// Email Sender Identities table - AE sender verification
-export const emailSenderIdentities = appSchema.table(
-  'email_sender_identities',
-  {
-    id: text('id')
-      .primaryKey()
-      .$defaultFn(() => createId()),
-    tenantId: text('tenant_id')
-      .notNull()
-      .references(() => tenants.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    fromEmail: text('from_email').notNull(),
-    fromName: text('from_name').notNull(),
-    domain: text('domain').notNull(),
-    sendgridSenderId: text('sendgrid_sender_id'),
-    validationStatus: text('validation_status').notNull().default('pending'), // pending|verified|failed
-    lastValidatedAt: timestamp('last_validated_at'),
-    dedicatedIpPool: text('dedicated_ip_pool'),
-    emailSignature: text('email_signature'), // HTML email signature
-    isDefault: boolean('is_default').notNull().default(false),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  },
-  (table) => [unique('tenant_email_unique').on(table.tenantId, table.fromEmail)]
-);
-
 // Enums for Contact Campaigns
 // Note: Use 'campaign_channel' to align with DB enum created in migrations
 export const channelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
@@ -474,9 +446,6 @@ export const contactCampaigns = appSchema.table(
     planJson: jsonb('plan_json').notNull(),
     planVersion: text('plan_version').notNull().default('1.0'),
     planHash: text('plan_hash').notNull(), // for idempotency
-    senderIdentityId: text('sender_identity_id').references(() => emailSenderIdentities.id, {
-      onDelete: 'set null',
-    }),
     startedAt: timestamp('started_at'),
     completedAt: timestamp('completed_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -561,9 +530,6 @@ export const outboundMessages = appSchema.table(
       .notNull()
       .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
     channel: channelEnum('channel').notNull(),
-    senderIdentityId: text('sender_identity_id').references(() => emailSenderIdentities.id, {
-      onDelete: 'set null',
-    }),
     providerMessageId: text('provider_message_id'),
     dedupeKey: text('dedupe_key').notNull(),
     content: jsonb('content'),
@@ -702,21 +668,13 @@ export const sendRateLimits = appSchema.table(
       .references(() => tenants.id, { onDelete: 'cascade' }),
     channel: channelEnum('channel').notNull(),
     scope: text('scope').notNull().default('tenant'), // tenant|identity
-    identityId: text('identity_id').references(() => emailSenderIdentities.id, {
-      onDelete: 'set null',
-    }),
     windowSeconds: integer('window_seconds').notNull(),
     maxSends: integer('max_sends').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
-    unique('send_rate_limits_unique').on(
-      table.tenantId,
-      table.channel,
-      table.scope,
-      table.identityId
-    ),
+    unique('send_rate_limits_unique').on(table.tenantId, table.channel, table.scope),
     index('send_rate_limits_channel_idx').on(table.channel),
   ]
 );
@@ -970,17 +928,6 @@ export const oauthTokens = appSchema.table(
 );
 
 // Relations for new tables
-export const emailSenderIdentitiesRelations = relations(emailSenderIdentities, ({ one, many }) => ({
-  tenant: one(tenants, {
-    fields: [emailSenderIdentities.tenantId],
-    references: [tenants.id],
-  }),
-  user: one(users, {
-    fields: [emailSenderIdentities.userId],
-    references: [users.id],
-  }),
-  outboundMessages: many(outboundMessages),
-}));
 
 export const contactCampaignsRelations = relations(contactCampaigns, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -994,10 +941,6 @@ export const contactCampaignsRelations = relations(contactCampaigns, ({ one, man
   contact: one(leadPointOfContacts, {
     fields: [contactCampaigns.contactId],
     references: [leadPointOfContacts.id],
-  }),
-  senderIdentity: one(emailSenderIdentities, {
-    fields: [contactCampaigns.senderIdentityId],
-    references: [emailSenderIdentities.id],
   }),
   scheduledActions: many(scheduledActions),
   outboundMessages: many(outboundMessages),
@@ -1044,10 +987,6 @@ export const outboundMessagesRelations = relations(outboundMessages, ({ one, man
   contact: one(leadPointOfContacts, {
     fields: [outboundMessages.contactId],
     references: [leadPointOfContacts.id],
-  }),
-  senderIdentity: one(emailSenderIdentities, {
-    fields: [outboundMessages.senderIdentityId],
-    references: [emailSenderIdentities.id],
   }),
   events: many(messageEvents),
 }));
@@ -1103,10 +1042,6 @@ export const sendRateLimitsRelations = relations(sendRateLimits, ({ one }) => ({
   tenant: one(tenants, {
     fields: [sendRateLimits.tenantId],
     references: [tenants.id],
-  }),
-  identity: one(emailSenderIdentities, {
-    fields: [sendRateLimits.identityId],
-    references: [emailSenderIdentities.id],
   }),
 }));
 
@@ -1230,8 +1165,6 @@ export type SiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferSelect;
 export type NewSiteEmbeddingDomain = typeof siteEmbeddingDomains.$inferInsert;
 export type LeadProduct = typeof leadProducts.$inferSelect;
 export type NewLeadProduct = typeof leadProducts.$inferInsert;
-export type EmailSenderIdentity = typeof emailSenderIdentities.$inferSelect;
-export type NewEmailSenderIdentity = typeof emailSenderIdentities.$inferInsert;
 export type ContactCampaign = typeof contactCampaigns.$inferSelect;
 export type NewContactCampaign = typeof contactCampaigns.$inferInsert;
 export type CampaignPlanVersion = typeof campaignPlanVersions.$inferSelect;

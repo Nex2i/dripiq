@@ -3,11 +3,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { UserService } from '@/modules/user.service';
-import {
-  emailSenderIdentityRepository,
-  userTenantRepository,
-  mailAccountRepository,
-} from '@/repositories';
+import { userTenantRepository, mailAccountRepository } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
@@ -313,16 +309,22 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Fetch sender identity
-        const senderIdentity = await emailSenderIdentityRepository.findByUserIdForTenant(
-          userId,
-          tenantId
-        );
+        // Check for connected primary mail account
+        let primaryMailAccount;
+        try {
+          primaryMailAccount = await mailAccountRepository.findPrimaryByUserId(userId);
 
-        if (!senderIdentity) {
+          if (primaryMailAccount.disconnectedAt || primaryMailAccount.reauthRequired) {
+            reply.status(400).send({
+              success: false,
+              message: 'Primary mail account is disconnected or requires re-authentication',
+            });
+            return;
+          }
+        } catch (_error) {
           reply.status(400).send({
             success: false,
-            message: 'No verified sender identity found for this tenant',
+            message: 'No connected primary mail account found',
           });
           return;
         }
@@ -332,25 +334,25 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         try {
           senderConfig = await SenderIdentityResolverService.resolveSenderConfig(
             tenantId,
-            senderIdentity.fromEmail,
-            senderIdentity.fromName
+            primaryMailAccount.primaryEmail,
+            primaryMailAccount.displayName || user.name || 'Unknown Sender'
           );
 
           logger.info('Test email sender configuration resolved', {
             tenantId,
             userId,
-            originalFrom: senderIdentity.fromEmail,
+            originalFrom: primaryMailAccount.primaryEmail,
             resolvedFrom: senderConfig.fromEmail,
             replyTo: senderConfig.replyTo,
           });
         } catch (resolverError) {
-          logger.error('Failed to resolve test email sender config, using original identity', {
+          logger.error('Failed to resolve test email sender config, using primary mail account', {
             tenantId,
             userId,
             error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
-            fallbackFrom: senderIdentity.fromEmail,
+            fallbackFrom: primaryMailAccount.primaryEmail,
           });
-          // Continue with original sender identity if resolver fails
+          // Continue with primary mail account if resolver fails
           senderConfig = undefined;
         }
 
