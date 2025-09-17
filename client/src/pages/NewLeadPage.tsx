@@ -33,21 +33,21 @@ const NewLeadPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
 
   const users = usersResponse?.data || []
-  const verifiedUsers = React.useMemo(
-    () => users.filter((u: any) => u.hasVerifiedSenderIdentity),
+  const eligibleUsers = React.useMemo(
+    () => users.filter((u: any) => u.hasActivePrimaryMailAccount),
     [users],
   )
 
-  // Default ownerId to current user if they are verified
+  // Default ownerId to current user if they have an active primary mail account
   useEffect(() => {
     const currentUserId = authUser?.user?.id
     if (!formData.ownerId && currentUserId) {
-      const isVerified = verifiedUsers.some((u: any) => u.id === currentUserId)
-      if (isVerified) {
+      const isEligible = eligibleUsers.some((u: any) => u.id === currentUserId)
+      if (isEligible) {
         setFormData((prev) => ({ ...prev, ownerId: currentUserId }))
       }
     }
-  }, [authUser, verifiedUsers])
+  }, [authUser, eligibleUsers])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -194,10 +194,10 @@ const NewLeadPage: React.FC = () => {
                       <option disabled>Loading users...</option>
                     ) : usersError ? (
                       <option disabled>Error loading users</option>
-                    ) : verifiedUsers.length === 0 ? (
-                      <option disabled>No verified users available</option>
+                    ) : eligibleUsers.length === 0 ? (
+                      <option disabled>No eligible users available</option>
                     ) : (
-                      verifiedUsers.map((user: any) => (
+                      eligibleUsers.map((user: any) => (
                         <option key={user.id} value={user.id}>
                           {user.firstName && user.lastName
                             ? `${user.firstName} ${user.lastName}`
@@ -207,7 +207,7 @@ const NewLeadPage: React.FC = () => {
                     )}
                   </select>
                   <p className="mt-1 text-xs text-gray-500">
-                    Only users with a verified sender identity can be selected.
+                    Only users with a connected primary mail account can be selected.
                   </p>
                 </div>
               </div>

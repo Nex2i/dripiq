@@ -8,8 +8,14 @@ jest.mock('@/repositories', () => ({
     createForTenant: jest.fn(),
     findByDedupeKeyForTenant: jest.fn(),
   },
-  emailSenderIdentityRepository: {
-    findByLeadIdForTenant: jest.fn(),
+  mailAccountRepository: {
+    findActivePrimaryForTenant: jest.fn(),
+  },
+  leadRepository: {
+    findByIdForTenant: jest.fn(),
+  },
+  userRepository: {
+    findById: jest.fn(),
   },
   scheduledActionRepository: {
     createForTenant: jest.fn(),

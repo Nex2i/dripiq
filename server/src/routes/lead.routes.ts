@@ -233,7 +233,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // Validation: owner must be verified
-        if (error.message?.includes('verified sender identity')) {
+        if (error.message?.includes('connected primary mail account')) {
           reply.status(400).send({
             message: 'Assigned owner must be verified',
             error: error.message,
@@ -353,7 +353,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         }
 
         // Validation: owner must be verified
-        if (error.message?.includes('verified sender identity')) {
+        if (error.message?.includes('connected primary mail account')) {
           reply.status(400).send({
             message: 'Assigned owner must be verified',
             error: error.message,
@@ -692,7 +692,7 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        if (error.message?.includes('verified sender identity')) {
+        if (error.message?.includes('connected primary mail account')) {
           reply.status(400).send({
             message: 'Assigned owner must be verified',
             error: error.message,

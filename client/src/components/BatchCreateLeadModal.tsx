@@ -37,8 +37,8 @@ export function BatchCreateLeadModal({
   const { user: authUser } = useAuth()
 
   const users = usersResponse?.data || []
-  const verifiedUsers = useMemo(
-    () => users.filter((u: any) => u.hasVerifiedSenderIdentity),
+  const eligibleUsers = useMemo(
+    () => users.filter((u: any) => u.hasActivePrimaryMailAccount),
     [users],
   )
 
@@ -65,16 +65,16 @@ export function BatchCreateLeadModal({
     return { valid, invalid, duplicates, total: parsedUrls.length }
   }, [parsedUrls])
 
-  // Default ownerId to current user if they are verified
+  // Default ownerId to current user if they have an active primary mail account
   useEffect(() => {
     const currentUserId = authUser?.user?.id
     if (!selectedOwnerId && currentUserId) {
-      const isVerified = verifiedUsers.some((u: any) => u.id === currentUserId)
-      if (isVerified) {
+      const isEligible = eligibleUsers.some((u: any) => u.id === currentUserId)
+      if (isEligible) {
         setSelectedOwnerId(currentUserId)
       }
     }
-  }, [authUser, verifiedUsers, selectedOwnerId])
+  }, [authUser, eligibleUsers, selectedOwnerId])
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -197,7 +197,7 @@ export function BatchCreateLeadModal({
                     disabled={isSubmitting}
                   >
                     <option value="">Select an owner...</option>
-                    {verifiedUsers.map((user: any) => (
+                    {eligibleUsers.map((user: any) => (
                       <option key={user.id} value={user.id}>
                         <div className="flex items-center">
                           {user.name || user.email}
@@ -209,10 +209,10 @@ export function BatchCreateLeadModal({
                     ))}
                   </select>
                 )}
-                {verifiedUsers.length === 0 && !usersLoading && (
+                {eligibleUsers.length === 0 && !usersLoading && (
                   <p className="text-sm text-red-600 mt-1">
-                    No verified users available. Users must have verified sender
-                    identities to own leads.
+                    No eligible users available. Users must have a connected primary
+                    mail account to own leads.
                   </p>
                 )}
               </div>
