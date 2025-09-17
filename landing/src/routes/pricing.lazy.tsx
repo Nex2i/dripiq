@@ -4,6 +4,16 @@ import SEOHead from '@/components/shared/SEOHead'
 import { APP_URLS } from '@/constants/app'
 
 const PricingPage = () => {
+  const sharedFeatures = [
+    'Full access to AI lead generation platform',
+    'Advanced AI lead scoring',
+    'Multi-channel cold outreach',
+    'CRM integration',
+    'Analytics dashboard',
+    'Custom templates',
+    'API access',
+    'Priority support',
+  ]
   const plans = [
     {
       name: 'Starter',
@@ -11,14 +21,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$2.50',
       leads: '100',
-      description: 'Perfect for small teams getting started',
-      features: [
-        'Up to 100 prospects per month',
-        '$2.50 per token (1 token = 1 prospect)',
-        'Basic AI lead generation',
-        'Email support',
-        'CRM integration',
-      ],
+      description: 'All features included. Best for getting started.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: false,
@@ -29,15 +33,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$2.00',
       leads: '250',
-      description: 'For growing sales teams',
-      features: [
-        'Up to 250 prospects per month',
-        '$2.00 per token (1 token = 1 prospect)',
-        'Advanced AI lead scoring',
-        'Multi-channel cold outreach',
-        'Priority support',
-        'Custom templates',
-      ],
+      description: 'All features included. Lower token price at this volume.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: true,
@@ -48,16 +45,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$1.50',
       leads: '500',
-      description: 'For established sales teams',
-      features: [
-        'Up to 500 prospects per month',
-        '$1.50 per token (1 token = 1 prospect)',
-        'Advanced AI lead scoring',
-        'Multi-channel cold outreach',
-        'Priority support',
-        'Analytics dashboard',
-        'Custom templates',
-      ],
+      description: 'All features included. Better token price with more volume.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: false,
@@ -68,17 +57,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$1.00',
       leads: '1,000',
-      description: 'For high-volume sales operations',
-      features: [
-        'Up to 1,000 prospects per month',
-        '$1.00 per token (1 token = 1 prospect)',
-        'Advanced AI lead scoring',
-        'Multi-channel cold outreach',
-        'Priority support',
-        'Analytics dashboard',
-        'Custom workflows',
-        'API access',
-      ],
+      description: 'All features included. Best token price for highest volume.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: false,
@@ -86,16 +66,8 @@ const PricingPage = () => {
     {
       name: 'Enterprise',
       price: 'Custom',
-      description: 'For large organizations with custom needs',
-      features: [
-        'Custom prospect volumes',
-        'Custom AI models',
-        'Dedicated success manager',
-        'White-label options',
-        'Full API access',
-        'Custom integrations',
-        'SLA guarantees',
-      ],
+      description: 'All features included. Custom volume and pricing.',
+      features: sharedFeatures,
       cta: 'Contact Sales',
       href: '/contact',
       popular: false,
@@ -137,6 +109,9 @@ const PricingPage = () => {
             Pay only for the prospects you engage. 1 token = 1 prospect.
             Generate cold leads, find net new opportunities, and recover closed
             lost deals.
+          </p>
+          <p className="text-base text-surface-600 max-w-3xl mx-auto mb-6">
+            All tiers include the same feature set — token price decreases with higher monthly volume.
           </p>
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
             <p className="text-lg font-semibold text-green-800 text-center">
