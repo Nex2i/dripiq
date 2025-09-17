@@ -97,7 +97,7 @@ const PricingPage = () => {
     <>
       <SEOHead
         title="Token-Based Pricing | dripIq - AI Sales Re-engagement Platform"
-        description="Pay per prospect with dripIq's token-based pricing. 1 token = 1 prospect. Generate cold leads, discover net new opportunities, and recover closed lost deals. Starting at $250/month."
+        description="Pay per lead with dripIq's token-based pricing. 1 token = 1 lead. A lead is an organization you're selling to and can include up to 5 contacts. Starting at $250/month."
         canonical="https://dripiq.ai/pricing"
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -280,6 +280,9 @@ const PricingPage = () => {
               </p>
               <p className="text-green-700 font-medium">
                 • Success fee: $250 charged per sale closed brought in by DripIQ
+              </p>
+              <p>
+                Learn more: <a href="/blog/what-is-a-lead" className="text-primary-600 hover:text-primary-700 underline">What is a Lead? Understanding tokens and contacts</a>
               </p>
             </div>
           </div>
