@@ -8,3 +8,4 @@ export { costOfIgnoredLeadsRevenueAnalysis } from './cost-of-ignored-leads-reven
 export { emailDeliverability2024SalesStrategies } from './email-deliverability-2024-sales-strategies'
 export { aiDrivenLeadScoringPredictablePipeline } from './ai-driven-lead-scoring-predictable-pipeline'
 export { multiChannelOutreachMasteryBeyondEmail } from './multi-channel-outreach-mastery-beyond-email'
+export { whatIsALead } from './what-is-a-lead'

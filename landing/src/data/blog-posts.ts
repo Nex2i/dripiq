@@ -26,6 +26,7 @@ import {
   emailDeliverability2024SalesStrategies,
   aiDrivenLeadScoringPredictablePipeline,
   multiChannelOutreachMasteryBeyondEmail,
+  whatIsALead,
 } from './blog-posts/index'
 
 export const blogPosts: BlogPost[] = [
@@ -38,4 +39,5 @@ export const blogPosts: BlogPost[] = [
   emailDeliverability2024SalesStrategies,
   aiDrivenLeadScoringPredictablePipeline,
   multiChannelOutreachMasteryBeyondEmail,
+  whatIsALead,
 ]
