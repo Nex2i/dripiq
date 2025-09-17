@@ -106,7 +106,7 @@ const PricingPage = () => {
             Token-Based <span className="gradient-text">Pricing</span>
           </h1>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto mb-4">
-            Pay only for the prospects you engage. 1 token = 1 prospect.
+            Pay only for the leads you engage. 1 token = 1 lead.
             Generate cold leads, find net new opportunities, and recover closed
             lost deals.
           </p>
@@ -267,8 +267,12 @@ const PricingPage = () => {
                 usage
               </p>
               <p>
-                • 1 token = 1 prospect engagement across all AI lead generation
+                • 1 token = 1 lead engagement across all AI lead generation
                 features
+              </p>
+              <p>
+                • A lead is an organization you are selling to and can include
+                up to 5 contacts per lead
               </p>
               <p>
                 • All plans include full access to our AI lead generation
