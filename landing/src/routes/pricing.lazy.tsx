@@ -120,6 +120,25 @@ const PricingPage = () => {
           </div>
         </div>
 
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-surface-900 mb-3">
+              Everything Included
+            </h2>
+            <p className="text-surface-600">
+              All plans include the same features. Only token price varies by volume.
+            </p>
+          </div>
+          <ul className="grid md:grid-cols-2 gap-3 max-w-4xl mx-auto">
+            {sharedFeatures.map((feature) => (
+              <li key={feature} className="flex items-start">
+                <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span className="text-surface-700">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="grid lg:grid-cols-5 md:grid-cols-2 gap-6 mb-16">
           {plans.map((plan) => (
             <div
@@ -158,14 +177,7 @@ const PricingPage = () => {
                 <p className="text-sm text-surface-600">{plan.description}</p>
               </div>
 
-              <ul className="space-y-2 mb-8 flex-grow">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start">
-                    <Check className="h-4 w-4 text-primary-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-surface-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-8" />
 
               <a
                 href={plan.href}
