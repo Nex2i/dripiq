@@ -3,7 +3,7 @@ import {
   roleRepository,
   userRepository,
   userTenantRepository,
-  emailSenderIdentityRepository,
+  mailAccountRepository,
 } from '@/repositories';
 import { NotFoundError } from '@/exceptions/error';
 
@@ -32,7 +32,7 @@ export interface UserWithInviteInfo {
   invitedAt?: Date;
   lastLogin?: Date;
   source: 'user_tenant';
-  hasVerifiedSenderIdentity?: boolean;
+  hasActivePrimaryMailAccount?: boolean;
 }
 
 export class InviteService {
@@ -113,9 +113,12 @@ export class InviteService {
     // Get all users for this tenant with role information
     const tenantUsersQuery = await userTenantRepository.findUsersWithDetailsForTenant(tenantId);
 
-    // Fetch all sender identities for this tenant once and build a lookup for verified users
-    const verifiedIdentities = await emailSenderIdentityRepository.findVerifiedForTenant(tenantId);
-    const verifiedUserIds = new Set(verifiedIdentities.map((i) => i.userId));
+    // Fetch all active primary mail accounts for this tenant and build a lookup for users
+    const activeMailAccounts =
+      await mailAccountRepository.findActivePrimaryAccountsForTenant(tenantId);
+    const usersWithActiveMailAccounts = new Set(
+      activeMailAccounts.map((account) => account.userId)
+    );
 
     // Transform to UserWithInviteInfo format
     const allUsers: UserWithInviteInfo[] = tenantUsersQuery.map((ut) => {
@@ -130,7 +133,7 @@ export class InviteService {
         invitedAt: ut.invitedAt || undefined,
         lastLogin: ut.acceptedAt || undefined,
         source: 'user_tenant' as const,
-        hasVerifiedSenderIdentity: verifiedUserIds.has(ut.userId),
+        hasActivePrimaryMailAccount: usersWithActiveMailAccounts.has(ut.userId),
       };
     });
 

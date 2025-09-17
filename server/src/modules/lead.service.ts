@@ -15,6 +15,14 @@ import { ProductsService } from './products.service';
 import { attachProductsToLead } from './leadProduct.service';
 import { LeadInitialProcessingPublisher } from './messages/leadInitialProcessing.publisher.service';
 
+const ensureActivePrimaryMailAccountForUser = async (tenantId: string, userId: string) => {
+  const mailAccount = await repositories.mailAccount.findActivePrimaryForTenant(userId, tenantId);
+
+  if (!mailAccount) {
+    throw new Error('Assigned owner must have a connected primary mail account');
+  }
+};
+
 // Helper function to transform lead data with signed URLs
 const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
   const storagePath = storageService.getTenantDomainLogoKey(tenantId, lead.url);
@@ -90,15 +98,9 @@ export const createLead = async (
   ownerId: string,
   pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
 ) => {
-  // If ownerId is provided, enforce verified sender identity for that owner
+  // If ownerId is provided, enforce active primary mail account for that owner
   if (ownerId) {
-    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
-      ownerId,
-      tenantId
-    );
-    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
-      throw new Error('Assigned owner must have a verified sender identity');
-    }
+    await ensureActivePrimaryMailAccountForUser(tenantId, ownerId);
   }
 
   // Add ownerId to the lead data
@@ -253,14 +255,8 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
       throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
     }
 
-    // Enforce that the user has a verified sender identity
-    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
-      userId,
-      tenantId
-    );
-    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
-      throw new Error('Assigned owner must have a verified sender identity');
-    }
+    // Enforce that the user has an active primary mail account
+    await ensureActivePrimaryMailAccountForUser(tenantId, userId);
 
     // Update the lead with the new owner
     const result = await leadRepository.assignToOwnerForTenant(leadId, tenantId, userId);
@@ -511,15 +507,9 @@ export const updateLeadStatuses = async (
  * @returns A promise that resolves to an array of batch creation results.
  */
 export const createLeadsBatch = async (tenantId: string, websites: string[], ownerId: string) => {
-  // If ownerId is provided, enforce verified sender identity for that owner
+  // If ownerId is provided, enforce active primary mail account for that owner
   if (ownerId) {
-    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
-      ownerId,
-      tenantId
-    );
-    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
-      throw new Error('Assigned owner must have a verified sender identity');
-    }
+    await ensureActivePrimaryMailAccountForUser(tenantId, ownerId);
   }
 
   const results = [];

@@ -274,6 +274,13 @@
       "when": 1757165101277,
       "tag": "0038_add_primary_provider_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1758040106822,
+      "tag": "0039_remove_sender_identity",
+      "breakpoints": true
     }
   ]
 }

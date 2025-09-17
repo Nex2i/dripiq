@@ -49,13 +49,13 @@ export function useLeadsColumns({
   formatDate,
 }: UseLeadsColumnsProps) {
   const getOwnerDisplay = (lead: Lead) => {
-    // Only show verified users in options
-    const verifiedUsers = Array.isArray(users)
-      ? users.filter((u) => u.hasVerifiedSenderIdentity)
+    // Only show users with connected primary mail accounts in options
+    const eligibleUsers = Array.isArray(users)
+      ? users.filter((u) => u.hasActivePrimaryMailAccount)
       : []
 
-    // Find the owner user from the verified users list first, fallback to all users for name display
-    const ownerUser = (verifiedUsers.length > 0 ? verifiedUsers : users).find(
+    // Find the owner user from the eligible users list first, fallback to all users for name display
+    const ownerUser = (eligibleUsers.length > 0 ? eligibleUsers : users).find(
       (user: any) => user.id === lead.ownerId,
     )
     const currentOwnerName = ownerUser
@@ -77,7 +77,7 @@ export function useLeadsColumns({
               e.stopPropagation()
               // This will be handled by the dropdown
             }}
-            title="Change owner (verified users only)"
+          title="Change owner (users with connected primary mail accounts only)"
           >
             <Edit className="h-4 w-4" />
           </button>
@@ -99,7 +99,7 @@ export function useLeadsColumns({
           {/* Placeholder only shown when unassigned; cannot be selected for assignment */}
           {!lead.ownerId && (
             <option value={placeholderValue} disabled>
-              Select verified owner
+              Select eligible owner
             </option>
           )}
           {usersLoading ? (
@@ -110,12 +110,12 @@ export function useLeadsColumns({
             <option value={placeholderValue} disabled>
               Error loading users
             </option>
-          ) : verifiedUsers.length === 0 ? (
+          ) : eligibleUsers.length === 0 ? (
             <option value={placeholderValue} disabled>
-              No verified users available
+              No eligible users available
             </option>
           ) : (
-            verifiedUsers.map((user) => (
+            eligibleUsers.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`

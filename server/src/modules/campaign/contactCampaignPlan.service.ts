@@ -3,7 +3,7 @@ import {
   contactCampaignRepository,
   campaignPlanVersionRepository,
   leadRepository,
-  emailSenderIdentityRepository,
+  mailAccountRepository,
 } from '@/repositories';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
@@ -66,7 +66,7 @@ export class ContactCampaignPlanService {
     let isNewCampaign = false;
     let campaign = existingCampaign;
 
-    const senderIdentityId = await this.findSenderIdentityForLead(leadId, tenantId);
+    await this.ensureLeadOwnerHasActivePrimaryMailAccount(leadId, tenantId);
 
     if (!campaign) {
       isNewCampaign = true;
@@ -79,7 +79,6 @@ export class ContactCampaignPlanService {
         planJson: normalizedPlan,
         planVersion: baseVersion,
         planHash,
-        senderIdentityId,
       });
     } else if (campaign.planHash !== planHash) {
       // Update to the new plan
@@ -88,7 +87,6 @@ export class ContactCampaignPlanService {
         planJson: normalizedPlan,
         planVersion: baseVersion,
         planHash,
-        senderIdentityId,
       });
     }
 
@@ -122,22 +120,24 @@ export class ContactCampaignPlanService {
     };
   }
 
-  private async findSenderIdentityForLead(
+  private async ensureLeadOwnerHasActivePrimaryMailAccount(
     leadId: string,
     tenantId: string
-  ): Promise<string | null> {
+  ): Promise<void> {
     const lead = await leadRepository.findByIdForTenant(leadId, tenantId);
     if (!lead.ownerId) {
-      throw new Error(`Cannot find sender identity for lead without owner`, {
+      throw new Error(`Cannot start campaigns for lead without an owner`, {
         cause: { leadId, tenantId },
       });
     }
-    const ownerSenderIdentityId = await emailSenderIdentityRepository.findIdByUserIdForTenant(
+    const mailAccount = await mailAccountRepository.findActivePrimaryForTenant(
       lead.ownerId,
       tenantId
     );
 
-    return ownerSenderIdentityId;
+    if (!mailAccount) {
+      throw new Error('Lead owner must have a connected primary mail account');
+    }
   }
 
   private async ensurePlanVersion(args: {

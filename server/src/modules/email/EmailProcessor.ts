@@ -23,6 +23,9 @@ export interface CampaignEmailData {
   recipientEmail: string;
   recipientName: string;
 
+  senderEmail: string;
+  senderName?: string;
+
   // Calendar info (optional, pre-fetched)
   calendarInfo?: {
     calendarLink: string;
@@ -91,6 +94,10 @@ export class EmailProcessor {
         throw new Error('Recipient email is required');
       }
 
+      if (!data.senderEmail || !data.senderEmail.trim()) {
+        throw new Error('Sender email is required');
+      }
+
       // Basic email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(recipientEmail)) {
@@ -99,6 +106,10 @@ export class EmailProcessor {
 
       // Generate dedupe key if not provided
       const dedupeKey = data.dedupeKey || `${tenantId}:${campaignId}:${contactId}:${nodeId}:email`;
+
+      const fromAddress = data.senderName
+        ? `${data.senderName} <${data.senderEmail}>`
+        : data.senderEmail;
 
       // Create outbound message ID (used for tracking even if not recording)
       const outboundMessageId = createId();
@@ -186,6 +197,7 @@ export class EmailProcessor {
         nodeId,
         outboundMessageId,
         dedupeKey,
+        from: fromAddress,
         to: recipientEmail,
         subject,
         html: htmlBody,

@@ -442,16 +442,6 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                   onCopy={copyToClipboard}
                 />
               )}
-              {nodeFromCurrentData.senderIdentityId !== undefined && (
-                <EditableInput
-                  value={nodeFromCurrentData.senderIdentityId || ''}
-                  onChange={() => {}} // Read-only
-                  label="Sender Identity Override"
-                  isEditing={false}
-                  copiedItem={copiedItem}
-                  onCopy={copyToClipboard}
-                />
-              )}
               {nodeFromCurrentData.schedule && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {nodeFromCurrentData.schedule.delay !== undefined && (
@@ -707,16 +697,6 @@ const ContactStrategyModal: React.FC<ContactStrategyModalProps> = ({
                       />
                     )}
                   </div>
-                )}
-                {currentData.senderIdentityId && (
-                  <EditableInput
-                    value={currentData.senderIdentityId}
-                    onChange={() => {}} // Read-only
-                    label="Default Sender Identity"
-                    isEditing={false}
-                    copiedItem={copiedItem}
-                    onCopy={copyToClipboard}
-                  />
                 )}
               </div>
             </CollapsibleSection>

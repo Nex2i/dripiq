@@ -142,7 +142,7 @@ export default function UserEditPage() {
           {isAdminMode ? 'Edit User' : 'Your Profile'}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Manage your personal details and email sender identity.
+          Manage your personal details and connected mail account settings.
         </p>
       </div>
 

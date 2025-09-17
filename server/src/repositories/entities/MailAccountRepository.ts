@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { mailAccounts, MailAccount, NewMailAccount } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
@@ -31,14 +31,56 @@ export class MailAccountRepository extends TenantAwareRepository<
     const result = await this.db
       .select()
       .from(this.table)
-      .where(and(eq(this.table.userId, userId), eq(this.table.isPrimary, true)))
+      .where(
+        and(
+          eq(this.table.userId, userId),
+          eq(this.table.isPrimary, true),
+          isNull(this.table.disconnectedAt),
+          eq(this.table.reauthRequired, false)
+        )
+      )
       .limit(1);
 
     if (!result || !result[0]) {
-      throw new NotFoundError(`MailAccount not found with userId: ${userId}`);
+      throw new NotFoundError(`Active primary mail account not found for user: ${userId}`);
     }
 
     return result[0];
+  }
+
+  async findActivePrimaryForTenant(
+    userId: string,
+    tenantId: string
+  ): Promise<MailAccount | undefined> {
+    const result = await this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.userId, userId),
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.isPrimary, true),
+          isNull(this.table.disconnectedAt),
+          eq(this.table.reauthRequired, false)
+        )
+      )
+      .limit(1);
+
+    return result[0];
+  }
+
+  async findActivePrimaryAccountsForTenant(tenantId: string): Promise<MailAccount[]> {
+    return this.db
+      .select()
+      .from(this.table)
+      .where(
+        and(
+          eq(this.table.tenantId, tenantId),
+          eq(this.table.isPrimary, true),
+          isNull(this.table.disconnectedAt),
+          eq(this.table.reauthRequired, false)
+        )
+      );
   }
 
   async create(mailAccount: NewMailAccount): Promise<MailAccount> {
