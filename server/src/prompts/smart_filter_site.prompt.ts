@@ -6,6 +6,7 @@ Your goal, based on the site type, is to select URLs most likely to contain rele
 - If the site type is "organization_site", prioritize URLs most likely containing **product and service information** about the company. Prioritize URLs that:
   - Include segments such as "/products", "/services", "/solutions", "/offerings", "/portfolio", "/capabilities".
   - Clearly reference specific products or services provided by the organization.
+  - ignore routes like robots.txt, sitemap.xml, and privacy policies.
   - Match patterns indicating detailed descriptions or listings of products and services, such as "/products/**", "/services/**", "/solutions/**", or similar.
 
 - If the site type is "lead_site", prioritize URLs most likely containing **contact information** about the company, its team, departments, locations, or individual members. Prioritize URLs that:
