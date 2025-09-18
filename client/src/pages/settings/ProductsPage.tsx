@@ -21,6 +21,7 @@ interface ProductModalProps {
   onCreate: (data: CreateProductData) => Promise<void>
   onUpdate: (data: UpdateProductData) => Promise<void>
   isLoading: boolean
+  error?: string | null
 }
 
 function ProductModal({
@@ -30,6 +31,7 @@ function ProductModal({
   onCreate,
   onUpdate,
   isLoading,
+  error,
 }: ProductModalProps) {
   const [formData, setFormData] = useState({
     title: product?.title || '',
@@ -38,6 +40,11 @@ function ProductModal({
     siteUrl: product?.siteUrl || '',
     isDefault: product?.isDefault || false,
   })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Character limits
+  const DESCRIPTION_LIMIT = 10000
+  const SALES_VOICE_LIMIT = 10000
 
   // Update form data when product prop changes
   useEffect(() => {
@@ -48,10 +55,38 @@ function ProductModal({
       siteUrl: product?.siteUrl || '',
       isDefault: product?.isDefault || false,
     })
+    setErrors({})
   }, [product])
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required'
+    }
+
+    if (
+      formData.description &&
+      formData.description.length > DESCRIPTION_LIMIT
+    ) {
+      newErrors.description = `Description must be ${DESCRIPTION_LIMIT} characters or less`
+    }
+
+    if (formData.salesVoice && formData.salesVoice.length > SALES_VOICE_LIMIT) {
+      newErrors.salesVoice = `Sales Voice must be ${SALES_VOICE_LIMIT} characters or less`
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
     if (product) {
       onUpdate(formData as UpdateProductData)
     } else {
@@ -67,6 +102,7 @@ function ProductModal({
       siteUrl: product?.siteUrl || '',
       isDefault: product?.isDefault || false,
     })
+    setErrors({})
     onClose()
   }
 
@@ -78,6 +114,15 @@ function ProductModal({
         <h2 className="text-xl font-semibold mb-4">
           {product ? 'Edit Product' : 'Create Product'}
         </h2>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+              <span className="text-red-700 text-sm">{error}</span>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -91,21 +136,43 @@ function ProductModal({
               type="text"
               id="title"
               value={formData.title}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData((prev) => ({ ...prev, title: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
+                if (errors.title) {
+                  setErrors((prev) => ({ ...prev, title: '' }))
+                }
+              }}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent ${
+                errors.title ? 'border-red-300' : 'border-gray-300'
+              }`}
               required
             />
+            {errors.title && (
+              <p className="text-sm text-red-600 mt-1">{errors.title}</p>
+            )}
           </div>
 
           <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Description
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Description
+              </label>
+              <span
+                className={`text-xs ${
+                  formData.description.length > DESCRIPTION_LIMIT
+                    ? 'text-red-500'
+                    : formData.description.length > DESCRIPTION_LIMIT * 0.9
+                      ? 'text-orange-500'
+                      : 'text-gray-500'
+                }`}
+              >
+                {formData.description.length.toLocaleString()}/
+                {DESCRIPTION_LIMIT.toLocaleString()}
+              </span>
+            </div>
             <textarea
               id="description"
               value={formData.description}
@@ -114,37 +181,67 @@ function ProductModal({
                   ...prev,
                   description: e.target.value,
                 }))
+                if (errors.description) {
+                  setErrors((prev) => ({ ...prev, description: '' }))
+                }
                 // Auto-resize textarea
                 e.target.style.height = 'auto'
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               rows={3}
               style={{ resize: 'none', overflow: 'hidden' }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent ${
+                errors.description ? 'border-red-300' : 'border-gray-300'
+              }`}
             />
+            {errors.description && (
+              <p className="text-sm text-red-600 mt-1">{errors.description}</p>
+            )}
           </div>
 
           <div>
-            <label
-              htmlFor="salesVoice"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Sales Voice
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="salesVoice"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Sales Voice
+              </label>
+              <span
+                className={`text-xs ${
+                  formData.salesVoice.length > SALES_VOICE_LIMIT
+                    ? 'text-red-500'
+                    : formData.salesVoice.length > SALES_VOICE_LIMIT * 0.9
+                      ? 'text-orange-500'
+                      : 'text-gray-500'
+                }`}
+              >
+                {formData.salesVoice.length.toLocaleString()}/
+                {SALES_VOICE_LIMIT.toLocaleString()}
+              </span>
+            </div>
             <textarea
               id="salesVoice"
               value={formData.salesVoice}
               onChange={(e) => {
                 setFormData((prev) => ({ ...prev, salesVoice: e.target.value }))
+                if (errors.salesVoice) {
+                  setErrors((prev) => ({ ...prev, salesVoice: '' }))
+                }
                 // Auto-resize textarea
                 e.target.style.height = 'auto'
                 e.target.style.height = e.target.scrollHeight + 'px'
               }}
               rows={3}
               style={{ resize: 'none', overflow: 'hidden' }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent ${
+                errors.salesVoice ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder="How would you describe this product to a potential customer?"
             />
+            {errors.salesVoice && (
+              <p className="text-sm text-red-600 mt-1">{errors.salesVoice}</p>
+            )}
           </div>
 
           <div>
@@ -194,7 +291,12 @@ function ProductModal({
             </button>
             <button
               type="submit"
-              disabled={isLoading || !formData.title.trim()}
+              disabled={
+                isLoading ||
+                !formData.title.trim() ||
+                formData.description.length > DESCRIPTION_LIMIT ||
+                formData.salesVoice.length > SALES_VOICE_LIMIT
+              }
               className="px-4 py-2 text-sm font-medium text-white bg-[var(--color-primary-600)] border border-transparent rounded-md hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Saving...' : product ? 'Update' : 'Create'}
@@ -223,18 +325,23 @@ export default function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [loadingProductId, setLoadingProductId] = useState<string | null>(null)
+  const [modalError, setModalError] = useState<string | null>(null)
 
   const handleCreateProduct = async (data: CreateProductData) => {
     if (!currentTenantId) return
 
     try {
+      setModalError(null)
       await createProductMutation.mutateAsync({
         tenantId: currentTenantId,
         data,
       })
       setIsModalOpen(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating product:', error)
+      const errorMessage =
+        error?.message || 'Failed to create product. Please try again.'
+      setModalError(errorMessage)
     }
   }
 
@@ -242,11 +349,15 @@ export default function ProductsPage() {
     if (!editingProduct) return
 
     try {
+      setModalError(null)
       await updateProductMutation.mutateAsync({ id: editingProduct.id, data })
       setIsModalOpen(false)
       setEditingProduct(null)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating product:', error)
+      const errorMessage =
+        error?.message || 'Failed to update product. Please try again.'
+      setModalError(errorMessage)
     }
   }
 
@@ -280,17 +391,20 @@ export default function ProductsPage() {
 
   const openEditModal = (product: Product) => {
     setEditingProduct(product)
+    setModalError(null)
     setIsModalOpen(true)
   }
 
   const openCreateModal = () => {
     setEditingProduct(null)
+    setModalError(null)
     setIsModalOpen(true)
   }
 
   const closeModal = () => {
     setIsModalOpen(false)
     setEditingProduct(null)
+    setModalError(null)
   }
 
   if (!currentTenantId) {
@@ -482,6 +596,7 @@ export default function ProductsPage() {
         isLoading={
           createProductMutation.isPending || updateProductMutation.isPending
         }
+        error={modalError}
       />
     </div>
   )
