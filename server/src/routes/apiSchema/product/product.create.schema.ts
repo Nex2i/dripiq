@@ -10,13 +10,13 @@ export const CreateProductRequestSchema = Type.Object({
   description: Type.Optional(
     Type.String({
       description: 'Product description',
-      maxLength: 1000,
+      maxLength: 10000,
     })
   ),
   salesVoice: Type.Optional(
     Type.String({
       description: 'Sales voice/pitch for the product',
-      maxLength: 2000,
+      maxLength: 10000,
     })
   ),
   // format: 'uri',
