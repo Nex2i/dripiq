@@ -16,16 +16,16 @@ export default function Hero() {
           <div className="text-center lg:text-left">
             <div className="mb-8">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 mb-6">
-                ✨ AI-Powered Sales Re-engagement
+                ✨ AI-Powered Lead Generation & Nurturing
               </span>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-surface-900 leading-tight">
-                Turn Lost Leads Into{' '}
-                <span className="gradient-text">Warm Prospects</span>
+                Transform Cold Leads Into{' '}
+                <span className="gradient-text">Revenue Wins</span>
               </h1>
               <p className="text-xl text-surface-600 mt-6 max-w-2xl mx-auto lg:mx-0">
-                dripIq uses AI to automatically identify dormant leads in your
-                CRM and orchestrate personalized re-engagement campaigns that
-                actually convert.
+                dripIq uses AI to supercharge your lead generation with smart
+                cold outreach, net new prospect discovery, and closed lost
+                recovery campaigns that actually convert.
               </p>
             </div>
 
@@ -55,7 +55,7 @@ export default function Hero() {
               </div>
               <div className="flex items-center">
                 <span className="font-semibold text-surface-900">2M+</span>
-                <span className="ml-1">leads re-engaged</span>
+                <span className="ml-1">leads generated</span>
               </div>
               <div className="flex items-center">
                 <span className="font-semibold text-surface-900">35%</span>

@@ -9,6 +9,7 @@ export default function Footer() {
     Product: [
       { name: 'Features', href: '/#features' },
       { name: 'Pricing', href: '/pricing' },
+      { name: 'What is a Lead?', href: '/blog/what-is-a-lead' },
     ],
     Company: [
       { name: 'About', href: '/about' },
@@ -33,8 +34,9 @@ export default function Footer() {
               <Logo size="md" showText />
             </div>
             <p className="text-surface-400 text-sm leading-6 max-w-xs">
-              AI-powered sales re-engagement platform that turns your lost leads
-              into warm prospects through intelligent automation.
+              AI-powered lead generation platform that transforms cold leads,
+              net new prospects, and closed lost opportunities into revenue
+              wins.
             </p>
             <div className="mt-6">
               <a

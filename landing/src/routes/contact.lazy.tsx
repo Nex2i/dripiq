@@ -8,7 +8,7 @@ const ContactPage = () => {
     <>
       <SEOHead
         title="Contact Us | dripIq - Get Started with AI Sales Re-engagement"
-        description="Get in touch with the dripIq team. Schedule a demo, ask questions, or learn how our AI-powered platform can transform your sales process."
+        description="Get in touch with the dripIq team. Schedule a demo, ask questions, or learn how our AI-powered lead generation platform can transform your sales process."
         canonical="https://dripiq.ai/contact"
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -17,7 +17,7 @@ const ContactPage = () => {
             Get in <span className="gradient-text">Touch</span>
           </h1>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto">
-            Ready to transform your lead re-engagement? Our team is here to help
+            Ready to supercharge your lead generation? Our team is here to help
             you get started with dripIq.
           </p>
         </div>
@@ -126,7 +126,7 @@ const ContactPage = () => {
             </h3>
             <p className="text-surface-600 mb-8">
               Join hundreds of sales teams who have transformed their lead
-              re-engagement with dripIq's AI-powered platform.
+              generation with dripIq's AI-powered platform.
             </p>
             <div className="space-y-4">
               <a

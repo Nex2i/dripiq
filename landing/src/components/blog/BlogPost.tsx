@@ -165,8 +165,8 @@ export default function BlogPost({ post }: BlogPostProps) {
           </h3>
           <p className="text-surface-600 mb-6 max-w-2xl mx-auto">
             See how dripIq's AI-powered platform can help you implement these
-            strategies automatically and turn your dormant leads into active
-            opportunities.
+            strategies automatically and turn your cold leads, net new
+            prospects, and closed lost opportunities into revenue wins.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a

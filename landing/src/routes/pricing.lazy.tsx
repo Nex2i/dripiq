@@ -4,6 +4,16 @@ import SEOHead from '@/components/shared/SEOHead'
 import { APP_URLS } from '@/constants/app'
 
 const PricingPage = () => {
+  const sharedFeatures = [
+    'Full access to AI lead generation platform',
+    'Advanced AI lead scoring',
+    'Multi-channel cold outreach',
+    'CRM integration',
+    'Analytics dashboard',
+    'Custom templates',
+    'API access',
+    'Priority support',
+  ]
   const plans = [
     {
       name: 'Starter',
@@ -11,14 +21,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$2.50',
       leads: '100',
-      description: 'Perfect for small teams getting started',
-      features: [
-        'Up to 100 leads per month',
-        '$2.50 per token (1 token = 1 lead)',
-        'Basic AI re-engagement',
-        'Email support',
-        'CRM integration',
-      ],
+      description: 'All features included. Best for getting started.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: false,
@@ -29,15 +33,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$2.00',
       leads: '250',
-      description: 'For growing sales teams',
-      features: [
-        'Up to 250 leads per month',
-        '$2.00 per token (1 token = 1 lead)',
-        'Advanced AI targeting',
-        'Multi-channel outreach',
-        'Priority support',
-        'Custom templates',
-      ],
+      description: 'All features included. Lower token price at this volume.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: true,
@@ -48,16 +45,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$1.50',
       leads: '500',
-      description: 'For established sales teams',
-      features: [
-        'Up to 500 leads per month',
-        '$1.50 per token (1 token = 1 lead)',
-        'Advanced AI targeting',
-        'Multi-channel outreach',
-        'Priority support',
-        'Analytics dashboard',
-        'Custom templates',
-      ],
+      description: 'All features included. Better token price with more volume.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: false,
@@ -68,17 +57,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$1.00',
       leads: '1,000',
-      description: 'For high-volume sales operations',
-      features: [
-        'Up to 1,000 leads per month',
-        '$1.00 per token (1 token = 1 lead)',
-        'Advanced AI targeting',
-        'Multi-channel outreach',
-        'Priority support',
-        'Analytics dashboard',
-        'Custom workflows',
-        'API access',
-      ],
+      description: 'All features included. Best token price for highest volume.',
+      features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
       popular: false,
@@ -86,16 +66,8 @@ const PricingPage = () => {
     {
       name: 'Enterprise',
       price: 'Custom',
-      description: 'For large organizations with custom needs',
-      features: [
-        'Custom lead volumes',
-        'Custom AI models',
-        'Dedicated success manager',
-        'White-label options',
-        'Full API access',
-        'Custom integrations',
-        'SLA guarantees',
-      ],
+      description: 'All features included. Custom volume and pricing.',
+      features: sharedFeatures,
       cta: 'Contact Sales',
       href: '/contact',
       popular: false,
@@ -125,7 +97,7 @@ const PricingPage = () => {
     <>
       <SEOHead
         title="Token-Based Pricing | dripIq - AI Sales Re-engagement Platform"
-        description="Pay per lead with dripIq's token-based pricing. 1 token = 1 lead. Choose from flexible monthly plans or rollover token bundles starting at $250/month."
+        description="Pay per lead with dripIq's token-based pricing. 1 token = 1 lead. A lead is an organization you're selling to and can include up to 5 contacts. Starting at $250/month."
         canonical="https://dripiq.ai/pricing"
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -134,8 +106,12 @@ const PricingPage = () => {
             Token-Based <span className="gradient-text">Pricing</span>
           </h1>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto mb-4">
-            Pay only for the leads you engage. 1 token = 1 lead. Choose monthly
-            plans or flexible token bundles that roll over.
+            Pay only for the leads you engage. 1 token = 1 lead.
+            Generate cold leads, find net new opportunities, and recover closed
+            lost deals.
+          </p>
+          <p className="text-base text-surface-600 max-w-3xl mx-auto mb-6">
+            All tiers include the same feature set — token price decreases with higher monthly volume.
           </p>
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
             <p className="text-lg font-semibold text-green-800 text-center">
@@ -144,11 +120,30 @@ const PricingPage = () => {
           </div>
         </div>
 
+        <div className="mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-surface-900 mb-3">
+              Everything Included
+            </h2>
+            <p className="text-surface-600">
+              All plans include the same features. Only token price varies by volume.
+            </p>
+          </div>
+          <ul className="grid md:grid-cols-2 gap-3 max-w-4xl mx-auto">
+            {sharedFeatures.map((feature) => (
+              <li key={feature} className="flex items-start">
+                <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0 mt-0.5" />
+                <span className="text-surface-700">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="grid lg:grid-cols-5 md:grid-cols-2 gap-6 mb-16">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative rounded-2xl p-6 ${
+              className={`relative rounded-2xl p-6 flex flex-col h-full ${
                 plan.popular
                   ? 'border-2 border-primary-500 bg-primary-50 shadow-xl'
                   : 'border border-surface-200 bg-white shadow-lg'
@@ -182,18 +177,11 @@ const PricingPage = () => {
                 <p className="text-sm text-surface-600">{plan.description}</p>
               </div>
 
-              <ul className="space-y-2 mb-8">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start">
-                    <Check className="h-4 w-4 text-primary-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-surface-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-8" />
 
               <a
                 href={plan.href}
-                className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors ${
+                className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors mt-auto ${
                   plan.popular
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
                     : 'bg-surface-100 text-surface-900 hover:bg-surface-200'
@@ -221,7 +209,7 @@ const PricingPage = () => {
             {tokenBundles.map((bundle) => (
               <div
                 key={bundle.name}
-                className="border border-surface-200 bg-white shadow-lg rounded-2xl p-8"
+                className="border border-surface-200 bg-white shadow-lg rounded-2xl p-8 flex flex-col h-full"
               >
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold text-surface-900 mb-2">
@@ -238,7 +226,7 @@ const PricingPage = () => {
                   <p className="text-surface-600">{bundle.description}</p>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-grow">
                   <li className="flex items-center">
                     <Check className="h-5 w-5 text-primary-500 mr-3 flex-shrink-0" />
                     <span className="text-surface-700">
@@ -267,7 +255,7 @@ const PricingPage = () => {
 
                 <a
                   href={APP_URLS.SIGNUP}
-                  className="block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors bg-surface-100 text-surface-900 hover:bg-surface-200"
+                  className="block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors bg-surface-100 text-surface-900 hover:bg-surface-200 mt-auto"
                 >
                   Purchase Bundle
                 </a>
@@ -291,14 +279,22 @@ const PricingPage = () => {
                 usage
               </p>
               <p>
-                • 1 token = 1 lead engagement across all AI re-engagement
+                • 1 token = 1 lead engagement across all AI lead generation
                 features
               </p>
               <p>
-                • All plans include full access to our AI re-engagement platform
+                • A lead is an organization you are selling to and can include
+                up to 5 contacts per lead
+              </p>
+              <p>
+                • All plans include full access to our AI lead generation
+                platform
               </p>
               <p className="text-green-700 font-medium">
                 • Success fee: $250 charged per sale closed brought in by DripIQ
+              </p>
+              <p>
+                Learn more: <a href="/blog/what-is-a-lead" className="text-primary-600 hover:text-primary-700 underline">What is a Lead? Understanding tokens and contacts</a>
               </p>
             </div>
           </div>
