@@ -1,12 +1,12 @@
 import { supabaseStorage } from '@/libs/supabase.storage';
 import { FireCrawlWebhookPayload } from '@/libs/firecrawl/firecrawl';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
+import { logger } from '@/libs/logger';
 import { updateLeadStatuses } from '../lead.service';
 import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
 import { EmbeddingsService } from './embeddings.service';
 import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
-import { logger } from '@/libs/logger';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
