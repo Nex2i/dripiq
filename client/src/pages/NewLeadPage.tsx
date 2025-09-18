@@ -34,7 +34,7 @@ const NewLeadPage: React.FC = () => {
 
   const users = usersResponse?.data || []
   const verifiedUsers = React.useMemo(
-    () => users.filter((u: any) => u.hasVerifiedSenderIdentity),
+    () => users.filter((u: any) => u.hasConnectedPrimaryMailAccount),
     [users],
   )
 

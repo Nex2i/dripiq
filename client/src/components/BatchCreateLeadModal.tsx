@@ -38,7 +38,7 @@ export function BatchCreateLeadModal({
 
   const users = usersResponse?.data || []
   const verifiedUsers = useMemo(
-    () => users.filter((u: any) => u.hasVerifiedSenderIdentity),
+    () => users.filter((u: any) => u.hasConnectedPrimaryMailAccount),
     [users],
   )
 

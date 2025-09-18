@@ -90,14 +90,15 @@ export const createLead = async (
   ownerId: string,
   pointOfContacts?: Omit<NewLeadPointOfContact, 'leadId'>[]
 ) => {
-  // If ownerId is provided, enforce verified sender identity for that owner
+  // If ownerId is provided, enforce connected primary mail account for that owner
   if (ownerId) {
-    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
-      ownerId,
-      tenantId
-    );
-    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
-      throw new Error('Assigned owner must have a verified sender identity');
+    try {
+      const mailAccount = await repositories.mailAccount.findPrimaryByUserId(ownerId);
+      if (mailAccount.disconnectedAt || mailAccount.reauthRequired) {
+        throw new Error('Assigned owner must have a connected primary mail account');
+      }
+    } catch (_error) {
+      throw new Error('Assigned owner must have a connected primary mail account');
     }
   }
 
@@ -253,13 +254,14 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
       throw new Error(`User not found with ID: ${userId} in tenant: ${tenantId}`);
     }
 
-    // Enforce that the user has a verified sender identity
-    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
-      userId,
-      tenantId
-    );
-    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
-      throw new Error('Assigned owner must have a verified sender identity');
+    // Enforce that the user has a connected primary mail account
+    try {
+      const mailAccount = await repositories.mailAccount.findPrimaryByUserId(userId);
+      if (mailAccount.disconnectedAt || mailAccount.reauthRequired) {
+        throw new Error('Assigned owner must have a connected primary mail account');
+      }
+    } catch (_error) {
+      throw new Error('Assigned owner must have a connected primary mail account');
     }
 
     // Update the lead with the new owner
@@ -511,14 +513,15 @@ export const updateLeadStatuses = async (
  * @returns A promise that resolves to an array of batch creation results.
  */
 export const createLeadsBatch = async (tenantId: string, websites: string[], ownerId: string) => {
-  // If ownerId is provided, enforce verified sender identity for that owner
+  // If ownerId is provided, enforce connected primary mail account for that owner
   if (ownerId) {
-    const senderIdentity = await repositories.emailSenderIdentity.findByUserIdForTenant(
-      ownerId,
-      tenantId
-    );
-    if (!senderIdentity || senderIdentity.validationStatus !== 'verified') {
-      throw new Error('Assigned owner must have a verified sender identity');
+    try {
+      const mailAccount = await repositories.mailAccount.findPrimaryByUserId(ownerId);
+      if (mailAccount.disconnectedAt || mailAccount.reauthRequired) {
+        throw new Error('Assigned owner must have a connected primary mail account');
+      }
+    } catch (_error) {
+      throw new Error('Assigned owner must have a connected primary mail account');
     }
   }
 

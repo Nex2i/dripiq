@@ -1,10 +1,5 @@
 import { createHash } from 'crypto';
-import {
-  contactCampaignRepository,
-  campaignPlanVersionRepository,
-  leadRepository,
-  emailSenderIdentityRepository,
-} from '@/repositories';
+import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
 import { normalizeCampaignPlanIds, isPlanNormalized } from './planIdNormalizer';
@@ -66,8 +61,6 @@ export class ContactCampaignPlanService {
     let isNewCampaign = false;
     let campaign = existingCampaign;
 
-    const senderIdentityId = await this.findSenderIdentityForLead(leadId, tenantId);
-
     if (!campaign) {
       isNewCampaign = true;
       campaign = await contactCampaignRepository.createForTenant(tenantId, {
@@ -79,7 +72,6 @@ export class ContactCampaignPlanService {
         planJson: normalizedPlan,
         planVersion: baseVersion,
         planHash,
-        senderIdentityId,
       });
     } else if (campaign.planHash !== planHash) {
       // Update to the new plan
@@ -88,7 +80,6 @@ export class ContactCampaignPlanService {
         planJson: normalizedPlan,
         planVersion: baseVersion,
         planHash,
-        senderIdentityId,
       });
     }
 
@@ -120,24 +111,6 @@ export class ContactCampaignPlanService {
       isNewCampaign,
       isNewVersion,
     };
-  }
-
-  private async findSenderIdentityForLead(
-    leadId: string,
-    tenantId: string
-  ): Promise<string | null> {
-    const lead = await leadRepository.findByIdForTenant(leadId, tenantId);
-    if (!lead.ownerId) {
-      throw new Error(`Cannot find sender identity for lead without owner`, {
-        cause: { leadId, tenantId },
-      });
-    }
-    const ownerSenderIdentityId = await emailSenderIdentityRepository.findIdByUserIdForTenant(
-      lead.ownerId,
-      tenantId
-    );
-
-    return ownerSenderIdentityId;
   }
 
   private async ensurePlanVersion(args: {

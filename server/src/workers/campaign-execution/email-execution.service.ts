@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { logger } from '@/libs/logger';
 import {
-  emailSenderIdentityRepository,
+  mailAccountRepository,
   outboundMessageRepository,
   scheduledActionRepository,
   userRepository,
@@ -18,7 +18,7 @@ import {
   TIMEOUT_JOB_OPTIONS,
 } from '@/constants/timeout-jobs';
 import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
-import type { ContactCampaign, EmailSenderIdentity, LeadPointOfContact } from '@/db/schema';
+import type { ContactCampaign, MailAccount, LeadPointOfContact } from '@/db/schema';
 import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
 import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
 import { JOB_NAMES } from '@/constants/queues';
@@ -41,7 +41,7 @@ export interface EmailExecutionParams {
   contact: LeadPointOfContact;
   campaign: ContactCampaign;
   planJson?: CampaignPlanOutput;
-  senderIdentity?: EmailSenderIdentity;
+  mailAccount?: MailAccount;
 }
 
 export interface EmailExecutionResult {
@@ -102,17 +102,17 @@ export class EmailExecutionService {
         };
       }
 
-      // Fetch and validate sender identity
-      const senderIdentity =
-        params.senderIdentity || (await this.getSenderIdentityByLeadId(tenantId, contact.leadId));
+      // Fetch and validate mail account
+      const mailAccount =
+        params.mailAccount || (await this.getMailAccountByLeadId(tenantId, contact.leadId));
 
       // Resolve sender configuration using domain validation fallback
       let senderConfig;
       try {
         senderConfig = await SenderIdentityResolverService.resolveSenderConfig(
           tenantId,
-          senderIdentity.fromEmail,
-          senderIdentity.fromName
+          mailAccount.primaryEmail,
+          mailAccount.displayName || 'Unknown Sender'
         );
 
         logger.info('[EmailExecutionService] Resolved sender configuration', {
@@ -120,23 +120,23 @@ export class EmailExecutionService {
           campaignId,
           contactId,
           nodeId,
-          originalFrom: senderIdentity.fromEmail,
+          originalFrom: mailAccount.primaryEmail,
           resolvedFrom: senderConfig.fromEmail,
           replyTo: senderConfig.replyTo,
         });
       } catch (resolverError) {
         logger.error(
-          '[EmailExecutionService] Failed to resolve sender config, using original identity',
+          '[EmailExecutionService] Failed to resolve sender config, using mail account',
           {
             tenantId,
             campaignId,
             contactId,
             nodeId,
             error: resolverError instanceof Error ? resolverError.message : 'Unknown error',
-            fallbackFrom: senderIdentity.fromEmail,
+            fallbackFrom: mailAccount.primaryEmail,
           }
         );
-        // Continue with original sender identity if resolver fails
+        // Continue with mail account if resolver fails
         senderConfig = undefined;
       }
 
@@ -305,27 +305,31 @@ export class EmailExecutionService {
     }
   }
 
-  private async getSenderIdentityByLeadId(tenantId: string, leadId?: string) {
+  private async getMailAccountByLeadId(tenantId: string, leadId?: string) {
     if (!leadId) {
-      throw new Error('No sender identity configured for campaign');
+      throw new Error('No mail account configured for campaign');
     }
 
-    const senderIdentity = await emailSenderIdentityRepository.findByLeadIdForTenant(
-      leadId,
-      tenantId
-    );
-
-    if (!senderIdentity) {
-      throw new Error(`Sender identity not found: ${leadId}`);
+    // Get the lead to find the owner
+    const lead = await leadRepository.findByIdForTenant(leadId, tenantId);
+    if (!lead || !lead.ownerId) {
+      throw new Error(`Lead owner not found: ${leadId}`);
     }
 
-    if (senderIdentity.validationStatus !== 'verified') {
-      throw new Error(
-        `Sender identity not verified: ${senderIdentity.fromEmail} (status: ${senderIdentity.validationStatus})`
-      );
-    }
+    // Get the primary mail account for the lead owner
+    try {
+      const mailAccount = await mailAccountRepository.findPrimaryByUserId(lead.ownerId);
 
-    return senderIdentity;
+      if (mailAccount.disconnectedAt || mailAccount.reauthRequired) {
+        throw new Error(
+          `Mail account is disconnected or requires re-authentication: ${mailAccount.primaryEmail}`
+        );
+      }
+
+      return mailAccount;
+    } catch (_error) {
+      throw new Error(`Primary mail account not found for lead owner: ${lead.ownerId}`);
+    }
   }
 
   private buildDedupeKey(params: EmailExecutionParams) {
