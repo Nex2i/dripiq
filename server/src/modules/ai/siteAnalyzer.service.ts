@@ -6,6 +6,7 @@ import { LEAD_STATUS } from '../../constants/leadStatus.constants';
 import { LeadAnalysisPublisher } from '../messages/leadAnalysis.publisher.service';
 import { EmbeddingsService } from './embeddings.service';
 import { OrganizationAnalyzerService } from './organizationAnalyzer.service';
+import { logger } from '@/libs/logger';
 
 export interface SiteAnalyzerDto {
   storageKey: string;
@@ -30,6 +31,8 @@ export const SiteAnalyzerService = {
         if (metadata.statusCode === 404) {
           return;
         }
+
+        logger.info('Analyzing page from Firecrawl', { url, markdown, metadata });
 
         const domain = await EmbeddingsService.getOrCreateDomainByUrl(url.getFullDomain());
 
