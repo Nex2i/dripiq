@@ -182,10 +182,23 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   removeArrayItem,
   updateArrayItem,
 }) => {
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    })
+  }
+
   // Shared button components for reuse
   const SaveButton = () => (
     <button
-      onClick={onSave}
+      onClick={() => {
+        onSave()
+        // Scroll to top after save action is initiated
+        setTimeout(scrollToTop, 100)
+      }}
       disabled={isSaving}
       className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
     >
@@ -196,7 +209,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 
   const CancelButton = () => (
     <button
-      onClick={onCancel}
+      onClick={() => {
+        onCancel()
+        // Scroll to top after cancel action is initiated
+        setTimeout(scrollToTop, 100)
+      }}
       className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
     >
       <X className="h-4 w-4 mr-2" />
