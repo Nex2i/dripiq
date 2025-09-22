@@ -1,10 +1,5 @@
 import React from 'react'
-import {
-  Globe,
-  Users,
-  RefreshCw,
-  Edit,
-} from 'lucide-react'
+import { Globe, Users, RefreshCw, Edit } from 'lucide-react'
 import Tooltip from './Tooltip'
 import LeadStatusBadges from './LeadStatusBadges'
 import type { Lead } from '../types/lead.types'
@@ -54,9 +49,7 @@ const LeadViewHeader: React.FC<LeadViewHeaderProps> = ({
               >
                 <Globe className="h-5 w-5 mr-1" />
                 <span className="text-lg">
-                  {lead.url
-                    .replace(/^https?:\/\//, '')
-                    .replace(/\/$/, '')}
+                  {lead.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                 </span>
               </a>
             )}

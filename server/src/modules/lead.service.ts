@@ -205,7 +205,7 @@ export const updateLead = async (
 ) => {
   // Update the lead
   const result = await leadRepository.updateByIdForTenant(id, tenantId, leadData);
-  
+
   if (!result) {
     throw new Error('Lead not found or update failed');
   }

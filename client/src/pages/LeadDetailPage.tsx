@@ -24,7 +24,7 @@ import ProductsTab from '../components/tabs/ProductsTab'
 import LeadProcessingBanner from '../components/LeadProcessingBanner'
 import LeadViewHeader from '../components/LeadViewHeader'
 import LeadEditForm from '../components/LeadEditForm'
-import { HOME_URL } from '../constants/navigation'
+import { LEADS_URL } from '../constants/navigation'
 import type { UpdateLeadData } from '../services/leads.service'
 
 const LeadDetailPage: React.FC = () => {
@@ -38,14 +38,14 @@ const LeadDetailPage: React.FC = () => {
   const [vendorFitModalOpen, setVendorFitModalOpen] = useState(false)
   const [vendorFitData, setVendorFitData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('contacts')
-  
+
   // Edit state management
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<UpdateLeadData>({})
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
 
   const handleBack = () => {
-    navigate({ to: HOME_URL })
+    navigate({ to: LEADS_URL })
   }
 
   // Initialize edit form when lead data is available
@@ -94,7 +94,7 @@ const LeadDetailPage: React.FC = () => {
       window.scrollTo({
         top: 0,
         left: 0,
-        behavior: 'smooth'
+        behavior: 'smooth',
       })
     }, 100)
   }
@@ -102,21 +102,21 @@ const LeadDetailPage: React.FC = () => {
   const handleSaveSuccess = () => {
     // Set success message immediately
     setUpdateMessage('Lead updated successfully')
-    
+
     // Small delay to ensure React Query cache is updated, then switch to view mode
     setTimeout(() => {
       setIsEditing(false)
-      
+
       // Scroll to top after switching back to view mode
       setTimeout(() => {
         window.scrollTo({
           top: 0,
           left: 0,
-          behavior: 'smooth'
+          behavior: 'smooth',
         })
       }, 100)
     }, 50)
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => setUpdateMessage(null), 3000)
   }
@@ -131,28 +131,32 @@ const LeadDetailPage: React.FC = () => {
     if (!value.trim()) return
     const currentArray = (editForm[field] as string[]) || []
     if (!currentArray.includes(value.trim())) {
-      setEditForm(prev => ({
+      setEditForm((prev) => ({
         ...prev,
-        [field]: [...currentArray, value.trim()]
+        [field]: [...currentArray, value.trim()],
       }))
     }
   }
 
   const removeArrayItem = (field: keyof UpdateLeadData, index: number) => {
     const currentArray = (editForm[field] as string[]) || []
-    setEditForm(prev => ({
+    setEditForm((prev) => ({
       ...prev,
-      [field]: currentArray.filter((_, i) => i !== index)
+      [field]: currentArray.filter((_, i) => i !== index),
     }))
   }
 
-  const updateArrayItem = (field: keyof UpdateLeadData, index: number, value: string) => {
+  const updateArrayItem = (
+    field: keyof UpdateLeadData,
+    index: number,
+    value: string,
+  ) => {
     const currentArray = (editForm[field] as string[]) || []
     const newArray = [...currentArray]
     newArray[index] = value
-    setEditForm(prev => ({
+    setEditForm((prev) => ({
       ...prev,
-      [field]: newArray
+      [field]: newArray,
     }))
   }
 
@@ -358,7 +362,6 @@ const LeadDetailPage: React.FC = () => {
         )
     }
   }
-
 
   return (
     <div className="min-h-screen bg-gray-50">

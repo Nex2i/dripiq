@@ -1,10 +1,5 @@
 import React, { useState } from 'react'
-import {
-  Save,
-  X,
-  Plus,
-  Trash2,
-} from 'lucide-react'
+import { Save, X, Plus, Trash2 } from 'lucide-react'
 import { useUpdateLead } from '../hooks/useLeadsQuery'
 import type { UpdateLeadData } from '../services/leads.service'
 import type { Lead } from '../types/lead.types'
@@ -18,7 +13,11 @@ interface LeadEditFormProps {
   onCancel: () => void
   addArrayItem: (field: keyof UpdateLeadData, value: string) => void
   removeArrayItem: (field: keyof UpdateLeadData, index: number) => void
-  updateArrayItem: (field: keyof UpdateLeadData, index: number, value: string) => void
+  updateArrayItem: (
+    field: keyof UpdateLeadData,
+    index: number,
+    value: string,
+  ) => void
 }
 
 // Array Field Editor Component
@@ -165,9 +164,7 @@ const ColorArrayFieldEditor: React.FC<{
             <Plus className="h-4 w-4" />
           </button>
         </div>
-        {error && (
-          <p className="text-red-600 text-sm mt-1">{error}</p>
-        )}
+        {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
       </div>
     </div>
   )
@@ -185,7 +182,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   updateArrayItem,
 }) => {
   const updateLead = useUpdateLead()
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({})
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
@@ -206,10 +205,11 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
 
     if (editForm.brandColors) {
       const invalidColors = editForm.brandColors.filter(
-        (color) => !/^#[0-9A-Fa-f]{6}$/.test(color)
+        (color) => !/^#[0-9A-Fa-f]{6}$/.test(color),
       )
       if (invalidColors.length > 0) {
-        errors.brandColors = 'All brand colors must be valid hex codes (e.g., #FF0000)'
+        errors.brandColors =
+          'All brand colors must be valid hex codes (e.g., #FF0000)'
       }
     }
 
@@ -226,10 +226,12 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (editForm.name !== lead.name) changedFields.name = editForm.name
     if (editForm.url !== lead.url) changedFields.url = editForm.url
     if (editForm.status !== lead.status) changedFields.status = editForm.status
-    if (editForm.summary !== lead.summary) changedFields.summary = editForm.summary
-    if (editForm.targetMarket !== lead.targetMarket) changedFields.targetMarket = editForm.targetMarket
+    if (editForm.summary !== lead.summary)
+      changedFields.summary = editForm.summary
+    if (editForm.targetMarket !== lead.targetMarket)
+      changedFields.targetMarket = editForm.targetMarket
     if (editForm.tone !== lead.tone) changedFields.tone = editForm.tone
-    
+
     // For arrays, check for changes
     if (JSON.stringify(editForm.products) !== JSON.stringify(lead.products)) {
       changedFields.products = editForm.products
@@ -237,10 +239,15 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (JSON.stringify(editForm.services) !== JSON.stringify(lead.services)) {
       changedFields.services = editForm.services
     }
-    if (JSON.stringify(editForm.differentiators) !== JSON.stringify(lead.differentiators)) {
+    if (
+      JSON.stringify(editForm.differentiators) !==
+      JSON.stringify(lead.differentiators)
+    ) {
       changedFields.differentiators = editForm.differentiators
     }
-    if (JSON.stringify(editForm.brandColors) !== JSON.stringify(lead.brandColors)) {
+    if (
+      JSON.stringify(editForm.brandColors) !== JSON.stringify(lead.brandColors)
+    ) {
       changedFields.brandColors = editForm.brandColors
     }
 
@@ -259,7 +266,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           onError('Failed to update lead')
           console.error('Error updating lead:', error)
         },
-      }
+      },
     )
   }
 
@@ -270,7 +277,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
       disabled={updateLead.isPending}
       className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <Save className={`h-4 w-4 mr-2 ${updateLead.isPending ? 'animate-spin' : ''}`} />
+      <Save
+        className={`h-4 w-4 mr-2 ${updateLead.isPending ? 'animate-spin' : ''}`}
+      />
       {updateLead.isPending ? 'Saving...' : 'Save Changes'}
     </button>
   )
@@ -295,7 +304,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           <SaveButton />
         </div>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Basic Information */}
@@ -306,14 +315,18 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             <input
               type="text"
               value={editForm.name || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] ${
                 validationErrors.name ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="Lead name"
             />
             {validationErrors.name && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.name}</p>
+              <p className="text-red-600 text-sm mt-1">
+                {validationErrors.name}
+              </p>
             )}
           </div>
 
@@ -324,14 +337,18 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             <input
               type="url"
               value={editForm.url || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, url: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, url: e.target.value }))
+              }
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] ${
                 validationErrors.url ? 'border-red-300' : 'border-gray-300'
               }`}
               placeholder="https://example.com"
             />
             {validationErrors.url && (
-              <p className="text-red-600 text-sm mt-1">{validationErrors.url}</p>
+              <p className="text-red-600 text-sm mt-1">
+                {validationErrors.url}
+              </p>
             )}
           </div>
 
@@ -341,7 +358,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             </label>
             <select
               value={editForm.status || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, status: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]"
             >
               <option value="new">New</option>
@@ -358,7 +377,12 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             <input
               type="text"
               value={editForm.targetMarket || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, targetMarket: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  targetMarket: e.target.value,
+                }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]"
               placeholder="Target market"
             />
@@ -370,7 +394,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             </label>
             <textarea
               value={editForm.summary || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, summary: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, summary: e.target.value }))
+              }
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]"
               placeholder="Lead summary"
@@ -384,7 +410,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
             <input
               type="text"
               value={editForm.tone || ''}
-              onChange={(e) => setEditForm(prev => ({ ...prev, tone: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, tone: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]"
               placeholder="Company tone"
             />
@@ -397,7 +425,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               items={editForm.products || []}
               onAdd={(value) => addArrayItem('products', value)}
               onRemove={(index) => removeArrayItem('products', index)}
-              onUpdate={(index, value) => updateArrayItem('products', index, value)}
+              onUpdate={(index, value) =>
+                updateArrayItem('products', index, value)
+              }
               placeholder="Add product"
             />
           </div>
@@ -408,7 +438,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               items={editForm.services || []}
               onAdd={(value) => addArrayItem('services', value)}
               onRemove={(index) => removeArrayItem('services', index)}
-              onUpdate={(index, value) => updateArrayItem('services', index, value)}
+              onUpdate={(index, value) =>
+                updateArrayItem('services', index, value)
+              }
               placeholder="Add service"
             />
           </div>
@@ -419,7 +451,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               items={editForm.differentiators || []}
               onAdd={(value) => addArrayItem('differentiators', value)}
               onRemove={(index) => removeArrayItem('differentiators', index)}
-              onUpdate={(index, value) => updateArrayItem('differentiators', index, value)}
+              onUpdate={(index, value) =>
+                updateArrayItem('differentiators', index, value)
+              }
               placeholder="Add differentiator"
             />
           </div>
@@ -430,7 +464,9 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               items={editForm.brandColors || []}
               onAdd={(value) => addArrayItem('brandColors', value)}
               onRemove={(index) => removeArrayItem('brandColors', index)}
-              onUpdate={(index, value) => updateArrayItem('brandColors', index, value)}
+              onUpdate={(index, value) =>
+                updateArrayItem('brandColors', index, value)
+              }
               error={validationErrors.brandColors}
             />
           </div>
