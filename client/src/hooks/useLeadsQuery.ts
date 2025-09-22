@@ -122,7 +122,7 @@ export function useUpdateLead() {
     mutationFn: ({ id, data }: { id: string; data: UpdateLeadData }) =>
       leadsService.updateLead(id, data),
     onSuccess: (updatedLead: Lead) => {
-      // Update the individual lead cache
+      // Update the individual lead cache - server now returns complete lead with relationships
       queryClient.setQueryData(
         leadQueryKeys.detail(updatedLead.id),
         updatedLead,

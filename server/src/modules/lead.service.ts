@@ -203,8 +203,16 @@ export const updateLead = async (
   id: string,
   leadData: Partial<Omit<NewLead, 'tenantId'>>
 ) => {
+  // Update the lead
   const result = await leadRepository.updateByIdForTenant(id, tenantId, leadData);
-  return result;
+  
+  if (!result) {
+    throw new Error('Lead not found or update failed');
+  }
+
+  // Return the complete lead with relationships to ensure pointOfContacts and statuses are included
+  const completeUpdatedLead = await getLeadById(tenantId, id);
+  return completeUpdatedLead;
 };
 
 /**
