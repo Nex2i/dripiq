@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc } from 'drizzle-orm';
+import { eq, and, or, ilike, desc, sql } from 'drizzle-orm';
 import { leads, Lead, NewLead, users, User } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
@@ -96,7 +96,7 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
   async findWithSearch(
     tenantId: string,
     options: LeadSearchOptions = {}
-  ): Promise<LeadWithOwner[]> {
+  ): Promise<{ leads: LeadWithOwner[]; total: number }> {
     const { searchQuery, ownerId, status, limit, offset } = options;
 
     let query = this.db
@@ -155,7 +155,36 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
       (query as any) = (query as any).offset(offset);
     }
 
-    return await (query as any);
+    const leads = await (query as any);
+
+    // Get total count for pagination
+    let countQuery = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(this.table)
+      .leftJoin(users, eq(this.table.ownerId, users.id));
+
+    const countConditions = [eq(this.table.tenantId, tenantId)];
+
+    if (searchQuery && searchQuery.trim()) {
+      const searchTerm = `%${searchQuery.trim()}%`;
+      countConditions.push(
+        or(ilike(this.table.name, searchTerm), ilike(this.table.url, searchTerm))!
+      );
+    }
+
+    if (ownerId) {
+      countConditions.push(eq(this.table.ownerId, ownerId));
+    }
+
+    if (status) {
+      countConditions.push(eq(this.table.status, status));
+    }
+
+    (countQuery as any) = (countQuery as any).where(and(...countConditions));
+
+    const [{ count }] = await (countQuery as any);
+
+    return { leads, total: count };
   }
 
   /**

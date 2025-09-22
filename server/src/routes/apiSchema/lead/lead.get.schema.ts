@@ -4,11 +4,25 @@ import { LeadResponseSchema } from './lead.response.schema';
 // Query parameters for getting leads
 export const GetLeadsQuerySchema = Type.Object({
   search: Type.Optional(Type.String({ description: 'Search term to filter leads' })),
+  page: Type.Optional(
+    Type.Number({ description: 'Page number (1-based)', minimum: 1, default: 1 })
+  ),
+  limit: Type.Optional(
+    Type.Number({ description: 'Number of leads per page', minimum: 1, maximum: 500, default: 10 })
+  ),
 });
 
-// Response schema for getting all leads
-export const GetLeadsResponseSchema = Type.Array(LeadResponseSchema, {
-  description: 'List of leads for the tenant',
+// Response schema for getting all leads with pagination metadata
+export const GetLeadsResponseSchema = Type.Object({
+  leads: Type.Array(LeadResponseSchema, {
+    description: 'List of leads for the tenant',
+  }),
+  pagination: Type.Object({
+    page: Type.Number({ description: 'Current page number' }),
+    limit: Type.Number({ description: 'Number of leads per page' }),
+    total: Type.Number({ description: 'Total number of leads' }),
+    totalPages: Type.Number({ description: 'Total number of pages' }),
+  }),
 });
 
 // Parameters for getting a single lead

@@ -61,6 +61,8 @@ export const leadQueryKeys = {
   lists: () => [...leadQueryKeys.all, 'list'] as const,
   list: (filters?: Record<string, any>) =>
     [...leadQueryKeys.lists(), filters] as const,
+  paginatedList: (search?: string, page?: number, limit?: number) =>
+    [...leadQueryKeys.lists(), { search, page, limit }] as const,
   details: () => [...leadQueryKeys.all, 'detail'] as const,
   detail: (id: string) => [...leadQueryKeys.details(), id] as const,
 }
@@ -76,14 +78,20 @@ class LeadsService {
   }
 
   // Get all leads - raw fetch for use with useQuery
-  async getLeads(searchQuery?: string): Promise<Lead[]> {
+  async getLeads(
+    searchQuery?: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ leads: Lead[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     const authHeaders = await authService.getAuthHeaders()
 
-    // Build URL with optional search parameter
+    // Build URL with optional search and pagination parameters
     const url = new URL(`${this.baseUrl}/leads`)
     if (searchQuery && searchQuery.trim()) {
       url.searchParams.append('search', searchQuery.trim())
     }
+    url.searchParams.append('page', page.toString())
+    url.searchParams.append('limit', limit.toString())
 
     const response = await fetch(url.toString(), {
       method: 'GET',

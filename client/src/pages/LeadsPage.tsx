@@ -53,7 +53,14 @@ const LeadsPage: React.FC = () => {
   const [isBatchCreateModalOpen, setIsBatchCreateModalOpen] =
     React.useState(false)
 
-  const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
+  const { data, isLoading, error, refetch } = useLeads(
+    searchQuery,
+    pagination.pageIndex + 1, // API uses 1-based pagination
+    pagination.pageSize
+  )
+
+  const leads = data?.leads || []
+  const totalCount = data?.pagination?.total || 0
   const {
     data: usersResponse,
     isLoading: usersLoading,
@@ -147,6 +154,10 @@ const LeadsPage: React.FC = () => {
       fuzzy: fuzzyFilter,
     },
     globalFilterFn: fuzzyFilter,
+    // Enable server-side pagination
+    manualPagination: true,
+    rowCount: totalCount,
+    pageCount: Math.ceil(totalCount / pagination.pageSize),
   })
 
   const selectedRowCount = Object.keys(rowSelection).filter(

@@ -9,11 +9,15 @@ import type {
   BatchCreateLeadResponse,
 } from '../services/leads.service'
 
-// Hook to get all leads
-export function useLeads(searchQuery?: string) {
+// Hook to get all leads with pagination
+export function useLeads(
+  searchQuery?: string,
+  page: number = 1,
+  limit: number = 10
+) {
   return useQuery({
-    queryKey: leadQueryKeys.list({ search: searchQuery }),
-    queryFn: () => leadsService.getLeads(searchQuery),
+    queryKey: leadQueryKeys.paginatedList(searchQuery, page, limit),
+    queryFn: () => leadsService.getLeads(searchQuery, page, limit),
     staleTime: 1000 * 60, // Consider data stale after 1 minute
     refetchOnMount: 'always', // Always refetch when component mounts
     refetchOnWindowFocus: true,
