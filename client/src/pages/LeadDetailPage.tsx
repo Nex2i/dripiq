@@ -4,7 +4,6 @@ import {
   useLead,
   useResyncLead,
   useVendorFitLead,
-  useUpdateLead,
 } from '../hooks/useLeadsQuery'
 import {
   ArrowLeft,
@@ -34,7 +33,6 @@ const LeadDetailPage: React.FC = () => {
   const { data: lead, isLoading, error } = useLead(leadId)
   const resyncLead = useResyncLead()
   const vendorFitLead = useVendorFitLead()
-  const updateLead = useUpdateLead()
   const [resyncMessage, setResyncMessage] = useState<string | null>(null)
   const [vendorFitMessage, setVendorFitMessage] = useState<string | null>(null)
   const [vendorFitModalOpen, setVendorFitModalOpen] = useState(false)
@@ -44,7 +42,6 @@ const LeadDetailPage: React.FC = () => {
   // Edit state management
   const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState<UpdateLeadData>({})
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
 
   const handleBack = () => {
@@ -83,7 +80,6 @@ const LeadDetailPage: React.FC = () => {
         tone: lead.tone || '',
         brandColors: lead.brandColors || [],
       })
-      setValidationErrors({})
       setUpdateMessage(null)
       setIsEditing(true)
     }
@@ -92,7 +88,6 @@ const LeadDetailPage: React.FC = () => {
   const handleCancelEdit = () => {
     setIsEditing(false)
     setEditForm({})
-    setValidationErrors({})
     setUpdateMessage(null)
     // Scroll to top after switching back to view mode
     setTimeout(() => {
@@ -104,100 +99,31 @@ const LeadDetailPage: React.FC = () => {
     }, 100)
   }
 
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {}
-
-    if (!editForm.name?.trim()) {
-      errors.name = 'Name is required'
-    }
-
-    if (!editForm.url?.trim()) {
-      errors.url = 'URL is required'
-    } else {
-      try {
-        new URL(editForm.url)
-      } catch {
-        errors.url = 'Invalid URL format'
-      }
-    }
-
-    if (editForm.brandColors) {
-      const invalidColors = editForm.brandColors.filter(
-        (color) => !/^#[0-9A-Fa-f]{6}$/.test(color)
-      )
-      if (invalidColors.length > 0) {
-        errors.brandColors = 'All brand colors must be valid hex codes (e.g., #FF0000)'
-      }
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+  const handleSaveSuccess = () => {
+    // Set success message immediately
+    setUpdateMessage('Lead updated successfully')
+    
+    // Small delay to ensure React Query cache is updated, then switch to view mode
+    setTimeout(() => {
+      setIsEditing(false)
+      
+      // Scroll to top after switching back to view mode
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth'
+        })
+      }, 100)
+    }, 50)
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => setUpdateMessage(null), 3000)
   }
 
-  const handleSaveEdit = () => {
-    if (!lead?.id || !validateForm()) return
-
-    const changedFields: UpdateLeadData = {}
-
-    // Only include changed fields
-    if (editForm.name !== lead.name) changedFields.name = editForm.name
-    if (editForm.url !== lead.url) changedFields.url = editForm.url
-    if (editForm.status !== lead.status) changedFields.status = editForm.status
-    if (editForm.summary !== lead.summary) changedFields.summary = editForm.summary
-    if (editForm.targetMarket !== lead.targetMarket) changedFields.targetMarket = editForm.targetMarket
-    if (editForm.tone !== lead.tone) changedFields.tone = editForm.tone
-    
-    // For arrays, check for changes
-    if (JSON.stringify(editForm.products) !== JSON.stringify(lead.products)) {
-      changedFields.products = editForm.products
-    }
-    if (JSON.stringify(editForm.services) !== JSON.stringify(lead.services)) {
-      changedFields.services = editForm.services
-    }
-    if (JSON.stringify(editForm.differentiators) !== JSON.stringify(lead.differentiators)) {
-      changedFields.differentiators = editForm.differentiators
-    }
-    if (JSON.stringify(editForm.brandColors) !== JSON.stringify(lead.brandColors)) {
-      changedFields.brandColors = editForm.brandColors
-    }
-
-    if (Object.keys(changedFields).length === 0) {
-      setUpdateMessage('No changes to save')
-      setTimeout(() => setUpdateMessage(null), 3000)
-      return
-    }
-
-    updateLead.mutate(
-      { id: lead.id, data: changedFields },
-      {
-        onSuccess: () => {
-          // Set success message immediately
-          setUpdateMessage('Lead updated successfully')
-          
-          // Small delay to ensure React Query cache is updated, then switch to view mode
-          setTimeout(() => {
-            setIsEditing(false)
-            
-            // Scroll to top after switching back to view mode
-            setTimeout(() => {
-              window.scrollTo({
-                top: 0,
-                left: 0,
-                behavior: 'smooth'
-              })
-            }, 100)
-          }, 50)
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => setUpdateMessage(null), 3000)
-        },
-        onError: (error) => {
-          setUpdateMessage('Failed to update lead')
-          console.error('Error updating lead:', error)
-          setTimeout(() => setUpdateMessage(null), 3000)
-        },
-      }
-    )
+  const handleSaveError = (message: string) => {
+    setUpdateMessage(message)
+    setTimeout(() => setUpdateMessage(null), 3000)
   }
 
   // Array field helpers
@@ -458,12 +384,12 @@ const LeadDetailPage: React.FC = () => {
             />
           ) : (
             <LeadEditForm
+              lead={lead}
               editForm={editForm}
               setEditForm={setEditForm}
-              validationErrors={validationErrors}
-              onSave={handleSaveEdit}
+              onSuccess={handleSaveSuccess}
+              onError={handleSaveError}
               onCancel={handleCancelEdit}
-              isSaving={updateLead.isPending}
               addArrayItem={addArrayItem}
               removeArrayItem={removeArrayItem}
               updateArrayItem={updateArrayItem}

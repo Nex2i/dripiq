@@ -5,15 +5,17 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
+import { useUpdateLead } from '../hooks/useLeadsQuery'
 import type { UpdateLeadData } from '../services/leads.service'
+import type { Lead } from '../types/lead.types'
 
 interface LeadEditFormProps {
+  lead: Lead
   editForm: UpdateLeadData
   setEditForm: React.Dispatch<React.SetStateAction<UpdateLeadData>>
-  validationErrors: Record<string, string>
-  onSave: () => void
+  onSuccess: () => void
+  onError: (message: string) => void
   onCancel: () => void
-  isSaving: boolean
   addArrayItem: (field: keyof UpdateLeadData, value: string) => void
   removeArrayItem: (field: keyof UpdateLeadData, index: number) => void
   updateArrayItem: (field: keyof UpdateLeadData, index: number, value: string) => void
@@ -172,25 +174,104 @@ const ColorArrayFieldEditor: React.FC<{
 }
 
 const LeadEditForm: React.FC<LeadEditFormProps> = ({
+  lead,
   editForm,
   setEditForm,
-  validationErrors,
-  onSave,
+  onSuccess,
+  onError,
   onCancel,
-  isSaving,
   addArrayItem,
   removeArrayItem,
   updateArrayItem,
 }) => {
+  const updateLead = useUpdateLead()
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+
+    if (!editForm.name?.trim()) {
+      errors.name = 'Name is required'
+    }
+
+    if (!editForm.url?.trim()) {
+      errors.url = 'URL is required'
+    } else {
+      try {
+        new URL(editForm.url)
+      } catch {
+        errors.url = 'Invalid URL format'
+      }
+    }
+
+    if (editForm.brandColors) {
+      const invalidColors = editForm.brandColors.filter(
+        (color) => !/^#[0-9A-Fa-f]{6}$/.test(color)
+      )
+      if (invalidColors.length > 0) {
+        errors.brandColors = 'All brand colors must be valid hex codes (e.g., #FF0000)'
+      }
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSave = () => {
+    if (!lead?.id || !validateForm()) return
+
+    const changedFields: UpdateLeadData = {}
+
+    // Only include changed fields
+    if (editForm.name !== lead.name) changedFields.name = editForm.name
+    if (editForm.url !== lead.url) changedFields.url = editForm.url
+    if (editForm.status !== lead.status) changedFields.status = editForm.status
+    if (editForm.summary !== lead.summary) changedFields.summary = editForm.summary
+    if (editForm.targetMarket !== lead.targetMarket) changedFields.targetMarket = editForm.targetMarket
+    if (editForm.tone !== lead.tone) changedFields.tone = editForm.tone
+    
+    // For arrays, check for changes
+    if (JSON.stringify(editForm.products) !== JSON.stringify(lead.products)) {
+      changedFields.products = editForm.products
+    }
+    if (JSON.stringify(editForm.services) !== JSON.stringify(lead.services)) {
+      changedFields.services = editForm.services
+    }
+    if (JSON.stringify(editForm.differentiators) !== JSON.stringify(lead.differentiators)) {
+      changedFields.differentiators = editForm.differentiators
+    }
+    if (JSON.stringify(editForm.brandColors) !== JSON.stringify(lead.brandColors)) {
+      changedFields.brandColors = editForm.brandColors
+    }
+
+    if (Object.keys(changedFields).length === 0) {
+      onError('No changes to save')
+      return
+    }
+
+    updateLead.mutate(
+      { id: lead.id, data: changedFields },
+      {
+        onSuccess: () => {
+          onSuccess()
+        },
+        onError: (error) => {
+          onError('Failed to update lead')
+          console.error('Error updating lead:', error)
+        },
+      }
+    )
+  }
+
   // Shared button components for reuse
   const SaveButton = () => (
     <button
-      onClick={onSave}
-      disabled={isSaving}
+      onClick={handleSave}
+      disabled={updateLead.isPending}
       className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <Save className={`h-4 w-4 mr-2 ${isSaving ? 'animate-spin' : ''}`} />
-      {isSaving ? 'Saving...' : 'Save Changes'}
+      <Save className={`h-4 w-4 mr-2 ${updateLead.isPending ? 'animate-spin' : ''}`} />
+      {updateLead.isPending ? 'Saving...' : 'Save Changes'}
     </button>
   )
 
