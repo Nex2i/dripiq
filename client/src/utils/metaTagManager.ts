@@ -114,16 +114,14 @@ export class MetaTagManager {
    */
   setDefaultMetaTags() {
     // Use environment-appropriate image URL
-    const isProduction = import.meta.env.VITE_API_BASE_URL?.includes('dripiq.ai')
-    const imageUrl = isProduction
-      ? 'https://dripiq.ai/android-chrome-512x512.png'
-      : '/android-chrome-512x512.png'
+    const appUrl = import.meta.env.VITE_APP_URL || 'https://dripiq.ai'
+    const imageUrl = `${appUrl}/android-chrome-512x512.png`
 
     this.setLeadMetaTags({
       title: 'dripIq - AI-Powered Sales Re-engagement Platform',
       description: 'dripIq - Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform.',
       image: imageUrl,
-      url: 'https://dripiq.ai/',
+      url: appUrl + '/',
       siteName: 'dripIq',
     })
   }
