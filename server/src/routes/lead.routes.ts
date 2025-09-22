@@ -69,17 +69,19 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
       request: FastifyRequest<{
         Querystring: {
           search?: string;
+          page?: number;
+          limit?: number;
         };
       }>,
       reply: FastifyReply
     ) => {
       try {
         const authenticatedRequest = request as AuthenticatedRequest;
-        const { search } = request.query;
+        const { search, page = 1, limit = 10 } = request.query;
 
-        const leads = await getLeads(authenticatedRequest.tenantId, search);
+        const result = await getLeads(authenticatedRequest.tenantId, search, { page, limit });
 
-        reply.send(leads);
+        reply.send(result);
       } catch (error: any) {
         logger.error(`Error fetching leads: ${error.message}`);
 

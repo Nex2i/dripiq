@@ -7,6 +7,7 @@ import {
   repositories,
 } from '../repositories';
 import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
+import { LeadWithOwner } from '../repositories/entities/LeadRepository';
 import { logger } from '../libs/logger';
 import { formatPhoneForStorage } from '../libs/phoneFormatter';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
@@ -16,7 +17,7 @@ import { attachProductsToLead } from './leadProduct.service';
 import { LeadInitialProcessingPublisher } from './messages/leadInitialProcessing.publisher.service';
 
 // Helper function to transform lead data with signed URLs
-const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
+const transformLeadWithSignedUrls = async (tenantId: string, lead: LeadWithOwner) => {
   const storagePath = storageService.getTenantDomainLogoKey(tenantId, lead.url);
   const signedLogoUrl = await storageService.getSignedUrl(storagePath);
 
@@ -27,19 +28,28 @@ const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
 };
 
 /**
- * Retrieves a list of leads for a specific tenant, with optional search functionality.
+ * Retrieves a list of leads for a specific tenant, with optional search functionality and pagination.
  * @param tenantId - The ID of the tenant to retrieve leads for.
  * @param searchQuery - An optional string to search for in the lead's name, email, company, or phone number.
- * @returns A promise that resolves to an array of lead objects with owner information.
+ * @param options - Optional pagination options
+ * @returns A promise that resolves to an object with leads array and pagination metadata.
  */
-export const getLeads = async (tenantId: string, searchQuery?: string) => {
-  // Use repository to get leads with search functionality
+export const getLeads = async (
+  tenantId: string,
+  searchQuery?: string,
+  options: { page?: number; limit?: number } = {}
+) => {
+  const { page = 1, limit = 50 } = options;
+  const offset = (page - 1) * limit;
+  // Use repository to get leads with search functionality and pagination
   const leadResults = await leadRepository.findWithSearch(tenantId, {
     searchQuery,
+    limit,
+    offset,
   });
 
   // Get statuses for all leads in a single query for better performance
-  const leadIds = leadResults.map((lead) => lead.id);
+  const leadIds = leadResults.leads.map((lead) => lead.id);
   let allStatuses: any[] = [];
 
   if (leadIds.length > 0) {
@@ -68,12 +78,22 @@ export const getLeads = async (tenantId: string, searchQuery?: string) => {
   );
 
   // Add statuses to each lead
-  const result = leadResults.map((lead) => ({
+  const leadsWithStatuses = leadResults.leads.map((lead: LeadWithOwner) => ({
     ...lead,
     statuses: statusesByLeadId[lead.id] || [],
   }));
 
-  return result;
+  const totalPages = Math.ceil(leadResults.total / limit);
+
+  return {
+    leads: leadsWithStatuses,
+    pagination: {
+      page,
+      limit,
+      total: leadResults.total,
+      totalPages,
+    },
+  };
 };
 
 /**
@@ -285,7 +305,9 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
 
     // Get the updated lead with owner information
     const updatedLeadResults = await leadRepository.findWithSearch(tenantId, {});
-    const updatedLeadWithOwner = updatedLeadResults.find((lead) => lead.id === leadId);
+    const updatedLeadWithOwner = updatedLeadResults.leads.find(
+      (lead: LeadWithOwner) => lead.id === leadId
+    );
 
     if (!updatedLeadWithOwner) {
       throw new Error('Failed to retrieve updated lead with owner information');
