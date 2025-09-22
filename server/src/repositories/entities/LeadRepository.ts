@@ -38,6 +38,24 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
   }
 
   /**
+   * Update record by ID with tenant validation
+   */
+  async updateByIdForTenant(
+    id: string,
+    tenantId: string,
+    data: Partial<Omit<NewLead, 'tenantId'>>
+  ): Promise<Lead | undefined> {
+    data.url = data.url?.cleanWebsiteUrl();
+
+    const [result] = await this.db
+      .update(this.table)
+      .set(data as any)
+      .where(and(eq((this.table as any).id, id), eq((this.table as any).tenantId, tenantId)))
+      .returning();
+    return result as Lead | undefined;
+  }
+
+  /**
    * Get a user from lead owner
    * @param leadId
    * @param tenantId

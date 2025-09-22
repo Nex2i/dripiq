@@ -11,7 +11,7 @@ export const UpdateLeadRequestSchema = Type.Partial(
   Type.Object({
     // Basic lead fields from creation
     name: Type.String({ minLength: 1, description: 'Lead name' }),
-    url: Type.String({ format: 'uri', minLength: 1, description: 'Lead website URL' }),
+    url: Type.String({ minLength: 1, description: 'Lead website URL' }),
     status: Type.String({
       enum: ['new', 'contacted', 'qualified', 'lost'],
       description: 'Lead status',

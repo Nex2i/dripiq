@@ -196,10 +196,23 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
     if (!editForm.url?.trim()) {
       errors.url = 'URL is required'
     } else {
-      try {
-        new URL(editForm.url)
-      } catch {
-        errors.url = 'Invalid URL format'
+      // Allow basic domain formats like "example.com" or full URLs
+      const url = editForm.url.trim()
+      const basicDomainRegex =
+        /^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.([a-zA-Z]{2,}|[a-zA-Z]{2,}\.[a-zA-Z]{2,})$/
+      const isBasicDomain = basicDomainRegex.test(url)
+      const isFullUrl = url.startsWith('http://') || url.startsWith('https://')
+
+      if (isBasicDomain) {
+        // Valid basic domain format
+      } else if (isFullUrl) {
+        try {
+          new URL(url)
+        } catch {
+          errors.url = 'Invalid URL format'
+        }
+      } else {
+        errors.url = 'Please enter a valid domain (e.g., example.com) or URL'
       }
     }
 
@@ -343,7 +356,7 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] ${
                 validationErrors.url ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="https://example.com"
+              placeholder="example.com"
             />
             {validationErrors.url && (
               <p className="text-red-600 text-sm mt-1">
