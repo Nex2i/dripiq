@@ -5,12 +5,16 @@ import { RouterProvider } from '@tanstack/react-router'
 import { router } from './router'
 import { AuthProvider } from './contexts/AuthContext'
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider'
+import { metaTagManager } from './utils/metaTagManager'
 
 import './styles.css'
 import reportWebVitals from './reportWebVitals'
 
 const rootElement = document.getElementById('app')
 if (rootElement && !rootElement.innerHTML) {
+  // Initialize meta tag manager with default tags
+  metaTagManager.setDefaultMetaTags()
+
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>

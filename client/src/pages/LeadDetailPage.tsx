@@ -26,6 +26,7 @@ import LeadViewHeader from '../components/LeadViewHeader'
 import LeadEditForm from '../components/LeadEditForm'
 import { LEADS_URL } from '../constants/navigation'
 import type { UpdateLeadData } from '../services/leads.service'
+import { metaTagManager } from '../utils/metaTagManager'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -65,6 +66,24 @@ const LeadDetailPage: React.FC = () => {
       })
     }
   }, [lead, isEditing])
+
+  // Update meta tags when lead data is loaded
+  useEffect(() => {
+    if (lead) {
+      metaTagManager.setLeadMetaTags({
+        title: `${lead.name} - Lead Details | dripIq`,
+        description: lead.summary || `Lead information for ${lead.name}${lead.url ? ` from ${lead.url}` : ''}`,
+        image: lead.logo || 'https://dripiq.ai/android-chrome-512x512.png',
+        url: window.location.href,
+        siteName: 'dripIq',
+      })
+    }
+
+    // Cleanup function to restore original meta tags
+    return () => {
+      metaTagManager.restoreOriginalTags()
+    }
+  }, [lead])
 
   const handleStartEdit = () => {
     if (lead) {
