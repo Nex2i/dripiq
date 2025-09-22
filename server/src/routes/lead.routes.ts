@@ -19,6 +19,7 @@ import {
   bulkDeleteLeads,
   getLeadById,
   assignLeadOwner,
+  checkUrlExists,
 } from '../modules/lead.service';
 import {
   getLeadProducts,
@@ -97,6 +98,75 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to fetch leads',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Check URL exists route
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/check-url`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Leads'],
+      summary: 'Check if URL exists',
+      description:
+        'Check if a lead with the given URL already exists for the tenant (tenant-scoped)',
+      querystring: {
+        type: 'object',
+        properties: {
+          url: { type: 'string' },
+        },
+        required: ['url'],
+      },
+      response: {
+        ...defaultRouteResponse(),
+        200: {
+          type: 'object',
+          properties: {
+            exists: { type: 'boolean' },
+            lead: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                name: { type: 'string' },
+                url: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Querystring: {
+          url: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { url } = request.query;
+
+        if (!url || !url.trim()) {
+          reply.status(400).send({
+            message: 'URL parameter is required',
+            error: 'Missing URL',
+          });
+          return;
+        }
+
+        // Use service method to check URL existence
+        const result = await checkUrlExists(authenticatedRequest.tenantId, url);
+
+        reply.send(result);
+      } catch (error: any) {
+        logger.error(`Error checking URL existence: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to check URL existence',
           error: error.message,
         });
       }
@@ -248,6 +318,18 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           reply.status(400).send({
             message: 'Lead with this information already exists',
             error: 'Duplicate data',
+          });
+          return;
+        }
+
+        // Check for duplicate URL error
+        if (error.message?.includes('Lead with URL') && error.message?.includes('already exists')) {
+          const match = error.message.match(/Existing lead ID: ([a-f0-9-]+)/);
+          const existingLeadId = match ? match[1] : undefined;
+          reply.status(400).send({
+            message: 'A lead with this URL already exists for your organization',
+            error: 'Duplicate URL',
+            existingLeadId,
           });
           return;
         }

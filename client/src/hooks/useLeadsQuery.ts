@@ -471,6 +471,16 @@ export function useInvalidateLeads() {
   }
 }
 
+// Hook to check if a URL exists
+export function useCheckUrlExists() {
+  return useMutation({
+    mutationFn: (url: string) => leadsService.checkUrlExists(url),
+    onError: (error) => {
+      console.error('Error checking URL existence:', error)
+    },
+  })
+}
+
 // Hook to vendor fit a lead
 export function useVendorFitLead() {
   const queryClient = useQueryClient()

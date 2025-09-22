@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useCreateLead, useUsers } from '../hooks/useLeadsQuery'
+import {
+  useCreateLead,
+  useUsers,
+  useCheckUrlExists,
+} from '../hooks/useLeadsQuery'
 import type { CreateLeadData } from '../services/leads.service'
 import { Plus, X, User, Crown, Loader2 } from 'lucide-react'
 import { HOME_URL } from '../constants/navigation'
@@ -23,6 +27,7 @@ const NewLeadPage: React.FC = () => {
     error: usersError,
   } = useUsers()
   const { user: authUser } = useAuth()
+  const checkUrlExistsMutation = useCheckUrlExists()
   const [formData, setFormData] = useState<
     Omit<CreateLeadData, 'pointOfContacts'>
   >({
@@ -31,12 +36,39 @@ const NewLeadPage: React.FC = () => {
   })
   const [contacts, setContacts] = useState<ContactFormData[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [urlError, setUrlError] = useState<{
+    message: string
+    existingLead?: { id: string; url: string; name: string }
+  } | null>(null)
 
   const users = usersResponse?.data || []
   const verifiedUsers = React.useMemo(
     () => users.filter((u: any) => u.hasConnectedPrimaryMailAccount),
     [users],
   )
+
+  const handleUrlBlur = async () => {
+    if (!formData.url.trim()) {
+      setUrlError(null)
+      return
+    }
+
+    try {
+      const result = await checkUrlExistsMutation.mutateAsync(formData.url)
+
+      if (result.exists && result.lead) {
+        setUrlError({
+          message: `A lead for this website already exists. Would you like to add a different lead instead?`,
+          existingLead: result.lead,
+        })
+      } else {
+        setUrlError(null)
+      }
+    } catch (error) {
+      // If the check fails, don't show duplicate error
+      setUrlError(null)
+    }
+  }
 
   // Default ownerId to current user if they are verified
   useEffect(() => {
@@ -95,8 +127,17 @@ const NewLeadPage: React.FC = () => {
       onSuccess: (newLead) => {
         navigate({ to: `/leads/${newLead.id}` })
       },
-      onError: (err) => {
-        setError(err instanceof Error ? err.message : 'Failed to create lead')
+      onError: (err: any) => {
+        // Handle duplicate URL error
+        if (err?.error === 'Duplicate URL' && err?.existingLeadId) {
+          setError(
+            `A lead with this URL already exists. Please check the existing lead or try a different URL.`,
+          )
+          // Optionally, you could navigate to the existing lead here
+          // navigate({ to: `/leads/${err.existingLeadId}` })
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to create lead')
+        }
       },
     })
   }
@@ -161,11 +202,36 @@ const NewLeadPage: React.FC = () => {
                     name="url"
                     value={formData.url}
                     onChange={handleChange}
+                    onBlur={handleUrlBlur}
                     placeholder="https://example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] transition-colors"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-[var(--color-primary-500)] transition-colors ${
+                      urlError ? 'border-red-300' : 'border-gray-300'
+                    }`}
                     required
                     disabled={createLeadMutation.isPending}
                   />
+                  {checkUrlExistsMutation.isPending && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        Checking for existing leads...
+                      </p>
+                    </div>
+                  )}
+                  {urlError && (
+                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-700 mb-2">
+                        {urlError.message}
+                      </p>
+                      {urlError.existingLead && (
+                        <a
+                          href={`/leads/${urlError.existingLead.id}`}
+                          className="inline-flex items-center text-sm text-yellow-700 hover:text-yellow-800 underline"
+                        >
+                          View existing lead: {urlError.existingLead.name}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>

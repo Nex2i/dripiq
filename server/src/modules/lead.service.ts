@@ -132,6 +132,11 @@ export const createLead = async (
     leadWithOwner.url = leadWithOwner.url.cleanWebsiteUrl();
   }
 
+  // Check for duplicate URL within the tenant
+  if (leadWithOwner.url) {
+    await checkUrlExists(tenantId, leadWithOwner.url, { throwOnExists: true });
+  }
+
   // Use transaction repository to create lead with contacts and status
   const result = await leadTransactionRepository.createLeadWithContacts(tenantId, {
     lead: leadWithOwner,
@@ -576,22 +581,14 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
       }
 
       // Check if a lead with this domain already exists for this tenant
-      // Check both the domain and common URL variations
-      const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: domain });
-      const existingLead = existingLeads.leads.find(
-        (lead: LeadWithOwner) =>
-          lead.url === domain ||
-          lead.url === `https://${domain}` ||
-          lead.url === `https://www.${domain}` ||
-          lead.url.includes(domain)
-      );
-      if (existingLead) {
+      const existingLeadResult = await checkUrlExists(tenantId, domain);
+      if (existingLeadResult.exists && existingLeadResult.lead) {
         results.push({
           url: domain,
           success: false,
           error: 'Lead with this domain already exists',
-          leadId: existingLead.id,
-          name: existingLead.name,
+          leadId: existingLeadResult.lead.id,
+          name: existingLeadResult.lead.name,
         });
         continue;
       }
@@ -661,4 +658,51 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
   logger.info(`Batch lead creation completed: ${summary.successful}/${summary.total} successful`);
 
   return { results, summary };
+};
+
+/**
+ * Check if a URL already exists for a specific tenant.
+ * @param tenantId - The ID of the tenant to check within.
+ * @param url - The URL to check for existence.
+ * @param options - Optional configuration for the check.
+ * @returns A promise that resolves to an object indicating if the URL exists and the existing lead if found.
+ */
+export const checkUrlExists = async (
+  tenantId: string,
+  url: string,
+  options: {
+    throwOnExists?: boolean;
+  } = {}
+): Promise<{
+  exists: boolean;
+  lead?: Lead;
+}> => {
+  const { throwOnExists = false } = options;
+
+  if (!url || !url.trim()) {
+    return { exists: false };
+  }
+
+  // Clean the URL for comparison
+  const cleanedUrl = url.trim().cleanWebsiteUrl();
+
+  // Use optimized repository method to check URL existence
+  const existingLead = await leadRepository.findByUrlForTenant(tenantId, cleanedUrl);
+
+  if (existingLead) {
+    if (throwOnExists) {
+      throw new Error(
+        `Lead with URL "${cleanedUrl}" already exists for this tenant. Existing lead ID: ${existingLead.id}`
+      );
+    }
+
+    return {
+      exists: true,
+      lead: existingLead,
+    };
+  } else {
+    return {
+      exists: false,
+    };
+  }
 };

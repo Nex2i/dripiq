@@ -5,6 +5,7 @@ import {
   cleanWebsiteUrl,
   isValidUrl,
   parseUrlList,
+  checkUrlDuplicate,
 } from './urlUtils'
 
 describe('urlUtils', () => {
@@ -160,11 +161,13 @@ describe('urlUtils', () => {
       )
     })
 
-    it('should preserve existing http protocol', () => {
+    it('should convert http to https protocol', () => {
       expect(cleanWebsiteUrl('http://example.com')).toBe(
-        'http://www.example.com',
+        'https://www.example.com',
       )
-      expect(cleanWebsiteUrl('http://www.test.org')).toBe('http://www.test.org')
+      expect(cleanWebsiteUrl('http://www.test.org')).toBe(
+        'https://www.test.org',
+      )
     })
 
     it('should add www when missing', () => {
@@ -783,6 +786,84 @@ https://another-valid.org`
         'test.travel',
         'site.name',
       ])
+    })
+  })
+
+  describe('checkUrlDuplicate', () => {
+    it('should detect duplicate URLs', () => {
+      const leads = [
+        { id: '1', url: 'https://www.example.com', name: 'Example Corp' },
+        { id: '2', url: 'https://www.test.org', name: 'Test Co' },
+      ]
+
+      const result = checkUrlDuplicate('https://www.example.com', leads)
+
+      expect(result.isDuplicate).toBe(true)
+      expect(result.existingLead).toEqual({
+        id: '1',
+        url: 'https://www.example.com',
+        name: 'Example Corp',
+      })
+    })
+
+    it('should not detect duplicate for non-matching URLs', () => {
+      const leads = [
+        { id: '1', url: 'https://www.example.com', name: 'Example Corp' },
+        { id: '2', url: 'https://www.test.org', name: 'Test Co' },
+      ]
+
+      const result = checkUrlDuplicate('https://www.newsite.com', leads)
+
+      expect(result.isDuplicate).toBe(false)
+      expect(result.existingLead).toBeUndefined()
+    })
+
+    it('should handle empty leads array', () => {
+      const result = checkUrlDuplicate('https://www.example.com', [])
+
+      expect(result.isDuplicate).toBe(false)
+      expect(result.existingLead).toBeUndefined()
+    })
+
+    it('should handle empty URL input', () => {
+      const leads = [
+        { id: '1', url: 'https://www.example.com', name: 'Example Corp' },
+      ]
+
+      const result = checkUrlDuplicate('', leads)
+
+      expect(result.isDuplicate).toBe(false)
+      expect(result.existingLead).toBeUndefined()
+    })
+
+    it('should match URLs case-insensitively', () => {
+      const leads = [
+        { id: '1', url: 'https://www.example.com', name: 'Example Corp' },
+      ]
+
+      const result = checkUrlDuplicate('https://www.EXAMPLE.com', leads)
+
+      expect(result.isDuplicate).toBe(true)
+      expect(result.existingLead).toEqual({
+        id: '1',
+        url: 'https://www.example.com',
+        name: 'Example Corp',
+      })
+    })
+
+    it('should match URLs with different protocols', () => {
+      const leads = [
+        { id: '1', url: 'https://www.example.com', name: 'Example Corp' },
+      ]
+
+      const result = checkUrlDuplicate('http://www.example.com', leads)
+
+      expect(result.isDuplicate).toBe(true)
+      expect(result.existingLead).toEqual({
+        id: '1',
+        url: 'https://www.example.com',
+        name: 'Example Corp',
+      })
     })
   })
 })
