@@ -112,6 +112,15 @@ export const createLead = async (
     leadWithOwner.url = leadWithOwner.url.cleanWebsiteUrl();
   }
 
+  // Check for duplicate URL within the tenant
+  if (leadWithOwner.url) {
+    const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: leadWithOwner.url });
+    const existingLead = existingLeads.find((lead) => lead.url === leadWithOwner.url);
+    if (existingLead) {
+      throw new Error(`Lead with URL "${leadWithOwner.url}" already exists for this tenant. Existing lead ID: ${existingLead.id}`);
+    }
+  }
+
   // Use transaction repository to create lead with contacts and status
   const result = await leadTransactionRepository.createLeadWithContacts(tenantId, {
     lead: leadWithOwner,

@@ -250,6 +250,18 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
+        // Check for duplicate URL error
+        if (error.message?.includes('Lead with URL') && error.message?.includes('already exists')) {
+          const match = error.message.match(/Existing lead ID: ([a-f0-9-]+)/);
+          const existingLeadId = match ? match[1] : undefined;
+          reply.status(400).send({
+            message: 'A lead with this URL already exists for your organization',
+            error: 'Duplicate URL',
+            existingLeadId,
+          });
+          return;
+        }
+
         reply.status(500).send({
           message: 'Failed to create lead',
           error: error.message,

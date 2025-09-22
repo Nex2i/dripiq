@@ -126,9 +126,12 @@ String.prototype.cleanWebsiteUrl = function (): string {
   if (this.isNullOrEmpty()) return '';
   let url = this.toString().trim();
 
-  // Add https:// if missing
+  // Add https:// if missing (always use https for consistency)
   if (!/^https?:\/\//i.test(url)) {
     url = 'https://' + url;
+  } else {
+    // Convert http to https for consistency
+    url = url.replace(/^http:\/\//i, 'https://');
   }
 
   // Add www. if missing

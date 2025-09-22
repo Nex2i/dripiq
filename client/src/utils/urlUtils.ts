@@ -44,9 +44,12 @@ export const getDomain = (url: string): string => {
 export const cleanWebsiteUrl = (url: string): string => {
   let cleanedUrl = url.toString().trim()
 
-  // Add https:// if missing
+  // Add https:// if missing (always use https for consistency)
   if (!/^https?:\/\//i.test(cleanedUrl)) {
     cleanedUrl = 'https://' + cleanedUrl
+  } else {
+    // Convert http to https for consistency
+    cleanedUrl = cleanedUrl.replace(/^http:\/\//i, 'https://')
   }
 
   // Add www. if missing
@@ -93,6 +96,40 @@ export const isValidUrl = (url: string): boolean => {
     return true
   } catch {
     return false
+  }
+}
+
+/**
+ * Check if a URL already exists in a list of leads (after cleaning both URLs)
+ * @param url - The URL to check
+ * @param leads - Array of lead objects to check against
+ * @returns Object with isDuplicate boolean and existingLead if found
+ */
+export const checkUrlDuplicate = (
+  url: string,
+  leads: Array<{ id: string; url: string; name: string }>,
+): { isDuplicate: boolean; existingLead?: { id: string; url: string; name: string } } => {
+  if (!url.trim()) {
+    return { isDuplicate: false }
+  }
+
+  try {
+    const cleanedUrl = cleanWebsiteUrl(url)
+    const existingLead = leads.find((lead) => {
+      try {
+        const cleanedLeadUrl = cleanWebsiteUrl(lead.url)
+        return cleanedLeadUrl === cleanedUrl
+      } catch {
+        return false
+      }
+    })
+
+    return {
+      isDuplicate: !!existingLead,
+      existingLead,
+    }
+  } catch {
+    return { isDuplicate: false }
   }
 }
 
