@@ -27,6 +27,7 @@ import {
 } from '../modules/leadProduct.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
+import { leadRepository } from '../repositories';
 
 // Import all lead schemas
 import {
@@ -95,6 +96,91 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
 
         reply.status(500).send({
           message: 'Failed to fetch leads',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  // Check URL exists route
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/check-url`,
+    preHandler: [fastify.authPrehandler],
+    schema: {
+      tags: ['Leads'],
+      summary: 'Check if URL exists',
+      description: 'Check if a lead with the given URL already exists for the tenant (tenant-scoped)',
+      querystring: {
+        type: 'object',
+        properties: {
+          url: { type: 'string' },
+        },
+        required: ['url'],
+      },
+      response: {
+        ...defaultRouteResponse(),
+        200: {
+          type: 'object',
+          properties: {
+            exists: { type: 'boolean' },
+            lead: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                name: { type: 'string' },
+                url: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Querystring: {
+          url: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const authenticatedRequest = request as AuthenticatedRequest;
+        const { url } = request.query;
+
+        if (!url || !url.trim()) {
+          reply.status(400).send({
+            message: 'URL parameter is required',
+            error: 'Missing URL',
+          });
+          return;
+        }
+
+        // Clean the URL for comparison
+        const cleanedUrl = url.trim().cleanWebsiteUrl();
+
+        // Check if lead exists with this URL
+        const existingLeads = await leadRepository.findWithSearch(authenticatedRequest.tenantId, { searchQuery: cleanedUrl });
+        const existingLead = existingLeads.find((lead: any) => lead.url === cleanedUrl);
+
+        if (existingLead) {
+          reply.send({
+            exists: true,
+            lead: {
+              id: existingLead.id,
+              name: existingLead.name,
+              url: existingLead.url,
+            },
+          });
+        } else {
+          reply.send({
+            exists: false,
+          });
+        }
+      } catch (error: any) {
+        logger.error(`Error checking URL existence: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to check URL existence',
           error: error.message,
         });
       }

@@ -530,6 +530,32 @@ class LeadsService {
     return result
   }
 
+  // Check if URL already exists for the tenant
+  async checkUrlExists(url: string): Promise<{
+    exists: boolean;
+    lead?: {
+      id: string;
+      name: string;
+      url: string;
+    };
+  }> {
+    const authHeaders = await authService.getAuthHeaders()
+
+    const response = await fetch(`${this.baseUrl}/leads/check-url?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        ...authHeaders,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Failed to check URL existence')
+    }
+
+    return response.json()
+  }
+
   // Create a new contact for a lead
   async createContact(
     leadId: string,
