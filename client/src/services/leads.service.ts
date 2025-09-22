@@ -81,7 +81,7 @@ class LeadsService {
   async getLeads(
     searchQuery?: string,
     page: number = 1,
-    limit: number = 10
+    limit: number = 50
   ): Promise<{ leads: Lead[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     const authHeaders = await authService.getAuthHeaders()
 

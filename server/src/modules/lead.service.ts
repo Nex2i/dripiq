@@ -7,6 +7,7 @@ import {
   repositories,
 } from '../repositories';
 import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
+import { LeadWithOwner } from '../repositories/entities/LeadRepository';
 import { logger } from '../libs/logger';
 import { formatPhoneForStorage } from '../libs/phoneFormatter';
 import { LEAD_STATUS } from '../constants/leadStatus.constants';
@@ -16,7 +17,7 @@ import { attachProductsToLead } from './leadProduct.service';
 import { LeadInitialProcessingPublisher } from './messages/leadInitialProcessing.publisher.service';
 
 // Helper function to transform lead data with signed URLs
-const transformLeadWithSignedUrls = async (tenantId: string, lead: any) => {
+const transformLeadWithSignedUrls = async (tenantId: string, lead: LeadWithOwner) => {
   const storagePath = storageService.getTenantDomainLogoKey(tenantId, lead.url);
   const signedLogoUrl = await storageService.getSignedUrl(storagePath);
 
@@ -38,7 +39,7 @@ export const getLeads = async (
   searchQuery?: string,
   options: { page?: number; limit?: number } = {}
 ) => {
-  const { page = 1, limit = 10 } = options;
+  const { page = 1, limit = 50 } = options;
   const offset = (page - 1) * limit;
   // Use repository to get leads with search functionality and pagination
   const leadResults = await leadRepository.findWithSearch(tenantId, {
@@ -77,7 +78,7 @@ export const getLeads = async (
   );
 
   // Add statuses to each lead
-  const leadsWithStatuses = leadResults.leads.map((lead: any) => ({
+  const leadsWithStatuses = leadResults.leads.map((lead: LeadWithOwner) => ({
     ...lead,
     statuses: statusesByLeadId[lead.id] || [],
   }));
@@ -299,7 +300,9 @@ export const assignLeadOwner = async (tenantId: string, leadId: string, userId: 
 
     // Get the updated lead with owner information
     const updatedLeadResults = await leadRepository.findWithSearch(tenantId, {});
-    const updatedLeadWithOwner = updatedLeadResults.leads.find((lead: any) => lead.id === leadId);
+    const updatedLeadWithOwner = updatedLeadResults.leads.find(
+      (lead: LeadWithOwner) => lead.id === leadId
+    );
 
     if (!updatedLeadWithOwner) {
       throw new Error('Failed to retrieve updated lead with owner information');
@@ -576,7 +579,7 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
       // Check both the domain and common URL variations
       const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: domain });
       const existingLead = existingLeads.leads.find(
-        (lead: any) =>
+        (lead: LeadWithOwner) =>
           lead.url === domain ||
           lead.url === `https://${domain}` ||
           lead.url === `https://www.${domain}` ||

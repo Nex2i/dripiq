@@ -8,7 +8,7 @@ export const GetLeadsQuerySchema = Type.Object({
     Type.Number({ description: 'Page number (1-based)', minimum: 1, default: 1 })
   ),
   limit: Type.Optional(
-    Type.Number({ description: 'Number of leads per page', minimum: 1, maximum: 500, default: 10 })
+    Type.Number({ description: 'Number of leads per page', minimum: 1, maximum: 500, default: 50 })
   ),
 });
 

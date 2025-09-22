@@ -13,7 +13,7 @@ import type {
 export function useLeads(
   searchQuery?: string,
   page: number = 1,
-  limit: number = 10
+  limit: number = 50
 ) {
   return useQuery({
     queryKey: leadQueryKeys.paginatedList(searchQuery, page, limit),
