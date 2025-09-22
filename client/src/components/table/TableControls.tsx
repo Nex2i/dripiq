@@ -105,7 +105,7 @@ export function TableControls({
           }}
           className="border border-gray-300 rounded px-2 py-1 text-sm"
         >
-          {[10, 25, 50, 100, 200, 300, 400, 500].map((pageSize) => (
+          {[50, 100, 200, 300, 400, 500].map((pageSize) => (
             <option key={pageSize} value={pageSize}>
               {pageSize}
             </option>

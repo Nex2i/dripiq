@@ -44,7 +44,7 @@ const LeadsPage: React.FC = () => {
     React.useState<VisibilityState>({})
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 50,
   })
   const [assigningOwner, setAssigningOwner] = React.useState<string | null>(
     null,
