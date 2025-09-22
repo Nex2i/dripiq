@@ -36,8 +36,14 @@ export class MetaTagManager {
   /**
    * Update a meta tag
    */
-  private updateMetaTag(name: string, content: string | null, property = false) {
-    const selector = property ? `meta[property="${name}"]` : `meta[name="${name}"]`
+  private updateMetaTag(
+    name: string,
+    content: string | null,
+    property = false,
+  ) {
+    const selector = property
+      ? `meta[property="${name}"]`
+      : `meta[name="${name}"]`
     const element = document.querySelector(selector) as HTMLMetaElement
 
     if (element) {
@@ -119,7 +125,8 @@ export class MetaTagManager {
 
     this.setLeadMetaTags({
       title: 'dripIq - AI-Powered Sales Re-engagement Platform',
-      description: 'dripIq - Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform.',
+      description:
+        'dripIq - Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform.',
       image: imageUrl,
       url: appUrl + '/',
       siteName: 'dripIq',

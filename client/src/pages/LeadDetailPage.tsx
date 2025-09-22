@@ -71,12 +71,14 @@ const LeadDetailPage: React.FC = () => {
   useEffect(() => {
     if (lead) {
       // Use environment-appropriate fallback image URL
-      const appUrl = import.meta.env.VITE_APP_URL || 'https://dripiq.ai'
+      const appUrl = import.meta.env.VITE_APP_URL || 'https://app.dripiq.ai'
       const fallbackImage = `${appUrl}/android-chrome-512x512.png`
 
       metaTagManager.setLeadMetaTags({
         title: `${lead.name} - Lead Details | dripIq`,
-        description: lead.summary || `Lead information for ${lead.name}${lead.url ? ` from ${lead.url}` : ''}`,
+        description:
+          lead.summary ||
+          `Lead information for ${lead.name}${lead.url ? ` from ${lead.url}` : ''}`,
         image: lead.logo || fallbackImage,
         url: window.location.href,
         siteName: 'dripIq',
