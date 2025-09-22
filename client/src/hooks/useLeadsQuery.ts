@@ -18,10 +18,11 @@ export function useLeads(
   return useQuery({
     queryKey: leadQueryKeys.paginatedList(searchQuery, page, limit),
     queryFn: () => leadsService.getLeads(searchQuery, page, limit),
-    staleTime: 1000 * 60, // Consider data stale after 1 minute
-    refetchOnMount: 'always', // Always refetch when component mounts
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
+    gcTime: 1000 * 60 * 15, // Keep in cache for 15 minutes
+    refetchOnMount: false, // Don't refetch on mount unless data is stale
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
   })
 }
 
@@ -31,10 +32,11 @@ export function useLead(id: string) {
     queryKey: leadQueryKeys.detail(id),
     queryFn: () => leadsService.getLead(id),
     enabled: !!id,
-    staleTime: 1000 * 30, // Reduced stale time to 30 seconds for processing leads
-    refetchOnMount: 'always', // Always refetch when component mounts
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 1000 * 60 * 10, // Consider data stale after 10 minutes
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    refetchOnMount: false, // Don't refetch on mount unless data is stale
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
   })
 }
 
@@ -495,10 +497,11 @@ export function useUsers(page = 1, limit = 25) {
   return useQuery({
     queryKey: ['users', { page, limit }],
     queryFn: () => invitesService.getUsers(page, limit),
-    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 1000 * 60 * 10, // Consider data stale after 10 minutes
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    refetchOnMount: false, // Don't refetch on mount unless data is stale
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect
   })
 }
 
