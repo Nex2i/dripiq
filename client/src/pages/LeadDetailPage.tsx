@@ -171,16 +171,24 @@ const LeadDetailPage: React.FC = () => {
       { id: lead.id, data: changedFields },
       {
         onSuccess: () => {
-          setIsEditing(false)
+          // Set success message immediately
           setUpdateMessage('Lead updated successfully')
-          // Scroll to top after switching back to view mode
+          
+          // Small delay to ensure React Query cache is updated, then switch to view mode
           setTimeout(() => {
-            window.scrollTo({
-              top: 0,
-              left: 0,
-              behavior: 'smooth'
-            })
-          }, 100)
+            setIsEditing(false)
+            
+            // Scroll to top after switching back to view mode
+            setTimeout(() => {
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'smooth'
+              })
+            }, 100)
+          }, 50)
+          
+          // Clear success message after 3 seconds
           setTimeout(() => setUpdateMessage(null), 3000)
         },
         onError: (error) => {
