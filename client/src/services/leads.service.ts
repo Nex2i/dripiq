@@ -23,6 +23,13 @@ export interface UpdateLeadData {
   name?: string
   url?: string
   status?: string
+  summary?: string
+  products?: string[]
+  services?: string[]
+  differentiators?: string[]
+  targetMarket?: string
+  tone?: string
+  brandColors?: string[]
 }
 
 export interface BatchCreateLeadData {
