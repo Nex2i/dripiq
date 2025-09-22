@@ -70,10 +70,16 @@ const LeadDetailPage: React.FC = () => {
   // Update meta tags when lead data is loaded
   useEffect(() => {
     if (lead) {
+      // Use environment-appropriate fallback image URL
+      const isProduction = import.meta.env.VITE_API_BASE_URL?.includes('dripiq.ai')
+      const fallbackImage = isProduction
+        ? 'https://dripiq.ai/android-chrome-512x512.png'
+        : '/android-chrome-512x512.png'
+
       metaTagManager.setLeadMetaTags({
         title: `${lead.name} - Lead Details | dripIq`,
         description: lead.summary || `Lead information for ${lead.name}${lead.url ? ` from ${lead.url}` : ''}`,
-        image: lead.logo || 'https://dripiq.ai/android-chrome-512x512.png',
+        image: lead.logo || fallbackImage,
         url: window.location.href,
         siteName: 'dripIq',
       })

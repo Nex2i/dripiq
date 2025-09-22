@@ -113,10 +113,16 @@ export class MetaTagManager {
    * Set generic app meta tags
    */
   setDefaultMetaTags() {
+    // Use environment-appropriate image URL
+    const isProduction = import.meta.env.VITE_API_BASE_URL?.includes('dripiq.ai')
+    const imageUrl = isProduction
+      ? 'https://dripiq.ai/android-chrome-512x512.png'
+      : '/android-chrome-512x512.png'
+
     this.setLeadMetaTags({
       title: 'dripIq - AI-Powered Sales Re-engagement Platform',
       description: 'dripIq - Automated, intelligent follow-up for your lost leads. AI-powered Salesforce re-engagement platform.',
-      image: 'https://dripiq.ai/android-chrome-512x512.png',
+      image: imageUrl,
       url: 'https://dripiq.ai/',
       siteName: 'dripIq',
     })
