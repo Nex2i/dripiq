@@ -19,6 +19,7 @@ import {
   bulkDeleteLeads,
   getLeadById,
   assignLeadOwner,
+  checkUrlExists,
 } from '../modules/lead.service';
 import {
   getLeadProducts,
@@ -27,7 +28,6 @@ import {
 } from '../modules/leadProduct.service';
 import { NewLead } from '../db/schema';
 import { AuthenticatedRequest } from '../plugins/authentication.plugin';
-import { leadRepository } from '../repositories';
 
 // Import all lead schemas
 import {
@@ -156,27 +156,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           return;
         }
 
-        // Clean the URL for comparison
-        const cleanedUrl = url.trim().cleanWebsiteUrl();
+        // Use service method to check URL existence
+        const result = await checkUrlExists(authenticatedRequest.tenantId, url);
 
-        // Check if lead exists with this URL
-        const existingLeads = await leadRepository.findWithSearch(authenticatedRequest.tenantId, { searchQuery: cleanedUrl });
-        const existingLead = existingLeads.find((lead: any) => lead.url === cleanedUrl);
-
-        if (existingLead) {
-          reply.send({
-            exists: true,
-            lead: {
-              id: existingLead.id,
-              name: existingLead.name,
-              url: existingLead.url,
-            },
-          });
-        } else {
-          reply.send({
-            exists: false,
-          });
-        }
+        reply.send(result);
       } catch (error: any) {
         logger.error(`Error checking URL existence: ${error.message}`);
         reply.status(500).send({
