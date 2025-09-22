@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import {
   useLead,
@@ -7,10 +7,7 @@ import {
 } from '../hooks/useLeadsQuery'
 import {
   ArrowLeft,
-  Edit,
-  Globe,
   Users,
-  RefreshCw,
   Info,
   Palette,
   Brain,
@@ -19,15 +16,16 @@ import {
 } from 'lucide-react'
 import VendorFitModal from '../components/VendorFitModal'
 import Tabs from '../components/Tabs'
-import Tooltip from '../components/Tooltip'
 import ContactsTab from '../components/tabs/ContactsTab'
 import AIDetailsTab from '../components/tabs/AIDetailsTab'
 import BrandingTab from '../components/tabs/BrandingTab'
 import LeadDetailsTab from '../components/tabs/LeadDetailsTab'
 import ProductsTab from '../components/tabs/ProductsTab'
-import LeadStatusBadges from '../components/LeadStatusBadges'
 import LeadProcessingBanner from '../components/LeadProcessingBanner'
-import { HOME_URL } from '../constants/navigation'
+import LeadViewHeader from '../components/LeadViewHeader'
+import LeadEditForm from '../components/LeadEditForm'
+import { LEADS_URL } from '../constants/navigation'
+import type { UpdateLeadData } from '../services/leads.service'
 
 const LeadDetailPage: React.FC = () => {
   const navigate = useNavigate()
@@ -41,8 +39,125 @@ const LeadDetailPage: React.FC = () => {
   const [vendorFitData, setVendorFitData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('contacts')
 
+  // Edit state management
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState<UpdateLeadData>({})
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+
   const handleBack = () => {
-    navigate({ to: HOME_URL })
+    navigate({ to: LEADS_URL })
+  }
+
+  // Initialize edit form when lead data is available
+  useEffect(() => {
+    if (lead && !isEditing) {
+      setEditForm({
+        name: lead.name || '',
+        url: lead.url || '',
+        status: lead.status || '',
+        summary: lead.summary || '',
+        products: lead.products || [],
+        services: lead.services || [],
+        differentiators: lead.differentiators || [],
+        targetMarket: lead.targetMarket || '',
+        tone: lead.tone || '',
+        brandColors: lead.brandColors || [],
+      })
+    }
+  }, [lead, isEditing])
+
+  const handleStartEdit = () => {
+    if (lead) {
+      setEditForm({
+        name: lead.name || '',
+        url: lead.url || '',
+        status: lead.status || '',
+        summary: lead.summary || '',
+        products: lead.products || [],
+        services: lead.services || [],
+        differentiators: lead.differentiators || [],
+        targetMarket: lead.targetMarket || '',
+        tone: lead.tone || '',
+        brandColors: lead.brandColors || [],
+      })
+      setUpdateMessage(null)
+      setIsEditing(true)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditForm({})
+    setUpdateMessage(null)
+    // Scroll to top after switching back to view mode
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth',
+      })
+    }, 100)
+  }
+
+  const handleSaveSuccess = () => {
+    // Set success message immediately
+    setUpdateMessage('Lead updated successfully')
+
+    // Small delay to ensure React Query cache is updated, then switch to view mode
+    setTimeout(() => {
+      setIsEditing(false)
+
+      // Scroll to top after switching back to view mode
+      setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'smooth',
+        })
+      }, 100)
+    }, 50)
+
+    // Clear success message after 3 seconds
+    setTimeout(() => setUpdateMessage(null), 3000)
+  }
+
+  const handleSaveError = (message: string) => {
+    setUpdateMessage(message)
+    setTimeout(() => setUpdateMessage(null), 3000)
+  }
+
+  // Array field helpers
+  const addArrayItem = (field: keyof UpdateLeadData, value: string) => {
+    if (!value.trim()) return
+    const currentArray = (editForm[field] as string[]) || []
+    if (!currentArray.includes(value.trim())) {
+      setEditForm((prev) => ({
+        ...prev,
+        [field]: [...currentArray, value.trim()],
+      }))
+    }
+  }
+
+  const removeArrayItem = (field: keyof UpdateLeadData, index: number) => {
+    const currentArray = (editForm[field] as string[]) || []
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: currentArray.filter((_, i) => i !== index),
+    }))
+  }
+
+  const updateArrayItem = (
+    field: keyof UpdateLeadData,
+    index: number,
+    value: string,
+  ) => {
+    const currentArray = (editForm[field] as string[]) || []
+    const newArray = [...currentArray]
+    newArray[index] = value
+    setEditForm((prev) => ({
+      ...prev,
+      [field]: newArray,
+    }))
   }
 
   const handleResync = () => {
@@ -260,76 +375,29 @@ const LeadDetailPage: React.FC = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Leads
           </button>
-          <div className="flex justify-between items-start">
-            <div className="flex items-center space-x-4">
-              <div>
-                <div className="flex items-center space-x-3">
-                  <Tooltip
-                    content={
-                      <div className="text-left">
-                        <div>Created: {formatDate(lead.createdAt)}</div>
-                        <div>Updated: {formatDate(lead.updatedAt)}</div>
-                      </div>
-                    }
-                  >
-                    <h1 className="text-3xl font-bold text-gray-900 cursor-help">
-                      {lead.name}
-                    </h1>
-                  </Tooltip>
-                  {lead.url && (
-                    <a
-                      href={lead.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                    >
-                      <Globe className="h-5 w-5 mr-1" />
-                      <span className="text-lg">
-                        {lead.url
-                          .replace(/^https?:\/\//, '')
-                          .replace(/\/$/, '')}
-                      </span>
-                    </a>
-                  )}
-                </div>
-                <div className="mt-3">
-                  <LeadStatusBadges statuses={lead.statuses || []} />
-                </div>
-                <p className="mt-2 text-gray-600">Lead Details</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleResync}
-                disabled={resyncLead.isPending}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 mr-2 ${resyncLead.isPending ? 'animate-spin' : ''}`}
-                />
-                {resyncLead.isPending ? 'Resyncing...' : 'Resync'}
-              </button>
-              <button
-                onClick={handleVendorFit}
-                disabled={vendorFitLead.isPending}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Users
-                  className={`h-4 w-4 mr-2 ${vendorFitLead.isPending ? 'animate-spin' : ''}`}
-                />
-                {vendorFitLead.isPending ? 'Running...' : 'Vendor Fit'}
-              </button>
-              <button
-                onClick={() => {
-                  console.log('Edit lead:', lead.id)
-                }}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </button>
-            </div>
-          </div>
+          {!isEditing ? (
+            <LeadViewHeader
+              lead={lead}
+              formatDate={formatDate}
+              onResync={handleResync}
+              onVendorFit={handleVendorFit}
+              onStartEdit={handleStartEdit}
+              isResyncing={resyncLead.isPending}
+              isVendorFitting={vendorFitLead.isPending}
+            />
+          ) : (
+            <LeadEditForm
+              lead={lead}
+              editForm={editForm}
+              setEditForm={setEditForm}
+              onSuccess={handleSaveSuccess}
+              onError={handleSaveError}
+              onCancel={handleCancelEdit}
+              addArrayItem={addArrayItem}
+              removeArrayItem={removeArrayItem}
+              updateArrayItem={updateArrayItem}
+            />
+          )}
         </div>
 
         {/* Processing Status Banner */}
@@ -363,6 +431,20 @@ const LeadDetailPage: React.FC = () => {
             }`}
           >
             <p className="text-sm font-medium">{vendorFitMessage}</p>
+          </div>
+        )}
+
+        {updateMessage && (
+          <div
+            className={`mb-6 p-4 rounded-lg border ${
+              updateMessage.includes('Failed') ||
+              updateMessage.includes('Error') ||
+              updateMessage.includes('No changes')
+                ? 'bg-red-50 border-red-200 text-red-700'
+                : 'bg-green-50 border-green-200 text-green-700'
+            }`}
+          >
+            <p className="text-sm font-medium">{updateMessage}</p>
           </div>
         )}
 

@@ -44,6 +44,7 @@ export class LeadTransactionRepository {
     return await db.transaction(async (tx) => {
       // Create the lead
       const leadData = { ...data.lead, tenantId };
+      leadData.url = leadData.url?.cleanWebsiteUrl();
       const [createdLead] = await tx.insert(leads).values(leadData).returning();
 
       if (!createdLead) {

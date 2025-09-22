@@ -431,7 +431,10 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
           request.body as Partial<Omit<NewLead, 'tenantId'>>
         );
 
-        reply.send(updatedLead);
+        reply.send({
+          message: 'Lead updated successfully',
+          lead: updatedLead,
+        });
       } catch (error: any) {
         logger.error(`Error updating lead: ${error.message}`);
         reply.status(500).send({
