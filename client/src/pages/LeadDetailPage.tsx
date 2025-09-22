@@ -94,6 +94,14 @@ const LeadDetailPage: React.FC = () => {
     setEditForm({})
     setValidationErrors({})
     setUpdateMessage(null)
+    // Scroll to top after switching back to view mode
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      })
+    }, 100)
   }
 
   const validateForm = (): boolean => {
@@ -165,6 +173,14 @@ const LeadDetailPage: React.FC = () => {
         onSuccess: () => {
           setIsEditing(false)
           setUpdateMessage('Lead updated successfully')
+          // Scroll to top after switching back to view mode
+          setTimeout(() => {
+            window.scrollTo({
+              top: 0,
+              left: 0,
+              behavior: 'smooth'
+            })
+          }, 100)
           setTimeout(() => setUpdateMessage(null), 3000)
         },
         onError: (error) => {
