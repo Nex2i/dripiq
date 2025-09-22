@@ -165,7 +165,9 @@ describe('urlUtils', () => {
       expect(cleanWebsiteUrl('http://example.com')).toBe(
         'https://www.example.com',
       )
-      expect(cleanWebsiteUrl('http://www.test.org')).toBe('https://www.test.org')
+      expect(cleanWebsiteUrl('http://www.test.org')).toBe(
+        'https://www.test.org',
+      )
     })
 
     it('should add www when missing', () => {
@@ -824,7 +826,9 @@ https://another-valid.org`
     })
 
     it('should handle empty URL input', () => {
-      const leads = [{ id: '1', url: 'https://www.example.com', name: 'Example Corp' }]
+      const leads = [
+        { id: '1', url: 'https://www.example.com', name: 'Example Corp' },
+      ]
 
       const result = checkUrlDuplicate('', leads)
 

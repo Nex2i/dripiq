@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useCreateLead, useUsers, useCheckUrlExists } from '../hooks/useLeadsQuery'
+import {
+  useCreateLead,
+  useUsers,
+  useCheckUrlExists,
+} from '../hooks/useLeadsQuery'
 import type { CreateLeadData } from '../services/leads.service'
 import { Plus, X, User, Crown, Loader2 } from 'lucide-react'
 import { HOME_URL } from '../constants/navigation'
@@ -126,7 +130,9 @@ const NewLeadPage: React.FC = () => {
       onError: (err: any) => {
         // Handle duplicate URL error
         if (err?.error === 'Duplicate URL' && err?.existingLeadId) {
-          setError(`A lead with this URL already exists. Please check the existing lead or try a different URL.`)
+          setError(
+            `A lead with this URL already exists. Please check the existing lead or try a different URL.`,
+          )
           // Optionally, you could navigate to the existing lead here
           // navigate({ to: `/leads/${err.existingLeadId}` })
         } else {
@@ -206,12 +212,16 @@ const NewLeadPage: React.FC = () => {
                   />
                   {checkUrlExistsMutation.isPending && (
                     <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-700">Checking for existing leads...</p>
+                      <p className="text-sm text-blue-700">
+                        Checking for existing leads...
+                      </p>
                     </div>
                   )}
                   {urlError && (
                     <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-700 mb-2">{urlError.message}</p>
+                      <p className="text-sm text-yellow-700 mb-2">
+                        {urlError.message}
+                      </p>
                       {urlError.existingLead && (
                         <a
                           href={`/leads/${urlError.existingLead.id}`}

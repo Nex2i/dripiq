@@ -110,7 +110,8 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
     schema: {
       tags: ['Leads'],
       summary: 'Check if URL exists',
-      description: 'Check if a lead with the given URL already exists for the tenant (tenant-scoped)',
+      description:
+        'Check if a lead with the given URL already exists for the tenant (tenant-scoped)',
       querystring: {
         type: 'object',
         properties: {

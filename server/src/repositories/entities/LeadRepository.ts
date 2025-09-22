@@ -163,6 +163,7 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
    * Optimized method for URL existence checking
    */
   async findByUrlForTenant(tenantId: string, url: string): Promise<Lead | null> {
+    url = url.cleanWebsiteUrl();
     const lead = await this.db
       .select()
       .from(this.table)

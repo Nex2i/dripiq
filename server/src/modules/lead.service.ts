@@ -669,7 +669,9 @@ export const checkUrlExists = async (
 
   if (existingLead) {
     if (throwOnExists) {
-      throw new Error(`Lead with URL "${cleanedUrl}" already exists for this tenant. Existing lead ID: ${existingLead.id}`);
+      throw new Error(
+        `Lead with URL "${cleanedUrl}" already exists for this tenant. Existing lead ID: ${existingLead.id}`
+      );
     }
 
     return {

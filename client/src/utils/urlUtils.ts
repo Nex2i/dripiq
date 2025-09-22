@@ -108,7 +108,10 @@ export const isValidUrl = (url: string): boolean => {
 export const checkUrlDuplicate = (
   url: string,
   leads: Array<{ id: string; url: string; name: string }>,
-): { isDuplicate: boolean; existingLead?: { id: string; url: string; name: string } } => {
+): {
+  isDuplicate: boolean
+  existingLead?: { id: string; url: string; name: string }
+} => {
   if (!url.trim()) {
     return { isDuplicate: false }
   }

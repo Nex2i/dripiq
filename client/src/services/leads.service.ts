@@ -532,21 +532,24 @@ class LeadsService {
 
   // Check if URL already exists for the tenant
   async checkUrlExists(url: string): Promise<{
-    exists: boolean;
+    exists: boolean
     lead?: {
-      id: string;
-      name: string;
-      url: string;
-    };
+      id: string
+      name: string
+      url: string
+    }
   }> {
     const authHeaders = await authService.getAuthHeaders()
 
-    const response = await fetch(`${this.baseUrl}/leads/check-url?url=${encodeURIComponent(url)}`, {
-      method: 'GET',
-      headers: {
-        ...authHeaders,
+    const response = await fetch(
+      `${this.baseUrl}/leads/check-url?url=${encodeURIComponent(url)}`,
+      {
+        method: 'GET',
+        headers: {
+          ...authHeaders,
+        },
       },
-    })
+    )
 
     if (!response.ok) {
       const errorData = await response.json()
