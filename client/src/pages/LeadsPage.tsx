@@ -141,7 +141,21 @@ const LeadsPage: React.FC = () => {
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      setPagination((prev) => {
+        const newPagination = typeof updater === 'function' ? updater(prev) : updater
+
+        // If page size changed, reset to page 1
+        if (newPagination.pageSize !== prev.pageSize) {
+          return {
+            pageIndex: 0, // Reset to first page
+            pageSize: newPagination.pageSize,
+          }
+        }
+
+        return newPagination
+      })
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
