@@ -43,12 +43,12 @@ export function TablePagination({ table }: TablePaginationProps) {
               {Math.min(
                 (table.getState().pagination.pageIndex + 1) *
                   table.getState().pagination.pageSize,
-                table.getFilteredRowModel().rows.length,
+                table.getRowCount(),
               )}
             </span>{' '}
             of{' '}
             <span className="font-medium">
-              {table.getFilteredRowModel().rows.length}
+              {table.getRowCount()}
             </span>{' '}
             results
           </p>

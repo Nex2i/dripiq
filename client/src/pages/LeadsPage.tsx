@@ -44,7 +44,7 @@ const LeadsPage: React.FC = () => {
     React.useState<VisibilityState>({})
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 50,
   })
   const [assigningOwner, setAssigningOwner] = React.useState<string | null>(
     null,
@@ -53,7 +53,14 @@ const LeadsPage: React.FC = () => {
   const [isBatchCreateModalOpen, setIsBatchCreateModalOpen] =
     React.useState(false)
 
-  const { data: leads = [], isLoading, error, refetch } = useLeads(searchQuery)
+  const { data, isLoading, error, refetch } = useLeads(
+    searchQuery,
+    pagination.pageIndex + 1, // API uses 1-based pagination
+    pagination.pageSize
+  )
+
+  const leads = data?.leads || []
+  const totalCount = data?.pagination?.total || 0
   const {
     data: usersResponse,
     isLoading: usersLoading,
@@ -134,7 +141,21 @@ const LeadsPage: React.FC = () => {
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      setPagination((prev) => {
+        const newPagination = typeof updater === 'function' ? updater(prev) : updater
+
+        // If page size changed, reset to page 1
+        if (newPagination.pageSize !== prev.pageSize) {
+          return {
+            pageIndex: 0, // Reset to first page
+            pageSize: newPagination.pageSize,
+          }
+        }
+
+        return newPagination
+      })
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -147,6 +168,10 @@ const LeadsPage: React.FC = () => {
       fuzzy: fuzzyFilter,
     },
     globalFilterFn: fuzzyFilter,
+    // Enable server-side pagination
+    manualPagination: true,
+    rowCount: totalCount,
+    pageCount: Math.ceil(totalCount / pagination.pageSize),
   })
 
   const selectedRowCount = Object.keys(rowSelection).filter(
