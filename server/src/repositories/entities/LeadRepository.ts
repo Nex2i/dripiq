@@ -159,6 +159,20 @@ export class LeadRepository extends TenantAwareRepository<typeof leads, Lead, Ne
   }
 
   /**
+   * Find lead by exact URL match for a specific tenant
+   * Optimized method for URL existence checking
+   */
+  async findByUrlForTenant(tenantId: string, url: string): Promise<Lead | null> {
+    const lead = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), eq(this.table.url, url)))
+      .limit(1);
+
+    return lead[0] || null;
+  }
+
+  /**
    * Assign lead to owner
    */
   async assignToOwnerForTenant(

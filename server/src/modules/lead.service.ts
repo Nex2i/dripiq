@@ -559,8 +559,7 @@ export const createLeadsBatch = async (tenantId: string, websites: string[], own
       }
 
       // Check if a lead with this domain already exists for this tenant
-      // Check both the domain and common URL variations
-      const existingLeadResult = await checkUrlExists(tenantId, domain, { checkVariations: true });
+      const existingLeadResult = await checkUrlExists(tenantId, domain);
       if (existingLeadResult.exists && existingLeadResult.lead) {
         results.push({
           url: domain,
@@ -651,17 +650,12 @@ export const checkUrlExists = async (
   url: string,
   options: {
     throwOnExists?: boolean;
-    checkVariations?: boolean;
   } = {}
 ): Promise<{
   exists: boolean;
-  lead?: {
-    id: string;
-    name: string;
-    url: string;
-  };
+  lead?: Lead;
 }> => {
-  const { throwOnExists = false, checkVariations = false } = options;
+  const { throwOnExists = false } = options;
 
   if (!url || !url.trim()) {
     return { exists: false };
@@ -670,32 +664,8 @@ export const checkUrlExists = async (
   // Clean the URL for comparison
   const cleanedUrl = url.trim().cleanWebsiteUrl();
 
-  // Check if lead exists with this URL
-  const existingLeads = await leadRepository.findWithSearch(tenantId, { searchQuery: cleanedUrl });
-  let existingLead = existingLeads.find((lead: any) => lead.url === cleanedUrl);
-
-  // If not found and checkVariations is enabled, check common URL variations
-  if (!existingLead && checkVariations) {
-    const domain = cleanedUrl.replace(/^https?:\/\/(www\.)?/, '');
-    const variations = [
-      domain,
-      `https://${domain}`,
-      `https://www.${domain}`,
-      `http://${domain}`,
-      `http://www.${domain}`,
-    ];
-
-    for (const variation of variations) {
-      const lead = existingLeads.find((lead: any) =>
-        lead.url === variation ||
-        lead.url.includes(domain)
-      );
-      if (lead) {
-        existingLead = lead;
-        break;
-      }
-    }
-  }
+  // Use optimized repository method to check URL existence
+  const existingLead = await leadRepository.findByUrlForTenant(tenantId, cleanedUrl);
 
   if (existingLead) {
     if (throwOnExists) {
@@ -704,11 +674,7 @@ export const checkUrlExists = async (
 
     return {
       exists: true,
-      lead: {
-        id: existingLead.id,
-        name: existingLead.name,
-        url: existingLead.url,
-      },
+      lead: existingLead,
     };
   } else {
     return {
