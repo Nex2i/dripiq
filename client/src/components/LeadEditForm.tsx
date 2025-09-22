@@ -182,9 +182,39 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
   removeArrayItem,
   updateArrayItem,
 }) => {
+  // Shared button components for reuse
+  const SaveButton = () => (
+    <button
+      onClick={onSave}
+      disabled={isSaving}
+      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <Save className={`h-4 w-4 mr-2 ${isSaving ? 'animate-spin' : ''}`} />
+      {isSaving ? 'Saving...' : 'Save Changes'}
+    </button>
+  )
+
+  const CancelButton = () => (
+    <button
+      onClick={onCancel}
+      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
+    >
+      <X className="h-4 w-4 mr-2" />
+      Cancel
+    </button>
+  )
+
   return (
     <div className="w-full">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Lead</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Edit Lead</h1>
+        {/* Top Action Buttons */}
+        <div className="flex items-center space-x-3">
+          <CancelButton />
+          <SaveButton />
+        </div>
+      </div>
+      
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Basic Information */}
@@ -325,23 +355,10 @@ const LeadEditForm: React.FC<LeadEditFormProps> = ({
           </div>
         </div>
 
-        {/* Edit Form Actions */}
+        {/* Bottom Action Buttons */}
         <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
-          <button
-            onClick={onCancel}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </button>
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className={`h-4 w-4 mr-2 ${isSaving ? 'animate-spin' : ''}`} />
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
+          <CancelButton />
+          <SaveButton />
         </div>
       </div>
     </div>
