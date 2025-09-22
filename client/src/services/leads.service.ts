@@ -205,7 +205,8 @@ class LeadsService {
       throw new Error(errorData.message || 'Failed to update lead')
     }
 
-    const updatedLead = await response.json()
+    const result = await response.json()
+    const updatedLead = result.lead || result // Handle both new format { message, lead } and legacy format
 
     // Update cache after successful update if queryClient is available
     if (this.queryClient) {
