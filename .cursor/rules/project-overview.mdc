@@ -1,15 +1,137 @@
 ---
-description: Project overview, patterns for the project
+description: Project engineering rules. Clean design patterns. SOLID. Uncle Bob practices.
 globs:
 alwaysApply: true
----
+-----------------
 
-This project is a monorepo with the client and backend. 
+# Scope
 
-Before starting any work always return back first your plan before writing or commiting any code.
+Monorepo with client and backend. Apply these rules to all code, tests, scripts, and infra.
 
-Before pushing a new commit run the scripts inside `ci.yml`. If any fail fix the issue, if it is a lint run the `lint --fix` command for the linter to fix for you.
+# Workflow
 
-Avoid at all costs adding comments saying that a new code block is new or when removing dont include a comment saying code used to be there. Avoid status comments of new, updated, removed.
+* **Plan first.** Before writing or committing code, post a short plan: problem, options, chosen approach, risks, test plan.
+* **CI gate.** Before pushing, run all scripts in `ci.yml`. Fix failures. Use `lint --fix` for autofixable issues.
+* **No status comments.** Do not add comments like “new/updated/removed”. Let VCS show history.
+* **Imports.** All imports at top of file. No conditional or hidden imports.
+* **Lazy loading.** Do not lazy-load components outside `@/landing`.
 
-Avoid importing/requiring anything not at the top of the file. Do not lazy load components outside of the @/landing project.
+# Core Principles
+
+* **SOLID**
+
+  * **S**ingle Responsibility: one reason to change per module/class/function.
+  * **O**pen/Closed: extend via new code, avoid modifying stable abstractions.
+  * **L**iskov Substitution: derived implementations must honor base contracts.
+  * **I**nterface Segregation: small, client-focused interfaces. No "fat" types.
+  * **D**ependency Inversion: depend on abstractions, not concretions. Use ports/adapters.
+* **Clean Architecture**
+
+  * Domain/business rules are framework-agnostic.
+  * Direction of dependencies: outer → inner via interfaces.
+  * Use the **Ports & Adapters** pattern at service boundaries.
+* **Boy Scout Rule.** Leave code cleaner than you found it.
+* **YAGNI and KISS.** Ship minimal viable design. Avoid speculative generality.
+
+# Project Structure (Monorepo)
+
+* **Packages**
+
+  * `client`: UI. Framework-specific.
+  * `backend`: API + workers.
+  * `landing`: Landing page optimized for SEO
+* **Boundaries**
+
+  * Domain never imports adapters or frameworks.
+  * Adapters implement domain-defined ports.
+  * Use dependency injection to wire graphs at the app layer.
+
+# Code Organization
+
+* **Modules** are small and cohesive. Prefer file-per-concept.
+* **Public API** surface minimal. Export only what callers need.
+* **Naming** is precise and unambiguous. Avoid abbreviations.
+* **Files** max \~600 lines; split when larger. There are exceptions that you can make but try to keep to the rule. If there is a file that has grown too large decide if its worth splitting up into 2 or more smaller files.
+* **Functions** max \~30–40 lines. Extract helpers when needed.
+* **Classes** encapsulate invariants and enforce them in constructors/factories.
+
+# Patterns: Prefer / Avoid
+
+* **Prefer**: Composition, Strategy, Template Method, Factory, Builder (only for complex invariants), Repository (as port), CQRS where useful, Decorator for cross-cutting concerns.
+* **Avoid**: Global singletons, Service Locator, God objects, deep inheritance, anemic domain models, primitive obsession.
+
+# Types and Contracts
+
+* Use strong typing everywhere. Model domain invariants with types.
+* Validate all external inputs at boundaries (HTTP, queue, CLI, DB). Fail fast with typed errors.
+* Define DTOs separate from domain entities. Map explicitly.
+* Keep interfaces small and behavioral. Document pre/postconditions.
+
+# Error Handling & Logging
+
+* No `throw` of raw strings. Use typed error classes with context.
+* Never swallow errors. Either handle or propagate.
+* Log at boundaries only. Use structured logs. Avoid noisy logs inside domain.
+* Include correlation IDs for requests and jobs.
+
+# Testing
+
+* **Pyramid**: unit > integration > e2e.
+* **Unit tests** live with code. No mocks in domain; inject fakes at ports.
+* **Integration tests** cover adapters against real services or containers when feasible.
+* **E2E** covers critical flows. Keep deterministic.
+* Tests must state intent. Arrange–Act–Assert. One behavior per test.
+* Coverage: strive for 80%+ in domain; target critical paths elsewhere.
+
+# UI (Client) Rules
+
+* Use functional components with hooks. No class components.
+* State management: prefer local state, lift only when needed. Keep global state minimal.
+* Presentational vs container split when complexity grows.
+* Components follow SRP. One component per file. Co-locate styles and tests.
+* Accessibility: semantic HTML, labeled controls, keyboard navigation, color contrast checks.
+* Performance: memoization only with evidence. Avoid premature optimization.
+
+# API & Backend Rules
+
+* Handlers thin. Delegate to use-cases in domain.
+* Explicit request/response schemas. Reject invalid inputs.
+* Idempotency for mutation endpoints where applicable.
+* Database access only in repositories/adapters. No query logic in handlers or domain.
+* Background jobs: retries with backoff, dead-letter queues, idempotent handlers.
+
+# Security
+
+* Validate all inputs. Escape all outputs where relevant.
+* Principle of least privilege in code and infra.
+* Never log secrets or PII. Use secret stores, not env files in repo.
+* Keep dependencies patched. Run vulnerability scans in CI.
+
+# Git Hygiene
+
+* Branch naming: `feat/…`, `fix/…`, `chore/…`, `refactor/…`.
+* Commit messages: imperative mood, concise summary, optional body with rationale.
+* No dead code. Remove unused files and exports.
+* Do not commit commented-out code.
+
+# Linting & Formatting
+
+* Lint and format must be deterministic. No local overrides.
+* Prefer rule fixes over ignore comments. If ignoring is necessary, justify inline.
+
+# Review Checklist (submitter)
+
+* Plan posted and linked in PR description.
+* Scope is single-purpose and reasonably sized.
+* Tests added or updated. CI is green locally.
+* Public API changes documented.
+* Security, performance, and error paths considered.
+
+# Exceptions
+
+* Deviations require a short written rationale and a time-boxed follow-up to align with rules.
+
+# Enforcement
+
+* CI enforces lint, type, test, security checks. PRs that fail do not merge.
+* Leads can block merges that violate boundaries or principles.
