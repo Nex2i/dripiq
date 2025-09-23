@@ -38,11 +38,7 @@ export default function ConfirmationPage() {
 
   return (
     <AuthLayout>
-      <FlowInformation
-        flowContent={flowContent}
-        flowType={flowType}
-        confirmationUrl={confirmationUrl}
-      />
+      <FlowInformation flowContent={flowContent} />
 
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
         <div className="space-y-6">
