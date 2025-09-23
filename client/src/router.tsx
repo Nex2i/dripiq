@@ -26,6 +26,7 @@ import BillingPage from './pages/settings/BillingPage'
 import OrganizationPage from './pages/settings/OrganizationPage'
 import ProductsPage from './pages/settings/ProductsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
 import NotFoundPage from './pages/NotFoundPage'
 import UserEditPage from './pages/users/UserEditPage'
 import UnsubscribePage from './pages/UnsubscribePage'
@@ -94,6 +95,13 @@ const privacyPolicyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/privacy-policy',
   component: () => <PrivacyPolicyPage />,
+})
+
+// Terms of service route - public
+const termsOfServiceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/terms-of-service',
+  component: () => <TermsOfServicePage />,
 })
 
 // Unsubscribe success route - public
@@ -247,6 +255,7 @@ const routeTree = rootRoute.addChildren([
   confirmationRoute,
   setupPasswordRoute,
   privacyPolicyRoute,
+  termsOfServiceRoute,
   unsubscribeSuccessRoute,
   protectedRouteTree,
   authRouteTree,
