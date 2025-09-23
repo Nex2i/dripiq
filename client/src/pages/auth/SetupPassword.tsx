@@ -33,9 +33,19 @@ export default function SetupPassword() {
   const [otpToken, setOtpToken] = useState('')
   const [otpError, setOtpError] = useState('')
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [hasInitialAuthError, setHasInitialAuthError] = useState(false)
 
   // Check if user already has a valid session on component mount
   useEffect(() => {
+    // First, check if there are error parameters in the URL that indicate
+    // an expired/invalid token that should show the token entry form
+    const hasAuthError = checkForAuthErrors()
+    if (hasAuthError) {
+      setHasInitialAuthError(true)
+      setCurrentStep('token-entry')
+      return
+    }
+
     checkExistingSession()
   }, [])
 
@@ -45,11 +55,52 @@ export default function SetupPassword() {
     setOtpToken('')
     setOtpError('')
     setError('')
+    setHasInitialAuthError(false)
   }
 
   const resetToPasswordSetup = () => {
     setCurrentStep('password-setup')
     setError('')
+  }
+
+  // Check for authentication errors in URL parameters
+  const checkForAuthErrors = () => {
+    // Check for hash fragment errors (Supabase typically uses hash fragments for errors)
+    const hash = window.location.hash
+    const searchParams = new URLSearchParams(window.location.search)
+
+    // Common Supabase error patterns
+    const errorInHash = hash.includes('error=') || hash.includes('error_code=')
+    const errorInSearch =
+      searchParams.has('error') || searchParams.has('error_code')
+
+    // Specific error codes that indicate expired/invalid tokens
+    const errorCode = searchParams.get('error_code')
+    const hashErrorCode = hash.match(/error_code=([^&]+)/)?.[1]
+
+    const expiredTokenErrors = [
+      'otp_expired',
+      'access_denied',
+      'invalid_token',
+      'token_expired',
+      'invalid_request',
+    ]
+
+    if (errorInHash || errorInSearch) {
+      console.log('Auth error detected in URL:', {
+        hash,
+        searchParams: Object.fromEntries(searchParams),
+        errorCode,
+        hashErrorCode,
+      })
+    }
+
+    return (
+      errorInHash ||
+      errorInSearch ||
+      expiredTokenErrors.includes(errorCode || '') ||
+      expiredTokenErrors.includes(hashErrorCode || '')
+    )
   }
 
   // Check if user already has a valid session
@@ -117,6 +168,7 @@ export default function SetupPassword() {
       if (error) throw error
 
       if (data?.user) {
+        setHasInitialAuthError(false) // Reset the error state on successful verification
         setCurrentStep('password-setup')
       } else {
         throw new Error('No user returned from token verification')
@@ -268,9 +320,11 @@ export default function SetupPassword() {
                 Enter One-Time Passcode
               </h2>
               <p className="mt-2 text-center text-sm text-gray-600">
-                {isInvited
-                  ? 'We need to verify your identity. Please enter the one-time passcode from your invitation email.'
-                  : 'Please enter the one-time passcode from your password reset email.'}
+                {hasInitialAuthError
+                  ? 'Your previous link has expired. Please enter the one-time passcode from your email to continue.'
+                  : isInvited
+                    ? 'We need to verify your identity. Please enter the one-time passcode from your invitation email.'
+                    : 'Please enter the one-time passcode from your password reset email.'}
               </p>
             </div>
           </div>
