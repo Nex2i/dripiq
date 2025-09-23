@@ -4,6 +4,7 @@ import AuthLayout from '../../components/auth/AuthLayout'
 import FlowInformation from '../../components/auth/FlowInformation'
 import ErrorDisplay from '../../components/auth/ErrorDisplay'
 import ConfirmationButton from '../../components/auth/ConfirmationButton'
+import OtpInput from '../../components/auth/OtpInput'
 import { AuthFlowService } from '../../services/auth-flow.service'
 
 /**
@@ -12,25 +13,26 @@ import { AuthFlowService } from '../../services/auth-flow.service'
  */
 export default function ConfirmationPage() {
   const search = useSearch({ strict: false }) as any
-  const confirmationUrl = search?.confirmation_url
+  const email = search?.email
   const isInvited = search?.invited === 'true'
 
   const [error, setError] = useState('')
+  const [otp, setOtp] = useState('')
 
   // Use the service to determine flow type and get content
-  const flowType = AuthFlowService.getFlowType({ confirmationUrl, isInvited })
+  const flowType = AuthFlowService.getFlowType({ email, isInvited })
   const flowContent = AuthFlowService.getFlowContent(flowType)
 
   // Validate flow parameters
   useEffect(() => {
     const validationError = AuthFlowService.validateFlowParams({
-      confirmationUrl,
+      email,
       isInvited,
     })
     if (validationError) {
       setError(validationError)
     }
-  }, [confirmationUrl, isInvited])
+  }, [email, isInvited])
 
   const handleError = (errorMessage: string) => {
     setError(errorMessage)
@@ -44,12 +46,32 @@ export default function ConfirmationPage() {
         <div className="space-y-6">
           <ErrorDisplay error={error} />
 
-          <ConfirmationButton
-            confirmationUrl={confirmationUrl}
-            buttonText={flowContent.buttonText}
-            onError={handleError}
-            disabled={!!error}
-          />
+          {!error && (
+            <>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Verification Code
+                  </label>
+                  <OtpInput
+                    length={6}
+                    value={otp}
+                    onChange={setOtp}
+                    disabled={!!error}
+                  />
+                </div>
+              </div>
+
+              <ConfirmationButton
+                email={email}
+                otp={otp}
+                flowType={flowType}
+                buttonText={flowContent.buttonText}
+                onError={handleError}
+                disabled={!!error}
+              />
+            </>
+          )}
         </div>
       </div>
     </AuthLayout>

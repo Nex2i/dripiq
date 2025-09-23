@@ -11,7 +11,7 @@ export interface AuthFlowContent {
 }
 
 export interface AuthFlowParams {
-  confirmationUrl?: string
+  email?: string
   isInvited?: boolean
 }
 
@@ -21,17 +21,14 @@ export interface AuthFlowParams {
  */
 export class AuthFlowService {
   /**
-   * Determine the authentication flow type based on URL parameters
+   * Determine the authentication flow type based on parameters
    */
   static getFlowType(params: AuthFlowParams): AuthFlowType {
-    const { confirmationUrl, isInvited } = params
+    const { isInvited } = params
 
     if (isInvited) return 'new-user'
-    if (confirmationUrl && confirmationUrl.includes('recovery'))
-      return 'reset-password'
-    if (confirmationUrl && confirmationUrl.includes('invite')) return 'new-user'
 
-    // Default fallback
+    // Default fallback for password reset
     return 'reset-password'
   }
 
@@ -45,19 +42,19 @@ export class AuthFlowService {
           icon: UserPlus,
           title: 'Complete Your Account Setup',
           subtitle:
-            'Welcome to the team! Click the button below to set up your password and complete your account.',
-          buttonText: 'Set Up My Account',
+            'Welcome to the team! Enter the verification code from your email to set up your password.',
+          buttonText: 'Verify Code & Set Up Account',
           instructionText:
-            "You'll be redirected to complete your account setup securely.",
+            'Check your email for a 6-digit verification code.',
         }
       case 'reset-password':
         return {
           icon: Lock,
           title: 'Reset Your Password',
-          subtitle: 'Click the button below to securely reset your password.',
-          buttonText: 'Reset My Password',
+          subtitle: 'Enter the verification code from your email to reset your password.',
+          buttonText: 'Verify Code & Reset Password',
           instructionText:
-            "You'll be redirected to set your new password securely.",
+            'Check your email for a 6-digit verification code.',
         }
       default:
         throw new Error(`Unknown flow type: ${flowType}`)
@@ -68,10 +65,10 @@ export class AuthFlowService {
    * Validate that required parameters are present for the flow
    */
   static validateFlowParams(params: AuthFlowParams): string | null {
-    const { confirmationUrl } = params
+    const { email } = params
 
-    if (!confirmationUrl) {
-      return 'Missing confirmation URL. Please use the link from your email.'
+    if (!email) {
+      return 'Missing email address. Please use the link from your email.'
     }
 
     return null
