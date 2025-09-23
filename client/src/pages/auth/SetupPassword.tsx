@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearch } from '@tanstack/react-router'
-import { KeyRound, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react'
+import {
+  KeyRound,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  ArrowLeft,
+} from 'lucide-react'
 import Logo from '../../components/Logo'
 import { supabase } from '../../lib/supabaseClient'
 import { invitesService } from '../../services/invites.service'
@@ -21,7 +27,9 @@ export default function SetupPassword() {
   const [status, setStatus] = useState<'setup' | 'success' | 'error'>('setup')
 
   // New state for OTP flow
-  const [currentStep, setCurrentStep] = useState<'auth-check' | 'token-entry' | 'password-setup' | 'success' | 'error'>('auth-check')
+  const [currentStep, setCurrentStep] = useState<
+    'auth-check' | 'token-entry' | 'password-setup' | 'success' | 'error'
+  >('auth-check')
   const [otpToken, setOtpToken] = useState('')
   const [otpError, setOtpError] = useState('')
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
@@ -47,7 +55,10 @@ export default function SetupPassword() {
   // Check if user already has a valid session
   const checkExistingSession = async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
       if (error) throw error
 
       if (user) {
@@ -86,17 +97,21 @@ export default function SetupPassword() {
       try {
         // We'll use the token to establish a session using Supabase's internal methods
         // This approach should work for both email verification and password reset tokens
-        const { data: sessionData, error: sessionError } = await (supabase.auth as any).verifyOtp({
+        const { data: sessionData, error: sessionError } = await (
+          supabase.auth as any
+        ).verifyOtp({
           token: otpToken.trim(),
           type: 'email',
-          email: 'temp@example.com' // Temporary email for type checking
+          email: 'temp@example.com', // Temporary email for type checking
         })
 
         data = sessionData
         error = sessionError
       } catch (verifyError: any) {
         console.error('Token verification failed:', verifyError)
-        throw new Error('Invalid or expired token. Please check your email and try again.')
+        throw new Error(
+          'Invalid or expired token. Please check your email and try again.',
+        )
       }
 
       if (error) throw error
@@ -109,7 +124,8 @@ export default function SetupPassword() {
     } catch (err: any) {
       console.error('OTP verification error:', err)
       setOtpError(
-        err.message || 'Invalid or expired one-time passcode. Please check your email and try again.'
+        err.message ||
+          'Invalid or expired one-time passcode. Please check your email and try again.',
       )
     } finally {
       setIsVerifyingOtp(false)
@@ -165,10 +181,15 @@ export default function SetupPassword() {
       setError('')
 
       // Ensure we have a valid session before updating password
-      const { data: { user }, error: sessionError } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: sessionError,
+      } = await supabase.auth.getUser()
       if (sessionError || !user) {
         setCurrentStep('token-entry')
-        setError('Your session has expired. Please enter the one-time passcode from your email to continue.')
+        setError(
+          'Your session has expired. Please enter the one-time passcode from your email to continue.',
+        )
         return
       }
 
@@ -283,7 +304,10 @@ export default function SetupPassword() {
               <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
                 <p className="font-medium mb-1">Where to find the code:</p>
                 <ul className="space-y-1">
-                  <li>• Check your email inbox for the {isInvited ? 'invitation' : 'password reset'} email</li>
+                  <li>
+                    • Check your email inbox for the{' '}
+                    {isInvited ? 'invitation' : 'password reset'} email
+                  </li>
                   <li>• The code is usually 6 digits long</li>
                   <li>• Codes expire after a short time for security</li>
                 </ul>

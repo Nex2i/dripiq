@@ -56,7 +56,7 @@ const LeadsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useLeads(
     searchQuery,
     pagination.pageIndex + 1, // API uses 1-based pagination
-    pagination.pageSize
+    pagination.pageSize,
   )
 
   const leads = data?.leads || []
@@ -143,7 +143,8 @@ const LeadsPage: React.FC = () => {
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: (updater) => {
       setPagination((prev) => {
-        const newPagination = typeof updater === 'function' ? updater(prev) : updater
+        const newPagination =
+          typeof updater === 'function' ? updater(prev) : updater
 
         // If page size changed, reset to page 1
         if (newPagination.pageSize !== prev.pageSize) {
