@@ -295,10 +295,24 @@ function Dashboard() {
                 <div className="space-y-4">
                   {dashboardData.recentActivity.map((activity) => {
                     const style = getActivityStyle(activity.type)
+                    const isCalendarClick = activity.type === 'calendar_clicked'
+                    const isNavigable = isCalendarClick && activity.entityId && activity.entityType === 'lead'
+                    
+                    const handleActivityClick = () => {
+                      if (isNavigable) {
+                        navigate({ to: `/leads/${activity.entityId}` })
+                      }
+                    }
+
                     return (
                       <div
                         key={activity.id}
-                        className="flex items-center space-x-3"
+                        className={`flex items-center space-x-3 ${
+                          isNavigable 
+                            ? 'cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors' 
+                            : ''
+                        }`}
+                        onClick={handleActivityClick}
                       >
                         <div
                           className="w-2 h-2 rounded-full flex-shrink-0"
@@ -309,7 +323,9 @@ function Dashboard() {
                           style={{ color: 'var(--color-text-secondary)' }}
                         >
                           <span
-                            className="font-medium"
+                            className={`font-medium ${
+                              isNavigable ? 'hover:underline' : ''
+                            }`}
                             style={{ color: 'var(--color-text-primary)' }}
                           >
                             {activity.description}

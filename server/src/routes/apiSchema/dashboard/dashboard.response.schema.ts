@@ -44,6 +44,8 @@ export const DashboardMetricsSchema = Type.Object({
       timestamp: Type.String({ format: 'date-time', description: 'Activity timestamp' }),
       entityId: Type.Optional(Type.String({ description: 'Related entity ID' })),
       entityType: Type.Optional(Type.String({ description: 'Related entity type' })),
+      contactName: Type.Optional(Type.String({ description: 'Contact name for calendar clicks' })),
+      leadName: Type.Optional(Type.String({ description: 'Lead name for calendar clicks' })),
     }),
     { description: 'Recent activity items', maxItems: 10 }
   ),
