@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useRouter, useSearch } from '@tanstack/react-router'
-import { KeyRound, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { KeyRound, CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react'
 import Logo from '../../components/Logo'
 import { supabase } from '../../lib/supabaseClient'
 import { invitesService } from '../../services/invites.service'
