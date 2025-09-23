@@ -21,6 +21,8 @@ import {
   errorResponseSchema,
   loginBodySchema,
   sessionInfoResponseSchema,
+  verifyOtpBodySchema,
+  verifyOtpResponseSchema,
 } from './apiSchema/authentication';
 
 const basePath = '/auth';
@@ -399,6 +401,85 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
       } else {
         // This case should ideally be caught by authPrehandler
         reply.status(401).send({ message: 'Unauthorized: No user data found on request.' });
+      }
+    },
+  });
+
+  // OTP verification route - for email confirmation with OTP
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/verify-otp`,
+    schema: {
+      body: verifyOtpBodySchema,
+      response: {
+        200: verifyOtpResponseSchema,
+        400: errorResponseSchema,
+        500: errorResponseSchema,
+      },
+      tags: ['Authentication'],
+      summary: 'Verify OTP',
+      description: 'Verify OTP code sent via email for account confirmation or password reset.',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Body: {
+          email: string;
+          otp: string;
+          type: 'signup' | 'recovery';
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { email, otp, type } = request.body;
+
+        // Verify OTP with Supabase
+        const { data, error } = await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: type === 'signup' ? 'email' : 'recovery',
+        });
+
+        if (error) {
+          logger.error(`OTP verification error: ${error.message}`);
+          reply.status(400).send({
+            message: 'Invalid or expired OTP code',
+            error: error.message,
+          });
+          return;
+        }
+
+        if (!data.user) {
+          reply.status(400).send({
+            message: 'OTP verification failed',
+            error: 'No user returned from verification',
+          });
+          return;
+        }
+
+        // Determine redirect URL based on type and current search params
+        let redirectUrl = `${process.env.FRONTEND_ORIGIN}/setup-password`;
+
+        // Forward any query params that were passed
+        const queryParams = new URLSearchParams();
+        if (type === 'signup') {
+          queryParams.set('invited', 'true');
+        }
+
+        if (queryParams.toString()) {
+          redirectUrl += `?${queryParams.toString()}`;
+        }
+
+        reply.send({
+          message: 'OTP verified successfully',
+          redirectUrl,
+        });
+      } catch (error: any) {
+        logger.error(`Error verifying OTP: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to verify OTP',
+          error: error.message,
+        });
       }
     },
   });
