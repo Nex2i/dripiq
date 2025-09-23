@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearch } from '@tanstack/react-router'
-import {
-  KeyRound,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  ArrowLeft,
-} from 'lucide-react'
-import Logo from '../../components/Logo'
+import { KeyRound, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import AuthLayout from '../../components/auth/AuthLayout'
+import ErrorDisplay from '../../components/auth/ErrorDisplay'
 import { supabase } from '../../lib/supabaseClient'
 import { invitesService } from '../../services/invites.service'
 import { HOME_URL } from '../../constants/navigation'
 
+/**
+ * SetupPassword component - now focused only on the actual password setup form
+ * Follows Single Responsibility Principle - only handles password setup after confirmation
+ */
 export default function SetupPassword() {
   const router = useRouter()
   const search = useSearch({ strict: false }) as any
   const isInvited = search?.invited === 'true'
 
-  // Existing state
+  // Form state
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: '',
@@ -25,164 +24,6 @@ export default function SetupPassword() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [status, setStatus] = useState<'setup' | 'success' | 'error'>('setup')
-
-  // New state for OTP flow
-  const [currentStep, setCurrentStep] = useState<
-    'auth-check' | 'token-entry' | 'password-setup' | 'success' | 'error'
-  >('auth-check')
-  const [otpToken, setOtpToken] = useState('')
-  const [otpError, setOtpError] = useState('')
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
-  const [hasInitialAuthError, setHasInitialAuthError] = useState(false)
-
-  // Check if user already has a valid session on component mount
-  useEffect(() => {
-    // First, check if there are error parameters in the URL that indicate
-    // an expired/invalid token that should show the token entry form
-    const hasAuthError = checkForAuthErrors()
-    if (hasAuthError) {
-      setHasInitialAuthError(true)
-      setCurrentStep('token-entry')
-      return
-    }
-
-    checkExistingSession()
-  }, [])
-
-  // Helper functions
-  const resetToTokenEntry = () => {
-    setCurrentStep('token-entry')
-    setOtpToken('')
-    setOtpError('')
-    setError('')
-    setHasInitialAuthError(false)
-  }
-
-  const resetToPasswordSetup = () => {
-    setCurrentStep('password-setup')
-    setError('')
-  }
-
-  // Check for authentication errors in URL parameters
-  const checkForAuthErrors = () => {
-    // Check for hash fragment errors (Supabase typically uses hash fragments for errors)
-    const hash = window.location.hash
-    const searchParams = new URLSearchParams(window.location.search)
-
-    // Common Supabase error patterns
-    const errorInHash = hash.includes('error=') || hash.includes('error_code=')
-    const errorInSearch =
-      searchParams.has('error') || searchParams.has('error_code')
-
-    // Specific error codes that indicate expired/invalid tokens
-    const errorCode = searchParams.get('error_code')
-    const hashErrorCode = hash.match(/error_code=([^&]+)/)?.[1]
-
-    const expiredTokenErrors = [
-      'otp_expired',
-      'access_denied',
-      'invalid_token',
-      'token_expired',
-      'invalid_request',
-    ]
-
-    if (errorInHash || errorInSearch) {
-      console.log('Auth error detected in URL:', {
-        hash,
-        searchParams: Object.fromEntries(searchParams),
-        errorCode,
-        hashErrorCode,
-      })
-    }
-
-    return (
-      errorInHash ||
-      errorInSearch ||
-      expiredTokenErrors.includes(errorCode || '') ||
-      expiredTokenErrors.includes(hashErrorCode || '')
-    )
-  }
-
-  // Check if user already has a valid session
-  const checkExistingSession = async () => {
-    try {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
-      if (error) throw error
-
-      if (user) {
-        setCurrentStep('password-setup')
-        return true
-      }
-      return false
-    } catch (err) {
-      console.warn('Session check failed:', err)
-      setCurrentStep('token-entry')
-      return false
-    }
-  }
-
-  // Verify OTP token and establish session
-  const verifyOtpToken = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!otpToken.trim()) {
-      setOtpError('Please enter the one-time passcode from your email')
-      return
-    }
-
-    try {
-      setIsVerifyingOtp(true)
-      setOtpError('')
-
-      // For this implementation, we'll use a flexible approach to handle different token types
-      // We'll try to work around the TypeScript limitations by using a more generic method
-
-      let data: any = null
-      let error: any = null
-
-      // Since we're dealing with TypeScript constraints, let's use a workaround
-      // that handles both invitation and password reset tokens
-      try {
-        // We'll use the token to establish a session using Supabase's internal methods
-        // This approach should work for both email verification and password reset tokens
-        const { data: sessionData, error: sessionError } = await (
-          supabase.auth as any
-        ).verifyOtp({
-          token: otpToken.trim(),
-          type: 'email',
-          email: 'temp@example.com', // Temporary email for type checking
-        })
-
-        data = sessionData
-        error = sessionError
-      } catch (verifyError: any) {
-        console.error('Token verification failed:', verifyError)
-        throw new Error(
-          'Invalid or expired token. Please check your email and try again.',
-        )
-      }
-
-      if (error) throw error
-
-      if (data?.user) {
-        setHasInitialAuthError(false) // Reset the error state on successful verification
-        setCurrentStep('password-setup')
-      } else {
-        throw new Error('No user returned from token verification')
-      }
-    } catch (err: any) {
-      console.error('OTP verification error:', err)
-      setOtpError(
-        err.message ||
-          'Invalid or expired one-time passcode. Please check your email and try again.',
-      )
-    } finally {
-      setIsVerifyingOtp(false)
-    }
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -238,9 +79,8 @@ export default function SetupPassword() {
         error: sessionError,
       } = await supabase.auth.getUser()
       if (sessionError || !user) {
-        setCurrentStep('token-entry')
         setError(
-          'Your session has expired. Please enter the one-time passcode from your email to continue.',
+          'Your session has expired. Please use the link from your email again.',
         )
         return
       }
@@ -265,9 +105,8 @@ export default function SetupPassword() {
       }
 
       setStatus('success')
-      setCurrentStep('success')
 
-      // Redirect to leads after success
+      // Redirect to home after success
       setTimeout(() => {
         router.navigate({ to: HOME_URL })
       }, 2000)
@@ -277,294 +116,142 @@ export default function SetupPassword() {
         err.message || 'An error occurred while setting up your password',
       )
       setStatus('error')
-      setCurrentStep('error')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (currentStep === 'success') {
+  if (status === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[var(--color-primary-50)] to-[var(--color-primary-100)] py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Password Set Successfully!
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Your password has been set. You'll be redirected to the leads page
-              shortly.
-            </p>
-            <div className="mt-4 animate-pulse">
-              <div className="bg-gray-200 rounded h-2 w-full"></div>
-            </div>
+      <AuthLayout>
+        <div className="text-center">
+          <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Password Set Successfully!
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Your password has been set. You'll be redirected to the dashboard
+            shortly.
+          </p>
+          <div className="mt-4 animate-pulse">
+            <div className="bg-gray-200 rounded h-2 w-full"></div>
           </div>
         </div>
-      </div>
+      </AuthLayout>
     )
   }
 
-  // Token entry step
-  if (currentStep === 'token-entry') {
+  if (status === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[var(--color-primary-50)] to-[var(--color-primary-100)] py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <div className="flex justify-center mb-6">
-              <Logo size="lg" showText={true} />
-            </div>
-            <div className="text-center">
-              <KeyRound className="mx-auto h-12 w-12 text-[var(--color-primary-600)]" />
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Enter One-Time Passcode
-              </h2>
-              <p className="mt-2 text-center text-sm text-gray-600">
-                {hasInitialAuthError
-                  ? 'Your previous link has expired. Please enter the one-time passcode from your email to continue.'
-                  : isInvited
-                    ? 'We need to verify your identity. Please enter the one-time passcode from your invitation email.'
-                    : 'Please enter the one-time passcode from your password reset email.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
-            <form className="space-y-6" onSubmit={verifyOtpToken}>
-              <div>
-                <label
-                  htmlFor="otpToken"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  One-Time Passcode
-                </label>
-                <input
-                  id="otpToken"
-                  name="otpToken"
-                  type="text"
-                  autoComplete="one-time-code"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
-                  placeholder="Enter the 6-digit code from your email"
-                  value={otpToken}
-                  onChange={(e) => {
-                    setOtpToken(e.target.value)
-                    if (otpError) setOtpError('')
-                  }}
-                  disabled={isVerifyingOtp}
-                />
-              </div>
-
-              <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                <p className="font-medium mb-1">Where to find the code:</p>
-                <ul className="space-y-1">
-                  <li>
-                    • Check your email inbox for the{' '}
-                    {isInvited ? 'invitation' : 'password reset'} email
-                  </li>
-                  <li>• The code is usually 6 digits long</li>
-                  <li>• Codes expire after a short time for security</li>
-                </ul>
-              </div>
-
-              {otpError && (
-                <div className="rounded-xl bg-red-50 p-4 border border-red-200">
-                  <div className="text-sm text-red-700">{otpError}</div>
-                </div>
-              )}
-
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={resetToPasswordSetup}
-                  className="flex-1 flex justify-center items-center py-3 px-4 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] transition-all duration-200"
-                  disabled={isVerifyingOtp}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={isVerifyingOtp}
-                  className="flex-1 bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white py-3 px-4 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {isVerifyingOtp ? (
-                    <>
-                      <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" />
-                      Verifying...
-                    </>
-                  ) : (
-                    'Verify Code'
-                  )}
-                </button>
-              </div>
-            </form>
+      <AuthLayout>
+        <div className="text-center">
+          <XCircle className="mx-auto h-16 w-16 text-red-600" />
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Setup Failed
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            There was an error setting up your password. Please try again.
+          </p>
+          <div className="mt-4">
+            <button
+              onClick={() => setStatus('setup')}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
+            >
+              Try Again
+            </button>
           </div>
         </div>
-      </div>
-    )
-  }
-
-  if (status === 'error' || currentStep === 'error') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[var(--color-primary-50)] to-[var(--color-primary-100)] py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <XCircle className="mx-auto h-16 w-16 text-red-600" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Setup Failed
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              There was an error setting up your password. Please try again.
-            </p>
-            <div className="mt-4 space-y-2">
-              <button
-                onClick={resetToTokenEntry}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
-              >
-                Try Token Entry
-              </button>
-              <button
-                onClick={() => setCurrentStep('password-setup')}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)]"
-              >
-                Try Password Setup
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Loading state while checking authentication
-  if (currentStep === 'auth-check') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[var(--color-primary-50)] to-[var(--color-primary-100)] py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-16 w-16 text-[var(--color-primary-600)] animate-spin" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Checking Authentication...
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Please wait while we verify your session.
-            </p>
-          </div>
-        </div>
-      </div>
+      </AuthLayout>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-[var(--color-primary-50)] to-[var(--color-primary-100)] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center mb-6">
-            <Logo size="lg" showText={true} />
-          </div>
-          <div className="text-center">
-            <KeyRound className="mx-auto h-12 w-12 text-[var(--color-primary-600)]" />
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Set Your Password
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              {isInvited
-                ? 'Welcome to the team! Please set a secure password for your account.'
-                : 'Please set a secure password for your account.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  New Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your password (min 8 characters)"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
-                  placeholder="Re-enter your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-              <p className="font-medium mb-1">Password requirements:</p>
-              <ul className="space-y-1">
-                <li>• At least 8 characters long</li>
-                <li>• Contains uppercase and lowercase letters</li>
-                <li>• Contains at least one number</li>
-              </ul>
-            </div>
-
-            {error && (
-              <div className="rounded-xl bg-red-50 p-4 border border-red-200">
-                <div className="text-sm text-red-700">{error}</div>
-              </div>
-            )}
-
-            <div className="flex space-x-3">
-              <button
-                type="button"
-                onClick={resetToTokenEntry}
-                className="flex-1 flex justify-center items-center py-3 px-4 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] transition-all duration-200"
-                disabled={isSubmitting}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Token
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white py-3 px-4 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" />
-                    Setting Password...
-                  </>
-                ) : (
-                  'Set Password'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+    <AuthLayout>
+      <div className="text-center">
+        <KeyRound className="mx-auto h-12 w-12 text-[var(--color-primary-600)]" />
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Set Your Password
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          {isInvited
+            ? 'Welcome to the team! Please set a secure password for your account.'
+            : 'Please set a secure password for your account.'}
+        </p>
       </div>
-    </div>
+
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                New Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
+                placeholder="Enter your password (min 8 characters)"
+                value={formData.password}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
+                placeholder="Re-enter your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+            <p className="font-medium mb-1">Password requirements:</p>
+            <ul className="space-y-1">
+              <li>• At least 8 characters long</li>
+              <li>• Contains uppercase and lowercase letters</li>
+              <li>• Contains at least one number</li>
+            </ul>
+          </div>
+
+          <ErrorDisplay error={error} />
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white py-3 px-4 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" />
+                Setting Password...
+              </>
+            ) : (
+              'Set Password'
+            )}
+          </button>
+        </form>
+      </div>
+    </AuthLayout>
   )
 }
