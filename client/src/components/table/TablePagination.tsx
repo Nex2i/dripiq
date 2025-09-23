@@ -46,10 +46,7 @@ export function TablePagination({ table }: TablePaginationProps) {
                 table.getRowCount(),
               )}
             </span>{' '}
-            of{' '}
-            <span className="font-medium">
-              {table.getRowCount()}
-            </span>{' '}
+            of <span className="font-medium">{table.getRowCount()}</span>{' '}
             results
           </p>
         </div>
