@@ -5,21 +5,21 @@ class OtpService {
     email: string
     otp: string
     type: 'signup' | 'recovery'
-  }): Promise<{ 
-    message: string; 
-    redirectUrl: string;
+  }): Promise<{
+    message: string
+    redirectUrl: string
     session?: {
-      access_token: string;
-      refresh_token: string;
-      expires_in: number;
-      expires_at?: number;
-      token_type: string;
+      access_token: string
+      refresh_token: string
+      expires_in: number
+      expires_at?: number
+      token_type: string
       user: {
-        id: string;
-        email: string;
-        email_confirmed_at?: string;
-      };
-    };
+        id: string
+        email: string
+        email_confirmed_at?: string
+      }
+    }
   }> {
     const response = await fetch(`${this.baseUrl}/auth/verify-otp`, {
       method: 'POST',

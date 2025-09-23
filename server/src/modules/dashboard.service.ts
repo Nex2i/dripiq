@@ -350,6 +350,8 @@ export class DashboardService {
       timestamp: string;
       entityId?: string;
       entityType?: string;
+      contactName?: string;
+      leadName?: string;
     }> = [];
 
     // Get recent leads (last 10)
@@ -394,13 +396,18 @@ export class DashboardService {
       .orderBy(desc(outboundMessages.sentAt))
       .limit(3);
 
-    // Get recent calendar clicks (last 3)
+    // Get recent calendar clicks with contact and lead information (last 3)
     const recentCalendarClicks = await db
       .select({
         id: calendarLinkClicks.id,
         clickedAt: calendarLinkClicks.clickedAt,
+        leadId: calendarLinkClicks.leadId,
+        leadName: leads.name,
+        contactName: leadPointOfContacts.name,
       })
       .from(calendarLinkClicks)
+      .innerJoin(leads, eq(calendarLinkClicks.leadId, leads.id))
+      .innerJoin(leadPointOfContacts, eq(calendarLinkClicks.contactId, leadPointOfContacts.id))
       .where(eq(calendarLinkClicks.tenantId, tenantId))
       .orderBy(desc(calendarLinkClicks.clickedAt))
       .limit(2);
@@ -447,13 +454,16 @@ export class DashboardService {
 
     // Transform recent calendar clicks into activities
     recentCalendarClicks.forEach((click) => {
+      const description = `${click.contactName} from ${click.leadName} clicked calendar link`;
       activities.push({
         id: `calendar-${click.id}`,
         type: 'calendar_clicked',
-        description: 'Calendar link clicked',
+        description,
         timestamp: click.clickedAt.toISOString(),
-        entityId: click.id,
-        entityType: 'calendar_click',
+        entityId: click.leadId, // Use leadId for navigation
+        entityType: 'lead', // Change to lead for proper navigation
+        contactName: click.contactName,
+        leadName: click.leadName,
       });
     });
 

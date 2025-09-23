@@ -39,6 +39,8 @@ export interface DashboardMetrics {
     timestamp: string
     entityId?: string
     entityType?: string
+    contactName?: string
+    leadName?: string
   }>
 }
 

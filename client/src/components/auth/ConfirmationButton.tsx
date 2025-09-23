@@ -21,14 +21,10 @@ export interface ConfirmationButtonRef {
  * Reusable confirmation button component
  * Follows Single Responsibility Principle - only handles OTP verification and redirect logic
  */
-const ConfirmationButton = forwardRef<ConfirmationButtonRef, ConfirmationButtonProps>(({
-  email,
-  otp,
-  flowType,
-  buttonText,
-  onError,
-  disabled = false,
-}, ref) => {
+const ConfirmationButton = forwardRef<
+  ConfirmationButtonRef,
+  ConfirmationButtonProps
+>(({ email, otp, flowType, buttonText, onError, disabled = false }, ref) => {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isInitiallyDisabled, setIsInitiallyDisabled] = useState(true)
@@ -71,7 +67,9 @@ const ConfirmationButton = forwardRef<ConfirmationButtonRef, ConfirmationButtonP
 
         if (sessionError) {
           console.error('Failed to set session:', sessionError)
-          onError?.('Failed to establish authenticated session. Please try again.')
+          onError?.(
+            'Failed to establish authenticated session. Please try again.',
+          )
           setIsSubmitting(false)
           return
         }
@@ -93,9 +91,13 @@ const ConfirmationButton = forwardRef<ConfirmationButtonRef, ConfirmationButtonP
   }
 
   // Expose handleConfirmation method to parent via ref
-  useImperativeHandle(ref, () => ({
-    handleConfirmation,
-  }), [handleConfirmation])
+  useImperativeHandle(
+    ref,
+    () => ({
+      handleConfirmation,
+    }),
+    [handleConfirmation],
+  )
 
   return (
     <button

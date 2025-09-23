@@ -261,7 +261,9 @@ export default function Register() {
             </button>
             <span className="text-gray-300">•</span>
             <button
-              onClick={() => router.navigate({ to: '/terms-of-service' } as any)}
+              onClick={() =>
+                router.navigate({ to: '/terms-of-service' } as any)
+              }
               className="text-sm text-gray-500 hover:text-gray-700 underline bg-transparent border-none cursor-pointer"
             >
               Terms of Service
