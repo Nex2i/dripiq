@@ -28,9 +28,9 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
 
   return (
     <div
-      className={`flex items-center space-x-3 ${
+      className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${
         navigable
-          ? 'cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors'
+          ? 'cursor-pointer hover:bg-gray-50'
           : ''
       }`}
       onClick={handleClick}

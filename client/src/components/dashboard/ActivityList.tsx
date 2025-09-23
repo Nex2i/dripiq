@@ -37,7 +37,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-1">
       {activities.map((activity) => (
         <ActivityItem
           key={activity.id}
