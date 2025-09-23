@@ -1,5 +1,8 @@
 import { Mail } from 'lucide-react'
-import type { AuthFlowContent, AuthFlowType } from '../../services/auth-flow.service'
+import type {
+  AuthFlowContent,
+  AuthFlowType,
+} from '../../services/auth-flow.service'
 
 interface FlowInformationProps {
   flowContent: AuthFlowContent
@@ -11,7 +14,11 @@ interface FlowInformationProps {
  * Component responsible for displaying flow-specific information
  * Follows Single Responsibility Principle - only handles information display
  */
-export default function FlowInformation({ flowContent, flowType, confirmationUrl }: FlowInformationProps) {
+export default function FlowInformation({
+  flowContent,
+  flowType,
+  confirmationUrl,
+}: FlowInformationProps) {
   return (
     <>
       {/* Flow header */}
@@ -51,7 +58,9 @@ export default function FlowInformation({ flowContent, flowType, confirmationUrl
       {/* Additional help text */}
       <div className="text-center">
         <p className="text-xs text-gray-500">
-          Having trouble? Check your email for the original {flowType === 'new-user' ? 'invitation' : 'password reset'} message and use that link instead.
+          Having trouble? Check your email for the original{' '}
+          {flowType === 'new-user' ? 'invitation' : 'password reset'} message
+          and use that link instead.
         </p>
       </div>
     </>

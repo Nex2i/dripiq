@@ -27,9 +27,10 @@ export class AuthFlowService {
     const { confirmationUrl, isInvited } = params
 
     if (isInvited) return 'new-user'
-    if (confirmationUrl && confirmationUrl.includes('recovery')) return 'reset-password'
+    if (confirmationUrl && confirmationUrl.includes('recovery'))
+      return 'reset-password'
     if (confirmationUrl && confirmationUrl.includes('invite')) return 'new-user'
-    
+
     // Default fallback
     return 'reset-password'
   }
@@ -43,9 +44,11 @@ export class AuthFlowService {
         return {
           icon: UserPlus,
           title: 'Complete Your Account Setup',
-          subtitle: 'Welcome to the team! Click the button below to set up your password and complete your account.',
+          subtitle:
+            'Welcome to the team! Click the button below to set up your password and complete your account.',
           buttonText: 'Set Up My Account',
-          instructionText: 'You\'ll be redirected to complete your account setup securely.'
+          instructionText:
+            "You'll be redirected to complete your account setup securely.",
         }
       case 'reset-password':
         return {
@@ -53,7 +56,8 @@ export class AuthFlowService {
           title: 'Reset Your Password',
           subtitle: 'Click the button below to securely reset your password.',
           buttonText: 'Reset My Password',
-          instructionText: 'You\'ll be redirected to set your new password securely.'
+          instructionText:
+            "You'll be redirected to set your new password securely.",
         }
       default:
         throw new Error(`Unknown flow type: ${flowType}`)

@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { useRouter, useSearch } from '@tanstack/react-router'
-import {
-  KeyRound,
-  CheckCircle,
-  XCircle,
-  Loader2,
-} from 'lucide-react'
+import { KeyRound, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import AuthLayout from '../../components/auth/AuthLayout'
 import ErrorDisplay from '../../components/auth/ErrorDisplay'
 import { supabase } from '../../lib/supabaseClient'
@@ -135,7 +130,8 @@ export default function SetupPassword() {
             Password Set Successfully!
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Your password has been set. You'll be redirected to the dashboard shortly.
+            Your password has been set. You'll be redirected to the dashboard
+            shortly.
           </p>
           <div className="mt-4 animate-pulse">
             <div className="bg-gray-200 rounded h-2 w-full"></div>

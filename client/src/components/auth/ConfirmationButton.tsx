@@ -12,17 +12,19 @@ interface ConfirmationButtonProps {
  * Reusable confirmation button component
  * Follows Single Responsibility Principle - only handles confirmation redirect logic
  */
-export default function ConfirmationButton({ 
-  confirmationUrl, 
-  buttonText, 
+export default function ConfirmationButton({
+  confirmationUrl,
+  buttonText,
   onError,
-  disabled = false
+  disabled = false,
 }: ConfirmationButtonProps) {
   const [isRedirecting, setIsRedirecting] = useState(false)
 
-  const handleConfirmation = async () => {
+  const handleConfirmation = () => {
     if (!confirmationUrl) {
-      onError?.('Missing confirmation URL. Please use the link from your email.')
+      onError?.(
+        'Missing confirmation URL. Please use the link from your email.',
+      )
       return
     }
 

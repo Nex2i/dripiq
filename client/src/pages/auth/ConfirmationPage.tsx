@@ -23,7 +23,10 @@ export default function ConfirmationPage() {
 
   // Validate flow parameters
   useEffect(() => {
-    const validationError = AuthFlowService.validateFlowParams({ confirmationUrl, isInvited })
+    const validationError = AuthFlowService.validateFlowParams({
+      confirmationUrl,
+      isInvited,
+    })
     if (validationError) {
       setError(validationError)
     }
@@ -35,7 +38,7 @@ export default function ConfirmationPage() {
 
   return (
     <AuthLayout>
-      <FlowInformation 
+      <FlowInformation
         flowContent={flowContent}
         flowType={flowType}
         confirmationUrl={confirmationUrl}
