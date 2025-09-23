@@ -14,6 +14,7 @@ import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import SetupPassword from './pages/auth/SetupPassword'
+import ConfirmationPage from './pages/auth/ConfirmationPage'
 import LeadsPage from './pages/LeadsPage'
 import NewLeadPage from './pages/NewLeadPage'
 import LeadDetailPage from './pages/LeadDetailPage'
@@ -72,6 +73,13 @@ const authRoute = createRoute({
       <TanStackQueryLayout />
     </>
   ),
+})
+
+// Confirmation page route - public (shows button to redirect to password setup)
+const confirmationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/confirm',
+  component: () => <ConfirmationPage />,
 })
 
 // Setup password route - public (for invited users who don't have passwords yet)
@@ -236,6 +244,7 @@ const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([
+  confirmationRoute,
   setupPasswordRoute,
   privacyPolicyRoute,
   unsubscribeSuccessRoute,
