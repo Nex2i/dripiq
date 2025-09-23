@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 
 interface ConfirmationButtonProps {
@@ -19,6 +19,15 @@ export default function ConfirmationButton({
   disabled = false,
 }: ConfirmationButtonProps) {
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [isInitiallyDisabled, setIsInitiallyDisabled] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitiallyDisabled(false)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleConfirmation = () => {
     if (!confirmationUrl) {
@@ -43,7 +52,9 @@ export default function ConfirmationButton({
   return (
     <button
       onClick={handleConfirmation}
-      disabled={isRedirecting || !confirmationUrl || disabled}
+      disabled={
+        isRedirecting || !confirmationUrl || disabled || isInitiallyDisabled
+      }
       className="w-full bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white py-3 px-4 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
     >
       {isRedirecting ? (
