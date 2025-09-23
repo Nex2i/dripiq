@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { otpService } from '../../services/otp.service'
+import { supabase } from '../../lib/supabaseClient'
 
 interface ConfirmationButtonProps {
   email?: string
@@ -12,18 +13,22 @@ interface ConfirmationButtonProps {
   disabled?: boolean
 }
 
+export interface ConfirmationButtonRef {
+  handleConfirmation: () => void
+}
+
 /**
  * Reusable confirmation button component
  * Follows Single Responsibility Principle - only handles OTP verification and redirect logic
  */
-export default function ConfirmationButton({
+const ConfirmationButton = forwardRef<ConfirmationButtonRef, ConfirmationButtonProps>(({
   email,
   otp,
   flowType,
   buttonText,
   onError,
   disabled = false,
-}: ConfirmationButtonProps) {
+}, ref) => {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isInitiallyDisabled, setIsInitiallyDisabled] = useState(true)
@@ -57,6 +62,21 @@ export default function ConfirmationButton({
         type: flowType === 'new-user' ? 'signup' : 'recovery',
       })
 
+      // If we received session data, set it in Supabase client
+      if (response.session) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: response.session.access_token,
+          refresh_token: response.session.refresh_token,
+        })
+
+        if (sessionError) {
+          console.error('Failed to set session:', sessionError)
+          onError?.('Failed to establish authenticated session. Please try again.')
+          setIsSubmitting(false)
+          return
+        }
+      }
+
       // Navigate to the setup-password page with query params
       const url = new URL(response.redirectUrl)
       const searchParams = new URLSearchParams(url.search)
@@ -71,6 +91,11 @@ export default function ConfirmationButton({
       setIsSubmitting(false)
     }
   }
+
+  // Expose handleConfirmation method to parent via ref
+  useImperativeHandle(ref, () => ({
+    handleConfirmation,
+  }), [handleConfirmation])
 
   return (
     <button
@@ -95,4 +120,8 @@ export default function ConfirmationButton({
       )}
     </button>
   )
-}
+})
+
+ConfirmationButton.displayName = 'ConfirmationButton'
+
+export default ConfirmationButton

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearch } from '@tanstack/react-router'
 import AuthLayout from '../../components/auth/AuthLayout'
 import FlowInformation from '../../components/auth/FlowInformation'
@@ -18,6 +18,7 @@ export default function ConfirmationPage() {
 
   const [error, setError] = useState('')
   const [otp, setOtp] = useState('')
+  const confirmationButtonRef = useRef<{ handleConfirmation: () => void }>(null)
 
   // Use the service to determine flow type and get content
   const flowType = AuthFlowService.getFlowType({ email, isInvited })
@@ -38,6 +39,16 @@ export default function ConfirmationPage() {
     setError(errorMessage)
   }
 
+  const handleOtpChange = (value: string) => {
+    setOtp(value)
+    // Auto-submit when OTP is complete (6 digits) and no error
+    if (value.length === 6 && !error && email) {
+      setTimeout(() => {
+        confirmationButtonRef.current?.handleConfirmation()
+      }, 100) // Small delay to ensure state is updated
+    }
+  }
+
   return (
     <AuthLayout>
       <FlowInformation flowContent={flowContent} />
@@ -56,13 +67,14 @@ export default function ConfirmationPage() {
                   <OtpInput
                     length={6}
                     value={otp}
-                    onChange={setOtp}
+                    onChange={handleOtpChange}
                     disabled={!!error}
                   />
                 </div>
               </div>
 
               <ConfirmationButton
+                ref={confirmationButtonRef}
                 email={email}
                 otp={otp}
                 flowType={flowType}

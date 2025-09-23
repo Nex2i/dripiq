@@ -470,10 +470,29 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           redirectUrl += `?${queryParams.toString()}`;
         }
 
-        reply.send({
+        // Prepare response with session data if available
+        const response: any = {
           message: 'OTP verified successfully',
           redirectUrl,
-        });
+        };
+
+        // Include session data if available (for frontend to establish authenticated session)
+        if (data.session) {
+          response.session = {
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+            expires_in: data.session.expires_in,
+            expires_at: data.session.expires_at,
+            token_type: data.session.token_type,
+            user: {
+              id: data.session.user.id,
+              email: data.session.user.email,
+              email_confirmed_at: data.session.user.email_confirmed_at,
+            },
+          };
+        }
+
+        reply.send(response);
       } catch (error: any) {
         logger.error(`Error verifying OTP: ${error.message}`);
         reply.status(500).send({
