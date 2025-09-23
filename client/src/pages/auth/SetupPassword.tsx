@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useRouter, useSearch } from '@tanstack/react-router'
 import { KeyRound, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import Logo from '../../components/Logo'
