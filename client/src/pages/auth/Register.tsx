@@ -252,12 +252,19 @@ export default function Register() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-x-4">
             <button
               onClick={() => router.navigate({ to: '/privacy-policy' } as any)}
               className="text-sm text-gray-500 hover:text-gray-700 underline bg-transparent border-none cursor-pointer"
             >
               Privacy Policy
+            </button>
+            <span className="text-gray-300">•</span>
+            <button
+              onClick={() => router.navigate({ to: '/terms-of-service' } as any)}
+              className="text-sm text-gray-500 hover:text-gray-700 underline bg-transparent border-none cursor-pointer"
+            >
+              Terms of Service
             </button>
           </div>
         </div>
