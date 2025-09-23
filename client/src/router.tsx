@@ -131,12 +131,6 @@ const authRegisterRoute = createRoute({
   component: () => <Register />,
 })
 
-const authSetupPasswordRoute = createRoute({
-  getParentRoute: () => authRoute,
-  path: '/setup-password',
-  component: () => <SetupPassword />,
-})
-
 const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: LEADS_URL,
@@ -238,11 +232,7 @@ const protectedRouteTree = protectedRoute.addChildren([
   settingsRouteTree,
 ])
 
-const authRouteTree = authRoute.addChildren([
-  authLoginRoute,
-  authRegisterRoute,
-  authSetupPasswordRoute,
-])
+const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([
