@@ -60,7 +60,7 @@ export default function ConfirmationButton({
       // Navigate to the setup-password page with query params
       const url = new URL(response.redirectUrl)
       const searchParams = new URLSearchParams(url.search)
-      
+
       router.navigate({
         to: '/setup-password',
         search: Object.fromEntries(searchParams.entries()),
@@ -76,7 +76,12 @@ export default function ConfirmationButton({
     <button
       onClick={handleConfirmation}
       disabled={
-        isSubmitting || !email || !otp || otp.length !== 6 || disabled || isInitiallyDisabled
+        isSubmitting ||
+        !email ||
+        !otp ||
+        otp.length !== 6 ||
+        disabled ||
+        isInitiallyDisabled
       }
       className="w-full bg-gradient-to-r from-[var(--color-primary-600)] to-[var(--color-primary-600)] hover:from-[var(--color-primary-700)] hover:to-[var(--color-primary-700)] text-white py-3 px-4 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
     >

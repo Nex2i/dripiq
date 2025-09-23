@@ -44,17 +44,16 @@ export class AuthFlowService {
           subtitle:
             'Welcome to the team! Enter the verification code from your email to set up your password.',
           buttonText: 'Verify Code & Set Up Account',
-          instructionText:
-            'Check your email for a 6-digit verification code.',
+          instructionText: 'Check your email for a 6-digit verification code.',
         }
       case 'reset-password':
         return {
           icon: Lock,
           title: 'Reset Your Password',
-          subtitle: 'Enter the verification code from your email to reset your password.',
+          subtitle:
+            'Enter the verification code from your email to reset your password.',
           buttonText: 'Verify Code & Reset Password',
-          instructionText:
-            'Check your email for a 6-digit verification code.',
+          instructionText: 'Check your email for a 6-digit verification code.',
         }
       default:
         throw new Error(`Unknown flow type: ${flowType}`)

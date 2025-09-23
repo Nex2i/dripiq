@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
+import { useState, useRef, useEffect  } from 'react'
+import type {KeyboardEvent} from 'react';
 
 interface OtpInputProps {
   length: number
