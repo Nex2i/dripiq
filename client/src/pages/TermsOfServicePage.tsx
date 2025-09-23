@@ -23,7 +23,9 @@ const TermsOfServicePage: React.FC = () => {
         setMarkdownContent(content)
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'Failed to load terms of service',
+          err instanceof Error
+            ? err.message
+            : 'Failed to load terms of service',
         )
       } finally {
         setLoading(false)

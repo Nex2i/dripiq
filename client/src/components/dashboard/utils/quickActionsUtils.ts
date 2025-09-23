@@ -9,7 +9,7 @@ export const generateQuickActions = (
   onNavigateToLeads: () => void,
   onNavigateToNewLead: () => void,
   onNavigateToSettings: () => void,
-  onNavigateToUsers: () => void
+  onNavigateToUsers: () => void,
 ): QuickAction[] => {
   return [
     {

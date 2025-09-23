@@ -32,10 +32,7 @@ export const StatCard: React.FC<StatCardProps> = ({ stat }) => {
       >
         {stat.value}
       </p>
-      <p
-        className="text-sm"
-        style={{ color: 'var(--color-success-600)' }}
-      >
+      <p className="text-sm" style={{ color: 'var(--color-success-600)' }}>
         {stat.change}
       </p>
     </div>

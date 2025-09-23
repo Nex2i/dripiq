@@ -23,7 +23,11 @@ export { ActivityList } from './ActivityList'
 export { RecentActivitySection } from './RecentActivitySection'
 
 // Utility Functions
-export { formatActivityTime, getActivityStyle, isActivityNavigable } from './utils/activityUtils'
+export {
+  formatActivityTime,
+  getActivityStyle,
+  isActivityNavigable,
+} from './utils/activityUtils'
 export { generateDashboardStats } from './utils/statsUtils'
 export { generateQuickActions } from './utils/quickActionsUtils'
 

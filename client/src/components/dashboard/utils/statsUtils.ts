@@ -7,7 +7,7 @@ import type { DashboardMetrics } from '../../../services/dashboard.service'
  * Single responsibility: Data transformation for statistics display
  */
 export const generateDashboardStats = (
-  dashboardData: DashboardMetrics | undefined
+  dashboardData: DashboardMetrics | undefined,
 ): DashboardStat[] => {
   if (!dashboardData) {
     return [

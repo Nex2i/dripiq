@@ -38,7 +38,7 @@ function Dashboard() {
     navigationHandlers.navigateToLeads,
     navigationHandlers.navigateToNewLead,
     navigationHandlers.navigateToSettings,
-    navigationHandlers.navigateToUsers
+    navigationHandlers.navigateToUsers,
   )
 
   // Handle loading state
@@ -49,9 +49,9 @@ function Dashboard() {
   // Handle error state
   if (error) {
     return (
-      <DashboardErrorState 
-        error={error} 
-        onRetry={() => window.location.reload()} 
+      <DashboardErrorState
+        error={error}
+        onRetry={() => window.location.reload()}
       />
     )
   }
@@ -62,11 +62,11 @@ function Dashboard() {
         userName={user?.user?.name || undefined}
         userEmail={user?.user?.email || undefined}
       />
-      
+
       <StatsGrid stats={stats} />
-      
+
       <QuickActionsSection actions={quickActions} />
-      
+
       <RecentActivitySection
         activities={dashboardData?.recentActivity || []}
         onNavigateToLead={navigationHandlers.navigateToLead}

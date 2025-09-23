@@ -1,6 +1,6 @@
 **Terms of Service**
 
-*Last updated: **January 15, 2025***
+\*Last updated: **January 15, 2025\***
 
 ---
 
@@ -68,6 +68,7 @@ You agree not to:
 
 **5.3 Content Standards**
 All content you submit through the Service must comply with applicable laws and must not contain:
+
 - Discriminatory, harassing, or offensive material
 - False, misleading, or deceptive information
 - Confidential information belonging to third parties without authorization
@@ -81,6 +82,7 @@ All content you submit through the Service must comply with applicable laws and 
 The Service is offered through various subscription plans with different features and usage limits. Current plans and pricing are available on our website.
 
 **6.2 Payment Terms**
+
 - Subscription fees are billed in advance on a monthly or annual basis
 - All fees are non-refundable except as expressly stated in these Terms
 - You authorize us to charge your payment method for all applicable fees
@@ -188,6 +190,7 @@ We may suspend or terminate your access to the Service immediately if you violat
 
 **14.3 Effect of Termination**
 Upon termination:
+
 - Your access to the Service will cease
 - You remain liable for all charges incurred through the termination date
 - We will delete or return your Customer Data as described in our Privacy Policy

@@ -1,7 +1,11 @@
 // Single Activity Item Component following Single Responsibility Principle
 import React from 'react'
 import type { Activity } from './types'
-import { formatActivityTime, getActivityStyle, isActivityNavigable } from './utils/activityUtils'
+import {
+  formatActivityTime,
+  getActivityStyle,
+  isActivityNavigable,
+} from './utils/activityUtils'
 
 interface ActivityItemProps {
   activity: Activity
@@ -29,9 +33,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({
   return (
     <div
       className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${
-        navigable
-          ? 'cursor-pointer hover:bg-gray-50'
-          : ''
+        navigable ? 'cursor-pointer hover:bg-gray-50' : ''
       }`}
       onClick={handleClick}
     >

@@ -40,10 +40,7 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({ action }) => {
       >
         {action.title}
       </h3>
-      <p
-        className="text-sm"
-        style={{ color: 'var(--color-text-secondary)' }}
-      >
+      <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
         {action.description}
       </p>
     </button>
