@@ -19,24 +19,6 @@ export default function SetupPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [status, setStatus] = useState<'setup' | 'success' | 'error'>('setup')
 
-  console.log('isInvited', isInvited)
-
-  useEffect(() => {
-    // Check if user is already authenticated and has a session
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      console.log('session', session)
-      if (!session && !isInvited) {
-        // If not invited and no session, redirect to login
-        router.navigate({ to: '/auth/login' })
-      }
-    }
-
-    checkSession()
-  }, [router, isInvited])
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
