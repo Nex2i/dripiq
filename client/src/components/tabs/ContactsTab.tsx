@@ -14,6 +14,7 @@ import {
   X,
   Plus,
   UserX,
+  MailX,
 } from 'lucide-react'
 import { Menu, MenuItem, MenuSeparator } from '../ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -559,6 +560,12 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                             Primary
                           </div>
                         )}
+                        {contact.isUnsubscribed && (
+                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <MailX className="h-3 w-3 mr-1" />
+                            Unsubscribed
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -574,6 +581,12 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                             <Crown className="h-3 w-3 mr-1" />
                             Primary
+                          </div>
+                        )}
+                        {contact.isUnsubscribed && (
+                          <div className="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <MailX className="h-3 w-3 mr-1" />
+                            Unsubscribed
                           </div>
                         )}
                       </>
@@ -677,13 +690,14 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                               editingContactId !== null ||
                               qualifyingContactId === contact.id ||
                               unsubscribeContactMutation.isPending ||
-                              !contact.email
+                              !contact.email ||
+                              contact.isUnsubscribed
                             }
                             variant="danger"
                           >
                             <div className="flex items-center space-x-2">
                               <UserX className="h-4 w-4" />
-                              <span>Unsubscribe</span>
+                              <span>{contact.isUnsubscribed ? 'Already Unsubscribed' : 'Unsubscribe'}</span>
                             </div>
                           </MenuItem>
                         </Menu>
@@ -736,20 +750,30 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center space-x-3">
-                          <Mail className="h-5 w-5 text-gray-400" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              Email
-                            </p>
-                            <a
-                              href={`mailto:${contact.email}`}
-                              className="text-base text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
-                            >
-                              {contact.email}
-                            </a>
+                          <div className="flex items-center space-x-3">
+                            <Mail className={`h-5 w-5 ${contact.isUnsubscribed ? 'text-red-400' : 'text-gray-400'}`} />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                Email
+                                {contact.isUnsubscribed && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                                    <MailX className="h-3 w-3 mr-1" />
+                                    Unsubscribed
+                                  </span>
+                                )}
+                              </p>
+                              <a
+                                href={`mailto:${contact.email}`}
+                                className={`text-base transition-colors ${
+                                  contact.isUnsubscribed 
+                                    ? 'text-red-600 hover:text-red-700 line-through' 
+                                    : 'text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)]'
+                                }`}
+                              >
+                                {contact.email}
+                              </a>
+                            </div>
                           </div>
-                        </div>
                         <CopyButton text={contact.email} label="email" />
                       </>
                     )}

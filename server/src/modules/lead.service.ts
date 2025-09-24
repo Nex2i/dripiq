@@ -5,6 +5,7 @@ import {
   leadStatusRepository,
   leadTransactionRepository,
   repositories,
+  contactUnsubscribeRepository,
 } from '../repositories';
 import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
 import { LeadWithOwner } from '../repositories/entities/LeadRepository';
@@ -174,8 +175,12 @@ export const createLead = async (
  * @param id - The ID of the lead to retrieve.
  * @returns A promise that resolves to the lead object with point of contacts, or undefined if not found.
  */
+type LeadPointOfContactWithUnsubscribe = LeadPointOfContact & {
+  isUnsubscribed?: boolean;
+};
+
 type LeadWithPointOfContacts = Lead & {
-  pointOfContacts: LeadPointOfContact[];
+  pointOfContacts: LeadPointOfContactWithUnsubscribe[];
   statuses: LeadStatus[];
 };
 export const getLeadById = async (
@@ -202,12 +207,39 @@ export const getLeadById = async (
       statuses = [];
     }
 
+    // Check unsubscribe status for contacts with email addresses
+    const contactsWithUnsubscribeStatus: LeadPointOfContactWithUnsubscribe[] = await Promise.all(
+      contacts.map(async (contact) => {
+        let isUnsubscribed = false;
+        
+        // Only check unsubscribe status if contact has an email
+        if (contact.email) {
+          try {
+            const unsubscribeRecord = await contactUnsubscribeRepository.findByChannelValue(
+              tenantId,
+              'email',
+              contact.email
+            );
+            isUnsubscribed = !!unsubscribeRecord;
+          } catch (error) {
+            // Log warning but don't fail the request
+            logger.warn(`Failed to check unsubscribe status for contact ${contact.id}:`, error);
+          }
+        }
+
+        return {
+          ...contact,
+          isUnsubscribed,
+        };
+      })
+    );
+
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
 
     return {
       ...transformedLead,
-      pointOfContacts: contacts,
+      pointOfContacts: contactsWithUnsubscribeStatus,
       statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
   } catch (error) {
