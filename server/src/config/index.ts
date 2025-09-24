@@ -21,6 +21,11 @@ export const {
   BULL_BOARD_USERNAME,
   BULL_BOARD_PASSWORD,
   ENCRYPTION_KEY,
+  // LangFuse configuration
+  LANGFUSE_SECRET_KEY,
+  LANGFUSE_PUBLIC_KEY,
+  LANGFUSE_BASE_URL,
+  LANGFUSE_RELEASE,
 } = process.env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';

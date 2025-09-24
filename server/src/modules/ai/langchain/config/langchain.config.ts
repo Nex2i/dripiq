@@ -1,29 +1,40 @@
 import { ChatOpenAI } from '@langchain/openai';
+import { createLangfuseClient, langfuseTracer } from './langfuse.config';
 
 export interface LangChainConfig {
   model: string;
   maxTokens?: number;
   maxIterations: number;
   timeout: number;
+  enableTracing?: boolean;
 }
 
 export const defaultLangChainConfig: LangChainConfig = {
   model: 'gpt-5-mini',
   maxIterations: 20,
   timeout: 60000, // 60 seconds
+  enableTracing: true,
 };
 
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
   const finalConfig = { ...defaultLangChainConfig, ...config };
+  const langfuseClient = createLangfuseClient();
 
-  return new ChatOpenAI({
+  const chatModelConfig: any = {
     model: finalConfig.model,
     maxTokens: finalConfig.maxTokens,
     timeout: finalConfig.timeout,
     apiKey: process.env.OPENAI_API_KEY,
     // Configure to use OpenAI's Responses API for better tool calling and structured output
     useResponsesApi: true,
-  });
+  };
+
+  // Add LangFuse tracing if enabled and available
+  if (finalConfig.enableTracing && langfuseClient) {
+    chatModelConfig.callbacks = [langfuseTracer];
+  }
+
+  return new ChatOpenAI(chatModelConfig);
 }
 
 export interface ReportConfig {
