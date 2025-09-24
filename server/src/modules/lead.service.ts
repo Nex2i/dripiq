@@ -174,8 +174,12 @@ export const createLead = async (
  * @param id - The ID of the lead to retrieve.
  * @returns A promise that resolves to the lead object with point of contacts, or undefined if not found.
  */
+type LeadPointOfContactWithUnsubscribe = LeadPointOfContact & {
+  isUnsubscribed?: boolean;
+};
+
 type LeadWithPointOfContacts = Lead & {
-  pointOfContacts: LeadPointOfContact[];
+  pointOfContacts: LeadPointOfContactWithUnsubscribe[];
   statuses: LeadStatus[];
 };
 export const getLeadById = async (
@@ -186,8 +190,9 @@ export const getLeadById = async (
     // Get lead with owner information using repository
     const leadData = await leadRepository.findById(id);
 
-    // Get point of contacts for this lead - strategyStatus is already stored in DB
-    const contacts = await leadPointOfContactRepository.findByLeadId(id);
+    // Get point of contacts for this lead with unsubscribe status in a single optimized query
+    const contactsWithUnsubscribeStatus =
+      await leadPointOfContactRepository.findByLeadIdWithUnsubscribeStatus(id, tenantId);
 
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
@@ -207,7 +212,7 @@ export const getLeadById = async (
 
     return {
       ...transformedLead,
-      pointOfContacts: contacts,
+      pointOfContacts: contactsWithUnsubscribeStatus,
       statuses: statuses || [], // Ensure statuses is always an array
     } as LeadWithPointOfContacts;
   } catch (error) {
