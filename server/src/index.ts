@@ -3,12 +3,16 @@ import { getNetworkAddress } from '@/utils/network';
 import { setupGracefulShutdown } from '@/libs/shutdown';
 import App from './app';
 import { logger } from './libs/logger';
+import { initializeLangFuseObservability, shutdownLangFuseObservability } from './modules/ai/observability/startup';
 
 dotenv.config();
 const PORT: number = Number(process.env.PORT || 3001);
 
 (async () => {
   try {
+    // Initialize LangFuse observability before starting the app
+    await initializeLangFuseObservability();
+
     const app = await App();
 
     logger.info('PORT', { port: PORT });
@@ -29,6 +33,15 @@ const PORT: number = Number(process.env.PORT || 3001);
       },
       'server'
     );
+
+    // Add shutdown handler for LangFuse
+    process.on('SIGTERM', async () => {
+      await shutdownLangFuseObservability();
+    });
+    
+    process.on('SIGINT', async () => {
+      await shutdownLangFuseObservability();
+    });
   } catch (error) {
     logger.error('Error running server:', error);
     process.exit(1);

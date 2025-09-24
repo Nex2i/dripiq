@@ -11,7 +11,9 @@ import {
   siteEmbeddingRepository,
 } from '@/repositories';
 import { TenantService } from '@/modules/tenant.service';
-import { createChatModel, LangChainConfig } from '../config/langchain.config';
+import { createInstrumentedChatModel, LangChainConfig } from '../config/langchain.config';
+import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
+import { promptService } from '../../observability/prompt.service';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
@@ -35,7 +37,14 @@ export type ContactStrategyResult = {
   finalResponseParsed: EmailContentOutput;
   totalIterations: number;
   functionCalls: any[];
+  traceId?: string;
 };
+
+export interface ContactStrategyOptions {
+  enableTracing?: boolean;
+  sessionId?: string;
+  metadata?: Record<string, any>;
+}
 
 type ValueSchema<T> = {
   description: string;
@@ -50,7 +59,7 @@ export class ContactStrategyAgent {
   constructor(config: LangChainConfig) {
     this.config = config;
 
-    const model = createChatModel(config);
+    const model = createInstrumentedChatModel('ContactStrategyAgent', {}, config);
 
     const tools: DynamicStructuredTool[] = [
       ListDomainPagesTool,
@@ -87,11 +96,36 @@ export class ContactStrategyAgent {
   async generateEmailContent(
     tenantId: string,
     leadId: string,
-    contactId: string
+    contactId: string,
+    options: ContactStrategyOptions = {}
   ): Promise<ContactStrategyResult> {
+    const {
+      enableTracing = true,
+      sessionId = `contact_strategy_${leadId}_${contactId}_${Date.now()}`,
+      metadata = {},
+    } = options;
+
+    // Create trace for this generation
+    let trace = null;
+    let traceId: string | undefined;
+
+    if (enableTracing && langfuseService.isReady()) {
+      trace = langfuseService.createTrace(`Contact Strategy: Lead ${leadId}`, {
+        tenantId,
+        sessionId,
+        agentType: 'ContactStrategyAgent',
+        metadata: { leadId, contactId, ...metadata },
+      });
+      traceId = trace?.id;
+    }
     let systemPrompt: string;
     try {
-      systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
+      // Get prompt (try remote first, fallback to local)
+      const { prompt: systemPromptTemplate } = await promptService.getPrompt('contact_strategy', {
+        useRemote: true,
+        fallbackToLocal: true,
+      });
+      systemPrompt = promptHelper.injectInputVariables(systemPromptTemplate, {});
     } catch (error) {
       logger.error('Error preparing prompt variables', error);
       throw new Error(
@@ -100,6 +134,17 @@ export class ContactStrategyAgent {
     }
 
     try {
+      // Log generation start
+      langfuseService.logEvent('contact_strategy_started', {
+        leadId,
+        contactId,
+      }, {
+        tenantId,
+        sessionId,
+        agentType: 'ContactStrategyAgent',
+        metadata,
+      });
+
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
         lead_details: await this.getLeadDetails(tenantId, leadId),
@@ -121,16 +166,54 @@ export class ContactStrategyAgent {
       // Enhanced JSON parsing with better error handling
       const parsedResult = parseWithSchema(finalResponse);
 
+      // Log successful completion
+      langfuseService.logEvent('contact_strategy_completed', {
+        leadId,
+        contactId,
+        totalIterations: result.intermediateSteps?.length ?? 0,
+        success: true,
+      }, {
+        tenantId,
+        sessionId,
+        agentType: 'ContactStrategyAgent',
+        metadata,
+      });
+
+      // Score the generation if we have a trace
+      if (trace && parsedResult) {
+        langfuseService.score(trace.id, 'strategy_quality', 0.8, 'Contact strategy generated successfully');
+      }
+
       return {
         finalResponse: result.output || finalResponse || 'Email content generation completed',
         finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        traceId,
       };
     } catch (error) {
-      logger.error('Email content generation failed:', error);
+      // Log error
+      langfuseService.logEvent('contact_strategy_error', {
+        leadId,
+        contactId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }, {
+        tenantId,
+        sessionId,
+        agentType: 'ContactStrategyAgent',
+        metadata,
+      });
 
+      // Score the error if we have a trace
+      if (trace) {
+        langfuseService.score(trace.id, 'strategy_quality', 0.1, `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+
+      logger.error('Email content generation failed:', error);
       throw error;
+    } finally {
+      // Flush events
+      await langfuseService.flush();
     }
   }
 
@@ -226,7 +309,7 @@ export class ContactStrategyAgent {
 
   private async getSiteContentForUrl(siteUrl: string): Promise<string> {
     try {
-      const cleanUrl = siteUrl.cleanWebsiteUrl();
+        const cleanUrl = siteUrl.cleanWebsiteUrl();
       const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
 
       if (!embeddings || embeddings.length === 0) {

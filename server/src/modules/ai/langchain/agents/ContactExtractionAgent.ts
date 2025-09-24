@@ -5,7 +5,9 @@ import { z } from 'zod';
 import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import extractContactsPrompt from '@/prompts/extractContacts.prompt';
-import { createChatModel, LangChainConfig } from '../config/langchain.config';
+import { createInstrumentedChatModel, LangChainConfig } from '../config/langchain.config';
+import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
+import { promptService } from '../../observability/prompt.service';
 import {
   fetchWebDataContacts,
   formatWebDataContactsForPrompt,
@@ -26,7 +28,16 @@ export type ContactExtractionResult = {
   finalResponseParsed: ContactExtractionOutput;
   totalIterations: number;
   functionCalls: any[];
+  traceId?: string;
 };
+
+export interface ContactExtractionOptions {
+  tenantId?: string;
+  userId?: string;
+  sessionId?: string;
+  enableTracing?: boolean;
+  metadata?: Record<string, any>;
+}
 
 export class ContactExtractionAgent {
   private agent: AgentExecutor;
@@ -35,7 +46,7 @@ export class ContactExtractionAgent {
   constructor(config: LangChainConfig) {
     this.config = config;
 
-    const model = createChatModel(config);
+    const model = createInstrumentedChatModel('ContactExtractionAgent', {}, config);
 
     const tools: DynamicStructuredTool[] = [
       ListDomainPagesTool,
@@ -61,20 +72,70 @@ export class ContactExtractionAgent {
     });
   }
 
-  async extractContacts(domain: string): Promise<ContactExtractionResult> {
-    // First, fetch webData contacts to include in the prompt
-    logger.info('Fetching webData contacts for extraction', { domain });
-    const webDataSummary = await fetchWebDataContacts(domain);
-    logger.info('WebData contacts fetched', { domain, webDataSummary });
-    const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
+  async extractContacts(
+    domain: string,
+    options: ContactExtractionOptions = {}
+  ): Promise<ContactExtractionResult> {
+    const {
+      tenantId,
+      userId,
+      sessionId = `contact_extraction_${domain}_${Date.now()}`,
+      enableTracing = true,
+      metadata = {},
+    } = options;
 
-    const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
-      domain,
-      webdata_contacts: webDataContactsText,
-      output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
-    });
+    // Create trace for this analysis
+    let trace = null;
+    let traceId: string | undefined;
 
+    if (enableTracing && langfuseService.isReady()) {
+      trace = langfuseService.createTrace(`Contact Extraction: ${domain}`, {
+        tenantId,
+        userId,
+        sessionId,
+        agentType: 'ContactExtractionAgent',
+        metadata: { domain, ...metadata },
+      });
+      traceId = trace?.id;
+    }
     try {
+      // First, fetch webData contacts to include in the prompt
+      logger.info('Fetching webData contacts for extraction', { domain });
+      const webDataSummary = await fetchWebDataContacts(domain);
+      logger.info('WebData contacts fetched', { domain, webDataSummary });
+      const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
+
+      // Get prompt from service
+      let systemPromptTemplate: string;
+      try {
+        const { prompt } = await promptService.getPrompt('extract_contacts', {
+          useRemote: true,
+          fallbackToLocal: true,
+        });
+        systemPromptTemplate = prompt;
+      } catch {
+        // Fallback to direct import if prompt service fails
+        systemPromptTemplate = extractContactsPrompt;
+      }
+
+      const systemPrompt = promptHelper.injectInputVariables(systemPromptTemplate, {
+        domain,
+        webdata_contacts: webDataContactsText,
+        output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
+      });
+
+      // Log extraction start
+      langfuseService.logEvent('contact_extraction_started', {
+        domain,
+        webDataContactsCount: webDataSummary.contacts.length,
+      }, {
+        tenantId,
+        userId,
+        sessionId,
+        agentType: 'ContactExtractionAgent',
+        metadata,
+      });
+
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
       });
@@ -82,7 +143,11 @@ export class ContactExtractionAgent {
       let finalResponse = getContentFromMessage(result.output);
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt);
+        finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt, {
+          tenantId,
+          userId,
+          sessionId,
+        });
       }
 
       const aiParsedResult = parseWithSchema(finalResponse, domain);
@@ -125,6 +190,30 @@ export class ContactExtractionAgent {
         summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
       };
 
+      // Log successful completion
+      langfuseService.logEvent('contact_extraction_completed', {
+        domain,
+        originalAI: aiParsedResult.contacts.length,
+        originalWebData: webDataSummary.contacts.length,
+        webDataPreserved: mergeResult.webDataContacts.length,
+        enrichedContacts: mergeResult.enrichedContacts.length,
+        aiOnlyContacts: mergeResult.aiOnlyContacts.length,
+        finalTotal: finalContacts.length,
+        priorityContactIndex: updatedPriorityContactId,
+        success: true,
+      }, {
+        tenantId,
+        userId,
+        sessionId,
+        agentType: 'ContactExtractionAgent',
+        metadata,
+      });
+
+      // Score the extraction if we have a trace
+      if (trace && finalContacts.length > 0) {
+        langfuseService.score(trace.id, 'extraction_quality', 0.8, `Successfully extracted ${finalContacts.length} contacts`);
+      }
+
       logger.info('Contact extraction and merge completed', {
         domain,
         originalAI: aiParsedResult.contacts.length,
@@ -141,9 +230,35 @@ export class ContactExtractionAgent {
         finalResponseParsed: finalParsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        traceId,
       };
     } catch (error) {
+      // Log error
+      langfuseService.logEvent('contact_extraction_error', {
+        domain,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }, {
+        tenantId,
+        userId,
+        sessionId,
+        agentType: 'ContactExtractionAgent',
+        metadata,
+      });
+
+      // Score the error if we have a trace
+      if (trace) {
+        langfuseService.score(trace.id, 'extraction_quality', 0.1, `Extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+
       logger.error('Contact extraction failed:', error);
+
+      // Fetch webData for fallback
+      let webDataSummary: WebDataContactSummary;
+      try {
+        webDataSummary = await fetchWebDataContacts(domain);
+      } catch {
+        webDataSummary = { contacts: [], totalFound: 0 };
+      }
 
       // Return fallback result with webData contacts if available
       const fallbackResult = getFallbackResultWithWebData(domain, error, webDataSummary);
@@ -152,18 +267,25 @@ export class ContactExtractionAgent {
         finalResponseParsed: fallbackResult,
         totalIterations: 0,
         functionCalls: [],
+        traceId,
       };
+    } finally {
+      // Flush events
+      await langfuseService.flush();
     }
   }
 
   private async generateSummaryFromSteps(
     domain: string,
     result: any,
-    systemPrompt: string
+    systemPrompt: string,
+    tracingMetadata?: Pick<TracingMetadata, 'tenantId' | 'userId' | 'sessionId'>
   ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(contactExtractionOutputSchema));
+    const structuredModel = createInstrumentedChatModel(
+      'ContactExtractionAgent_Summarizer',
+      tracingMetadata || {},
+      { model: this.config.model }
+    ).withStructuredOutput(z.toJSONSchema(contactExtractionOutputSchema));
 
     const gatheredInfo = (result.intermediateSteps || [])
       .map((step: any) => {
