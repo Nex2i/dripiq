@@ -98,7 +98,7 @@ describe('EmailValidationService', () => {
 
       expect(result.status).toBe('invalid');
       expect(result.sub_status).toBe('disposable');
-      expect(result.mx_found).toBe(true);
+      expect(result.mx_found).toBe(false); // MX lookup skipped for disposable domains
     });
 
     it('should return valid result for role-based email', async () => {

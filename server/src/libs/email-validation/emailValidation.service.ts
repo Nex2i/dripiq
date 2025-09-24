@@ -62,7 +62,18 @@ export class EmailValidationService {
     // Step 4: Check for domain typos and suggest corrections
     const suggestion = this.domainClassifier.suggestDomainCorrection(domain);
 
-    // Step 5: DNS/MX record validation
+    // Step 5: Check for disposable domains first (reject regardless of MX records)
+    if (domainInfo.isDisposable) {
+      return this.createInvalidResult(trimmedEmail, 'disposable', {
+        account,
+        domain,
+        domainInfo,
+        suggestion,
+        mxInfo: { found: false, primaryRecord: null, allRecords: [] },
+      });
+    }
+
+    // Step 6: DNS/MX record validation
     const mxInfo = await this.dnsValidator.validateMxRecords(domain);
 
     if (!mxInfo.found) {
@@ -75,19 +86,16 @@ export class EmailValidationService {
       });
     }
 
-    // Step 6: Determine validation status based on domain classification
+    // Step 7: Determine validation status based on domain classification
     let status: 'valid' | 'invalid' | 'unknown' = 'valid';
     let subStatus: string | null = null;
 
-    if (domainInfo.isDisposable) {
-      status = 'invalid';
-      subStatus = 'disposable';
-    } else if (domainInfo.isRoleBasedAccount) {
+    if (domainInfo.isRoleBasedAccount) {
       status = 'valid';
       subStatus = 'role_based';
     }
 
-    // Step 7: SMTP validation (optional and limited)
+    // Step 8: SMTP validation (optional and limited)
     let smtpResult = null;
     if (
       this.config.enableSmtpValidation &&
@@ -111,10 +119,10 @@ export class EmailValidationService {
       }
     }
 
-    // Step 8: Extract potential name information from email
+    // Step 9: Extract potential name information from email
     const nameInfo = this.extractNameFromEmail(account);
 
-    // Step 9: Create result entity
+    // Step 10: Create result entity
     const resultEntity = EmailValidationResultEntity.create({
       email: trimmedEmail,
       status,
