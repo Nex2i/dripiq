@@ -99,15 +99,38 @@ export class EmailValidationService {
     let smtpResult = null;
     if (
       this.config.enableSmtpValidation &&
-      this.smtpValidator.shouldAttemptSmtpValidation(domain) &&
+      this.smtpValidator.shouldAttemptSmtpValidation(domain, mxInfo.primaryRecord || undefined) &&
       status === 'valid'
     ) {
       try {
         smtpResult = await this.smtpValidator.validateEmail(trimmedEmail, mxInfo.primaryRecord!);
 
         if (!smtpResult.isValid) {
-          status = 'invalid';
-          subStatus = 'mailbox_not_found';
+          // Check if this is a genuine mailbox failure vs connection/blocking issue
+          if (smtpResult.errorMessage && 
+              (smtpResult.errorMessage.includes('550') || 
+               smtpResult.errorMessage.includes('551') || 
+               smtpResult.errorMessage.includes('553') ||
+               smtpResult.errorMessage.includes('5.1.1') ||  // No such user
+               smtpResult.errorMessage.includes('5.7.1'))) { // Access denied/blocked
+            // Genuine SMTP rejection - mailbox likely doesn't exist
+            status = 'invalid';
+            subStatus = 'mailbox_not_found';
+          } else if (smtpResult.errorMessage && smtpResult.errorMessage.includes('SMTP validation failed:')) {
+            // For Google Workspace domains, SMTP connection failures often indicate non-existent mailboxes
+            // This is a heuristic based on the fact that Google tends to block connections for invalid addresses
+            if (mxInfo.primaryRecord && mxInfo.primaryRecord.toLowerCase().includes('aspmx.l.google.com')) {
+              status = 'invalid';
+              subStatus = 'mailbox_not_found';
+            } else {
+              status = 'unknown';
+              subStatus = 'smtp_verification_unavailable';
+            }
+          } else {
+            // Connection issue, timeout, or provider blocking - don't mark as invalid
+            status = 'unknown';
+            subStatus = 'smtp_verification_unavailable';
+          }
         } else if (smtpResult.isCatchAll) {
           subStatus = 'catch_all';
         }

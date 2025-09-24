@@ -176,9 +176,9 @@ export class SmtpValidator {
 
   /**
    * Quick check if SMTP validation should be attempted
-   * Skips validation for known problematic domains
+   * Skips validation for known problematic domains and specific MX patterns
    */
-  shouldAttemptSmtpValidation(domain: string): boolean {
+  shouldAttemptSmtpValidation(domain: string, mxRecord?: string): boolean {
     const problematicDomains = new Set([
       'gmail.com',
       'yahoo.com',
@@ -188,6 +188,27 @@ export class SmtpValidator {
       'aol.com',
     ]);
 
-    return !problematicDomains.has(domain.toLowerCase());
+    // Check domain directly - these providers always block SMTP validation
+    if (problematicDomains.has(domain.toLowerCase())) {
+      return false;
+    }
+
+    // Check for specific MX providers that are known to block SMTP validation
+    if (mxRecord) {
+      const lowerMx = mxRecord.toLowerCase();
+      
+      // Skip Microsoft-hosted business emails - they consistently block SMTP validation
+      if (lowerMx.includes('mail.protection.outlook.com')) {
+        return false;
+      }
+      
+      // Allow Google Workspace MX records (aspmx.l.google.com) as they may provide useful results
+      // Only skip the direct Gmail consumer MX records
+      if (lowerMx.includes('gmail-smtp-in.l.google.com')) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
