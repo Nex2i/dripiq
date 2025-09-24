@@ -1,17 +1,6 @@
 import { Type } from '@sinclair/typebox';
 
 /**
- * Email validation request schema
- */
-export const emailValidationRequestSchema = Type.Object({
-  email: Type.String({
-    format: 'email',
-    description: 'Email address to validate',
-    examples: ['user@example.com', 'john.doe@gmail.com'],
-  }),
-});
-
-/**
  * Email validation response schema
  */
 export const emailValidationResponseSchema = Type.Object({
