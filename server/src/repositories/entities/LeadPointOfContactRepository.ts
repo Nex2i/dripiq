@@ -1,5 +1,5 @@
-import { eq, and } from 'drizzle-orm';
-import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads } from '@/db/schema';
+import { eq, and, isNotNull } from 'drizzle-orm';
+import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads, contactUnsubscribes } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
 
@@ -20,6 +20,62 @@ export class LeadPointOfContactRepository extends BaseRepository<
       .select()
       .from(leadPointOfContacts)
       .where(eq(leadPointOfContacts.leadId, leadId));
+  }
+
+  /**
+   * Find contacts by lead ID with unsubscribe status included
+   * Uses a single optimized query with LEFT JOIN to get unsubscribe status
+   */
+  async findByLeadIdWithUnsubscribeStatus(
+    leadId: string, 
+    tenantId: string
+  ): Promise<(LeadPointOfContact & { isUnsubscribed: boolean })[]> {
+    const results = await this.db
+      .select({
+        // Select all contact fields
+        id: leadPointOfContacts.id,
+        leadId: leadPointOfContacts.leadId,
+        name: leadPointOfContacts.name,
+        email: leadPointOfContacts.email,
+        phone: leadPointOfContacts.phone,
+        title: leadPointOfContacts.title,
+        company: leadPointOfContacts.company,
+        sourceUrl: leadPointOfContacts.sourceUrl,
+        manuallyReviewed: leadPointOfContacts.manuallyReviewed,
+        strategyStatus: leadPointOfContacts.strategyStatus,
+        createdAt: leadPointOfContacts.createdAt,
+        updatedAt: leadPointOfContacts.updatedAt,
+        // Check if unsubscribe record exists
+        unsubscribeId: contactUnsubscribes.id,
+      })
+      .from(leadPointOfContacts)
+      .leftJoin(
+        contactUnsubscribes,
+        and(
+          eq(contactUnsubscribes.tenantId, tenantId),
+          eq(contactUnsubscribes.channel, 'email'),
+          eq(contactUnsubscribes.channelValue, leadPointOfContacts.email),
+          isNotNull(leadPointOfContacts.email) // Only join if email is not null
+        )
+      )
+      .where(eq(leadPointOfContacts.leadId, leadId));
+
+    // Transform the results to include isUnsubscribed boolean
+    return results.map(result => ({
+      id: result.id,
+      leadId: result.leadId,
+      name: result.name,
+      email: result.email,
+      phone: result.phone,
+      title: result.title,
+      company: result.company,
+      sourceUrl: result.sourceUrl,
+      manuallyReviewed: result.manuallyReviewed,
+      strategyStatus: result.strategyStatus,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      isUnsubscribed: !!result.unsubscribeId,
+    }));
   }
 
   /**

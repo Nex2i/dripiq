@@ -5,7 +5,6 @@ import {
   leadStatusRepository,
   leadTransactionRepository,
   repositories,
-  contactUnsubscribeRepository,
 } from '../repositories';
 import { NewLead, NewLeadPointOfContact, Lead, LeadPointOfContact, LeadStatus } from '../db/schema';
 import { LeadWithOwner } from '../repositories/entities/LeadRepository';
@@ -191,8 +190,8 @@ export const getLeadById = async (
     // Get lead with owner information using repository
     const leadData = await leadRepository.findById(id);
 
-    // Get point of contacts for this lead - strategyStatus is already stored in DB
-    const contacts = await leadPointOfContactRepository.findByLeadId(id);
+    // Get point of contacts for this lead with unsubscribe status in a single optimized query
+    const contactsWithUnsubscribeStatus = await leadPointOfContactRepository.findByLeadIdWithUnsubscribeStatus(id, tenantId);
 
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];
@@ -206,33 +205,6 @@ export const getLeadById = async (
       );
       statuses = [];
     }
-
-    // Check unsubscribe status for contacts with email addresses
-    const contactsWithUnsubscribeStatus: LeadPointOfContactWithUnsubscribe[] = await Promise.all(
-      contacts.map(async (contact) => {
-        let isUnsubscribed = false;
-        
-        // Only check unsubscribe status if contact has an email
-        if (contact.email) {
-          try {
-            const unsubscribeRecord = await contactUnsubscribeRepository.findByChannelValue(
-              tenantId,
-              'email',
-              contact.email
-            );
-            isUnsubscribed = !!unsubscribeRecord;
-          } catch (error) {
-            // Log warning but don't fail the request
-            logger.warn(`Failed to check unsubscribe status for contact ${contact.id}:`, error);
-          }
-        }
-
-        return {
-          ...contact,
-          isUnsubscribed,
-        };
-      })
-    );
 
     // Transform lead with signed URLs using existing function
     const transformedLead = await transformLeadWithSignedUrls(tenantId, leadData);
