@@ -56,11 +56,11 @@ export class EmailValidationService {
       return this.createInvalidResult(trimmedEmail, 'invalid_format');
     }
 
-    // Step 3: Domain classification
-    const domainInfo = this.domainClassifier.classifyDomain(domain, account);
-
-    // Step 4: Check for domain typos and suggest corrections
-    const suggestion = this.domainClassifier.suggestDomainCorrection(domain);
+    // Step 3 & 4: Domain classification and typo detection (can run in parallel)
+    const [domainInfo, suggestion] = await Promise.all([
+      Promise.resolve(this.domainClassifier.classifyDomain(domain, account)),
+      Promise.resolve(this.domainClassifier.suggestDomainCorrection(domain)),
+    ]);
 
     // Step 5: Check for disposable domains first (reject regardless of MX records)
     if (domainInfo.isDisposable) {
@@ -107,19 +107,28 @@ export class EmailValidationService {
 
         if (!smtpResult.isValid) {
           // Check if this is a genuine mailbox failure vs connection/blocking issue
-          if (smtpResult.errorMessage && 
-              (smtpResult.errorMessage.includes('550') || 
-               smtpResult.errorMessage.includes('551') || 
-               smtpResult.errorMessage.includes('553') ||
-               smtpResult.errorMessage.includes('5.1.1') ||  // No such user
-               smtpResult.errorMessage.includes('5.7.1'))) { // Access denied/blocked
+          if (
+            smtpResult.errorMessage &&
+            (smtpResult.errorMessage.includes('550') ||
+              smtpResult.errorMessage.includes('551') ||
+              smtpResult.errorMessage.includes('553') ||
+              smtpResult.errorMessage.includes('5.1.1') || // No such user
+              smtpResult.errorMessage.includes('5.7.1'))
+          ) {
+            // Access denied/blocked
             // Genuine SMTP rejection - mailbox likely doesn't exist
             status = 'invalid';
             subStatus = 'mailbox_not_found';
-          } else if (smtpResult.errorMessage && smtpResult.errorMessage.includes('SMTP validation failed:')) {
+          } else if (
+            smtpResult.errorMessage &&
+            smtpResult.errorMessage.includes('SMTP validation failed:')
+          ) {
             // For Google Workspace domains, SMTP connection failures often indicate non-existent mailboxes
             // This is a heuristic based on the fact that Google tends to block connections for invalid addresses
-            if (mxInfo.primaryRecord && mxInfo.primaryRecord.toLowerCase().includes('aspmx.l.google.com')) {
+            if (
+              mxInfo.primaryRecord &&
+              mxInfo.primaryRecord.toLowerCase().includes('aspmx.l.google.com')
+            ) {
               status = 'invalid';
               subStatus = 'mailbox_not_found';
             } else {
@@ -250,9 +259,10 @@ export class EmailValidationService {
   static createDefault(): EmailValidationService {
     return new EmailValidationService({
       enableSmtpValidation: true, // Enabled by default for accurate validation
-      smtpTimeout: 10000,
-      maxRetries: 2,
-      enableCaching: false,
+      smtpTimeout: 3000, // Reduced from 10s to 3s for better performance
+      maxRetries: 1, // Reduced from 2 to 1 retry for speed
+      enableCaching: true, // Enable caching for better performance
+      cacheTtlSeconds: 300, // 5 minutes cache
     });
   }
 
@@ -266,6 +276,19 @@ export class EmailValidationService {
       maxRetries: 2,
       enableCaching: true,
       cacheTtlSeconds: 3600,
+    });
+  }
+
+  /**
+   * Factory method for ultra-fast validation (minimal SMTP validation)
+   */
+  static createFast(): EmailValidationService {
+    return new EmailValidationService({
+      enableSmtpValidation: true,
+      smtpTimeout: 1000, // Ultra-fast 1 second timeout
+      maxRetries: 0, // No retries for maximum speed
+      enableCaching: true,
+      cacheTtlSeconds: 300,
     });
   }
 }

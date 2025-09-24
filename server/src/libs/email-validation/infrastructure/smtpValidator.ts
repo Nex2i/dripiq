@@ -41,8 +41,8 @@ export class SmtpValidator {
             errorMessage: `SMTP validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           };
         }
-        // Wait before retry
-        await this.delay(1000 * attempt);
+        // Wait before retry (reduced delay)
+        await this.delay(500 * attempt);
       }
     }
 
@@ -87,6 +87,10 @@ export class SmtpValidator {
       }, this.timeout);
 
       socket.setTimeout(this.timeout);
+
+      // Set socket options for faster failure detection
+      socket.setKeepAlive(false);
+      socket.setNoDelay(true);
 
       socket.connect(25, mxRecord, () => {
         // Connected to SMTP server
@@ -150,7 +154,12 @@ export class SmtpValidator {
 
       socket.on('error', (error) => {
         clearTimeout(timer);
-        rejectOnce(error);
+        // Fast-fail for connection refused (server likely blocking)
+        if (error.message && error.message.includes('ECONNREFUSED')) {
+          rejectOnce(new Error('Connection refused - server blocking SMTP validation'));
+        } else {
+          rejectOnce(error);
+        }
       });
 
       socket.on('timeout', () => {
@@ -196,12 +205,12 @@ export class SmtpValidator {
     // Check for specific MX providers that are known to block SMTP validation
     if (mxRecord) {
       const lowerMx = mxRecord.toLowerCase();
-      
+
       // Skip Microsoft-hosted business emails - they consistently block SMTP validation
       if (lowerMx.includes('mail.protection.outlook.com')) {
         return false;
       }
-      
+
       // Allow Google Workspace MX records (aspmx.l.google.com) as they may provide useful results
       // Only skip the direct Gmail consumer MX records
       if (lowerMx.includes('gmail-smtp-in.l.google.com')) {
