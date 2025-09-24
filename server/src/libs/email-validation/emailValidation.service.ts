@@ -86,7 +86,21 @@ export class EmailValidationService {
       });
     }
 
-    // Step 7: Determine validation status based on domain classification
+    // Step 7: Check for obvious invalid patterns on Microsoft domains
+    const isMicrosoftDomain = mxInfo.primaryRecord && 
+      mxInfo.primaryRecord.toLowerCase().includes('mail.protection.outlook.com');
+    
+    if (isMicrosoftDomain && this.isObviouslyInvalidEmail(account, domain)) {
+      return this.createInvalidResult(trimmedEmail, 'mailbox_not_found', {
+        account,
+        domain,
+        domainInfo,
+        suggestion,
+        mxInfo,
+      });
+    }
+
+    // Step 8: Determine validation status based on domain classification
     let status: 'valid' | 'invalid' | 'unknown' = 'valid';
     let subStatus: string | null = null;
 
@@ -263,6 +277,46 @@ export class EmailValidationService {
   private capitalizeFirst(str: string): string {
     if (!str) return str;
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  /**
+   * Detects obviously invalid email patterns that are likely typos or non-existent
+   * Used for Microsoft domains where SMTP validation is unreliable
+   */
+  private isObviouslyInvalidEmail(account: string, domain: string): boolean {
+    const lowerAccount = account.toLowerCase();
+    
+    // Pattern 1: Repeated characters (like ryanhutchisonnnnn)
+    if (/(.)\1{3,}/.test(lowerAccount)) {
+      return true;
+    }
+    
+    // Pattern 2: Random character sequences
+    if (/[a-z]{10,}/.test(lowerAccount) && !/[aeiou]/.test(lowerAccount)) {
+      return true; // Long sequences without vowels are likely random
+    }
+    
+    // Pattern 3: Common test patterns
+    const testPatterns = [
+      /^test\d*$/,
+      /^fake/,
+      /^invalid/,
+      /^dummy/,
+      /^example/,
+      /^noreply/,
+      /^no-reply/
+    ];
+    
+    if (testPatterns.some(pattern => pattern.test(lowerAccount))) {
+      return true;
+    }
+    
+    // Pattern 4: Gibberish patterns (consonant clusters, unlikely sequences)
+    if (/[bcdfghjklmnpqrstvwxyz]{5,}/.test(lowerAccount)) {
+      return true; // 5+ consecutive consonants
+    }
+    
+    return false;
   }
 
   /**
