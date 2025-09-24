@@ -151,7 +151,7 @@ The service follows clean architecture principles:
 ### SMTP Validation Challenges
 - Many providers (Gmail, Outlook) block SMTP validation attempts
 - Rate limiting required to avoid IP blocking
-- Disabled by default, can be enabled for internal/business domains
+- Enabled by default for accurate validation, skips known problematic domains
 
 ### Accuracy Expectations
 - **Syntax**: 99%+ accuracy

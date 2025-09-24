@@ -236,7 +236,7 @@ describe('EmailValidationService', () => {
   });
 
   describe('factory methods', () => {
-    it('should create default service with SMTP validation disabled', () => {
+    it('should create default service with SMTP validation enabled', () => {
       const defaultService = EmailValidationService.createDefault();
       expect(defaultService).toBeInstanceOf(EmailValidationService);
     });

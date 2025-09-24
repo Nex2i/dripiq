@@ -105,7 +105,7 @@ export class EmailValidationService {
       try {
         smtpResult = await this.smtpValidator.validateEmail(trimmedEmail, mxInfo.primaryRecord!);
 
-        if (!smtpResult.isValid && smtpResult.errorMessage?.includes('550')) {
+        if (!smtpResult.isValid) {
           status = 'invalid';
           subStatus = 'mailbox_not_found';
         } else if (smtpResult.isCatchAll) {
@@ -226,9 +226,9 @@ export class EmailValidationService {
    */
   static createDefault(): EmailValidationService {
     return new EmailValidationService({
-      enableSmtpValidation: false, // Disabled by default due to provider blocking
-      smtpTimeout: 5000,
-      maxRetries: 1,
+      enableSmtpValidation: true, // Enabled by default for accurate validation
+      smtpTimeout: 10000,
+      maxRetries: 2,
       enableCaching: false,
     });
   }
