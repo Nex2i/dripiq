@@ -1,7 +1,17 @@
-import { eq, and, isNotNull, sql, inArray } from 'drizzle-orm';
-import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads, contactUnsubscribes } from '@/db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
+import {
+  leadPointOfContacts,
+  LeadPointOfContact,
+  NewLeadPointOfContact,
+  leads,
+  contactUnsubscribes,
+} from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
+
+export type LeadPointOfContactWithUnsubscribe = LeadPointOfContact & {
+  isUnsubscribed: boolean;
+};
 
 export class LeadPointOfContactRepository extends BaseRepository<
   typeof leadPointOfContacts,
@@ -27,9 +37,9 @@ export class LeadPointOfContactRepository extends BaseRepository<
    * Uses an optimized two-query approach to get unsubscribe status efficiently
    */
   async findByLeadIdWithUnsubscribeStatus(
-    leadId: string, 
+    leadId: string,
     tenantId: string
-  ): Promise<(LeadPointOfContact & { isUnsubscribed: boolean })[]> {
+  ): Promise<LeadPointOfContactWithUnsubscribe[]> {
     // First get all contacts for the lead
     const contacts = await this.db
       .select()
@@ -42,13 +52,13 @@ export class LeadPointOfContactRepository extends BaseRepository<
 
     // Get all email addresses from contacts (filter out null/empty emails)
     const emailAddresses = contacts
-      .map(contact => contact.email)
+      .map((contact) => contact.email)
       .filter((email): email is string => !!email)
-      .map(email => email.toLowerCase().trim());
+      .map((email) => email.toLowerCase().trim());
 
     // If no emails, return contacts with isUnsubscribed = false
     if (emailAddresses.length === 0) {
-      return contacts.map(contact => ({
+      return contacts.map((contact) => ({
         ...contact,
         isUnsubscribed: false,
       }));
@@ -69,14 +79,14 @@ export class LeadPointOfContactRepository extends BaseRepository<
       );
 
     // Create a Set of unsubscribed emails for quick lookup
-    const unsubscribedEmails = new Set(
-      unsubscribeRecords.map(record => record.channelValue)
-    );
+    const unsubscribedEmails = new Set(unsubscribeRecords.map((record) => record.channelValue));
 
     // Map contacts with unsubscribe status
-    return contacts.map(contact => ({
+    return contacts.map((contact) => ({
       ...contact,
-      isUnsubscribed: contact.email ? unsubscribedEmails.has(contact.email.toLowerCase().trim()) : false,
+      isUnsubscribed: contact.email
+        ? unsubscribedEmails.has(contact.email.toLowerCase().trim())
+        : false,
     }));
   }
 

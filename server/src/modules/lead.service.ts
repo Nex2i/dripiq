@@ -191,7 +191,8 @@ export const getLeadById = async (
     const leadData = await leadRepository.findById(id);
 
     // Get point of contacts for this lead with unsubscribe status in a single optimized query
-    const contactsWithUnsubscribeStatus = await leadPointOfContactRepository.findByLeadIdWithUnsubscribeStatus(id, tenantId);
+    const contactsWithUnsubscribeStatus =
+      await leadPointOfContactRepository.findByLeadIdWithUnsubscribeStatus(id, tenantId);
 
     // Get statuses for this lead (handle case where table doesn't exist yet)
     let statuses: any[] = [];

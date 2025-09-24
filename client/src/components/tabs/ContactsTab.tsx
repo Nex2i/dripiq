@@ -697,7 +697,11 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                           >
                             <div className="flex items-center space-x-2">
                               <UserX className="h-4 w-4" />
-                              <span>{contact.isUnsubscribed ? 'Already Unsubscribed' : 'Unsubscribe'}</span>
+                              <span>
+                                {contact.isUnsubscribed
+                                  ? 'Already Unsubscribed'
+                                  : 'Unsubscribe'}
+                              </span>
                             </div>
                           </MenuItem>
                         </Menu>
@@ -750,30 +754,32 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                       </div>
                     ) : (
                       <>
-                          <div className="flex items-center space-x-3">
-                            <Mail className={`h-5 w-5 ${contact.isUnsubscribed ? 'text-red-400' : 'text-gray-400'}`} />
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                                Email
-                                {contact.isUnsubscribed && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                                    <MailX className="h-3 w-3 mr-1" />
-                                    Unsubscribed
-                                  </span>
-                                )}
-                              </p>
-                              <a
-                                href={`mailto:${contact.email}`}
-                                className={`text-base transition-colors ${
-                                  contact.isUnsubscribed 
-                                    ? 'text-red-600 hover:text-red-700 line-through' 
-                                    : 'text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)]'
-                                }`}
-                              >
-                                {contact.email}
-                              </a>
-                            </div>
+                        <div className="flex items-center space-x-3">
+                          <Mail
+                            className={`h-5 w-5 ${contact.isUnsubscribed ? 'text-red-400' : 'text-gray-400'}`}
+                          />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                              Email
+                              {contact.isUnsubscribed && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                                  <MailX className="h-3 w-3 mr-1" />
+                                  Unsubscribed
+                                </span>
+                              )}
+                            </p>
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className={`text-base transition-colors ${
+                                contact.isUnsubscribed
+                                  ? 'text-red-600 hover:text-red-700 line-through'
+                                  : 'text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)]'
+                              }`}
+                            >
+                              {contact.email}
+                            </a>
                           </div>
+                        </div>
                         <CopyButton text={contact.email} label="email" />
                       </>
                     )}
