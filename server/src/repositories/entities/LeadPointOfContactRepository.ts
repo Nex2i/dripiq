@@ -1,4 +1,4 @@
-import { eq, and, isNotNull } from 'drizzle-orm';
+import { eq, and, isNotNull, sql, inArray } from 'drizzle-orm';
 import { leadPointOfContacts, LeadPointOfContact, NewLeadPointOfContact, leads, contactUnsubscribes } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { BaseRepository } from '../base/BaseRepository';
@@ -30,51 +30,53 @@ export class LeadPointOfContactRepository extends BaseRepository<
     leadId: string, 
     tenantId: string
   ): Promise<(LeadPointOfContact & { isUnsubscribed: boolean })[]> {
-    const results = await this.db
-      .select({
-        // Select all contact fields
-        id: leadPointOfContacts.id,
-        leadId: leadPointOfContacts.leadId,
-        name: leadPointOfContacts.name,
-        email: leadPointOfContacts.email,
-        phone: leadPointOfContacts.phone,
-        title: leadPointOfContacts.title,
-        company: leadPointOfContacts.company,
-        sourceUrl: leadPointOfContacts.sourceUrl,
-        manuallyReviewed: leadPointOfContacts.manuallyReviewed,
-        strategyStatus: leadPointOfContacts.strategyStatus,
-        createdAt: leadPointOfContacts.createdAt,
-        updatedAt: leadPointOfContacts.updatedAt,
-        // Check if unsubscribe record exists
-        unsubscribeId: contactUnsubscribes.id,
-      })
+    // First get all contacts for the lead
+    const contacts = await this.db
+      .select()
       .from(leadPointOfContacts)
-      .leftJoin(
-        contactUnsubscribes,
+      .where(eq(leadPointOfContacts.leadId, leadId));
+
+    if (contacts.length === 0) {
+      return [];
+    }
+
+    // Get all email addresses from contacts (filter out null/empty emails)
+    const emailAddresses = contacts
+      .map(contact => contact.email)
+      .filter((email): email is string => !!email)
+      .map(email => email.toLowerCase().trim());
+
+    // If no emails, return contacts with isUnsubscribed = false
+    if (emailAddresses.length === 0) {
+      return contacts.map(contact => ({
+        ...contact,
+        isUnsubscribed: false,
+      }));
+    }
+
+    // Get unsubscribe records for these emails
+    const unsubscribeRecords = await this.db
+      .select({
+        channelValue: contactUnsubscribes.channelValue,
+      })
+      .from(contactUnsubscribes)
+      .where(
         and(
           eq(contactUnsubscribes.tenantId, tenantId),
           eq(contactUnsubscribes.channel, 'email'),
-          eq(contactUnsubscribes.channelValue, leadPointOfContacts.email),
-          isNotNull(leadPointOfContacts.email) // Only join if email is not null
+          inArray(contactUnsubscribes.channelValue, emailAddresses)
         )
-      )
-      .where(eq(leadPointOfContacts.leadId, leadId));
+      );
 
-    // Transform the results to include isUnsubscribed boolean
-    return results.map(result => ({
-      id: result.id,
-      leadId: result.leadId,
-      name: result.name,
-      email: result.email,
-      phone: result.phone,
-      title: result.title,
-      company: result.company,
-      sourceUrl: result.sourceUrl,
-      manuallyReviewed: result.manuallyReviewed,
-      strategyStatus: result.strategyStatus,
-      createdAt: result.createdAt,
-      updatedAt: result.updatedAt,
-      isUnsubscribed: !!result.unsubscribeId,
+    // Create a Set of unsubscribed emails for quick lookup
+    const unsubscribedEmails = new Set(
+      unsubscribeRecords.map(record => record.channelValue)
+    );
+
+    // Map contacts with unsubscribe status
+    return contacts.map(contact => ({
+      ...contact,
+      isUnsubscribed: contact.email ? unsubscribedEmails.has(contact.email.toLowerCase().trim()) : false,
     }));
   }
 
