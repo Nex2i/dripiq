@@ -103,7 +103,18 @@ export class EmailValidationService {
       status === 'valid'
     ) {
       try {
-        smtpResult = await this.smtpValidator.validateEmail(trimmedEmail, mxInfo.primaryRecord!);
+        // Use shorter timeout for Microsoft domains as they tend to be more restrictive
+        const isMicrosoftDomain = mxInfo.primaryRecord && 
+          mxInfo.primaryRecord.toLowerCase().includes('mail.protection.outlook.com');
+        
+        if (isMicrosoftDomain) {
+          // Create a faster validator for Microsoft domains
+          const { SmtpValidator } = require('./infrastructure/smtpValidator');
+          const fastSmtpValidator = new SmtpValidator(1500, 0);
+          smtpResult = await fastSmtpValidator.validateEmail(trimmedEmail, mxInfo.primaryRecord!);
+        } else {
+          smtpResult = await this.smtpValidator.validateEmail(trimmedEmail, mxInfo.primaryRecord!);
+        }
 
         if (!smtpResult.isValid) {
           // Check if this is a genuine mailbox failure vs connection/blocking issue
@@ -123,11 +134,12 @@ export class EmailValidationService {
             smtpResult.errorMessage &&
             smtpResult.errorMessage.includes('SMTP validation failed:')
           ) {
-            // For Google Workspace domains, SMTP connection failures often indicate non-existent mailboxes
-            // This is a heuristic based on the fact that Google tends to block connections for invalid addresses
+            // For Google Workspace and Microsoft domains, SMTP connection failures often indicate non-existent mailboxes
+            // This is a heuristic based on the fact that these providers tend to block connections for invalid addresses
             if (
-              mxInfo.primaryRecord &&
-              mxInfo.primaryRecord.toLowerCase().includes('aspmx.l.google.com')
+              (mxInfo.primaryRecord &&
+                mxInfo.primaryRecord.toLowerCase().includes('aspmx.l.google.com')) ||
+              isMicrosoftDomain
             ) {
               status = 'invalid';
               subStatus = 'mailbox_not_found';

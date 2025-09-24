@@ -205,12 +205,13 @@ export class SmtpValidator {
     // Check for specific MX providers that are known to block SMTP validation
     if (mxRecord) {
       const lowerMx = mxRecord.toLowerCase();
-
+      
       // Skip Microsoft-hosted business emails - they consistently block SMTP validation
+      // and don't provide reliable differentiation between valid/invalid mailboxes
       if (lowerMx.includes('mail.protection.outlook.com')) {
         return false;
       }
-
+      
       // Allow Google Workspace MX records (aspmx.l.google.com) as they may provide useful results
       // Only skip the direct Gmail consumer MX records
       if (lowerMx.includes('gmail-smtp-in.l.google.com')) {
