@@ -24,7 +24,7 @@ export class LeadPointOfContactRepository extends BaseRepository<
 
   /**
    * Find contacts by lead ID with unsubscribe status included
-   * Uses a single optimized query with LEFT JOIN to get unsubscribe status
+   * Uses an optimized two-query approach to get unsubscribe status efficiently
    */
   async findByLeadIdWithUnsubscribeStatus(
     leadId: string, 
