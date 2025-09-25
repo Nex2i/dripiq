@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
@@ -10,19 +9,29 @@ import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomai
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import reportOutputSchema from '../../schemas/reportOutputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import { BaseObservableAgent } from '../../observability/base-agent';
+import { 
+  AgentExecutionOptions, 
+  AgentExecutionResult, 
+  AgentTracingContext,
+  PromptInjectionContext,
+  AgentError,
+  AgentErrorType 
+} from '../../observability/types';
+import { langfuseService } from '../../observability/langfuse.service';
 
-export type SiteAnalysisResult = {
-  finalResponse: string;
-  finalResponseParsed: z.infer<typeof reportOutputSchema>;
-  totalIterations: number;
-  functionCalls: any[];
-};
+export type SiteAnalysisResult = AgentExecutionResult<z.infer<typeof reportOutputSchema>>;
 
-export class SiteAnalysisAgent {
+export interface SiteAnalysisInput {
+  domain: string;
+}
+
+export class SiteAnalysisAgent extends BaseObservableAgent<SiteAnalysisInput, z.infer<typeof reportOutputSchema>> {
   private agent: AgentExecutor;
   private config: LangChainConfig;
 
   constructor(config: LangChainConfig) {
+    super();
     this.config = config;
 
     const model = createChatModel(config);
@@ -53,25 +62,82 @@ export class SiteAnalysisAgent {
     });
   }
 
-  async analyze(domain: string): Promise<SiteAnalysisResult> {
-    const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-    const systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
-      domain,
-      output_schema: outputSchemaJson,
-    });
+  protected getAgentName(): string {
+    return 'SiteAnalysisAgent';
+  }
+
+  protected getAgentVersion(): string {
+    return '2.0.0';
+  }
+
+  protected getPromptName(): string {
+    return 'summarize_site';
+  }
+
+  protected getAgentDescription(): string {
+    return 'Analyzes websites to extract comprehensive information about products, services, and company details';
+  }
+
+  protected preparePromptContext(input: SiteAnalysisInput): PromptInjectionContext {
+    return {
+      domain: input.domain,
+      variables: {
+        domain: input.domain,
+        // Note: As per requirements, we're ignoring output_schema injection
+      },
+    };
+  }
+
+  protected async executeCore(
+    input: SiteAnalysisInput,
+    promptContent: string,
+    context: AgentTracingContext
+  ): Promise<{
+    finalResponse: string;
+    finalResponseParsed: z.infer<typeof reportOutputSchema>;
+    totalIterations: number;
+    functionCalls: any[];
+  }> {
+    // Create generation for LLM tracking
+    const generation = context ? langfuseService.createGeneration(context.trace, {
+      name: 'site_analysis_generation',
+      model: this.config.model,
+      input: {
+        domain: input.domain,
+        promptLength: promptContent.length,
+      },
+    }) : null;
 
     try {
       const result = await this.agent.invoke({
-        system_prompt: systemPrompt,
+        system_prompt: promptContent,
       });
 
       let finalResponse = getContentFromMessage(result.output);
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt);
+        finalResponse = await this.summarizePartialSteps(result, input.domain, promptContent, context);
       }
 
-      const finalResponseParsed = parseWithSchema(finalResponse, domain);
+      const finalResponseParsed = parseWithSchema(finalResponse, input.domain);
+
+      // Update generation with success
+      if (generation) {
+        langfuseService.updateElement(generation, {
+          output: {
+            success: true,
+            responseLength: finalResponse.length,
+            iterations: result.intermediateSteps?.length ?? 0,
+            functionCalls: result.intermediateSteps?.length ?? 0,
+          },
+        });
+        langfuseService.endElement(generation);
+      }
+
+      // Track function calls as events
+      if (context && result.intermediateSteps) {
+        this.trackFunctionCalls(context, result.intermediateSteps);
+      }
 
       return {
         finalResponse,
@@ -80,36 +146,71 @@ export class SiteAnalysisAgent {
         functionCalls: result.intermediateSteps ?? [],
       };
     } catch (error) {
-      logger.error('Error in site analysis:', error);
-      return {
-        finalResponse: `Error occurred during site analysis: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        totalIterations: 1,
-        functionCalls: [],
-        finalResponseParsed: getFallbackResult(domain, error),
-      };
+      // Update generation with error
+      if (generation) {
+        langfuseService.updateElement(generation, {
+          output: { 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            success: false 
+          },
+          level: 'ERROR',
+        });
+        langfuseService.endElement(generation);
+      }
+
+      // Try fallback analysis
+      logger.warn('Site analysis failed, attempting fallback', {
+        domain: input.domain,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      throw new AgentError(
+        AgentErrorType.LLM_EXECUTION_ERROR,
+        `Site analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { 
+          domain: input.domain,
+          agentName: this.getAgentName() 
+        },
+        context?.trace?.id
+      );
     }
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   */
+  async analyze(domain: string, options?: AgentExecutionOptions): Promise<SiteAnalysisResult> {
+    return this.execute({ domain }, options);
   }
 
   private async summarizePartialSteps(
     result: any,
     domain: string,
-    systemPrompt: string
+    systemPrompt: string,
+    context: AgentTracingContext | null
   ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
+    const summarySpan = context ? langfuseService.createSpan(context.trace, {
+      name: 'partial_steps_summary',
+      metadata: {
+        domain,
+        stepCount: result.intermediateSteps?.length || 0,
+      },
+    }) : null;
 
-    const gatheredInfo = (result.intermediateSteps || [])
-      .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
-          step.observation || 'No result'
-        }\n`;
-      })
-      .join('\n---\n');
+    try {
+      const structuredModel = createChatModel({
+        model: this.config.model,
+      }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
 
-    const summaryPrompt = `
+      const gatheredInfo = (result.intermediateSteps || [])
+        .map((step: any) => {
+          return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
+            step.observation || 'No result'
+          }\n`;
+        })
+        .join('\n---\n');
+
+      const summaryPrompt = `
 You are a website analysis expert. Based on the partial research conducted below, provide a comprehensive website analysis for ${domain}.
 Research conducted so far:
 ${gatheredInfo}
@@ -118,15 +219,68 @@ ${systemPrompt}
 
 Even though the research may be incomplete, provide the best possible analysis based on the available information.
 Return your answer as valid JSON matching the provided schema.
-    `;
+      `;
 
-    const summary = await structuredModel.invoke([
-      {
-        role: 'system',
-        content: summaryPrompt,
-      },
-    ]);
-    return getContentFromMessage(summary.content ?? summary);
+      const summary = await structuredModel.invoke([
+        {
+          role: 'system',
+          content: summaryPrompt,
+        },
+      ]);
+
+      const summaryResult = getContentFromMessage(summary.content ?? summary);
+
+      if (summarySpan) {
+        langfuseService.updateElement(summarySpan, {
+          output: {
+            success: true,
+            summaryLength: summaryResult.length,
+          },
+        });
+        langfuseService.endElement(summarySpan);
+      }
+
+      return summaryResult;
+    } catch (error) {
+      if (summarySpan) {
+        langfuseService.updateElement(summarySpan, {
+          output: { 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            success: false 
+          },
+          level: 'ERROR',
+        });
+        langfuseService.endElement(summarySpan);
+      }
+
+      throw error;
+    }
+  }
+
+  private trackFunctionCalls(context: AgentTracingContext, intermediateSteps: any[]): void {
+    intermediateSteps.forEach((step, index) => {
+      const toolName = step.action?.tool || 'unknown_tool';
+      const toolInput = step.action?.toolInput || {};
+      const observation = step.observation || 'No result';
+
+      langfuseService.createEvent(context.trace, {
+        name: `tool_call_${toolName}`,
+        input: {
+          step: index + 1,
+          tool: toolName,
+          input: toolInput,
+        },
+        output: {
+          observation: observation,
+          success: !!observation,
+        },
+        metadata: {
+          toolName,
+          stepIndex: index,
+          hasResult: !!observation,
+        },
+      });
+    });
   }
 }
 

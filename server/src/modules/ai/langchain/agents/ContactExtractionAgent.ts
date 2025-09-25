@@ -2,9 +2,7 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
-import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import {
   fetchWebDataContacts,
@@ -20,19 +18,29 @@ import contactExtractionOutputSchema, {
   ContactExtractionOutput,
 } from '../../schemas/contactExtractionSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import { BaseObservableAgent } from '../../observability/base-agent';
+import { 
+  AgentExecutionOptions, 
+  AgentExecutionResult, 
+  AgentTracingContext,
+  PromptInjectionContext,
+  AgentError,
+  AgentErrorType 
+} from '../../observability/types';
+import { langfuseService } from '../../observability/langfuse.service';
 
-export type ContactExtractionResult = {
-  finalResponse: string;
-  finalResponseParsed: ContactExtractionOutput;
-  totalIterations: number;
-  functionCalls: any[];
-};
+export type ContactExtractionResult = AgentExecutionResult<ContactExtractionOutput>;
 
-export class ContactExtractionAgent {
+export interface ContactExtractionInput {
+  domain: string;
+}
+
+export class ContactExtractionAgent extends BaseObservableAgent<ContactExtractionInput, ContactExtractionOutput> {
   private agent: AgentExecutor;
   private config: LangChainConfig;
 
   constructor(config: LangChainConfig) {
+    super();
     this.config = config;
 
     const model = createChatModel(config);
@@ -61,94 +69,228 @@ export class ContactExtractionAgent {
     });
   }
 
-  async extractContacts(domain: string): Promise<ContactExtractionResult> {
-    // First, fetch webData contacts to include in the prompt
-    logger.info('Fetching webData contacts for extraction', { domain });
-    const webDataSummary = await fetchWebDataContacts(domain);
-    logger.info('WebData contacts fetched', { domain, webDataSummary });
-    const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
+  protected getAgentName(): string {
+    return 'ContactExtractionAgent';
+  }
 
-    const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
-      domain,
-      webdata_contacts: webDataContactsText,
-      output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
-    });
+  protected getAgentVersion(): string {
+    return '2.0.0';
+  }
+
+  protected getPromptName(): string {
+    return 'extract_contacts';
+  }
+
+  protected getAgentDescription(): string {
+    return 'Extracts contact information from websites, merging with webData contacts for comprehensive results';
+  }
+
+  protected preparePromptContext(input: ContactExtractionInput): PromptInjectionContext {
+    return {
+      domain: input.domain,
+      variables: {
+        domain: input.domain,
+        // webdata_contacts and output_schema will be injected in executeCore
+      },
+    };
+  }
+
+  protected async executeCore(
+    input: ContactExtractionInput,
+    promptContent: string,
+    context: AgentTracingContext
+  ): Promise<{
+    finalResponse: string;
+    finalResponseParsed: ContactExtractionOutput;
+    totalIterations: number;
+    functionCalls: any[];
+  }> {
+    // Create span for webData fetching
+    const webDataSpan = context ? langfuseService.createSpan(context.trace, {
+      name: 'webdata_contacts_fetch',
+      metadata: {
+        domain: input.domain,
+      },
+    }) : null;
+
+    let webDataSummary: WebDataContactSummary;
+    try {
+      // Fetch webData contacts first
+      logger.info('Fetching webData contacts for extraction', { domain: input.domain });
+      webDataSummary = await fetchWebDataContacts(input.domain);
+      
+      if (webDataSpan) {
+        langfuseService.updateElement(webDataSpan, {
+          output: {
+            success: true,
+            contactCount: webDataSummary.contacts.length,
+            hasHighPriority: webDataSummary.contacts.some(c => c.priority === 'high'),
+          },
+        });
+        langfuseService.endElement(webDataSpan);
+      }
+
+      logger.info('WebData contacts fetched', { domain: input.domain, contactCount: webDataSummary.contacts.length });
+    } catch (error) {
+      if (webDataSpan) {
+        langfuseService.updateElement(webDataSpan, {
+          output: { 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            success: false 
+          },
+          level: 'ERROR',
+        });
+        langfuseService.endElement(webDataSpan);
+      }
+
+      // Continue with empty webData if fetching fails
+      webDataSummary = { contacts: [], totalFound: 0, highPriorityCount: 0 };
+      logger.warn('WebData contacts fetch failed, continuing with empty data', { 
+        domain: input.domain, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+
+    // Format webData contacts for prompt injection
+    const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
+    
+    // Inject webData contacts into the prompt
+    const finalPrompt = promptContent
+      .replace('{{webdata_contacts}}', webDataContactsText)
+      .replace('{{output_schema}}', JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2));
+
+    // Create generation for LLM tracking
+    const generation = context ? langfuseService.createGeneration(context.trace, {
+      name: 'contact_extraction_generation',
+      model: this.config.model,
+      input: {
+        domain: input.domain,
+        promptLength: finalPrompt.length,
+        webDataContactCount: webDataSummary.contacts.length,
+      },
+    }) : null;
 
     try {
       const result = await this.agent.invoke({
-        system_prompt: systemPrompt,
+        system_prompt: finalPrompt,
       });
 
       let finalResponse = getContentFromMessage(result.output);
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt);
+        finalResponse = await this.generateSummaryFromSteps(input.domain, result, finalPrompt, context);
       }
 
-      const aiParsedResult = parseWithSchema(finalResponse, domain);
+      const aiParsedResult = parseWithSchema(finalResponse, input.domain);
 
-      // Merge AI contacts with webData contacts - webData first approach
-      const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
+      // Create span for contact merging
+      const mergeSpan = context ? langfuseService.createSpan(context.trace, {
+        name: 'contact_merge_process',
+        metadata: {
+          aiContactCount: aiParsedResult.contacts.length,
+          webDataContactCount: webDataSummary.contacts.length,
+        },
+      }) : null;
 
-      // Combine contacts: enriched webData contacts first, then AI-only contacts
-      const finalContacts = [...mergeResult.enrichedContacts, ...mergeResult.aiOnlyContacts];
+      try {
+        // Merge AI contacts with webData contacts
+        const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
+        const finalContacts = [...mergeResult.enrichedContacts, ...mergeResult.aiOnlyContacts];
 
-      // Update priority contact index after merging
-      let updatedPriorityContactId = aiParsedResult.priorityContactId;
-      if (updatedPriorityContactId !== null && aiParsedResult.contacts.length > 0) {
-        const originalPriorityContact = aiParsedResult.contacts[updatedPriorityContactId];
-        if (originalPriorityContact) {
-          // Find the priority contact in the final list
-          const finalIndex = finalContacts.findIndex(
-            (contact) =>
-              contact.name.toLowerCase().trim() ===
-              originalPriorityContact.name.toLowerCase().trim()
-          );
-          updatedPriorityContactId = finalIndex >= 0 ? finalIndex : null;
+        // Update priority contact index after merging
+        let updatedPriorityContactId = this.updatePriorityContactId(
+          aiParsedResult, finalContacts
+        );
+
+        const finalParsedResult: ContactExtractionOutput = {
+          contacts: finalContacts,
+          priorityContactId: updatedPriorityContactId,
+          summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
+        };
+
+        if (mergeSpan) {
+          langfuseService.updateElement(mergeSpan, {
+            output: {
+              success: true,
+              finalContactCount: finalContacts.length,
+              enrichedCount: mergeResult.enrichedContacts.length,
+              aiOnlyCount: mergeResult.aiOnlyContacts.length,
+              priorityContactId: updatedPriorityContactId,
+            },
+          });
+          langfuseService.endElement(mergeSpan);
         }
-      }
 
-      // If no priority contact found from AI, try to find one from high-priority webData contacts
-      if (updatedPriorityContactId === null) {
-        const highPriorityIndex = finalContacts.findIndex((contact) => contact.isPriorityContact);
-        if (highPriorityIndex >= 0 && finalContacts[highPriorityIndex]) {
-          updatedPriorityContactId = highPriorityIndex;
-          logger.info(
-            `Set priority contact from webData: ${finalContacts[highPriorityIndex].name}`
-          );
+        // Update generation with success
+        if (generation) {
+          langfuseService.updateElement(generation, {
+            output: {
+              success: true,
+              responseLength: finalResponse.length,
+              finalContactCount: finalContacts.length,
+              iterations: result.intermediateSteps?.length ?? 0,
+            },
+          });
+          langfuseService.endElement(generation);
         }
+
+        // Track function calls as events
+        if (context && result.intermediateSteps) {
+          this.trackFunctionCalls(context, result.intermediateSteps);
+        }
+
+        logger.info('Contact extraction and merge completed', {
+          domain: input.domain,
+          originalAI: aiParsedResult.contacts.length,
+          originalWebData: webDataSummary.contacts.length,
+          finalTotal: finalContacts.length,
+          priorityContactIndex: updatedPriorityContactId,
+        });
+
+        return {
+          finalResponse: result.output || 'Contact extraction completed',
+          finalResponseParsed: finalParsedResult,
+          totalIterations: result.intermediateSteps?.length ?? 0,
+          functionCalls: result.intermediateSteps ?? [],
+        };
+
+      } catch (mergeError) {
+        if (mergeSpan) {
+          langfuseService.updateElement(mergeSpan, {
+            output: { 
+              error: mergeError instanceof Error ? mergeError.message : 'Unknown error',
+              success: false 
+            },
+            level: 'ERROR',
+          });
+          langfuseService.endElement(mergeSpan);
+        }
+        throw mergeError;
       }
 
-      const finalParsedResult: ContactExtractionOutput = {
-        contacts: finalContacts,
-        priorityContactId: updatedPriorityContactId,
-        summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
-      };
+    } catch (error) {
+      // Update generation with error
+      if (generation) {
+        langfuseService.updateElement(generation, {
+          output: { 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            success: false 
+          },
+          level: 'ERROR',
+        });
+        langfuseService.endElement(generation);
+      }
 
-      logger.info('Contact extraction and merge completed', {
-        domain,
-        originalAI: aiParsedResult.contacts.length,
-        originalWebData: webDataSummary.contacts.length,
-        webDataPreserved: mergeResult.webDataContacts.length,
-        enrichedContacts: mergeResult.enrichedContacts.length,
-        aiOnlyContacts: mergeResult.aiOnlyContacts.length,
-        finalTotal: finalContacts.length,
-        priorityContactIndex: updatedPriorityContactId,
+      logger.error('Contact extraction failed', {
+        domain: input.domain,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
+      // Return fallback with webData if available
+      const fallbackResult = getFallbackResultWithWebData(input.domain, error, webDataSummary);
+      
       return {
-        finalResponse: result.output || 'Contact extraction completed',
-        finalResponseParsed: finalParsedResult,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        functionCalls: result.intermediateSteps,
-      };
-    } catch (error) {
-      logger.error('Contact extraction failed:', error);
-
-      // Return fallback result with webData contacts if available
-      const fallbackResult = getFallbackResultWithWebData(domain, error, webDataSummary);
-      return {
-        finalResponse: `Contact extraction failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        finalResponse: `Contact extraction failed for ${input.domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         finalResponseParsed: fallbackResult,
         totalIterations: 0,
         functionCalls: [],
@@ -156,24 +298,73 @@ export class ContactExtractionAgent {
     }
   }
 
+  /**
+   * Legacy method for backward compatibility
+   */
+  async extractContacts(domain: string, options?: AgentExecutionOptions): Promise<ContactExtractionResult> {
+    return this.execute({ domain }, options);
+  }
+
+  private updatePriorityContactId(
+    aiParsedResult: ContactExtractionOutput,
+    finalContacts: any[]
+  ): number | null {
+    let updatedPriorityContactId = aiParsedResult.priorityContactId;
+    
+    if (updatedPriorityContactId !== null && aiParsedResult.contacts.length > 0) {
+      const originalPriorityContact = aiParsedResult.contacts[updatedPriorityContactId];
+      if (originalPriorityContact) {
+        const finalIndex = finalContacts.findIndex(
+          (contact) =>
+            contact.name.toLowerCase().trim() ===
+            originalPriorityContact.name.toLowerCase().trim()
+        );
+        updatedPriorityContactId = finalIndex >= 0 ? finalIndex : null;
+      }
+    }
+
+    // If no priority contact found from AI, try to find one from high-priority webData contacts
+    if (updatedPriorityContactId === null) {
+      const highPriorityIndex = finalContacts.findIndex((contact) => contact.isPriorityContact);
+      if (highPriorityIndex >= 0 && finalContacts[highPriorityIndex]) {
+        updatedPriorityContactId = highPriorityIndex;
+        logger.info(
+          `Set priority contact from webData: ${finalContacts[highPriorityIndex].name}`
+        );
+      }
+    }
+
+    return updatedPriorityContactId;
+  }
+
   private async generateSummaryFromSteps(
     domain: string,
     result: any,
-    systemPrompt: string
+    systemPrompt: string,
+    context: AgentTracingContext | null
   ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(contactExtractionOutputSchema));
+    const summarySpan = context ? langfuseService.createSpan(context.trace, {
+      name: 'contact_extraction_summary',
+      metadata: {
+        domain,
+        stepCount: result.intermediateSteps?.length || 0,
+      },
+    }) : null;
 
-    const gatheredInfo = (result.intermediateSteps || [])
-      .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
-          step.observation || 'No result'
-        }\n`;
-      })
-      .join('\n---\n');
+    try {
+      const structuredModel = createChatModel({
+        model: this.config.model,
+      }).withStructuredOutput(z.toJSONSchema(contactExtractionOutputSchema));
 
-    const summaryPrompt = `
+      const gatheredInfo = (result.intermediateSteps || [])
+        .map((step: any) => {
+          return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
+            step.observation || 'No result'
+          }\n`;
+        })
+        .join('\n---\n');
+
+      const summaryPrompt = `
 You are a contact extraction expert. Based on the research conducted below, extract all available contact information for ${domain}.
 
 Research conducted so far:
@@ -183,15 +374,68 @@ ${systemPrompt}
 
 Even if the research is incomplete, extract all available contact information based on what was found.
 Return your answer as valid JSON matching the provided schema.
-    `;
+      `;
 
-    const summary = await structuredModel.invoke([
-      {
-        role: 'system',
-        content: summaryPrompt,
-      },
-    ]);
-    return getContentFromMessage(summary.content ?? summary);
+      const summary = await structuredModel.invoke([
+        {
+          role: 'system',
+          content: summaryPrompt,
+        },
+      ]);
+
+      const summaryResult = getContentFromMessage(summary.content ?? summary);
+
+      if (summarySpan) {
+        langfuseService.updateElement(summarySpan, {
+          output: {
+            success: true,
+            summaryLength: summaryResult.length,
+          },
+        });
+        langfuseService.endElement(summarySpan);
+      }
+
+      return summaryResult;
+    } catch (error) {
+      if (summarySpan) {
+        langfuseService.updateElement(summarySpan, {
+          output: { 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            success: false 
+          },
+          level: 'ERROR',
+        });
+        langfuseService.endElement(summarySpan);
+      }
+
+      throw error;
+    }
+  }
+
+  private trackFunctionCalls(context: AgentTracingContext, intermediateSteps: any[]): void {
+    intermediateSteps.forEach((step, index) => {
+      const toolName = step.action?.tool || 'unknown_tool';
+      const toolInput = step.action?.toolInput || {};
+      const observation = step.observation || 'No result';
+
+      langfuseService.createEvent(context.trace, {
+        name: `tool_call_${toolName}`,
+        input: {
+          step: index + 1,
+          tool: toolName,
+          input: toolInput,
+        },
+        output: {
+          observation: observation,
+          success: !!observation,
+        },
+        metadata: {
+          toolName,
+          stepIndex: index,
+          hasResult: !!observation,
+        },
+      });
+    });
   }
 }
 
