@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import { createInstrumentedChatModel, LangChainConfig } from '../config/langchain.config';
 import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
@@ -90,14 +89,11 @@ export class SiteAnalysisAgent {
     }
 
     try {
-      // Get prompt (try remote first, fallback to local)
-      const { prompt: systemPromptTemplate } = await promptService.getPrompt('summarize_site', {
-        useRemote: true,
-        fallbackToLocal: true,
-      });
+      // Get prompt from LangFuse
+      const { prompt: systemPromptTemplate } = await promptService.getPrompt('summarize_site');
 
       const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-      const systemPrompt = promptHelper.injectInputVariables(systemPromptTemplate, {
+      const systemPrompt = promptService.injectVariables(systemPromptTemplate, {
         domain,
         output_schema: outputSchemaJson,
       });

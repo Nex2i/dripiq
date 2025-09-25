@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import { createInstrumentedChatModel, LangChainConfig } from '../config/langchain.config';
 import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
@@ -92,13 +91,10 @@ export class VendorFitAgent {
       traceId = trace?.id;
     }
     try {
-      // Get prompt (try remote first, fallback to local)
-      const { prompt: systemPromptTemplate } = await promptService.getPrompt('vendor_fit', {
-        useRemote: true,
-        fallbackToLocal: true,
-      });
+      // Get prompt from LangFuse
+      const { prompt: systemPromptTemplate } = await promptService.getPrompt('vendor_fit');
 
-      const systemPrompt = promptHelper.injectInputVariables(systemPromptTemplate, {
+      const systemPrompt = promptService.injectVariables(systemPromptTemplate, {
         input_schema: JSON.stringify(z.toJSONSchema(vendorFitInputSchema), null, 2),
         partner_details: JSON.stringify(partnerInfo, null, 2),
         opportunity_details: opportunityContext,

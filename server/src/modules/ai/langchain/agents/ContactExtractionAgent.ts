@@ -2,9 +2,7 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
-import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createInstrumentedChatModel, LangChainConfig } from '../config/langchain.config';
 import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
 import { promptService } from '../../observability/prompt.service';
@@ -105,20 +103,10 @@ export class ContactExtractionAgent {
       logger.info('WebData contacts fetched', { domain, webDataSummary });
       const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
 
-      // Get prompt from service
-      let systemPromptTemplate: string;
-      try {
-        const { prompt } = await promptService.getPrompt('extract_contacts', {
-          useRemote: true,
-          fallbackToLocal: true,
-        });
-        systemPromptTemplate = prompt;
-      } catch {
-        // Fallback to direct import if prompt service fails
-        systemPromptTemplate = extractContactsPrompt;
-      }
+      // Get prompt from LangFuse
+      const { prompt: systemPromptTemplate } = await promptService.getPrompt('extract_contacts');
 
-      const systemPrompt = promptHelper.injectInputVariables(systemPromptTemplate, {
+      const systemPrompt = promptService.injectVariables(systemPromptTemplate, {
         domain,
         webdata_contacts: webDataContactsText,
         output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),

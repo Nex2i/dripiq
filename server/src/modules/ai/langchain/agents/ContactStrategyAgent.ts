@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import {
   leadPointOfContactRepository,
@@ -120,16 +119,13 @@ export class ContactStrategyAgent {
     }
     let systemPrompt: string;
     try {
-      // Get prompt (try remote first, fallback to local)
-      const { prompt: systemPromptTemplate } = await promptService.getPrompt('contact_strategy', {
-        useRemote: true,
-        fallbackToLocal: true,
-      });
-      systemPrompt = promptHelper.injectInputVariables(systemPromptTemplate, {});
+      // Get prompt from LangFuse
+      const { prompt: systemPromptTemplate } = await promptService.getPrompt('contact_strategy');
+      systemPrompt = systemPromptTemplate; // No variable injection needed for this prompt
     } catch (error) {
-      logger.error('Error preparing prompt variables', error);
+      logger.error('Error fetching prompt from LangFuse', error);
       throw new Error(
-        `Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to fetch prompt from LangFuse: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
 

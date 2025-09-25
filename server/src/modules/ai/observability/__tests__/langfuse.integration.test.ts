@@ -15,7 +15,7 @@ jest.mock('langfuse', () => ({
 
 import { langfuseService } from '../langfuse.service';
 import { promptService } from '../prompt.service';
-import { migrationService } from '../migration.service';
+import { checkLangFuseHealth } from '../startup';
 
 // Mock environment variables for testing
 const originalEnv = process.env;
@@ -72,23 +72,10 @@ describe('LangFuse Integration Tests', () => {
   });
 
   describe('Prompt Service', () => {
-    test('should handle prompt retrieval when LangFuse is disabled', async () => {
-      // When LangFuse is disabled and no local prompt found, should throw
+    test('should throw error when LangFuse is disabled', async () => {
       await expect(
-        promptService.getPrompt('non_existent_prompt', {
-          useRemote: true,
-          fallbackToLocal: true,
-        })
-      ).rejects.toThrow();
-    });
-
-    test('should throw error when prompt not found and no fallback', async () => {
-      await expect(
-        promptService.getPrompt('non_existent_prompt', {
-          useRemote: true,
-          fallbackToLocal: false,
-        })
-      ).rejects.toThrow();
+        promptService.getPrompt('test_prompt')
+      ).rejects.toThrow('LangFuse service is not ready');
     });
 
     test('should handle cache operations', () => {
@@ -97,21 +84,47 @@ describe('LangFuse Integration Tests', () => {
       }).not.toThrow();
     });
 
-    test('should handle remote prompt API gracefully when disabled', async () => {
-      const result = await promptService.createOrUpdatePrompt(
-        'test_prompt',
-        'Test prompt content',
-        { model: 'gpt-4o-mini' }
-      );
+    test('should provide cache statistics', () => {
+      const stats = promptService.getCacheStats();
+      expect(stats).toHaveProperty('size');
+      expect(stats).toHaveProperty('keys');
+      expect(Array.isArray(stats.keys)).toBe(true);
+    });
 
-      // Should return false when LangFuse is disabled
-      expect(result).toBe(false);
+    test('should handle variable injection', () => {
+      const template = 'Hello {{name}}, welcome to {{site}}!';
+      const result = promptService.injectVariables(template, {
+        name: 'John',
+        site: 'example.com'
+      });
+      
+      expect(result).toBe('Hello John, welcome to example.com!');
+    });
+
+    test('should handle missing variables gracefully', () => {
+      const template = 'Hello {{name}}, welcome to {{site}}!';
+      const result = promptService.injectVariables(template, {
+        name: 'John'
+        // missing 'site' variable
+      });
+      
+      expect(result).toBe('Hello John, welcome to {{site}}!');
+    });
+
+    test('should throw when creating prompt with disabled LangFuse', async () => {
+      await expect(
+        promptService.createOrUpdatePrompt(
+          'test_prompt',
+          'Test prompt content',
+          { model: 'gpt-4o-mini' }
+        )
+      ).rejects.toThrow('LangFuse service is not ready');
     });
   });
 
-  describe('Migration Service', () => {
+  describe('Health Check Service', () => {
     test('should perform health check', async () => {
-      const healthCheck = await migrationService.healthCheck();
+      const healthCheck = await checkLangFuseHealth();
 
       expect(healthCheck).toHaveProperty('isReady');
       expect(healthCheck).toHaveProperty('clientAvailable');
@@ -119,16 +132,11 @@ describe('LangFuse Integration Tests', () => {
       expect(typeof healthCheck.clientAvailable).toBe('boolean');
     });
 
-    test('should handle initialization when LangFuse is disabled', async () => {
-      await expect(migrationService.initializeObservability()).resolves.toBeUndefined();
-    });
+    test('should return false values when LangFuse is disabled', async () => {
+      const healthCheck = await checkLangFuseHealth();
 
-    test('should handle prompt migration when LangFuse is disabled', async () => {
-      await expect(migrationService.migratePrompts()).resolves.toBeUndefined();
-    });
-
-    test('should handle dataset creation when LangFuse is disabled', async () => {
-      await expect(migrationService.createEvaluationDatasets()).resolves.toBeUndefined();
+      expect(healthCheck.isReady).toBe(false);
+      expect(healthCheck.clientAvailable).toBe(false);
     });
   });
 });
@@ -204,10 +212,7 @@ describe('LangFuse Live Integration (requires setup)', () => {
 
   (isLiveTest ? test : test.skip)('should retrieve prompts from LangFuse', async () => {
     // This would test actual prompt retrieval
-    const { prompt } = await promptService.getPrompt('summarize_site', {
-      useRemote: true,
-      fallbackToLocal: true,
-    });
+    const { prompt } = await promptService.getPrompt('summarize_site');
 
     expect(prompt).toBeDefined();
     expect(typeof prompt).toBe('string');

@@ -1,7 +1,6 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { logger } from '@/libs/logger';
-import { promptHelper, PromptTypes } from '@/prompts/prompt.helper';
 import { langfuseService } from './langfuse.service';
+import { logger } from '@/libs/logger';
 
 export interface PromptVersion {
   version: number;
@@ -17,9 +16,8 @@ export interface PromptVersion {
 }
 
 export interface PromptConfig {
-  useRemote?: boolean;
-  fallbackToLocal?: boolean;
   version?: number;
+  cacheTtlSeconds?: number;
 }
 
 class PromptManagementService {
@@ -27,47 +25,50 @@ class PromptManagementService {
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   /**
-   * Get prompt from LangFuse or fallback to local
+   * Get prompt from LangFuse with caching
    */
   public async getPrompt(
     promptName: string,
     config: PromptConfig = {}
   ): Promise<{ prompt: string; promptConfig?: any }> {
-    const { useRemote = true, fallbackToLocal = true, version } = config;
+    const { version, cacheTtlSeconds } = config;
 
-    if (useRemote && langfuseService.isReady()) {
-      try {
-        const remotePrompt = await this.getRemotePrompt(promptName, version);
-        if (remotePrompt) {
-          this.cachePrompt(promptName, remotePrompt.prompt, remotePrompt.config);
-          return {
-            prompt: remotePrompt.prompt,
-            promptConfig: remotePrompt.config,
-          };
-        }
-      } catch (error) {
-        logger.warn('Failed to fetch remote prompt, trying cache or fallback', {
-          promptName,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
+    // Override cache TTL if specified
+    const cacheKey = version ? `${promptName}:${version}` : promptName;
+    const customTtl = cacheTtlSeconds ? cacheTtlSeconds * 1000 : this.CACHE_TTL;
 
-    // Try cache first
-    const cached = this.getCachedPrompt(promptName);
+    // Check cache first
+    const cached = this.getCachedPrompt(cacheKey, customTtl);
     if (cached) {
+      logger.debug('Retrieved prompt from cache', { promptName, version, cacheKey });
       return { prompt: cached.prompt, promptConfig: cached.config };
     }
 
-    // Fallback to local prompt
-    if (fallbackToLocal) {
-      const localPrompt = this.getLocalPrompt(promptName);
-      if (localPrompt) {
-        return { prompt: localPrompt };
-      }
+    // Ensure LangFuse is ready
+    if (!langfuseService.isReady()) {
+      throw new Error('LangFuse service is not ready. Please check your configuration.');
     }
 
-    throw new Error(`Prompt '${promptName}' not found in remote, cache, or local sources`);
+    try {
+      const remotePrompt = await this.getRemotePrompt(promptName, version);
+      if (remotePrompt) {
+        this.cachePrompt(cacheKey, remotePrompt.prompt, remotePrompt.config);
+        logger.debug('Retrieved and cached prompt from LangFuse', { promptName, version });
+        return {
+          prompt: remotePrompt.prompt,
+          promptConfig: remotePrompt.config,
+        };
+      }
+
+      throw new Error(`Prompt '${promptName}' not found in LangFuse`);
+    } catch (error) {
+      logger.error('Failed to fetch prompt from LangFuse', {
+        promptName,
+        version,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
   }
 
   /**
@@ -91,14 +92,13 @@ class PromptManagementService {
     labels: string[] = ['production']
   ): Promise<boolean> {
     if (!langfuseService.isReady()) {
-      logger.warn('LangFuse not ready, cannot create/update prompt');
-      return false;
+      throw new Error('LangFuse service is not ready. Cannot create/update prompt.');
     }
 
     try {
       const client = langfuseService.getClient();
       if (!client) {
-        return false;
+        throw new Error('LangFuse client is not available');
       }
 
       await client.createPrompt({
@@ -113,8 +113,8 @@ class PromptManagementService {
 
       logger.info('Successfully created/updated prompt in LangFuse', { name, labels });
 
-      // Invalidate cache
-      this.promptCache.delete(name);
+      // Invalidate related cache entries
+      this.invalidatePromptCache(name);
 
       return true;
     } catch (error) {
@@ -122,67 +122,8 @@ class PromptManagementService {
         name,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return false;
+      throw error;
     }
-  }
-
-  /**
-   * Migrate local prompts to LangFuse
-   */
-  public async migrateLocalPromptsToLangFuse(): Promise<void> {
-    if (!langfuseService.isReady()) {
-      logger.warn('LangFuse not ready, skipping prompt migration');
-      return;
-    }
-
-    logger.info('Starting migration of local prompts to LangFuse');
-
-    const promptTypes: PromptTypes[] = [
-      'summarize_site',
-      'vendor_fit',
-      'smart_filter_site',
-      'contact_strategy',
-    ];
-
-    const migrationResults = await Promise.allSettled(
-      promptTypes.map(async (promptType) => {
-        try {
-          const localPrompt = this.getLocalPrompt(promptType);
-          if (localPrompt) {
-            const success = await this.createOrUpdatePrompt(
-              promptType,
-              localPrompt,
-              {
-                model: 'gpt-4o-mini',
-                temperature: 0,
-                maxTokens: 4000,
-              },
-              ['production', 'migrated']
-            );
-
-            if (success) {
-              logger.info(`Successfully migrated prompt: ${promptType}`);
-            } else {
-              logger.warn(`Failed to migrate prompt: ${promptType}`);
-            }
-
-            return { promptType, success };
-          } else {
-            logger.warn(`Local prompt not found: ${promptType}`);
-            return { promptType, success: false };
-          }
-        } catch (error) {
-          logger.error(`Error migrating prompt: ${promptType}`, error);
-          return { promptType, success: false, error };
-        }
-      })
-    );
-
-    const successful = migrationResults.filter(
-      (result) => result.status === 'fulfilled' && result.value.success
-    ).length;
-
-    logger.info(`Prompt migration completed: ${successful}/${promptTypes.length} successful`);
   }
 
   /**
@@ -190,13 +131,13 @@ class PromptManagementService {
    */
   public async getPromptVersions(promptName: string): Promise<PromptVersion[]> {
     if (!langfuseService.isReady()) {
-      return [];
+      throw new Error('LangFuse service is not ready');
     }
 
     try {
       const client = langfuseService.getClient();
       if (!client) {
-        return [];
+        throw new Error('LangFuse client is not available');
       }
 
       // Note: This would need to be implemented based on LangFuse API
@@ -205,8 +146,24 @@ class PromptManagementService {
       return [];
     } catch (error) {
       logger.error('Failed to get prompt versions', { promptName, error });
-      return [];
+      throw error;
     }
+  }
+
+  /**
+   * Inject variables into prompt template
+   */
+  public injectVariables(prompt: string, variables: Record<string, string>): string {
+    return prompt.replace(/\{\{(\w+)\}\}/g, (match: string, variableName: string): string => {
+      if (variableName in variables && variables[variableName] !== undefined) {
+        return variables[variableName];
+      }
+      logger.warn(`Variable ${variableName} not found in prompt variables`, { 
+        prompt: prompt.substring(0, 100) + '...', 
+        availableVars: Object.keys(variables) 
+      });
+      return match; // Keep the placeholder if variable not found
+    });
   }
 
   private async getRemotePrompt(
@@ -231,46 +188,60 @@ class PromptManagementService {
       return null;
     } catch (error) {
       logger.error('Failed to fetch remote prompt', { promptName, version, error });
-      return null;
+      throw error;
     }
   }
 
-  private getLocalPrompt(promptName: string): string | null {
-    try {
-      return promptHelper.getPromptAndInject(promptName as PromptTypes, {});
-    } catch (error) {
-      logger.warn('Local prompt not found', { promptName, error });
-      return null;
-    }
-  }
-
-  private cachePrompt(promptName: string, prompt: string, config?: any): void {
-    this.promptCache.set(promptName, {
+  private cachePrompt(cacheKey: string, prompt: string, config?: any): void {
+    this.promptCache.set(cacheKey, {
       prompt,
       config,
       timestamp: Date.now(),
     });
   }
 
-  private getCachedPrompt(promptName: string): { prompt: string; config?: any } | null {
-    const cached = this.promptCache.get(promptName);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+  private getCachedPrompt(cacheKey: string, ttl: number = this.CACHE_TTL): { prompt: string; config?: any } | null {
+    const cached = this.promptCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < ttl) {
       return { prompt: cached.prompt, config: cached.config };
     }
 
     if (cached) {
-      this.promptCache.delete(promptName);
+      this.promptCache.delete(cacheKey);
     }
 
     return null;
   }
 
+  private invalidatePromptCache(promptName: string): void {
+    // Remove all cached versions of this prompt
+    const keysToDelete = Array.from(this.promptCache.keys()).filter(key => 
+      key === promptName || key.startsWith(`${promptName}:`)
+    );
+    
+    keysToDelete.forEach(key => this.promptCache.delete(key));
+    
+    if (keysToDelete.length > 0) {
+      logger.debug('Invalidated prompt cache entries', { promptName, keysRemoved: keysToDelete });
+    }
+  }
+
   /**
-   * Clear prompt cache
+   * Clear all cached prompts
    */
   public clearCache(): void {
     this.promptCache.clear();
     logger.info('Prompt cache cleared');
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public getCacheStats(): { size: number; keys: string[] } {
+    return {
+      size: this.promptCache.size,
+      keys: Array.from(this.promptCache.keys()),
+    };
   }
 }
 
