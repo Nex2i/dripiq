@@ -7,6 +7,14 @@ export {
   type ReportConfig,
 } from './config/langchain.config';
 
+// Export LangFuse integration
+export {
+  langfuseClient,
+  createLangfuseClient,
+  flushLangfuse,
+  langfuseTracer,
+} from './config/langfuse.config';
+
 // Export tools
 export { RetrieveFullPageTool } from './tools/RetrieveFullPageTool';
 export { GetInformationAboutDomainTool } from './tools/GetInformationAboutDomainTool';
@@ -34,3 +42,14 @@ export {
   createContactExtractionAgent,
   createContactStrategyAgent,
 } from './factories/AgentFactory';
+
+// Export prompt management
+export { promptManager, type PromptVersion, type PromptExecution } from './prompts/promptManager';
+
+// Export evaluation capabilities
+export {
+  evaluationService,
+  type EvaluationCriteria,
+  type EvaluationResult,
+  type SiteAnalysisEvaluation,
+} from './evaluations/evaluationService';

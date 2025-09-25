@@ -2,9 +2,11 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
+import { createLangfuseClient } from '../config/langfuse.config';
+import { promptManager } from '../prompts/promptManager';
+import { evaluationService } from '../evaluations/evaluationService';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
@@ -55,9 +57,32 @@ export class SiteAnalysisAgent {
 
   async analyze(domain: string): Promise<SiteAnalysisResult> {
     const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-    const systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
+    const systemPrompt = await promptManager.getPrompt('summarize_site', {
       domain,
       output_schema: outputSchemaJson,
+    });
+
+    const langfuseClient = createLangfuseClient();
+
+    // Start LangFuse trace
+    const trace = langfuseClient?.trace({
+      name: 'site-analysis',
+      input: {
+        domain,
+        prompt: systemPrompt,
+      },
+      metadata: {
+        agent: 'SiteAnalysisAgent',
+        model: this.config.model,
+      },
+    });
+
+    const span = trace?.span({
+      name: 'site-analysis-execution',
+      input: {
+        domain,
+        systemPrompt: systemPrompt.substring(0, 1000), // Truncate for readability
+      },
     });
 
     try {
@@ -68,10 +93,55 @@ export class SiteAnalysisAgent {
       let finalResponse = getContentFromMessage(result.output);
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
+        const partialSpan = span?.span({
+          name: 'partial-results-summary',
+          input: { domain, steps: result.intermediateSteps.length },
+        });
+
         finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt);
+
+        partialSpan?.end({
+          output: { finalResponse: finalResponse.substring(0, 500) },
+        });
       }
 
       const finalResponseParsed = parseWithSchema(finalResponse, domain);
+
+      // Run evaluation
+      const evaluation = await evaluationService.evaluateSiteAnalysis(
+        domain,
+        {}, // No expected output for basic evaluation
+        finalResponseParsed
+      );
+
+      // End span with success and evaluation
+      span?.end({
+        output: {
+          success: true,
+          iterations: result.intermediateSteps?.length ?? 0,
+          summaryLength: finalResponseParsed.summary.length,
+          productsCount: finalResponseParsed.products.length,
+          servicesCount: finalResponseParsed.services.length,
+          evaluationScore: evaluation.evaluation.score,
+        },
+      });
+
+      // Log final results to trace
+      trace?.event({
+        name: 'analysis-complete',
+        input: {
+          domain,
+        },
+        output: {
+          success: true,
+          summary: finalResponseParsed.summary.substring(0, 200),
+          evaluationScore: evaluation.evaluation.score,
+          evaluationFeedback: evaluation.evaluation.feedback.substring(0, 100),
+        },
+        metadata: {
+          type: 'analysis-complete',
+        },
+      });
 
       return {
         finalResponse,
@@ -81,6 +151,40 @@ export class SiteAnalysisAgent {
       };
     } catch (error) {
       logger.error('Error in site analysis:', error);
+
+      // Run evaluation even on error
+      const evaluation = await evaluationService.evaluateSiteAnalysis(
+        domain,
+        {},
+        { error: error instanceof Error ? error.message : 'Unknown error' }
+      );
+
+      // End span with error and evaluation
+      span?.end({
+        output: {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          evaluationScore: evaluation.evaluation.score,
+        },
+      });
+
+      // Log error to trace
+      trace?.event({
+        name: 'analysis-error',
+        input: {
+          domain,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        output: {
+          success: false,
+          evaluationScore: evaluation.evaluation.score,
+          evaluationFeedback: evaluation.evaluation.feedback.substring(0, 100),
+        },
+        metadata: {
+          type: 'analysis-error',
+        },
+      });
+
       return {
         finalResponse: `Error occurred during site analysis: ${
           error instanceof Error ? error.message : 'Unknown error'
