@@ -21,6 +21,16 @@ export const {
   BULL_BOARD_USERNAME,
   BULL_BOARD_PASSWORD,
   ENCRYPTION_KEY,
+  // OpenAI Configuration
+  OPENAI_API_KEY,
+  // LangFuse Configuration
+  LANGFUSE_PUBLIC_KEY,
+  LANGFUSE_SECRET_KEY,
+  LANGFUSE_HOST,
+  LANGFUSE_ENABLED,
+  LANGFUSE_DEBUG,
+  LANGFUSE_FLUSH_AT,
+  LANGFUSE_FLUSH_INTERVAL,
 } = process.env;
 
 export const IS_PRODUCTION = NODE_ENV === 'production';
