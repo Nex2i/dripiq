@@ -106,16 +106,20 @@ export class VendorFitAgent {
       });
 
       // Log analysis start
-      langfuseService.logEvent('vendor_fit_started', {
-        partnerDomain: partnerInfo?.domain,
-        opportunityContext: opportunityContext?.substring(0, 200),
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'VendorFitAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'vendor_fit_started',
+        {
+          partnerDomain: partnerInfo?.domain,
+          opportunityContext: opportunityContext?.substring(0, 200),
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'VendorFitAgent',
+          metadata,
+        }
+      );
 
       const result = await this.agent.invoke({
         input: {
@@ -138,21 +142,30 @@ export class VendorFitAgent {
       const finalResponseParsed = parseWithSchema(finalResponse, partnerInfo);
 
       // Log successful completion
-      langfuseService.logEvent('vendor_fit_completed', {
-        partnerDomain: partnerInfo?.domain,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        success: true,
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'VendorFitAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'vendor_fit_completed',
+        {
+          partnerDomain: partnerInfo?.domain,
+          totalIterations: result.intermediateSteps?.length ?? 0,
+          success: true,
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'VendorFitAgent',
+          metadata,
+        }
+      );
 
       // Score the analysis if we have a trace
       if (trace && finalResponseParsed) {
-        langfuseService.score(trace.id, 'vendor_fit_quality', 0.8, 'Vendor fit analysis completed successfully');
+        langfuseService.score(
+          trace.id,
+          'vendor_fit_quality',
+          0.8,
+          'Vendor fit analysis completed successfully'
+        );
       }
 
       return {
@@ -164,20 +177,29 @@ export class VendorFitAgent {
       };
     } catch (error) {
       // Log error
-      langfuseService.logEvent('vendor_fit_error', {
-        partnerDomain: partnerInfo?.domain,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'VendorFitAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'vendor_fit_error',
+        {
+          partnerDomain: partnerInfo?.domain,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'VendorFitAgent',
+          metadata,
+        }
+      );
 
       // Score the error if we have a trace
       if (trace) {
-        langfuseService.score(trace.id, 'vendor_fit_quality', 0.1, `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        langfuseService.score(
+          trace.id,
+          'vendor_fit_quality',
+          0.1,
+          `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
 
       logger.error('Error in vendor fit analysis:', error);

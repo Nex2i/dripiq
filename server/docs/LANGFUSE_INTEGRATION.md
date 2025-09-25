@@ -5,6 +5,7 @@ This document explains how to configure and use LangFuse for observability, trac
 ## Overview
 
 LangFuse provides:
+
 - **Observability**: Monitor agent performance and behavior
 - **Tracing**: Track execution flow through your agents
 - **Prompt Management**: Version and manage prompts centrally
@@ -68,8 +69,8 @@ const result = await siteAnalysisAgent.analyze('example.com', {
   enableTracing: true,
   metadata: {
     campaign: 'Q1-2024',
-    source: 'web-app'
-  }
+    source: 'web-app',
+  },
 });
 ```
 
@@ -102,13 +103,17 @@ Log custom events for tracking:
 ```typescript
 import { langfuseService } from '@/modules/ai/observability';
 
-langfuseService.logEvent('custom_event', {
-  action: 'user_action',
-  data: { key: 'value' }
-}, {
-  tenantId: 'tenant-123',
-  userId: 'user-456'
-});
+langfuseService.logEvent(
+  'custom_event',
+  {
+    action: 'user_action',
+    data: { key: 'value' },
+  },
+  {
+    tenantId: 'tenant-123',
+    userId: 'user-456',
+  }
+);
 ```
 
 ### 4. Manual Traces
@@ -118,7 +123,7 @@ Create custom traces for complex workflows:
 ```typescript
 const trace = langfuseService.createTrace('Complex Workflow', {
   tenantId: 'tenant-123',
-  metadata: { workflow: 'lead_analysis' }
+  metadata: { workflow: 'lead_analysis' },
 });
 
 // Score the trace
@@ -134,37 +139,41 @@ if (trace) {
 All agents now support additional options for tracing:
 
 #### SiteAnalysisAgent
+
 ```typescript
 const result = await agent.analyze('domain.com', {
   tenantId: 'tenant-123',
   userId: 'user-456',
   enableTracing: true,
-  metadata: { source: 'campaign' }
+  metadata: { source: 'campaign' },
 });
 // Returns: { finalResponse, finalResponseParsed, totalIterations, functionCalls, traceId }
 ```
 
 #### VendorFitAgent
+
 ```typescript
 const result = await agent.analyzeVendorFit(partnerInfo, opportunityContext, {
   tenantId: 'tenant-123',
-  enableTracing: true
+  enableTracing: true,
 });
 ```
 
 #### ContactExtractionAgent
+
 ```typescript
 const result = await agent.extractContacts('domain.com', {
   tenantId: 'tenant-123',
-  enableTracing: true
+  enableTracing: true,
 });
 ```
 
 #### ContactStrategyAgent
+
 ```typescript
 const result = await agent.generateEmailContent(tenantId, leadId, contactId, {
   enableTracing: true,
-  sessionId: 'custom-session'
+  sessionId: 'custom-session',
 });
 ```
 
@@ -173,6 +182,7 @@ const result = await agent.generateEmailContent(tenantId, leadId, contactId, {
 ### Automatic Metrics
 
 Each agent automatically logs:
+
 - Execution start/completion events
 - Error events with context
 - Performance scores
@@ -182,6 +192,7 @@ Each agent automatically logs:
 ### Evaluation Datasets
 
 The system automatically creates evaluation datasets for:
+
 - `site-analysis-eval`: Site analysis performance
 - `vendor-fit-eval`: Vendor fit analysis quality
 - `contact-extraction-eval`: Contact extraction accuracy
@@ -190,6 +201,7 @@ The system automatically creates evaluation datasets for:
 ### Custom Scoring
 
 Agents automatically score their performance:
+
 - Successful completions: 0.8
 - Partial completions: 0.5-0.7
 - Failures: 0.1
@@ -199,6 +211,7 @@ Agents automatically score their performance:
 ### Automatic Setup
 
 The server automatically:
+
 1. Initializes LangFuse connection
 2. Migrates local prompts to LangFuse (if enabled)
 3. Creates evaluation datasets (if enabled)
@@ -319,6 +332,7 @@ The LangFuse client maintains an internal buffer for events. Monitor memory usag
 ## Support
 
 For issues with:
+
 - **LangFuse integration**: Check this documentation and logs
 - **LangFuse platform**: Visit [LangFuse Documentation](https://langfuse.com/docs)
 - **Agent performance**: Use LangFuse dashboard for analysis

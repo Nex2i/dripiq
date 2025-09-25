@@ -1,7 +1,6 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
 import { logger } from '@/libs/logger';
+import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
 
 export interface LangChainConfig {
   model: string;
@@ -28,17 +27,17 @@ export interface ChatModelOptions extends Partial<LangChainConfig> {
 
 export function createChatModel(options: ChatModelOptions = {}): ChatOpenAI {
   const config = { ...defaultLangChainConfig, ...options };
-  
+
   // Prepare callbacks array
   const callbacks: any[] = options.callbacks || [];
-  
+
   // Add LangFuse callback if tracing is enabled
   if (config.enableTracing && langfuseService.isReady()) {
     try {
       const langfuseCallback = langfuseService.getCallbackHandler(
         options.tracingMetadata || config.tracingMetadata
       );
-      
+
       if (langfuseCallback) {
         callbacks.push(langfuseCallback);
         logger.debug('LangFuse tracing enabled for chat model', {

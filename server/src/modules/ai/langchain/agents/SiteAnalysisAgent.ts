@@ -103,13 +103,17 @@ export class SiteAnalysisAgent {
       });
 
       // Log analysis start
-      langfuseService.logEvent('site_analysis_started', { domain }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'SiteAnalysisAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'site_analysis_started',
+        { domain },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'SiteAnalysisAgent',
+          metadata,
+        }
+      );
 
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
@@ -128,21 +132,30 @@ export class SiteAnalysisAgent {
       const finalResponseParsed = parseWithSchema(finalResponse, domain);
 
       // Log successful completion
-      langfuseService.logEvent('site_analysis_completed', {
-        domain,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        success: true,
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'SiteAnalysisAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'site_analysis_completed',
+        {
+          domain,
+          totalIterations: result.intermediateSteps?.length ?? 0,
+          success: true,
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'SiteAnalysisAgent',
+          metadata,
+        }
+      );
 
       // Score the analysis if we have a trace
       if (trace && finalResponseParsed) {
-        langfuseService.score(trace.id, 'analysis_quality', 0.8, 'Site analysis completed successfully');
+        langfuseService.score(
+          trace.id,
+          'analysis_quality',
+          0.8,
+          'Site analysis completed successfully'
+        );
       }
 
       return {
@@ -154,20 +167,29 @@ export class SiteAnalysisAgent {
       };
     } catch (error) {
       // Log error
-      langfuseService.logEvent('site_analysis_error', {
-        domain,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'SiteAnalysisAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'site_analysis_error',
+        {
+          domain,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'SiteAnalysisAgent',
+          metadata,
+        }
+      );
 
       // Score the error if we have a trace
       if (trace) {
-        langfuseService.score(trace.id, 'analysis_quality', 0.1, `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        langfuseService.score(
+          trace.id,
+          'analysis_quality',
+          0.1,
+          `Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
 
       logger.error('Error in site analysis:', error);

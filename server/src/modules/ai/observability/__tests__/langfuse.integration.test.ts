@@ -56,9 +56,13 @@ describe('LangFuse Integration Tests', () => {
 
     test('should handle log events gracefully when disabled', () => {
       expect(() => {
-        langfuseService.logEvent('test_event', { test: true }, {
-          tenantId: 'test-tenant',
-        });
+        langfuseService.logEvent(
+          'test_event',
+          { test: true },
+          {
+            tenantId: 'test-tenant',
+          }
+        );
       }).not.toThrow();
     });
 
@@ -140,7 +144,7 @@ describe('LangFuse Agent Integration', () => {
 
     // Test that callback handler receives correct metadata
     const handler = langfuseService.getCallbackHandler(tracingMetadata);
-    
+
     // When disabled, should return null
     expect(handler).toBeNull();
   });
@@ -180,9 +184,10 @@ describe('LangFuse Configuration Validation', () => {
 // Integration test that would require actual LangFuse instance
 describe('LangFuse Live Integration (requires setup)', () => {
   // These tests would only run if LANGFUSE_ENABLED=true and valid credentials are provided
-  const isLiveTest = process.env.LANGFUSE_ENABLED === 'true' && 
-                     process.env.LANGFUSE_PUBLIC_KEY && 
-                     process.env.LANGFUSE_SECRET_KEY;
+  const isLiveTest =
+    process.env.LANGFUSE_ENABLED === 'true' &&
+    process.env.LANGFUSE_PUBLIC_KEY &&
+    process.env.LANGFUSE_SECRET_KEY;
 
   (isLiveTest ? test : test.skip)('should connect to LangFuse and create trace', async () => {
     const trace = langfuseService.createTrace('Integration Test Trace', {

@@ -12,7 +12,7 @@ import {
 } from '@/repositories';
 import { TenantService } from '@/modules/tenant.service';
 import { createInstrumentedChatModel, LangChainConfig } from '../config/langchain.config';
-import { langfuseService, TracingMetadata } from '../../observability/langfuse.service';
+import { langfuseService } from '../../observability/langfuse.service';
 import { promptService } from '../../observability/prompt.service';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -135,15 +135,19 @@ export class ContactStrategyAgent {
 
     try {
       // Log generation start
-      langfuseService.logEvent('contact_strategy_started', {
-        leadId,
-        contactId,
-      }, {
-        tenantId,
-        sessionId,
-        agentType: 'ContactStrategyAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'contact_strategy_started',
+        {
+          leadId,
+          contactId,
+        },
+        {
+          tenantId,
+          sessionId,
+          agentType: 'ContactStrategyAgent',
+          metadata,
+        }
+      );
 
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
@@ -167,21 +171,30 @@ export class ContactStrategyAgent {
       const parsedResult = parseWithSchema(finalResponse);
 
       // Log successful completion
-      langfuseService.logEvent('contact_strategy_completed', {
-        leadId,
-        contactId,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        success: true,
-      }, {
-        tenantId,
-        sessionId,
-        agentType: 'ContactStrategyAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'contact_strategy_completed',
+        {
+          leadId,
+          contactId,
+          totalIterations: result.intermediateSteps?.length ?? 0,
+          success: true,
+        },
+        {
+          tenantId,
+          sessionId,
+          agentType: 'ContactStrategyAgent',
+          metadata,
+        }
+      );
 
       // Score the generation if we have a trace
       if (trace && parsedResult) {
-        langfuseService.score(trace.id, 'strategy_quality', 0.8, 'Contact strategy generated successfully');
+        langfuseService.score(
+          trace.id,
+          'strategy_quality',
+          0.8,
+          'Contact strategy generated successfully'
+        );
       }
 
       return {
@@ -193,20 +206,29 @@ export class ContactStrategyAgent {
       };
     } catch (error) {
       // Log error
-      langfuseService.logEvent('contact_strategy_error', {
-        leadId,
-        contactId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, {
-        tenantId,
-        sessionId,
-        agentType: 'ContactStrategyAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'contact_strategy_error',
+        {
+          leadId,
+          contactId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        {
+          tenantId,
+          sessionId,
+          agentType: 'ContactStrategyAgent',
+          metadata,
+        }
+      );
 
       // Score the error if we have a trace
       if (trace) {
-        langfuseService.score(trace.id, 'strategy_quality', 0.1, `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        langfuseService.score(
+          trace.id,
+          'strategy_quality',
+          0.1,
+          `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
 
       logger.error('Email content generation failed:', error);
@@ -309,7 +331,7 @@ export class ContactStrategyAgent {
 
   private async getSiteContentForUrl(siteUrl: string): Promise<string> {
     try {
-        const cleanUrl = siteUrl.cleanWebsiteUrl();
+      const cleanUrl = siteUrl.cleanWebsiteUrl();
       const embeddings = await siteEmbeddingRepository.findByUrl(cleanUrl);
 
       if (!embeddings || embeddings.length === 0) {

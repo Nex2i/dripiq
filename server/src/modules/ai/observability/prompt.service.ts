@@ -1,7 +1,7 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { langfuseService } from './langfuse.service';
 import { logger } from '@/libs/logger';
 import { promptHelper, PromptTypes } from '@/prompts/prompt.helper';
+import { langfuseService } from './langfuse.service';
 
 export interface PromptVersion {
   version: number;
@@ -112,10 +112,10 @@ class PromptManagementService {
       });
 
       logger.info('Successfully created/updated prompt in LangFuse', { name, labels });
-      
+
       // Invalidate cache
       this.promptCache.delete(name);
-      
+
       return true;
     } catch (error) {
       logger.error('Failed to create/update prompt in LangFuse', {

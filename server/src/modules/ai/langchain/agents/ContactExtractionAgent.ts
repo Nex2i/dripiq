@@ -125,16 +125,20 @@ export class ContactExtractionAgent {
       });
 
       // Log extraction start
-      langfuseService.logEvent('contact_extraction_started', {
-        domain,
-        webDataContactsCount: webDataSummary.contacts.length,
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'ContactExtractionAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'contact_extraction_started',
+        {
+          domain,
+          webDataContactsCount: webDataSummary.contacts.length,
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'ContactExtractionAgent',
+          metadata,
+        }
+      );
 
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
@@ -191,27 +195,36 @@ export class ContactExtractionAgent {
       };
 
       // Log successful completion
-      langfuseService.logEvent('contact_extraction_completed', {
-        domain,
-        originalAI: aiParsedResult.contacts.length,
-        originalWebData: webDataSummary.contacts.length,
-        webDataPreserved: mergeResult.webDataContacts.length,
-        enrichedContacts: mergeResult.enrichedContacts.length,
-        aiOnlyContacts: mergeResult.aiOnlyContacts.length,
-        finalTotal: finalContacts.length,
-        priorityContactIndex: updatedPriorityContactId,
-        success: true,
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'ContactExtractionAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'contact_extraction_completed',
+        {
+          domain,
+          originalAI: aiParsedResult.contacts.length,
+          originalWebData: webDataSummary.contacts.length,
+          webDataPreserved: mergeResult.webDataContacts.length,
+          enrichedContacts: mergeResult.enrichedContacts.length,
+          aiOnlyContacts: mergeResult.aiOnlyContacts.length,
+          finalTotal: finalContacts.length,
+          priorityContactIndex: updatedPriorityContactId,
+          success: true,
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'ContactExtractionAgent',
+          metadata,
+        }
+      );
 
       // Score the extraction if we have a trace
       if (trace && finalContacts.length > 0) {
-        langfuseService.score(trace.id, 'extraction_quality', 0.8, `Successfully extracted ${finalContacts.length} contacts`);
+        langfuseService.score(
+          trace.id,
+          'extraction_quality',
+          0.8,
+          `Successfully extracted ${finalContacts.length} contacts`
+        );
       }
 
       logger.info('Contact extraction and merge completed', {
@@ -234,20 +247,29 @@ export class ContactExtractionAgent {
       };
     } catch (error) {
       // Log error
-      langfuseService.logEvent('contact_extraction_error', {
-        domain,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, {
-        tenantId,
-        userId,
-        sessionId,
-        agentType: 'ContactExtractionAgent',
-        metadata,
-      });
+      langfuseService.logEvent(
+        'contact_extraction_error',
+        {
+          domain,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        {
+          tenantId,
+          userId,
+          sessionId,
+          agentType: 'ContactExtractionAgent',
+          metadata,
+        }
+      );
 
       // Score the error if we have a trace
       if (trace) {
-        langfuseService.score(trace.id, 'extraction_quality', 0.1, `Extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        langfuseService.score(
+          trace.id,
+          'extraction_quality',
+          0.1,
+          `Extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
 
       logger.error('Contact extraction failed:', error);

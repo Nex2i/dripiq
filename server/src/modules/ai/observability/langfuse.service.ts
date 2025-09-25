@@ -92,14 +92,14 @@ class LangFuseService {
       // In a real implementation, this would be the actual LangChain-LangFuse integration
       const handler: CallbackHandler = {
         handleLLMStart: (llm: any, prompts: string[], runId: string) => {
-          this.logEvent('llm_start', { prompts, runId }, metadata);
+          this.logEvent('llm_start', { prompts, runId, llm }, metadata);
         },
         handleLLMEnd: (output: any, runId: string) => {
           this.logEvent('llm_end', { output, runId }, metadata);
         },
         handleLLMError: (error: any, runId: string) => {
           this.logEvent('llm_error', { error: error.message, runId }, metadata);
-        }
+        },
       };
 
       return handler;
