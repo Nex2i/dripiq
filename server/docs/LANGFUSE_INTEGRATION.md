@@ -5,14 +5,14 @@ This document explains how to configure and use LangFuse for observability, trac
 ## Overview
 
 LangFuse provides:
-- **Observability**: Monitor agent performance and behavior
-- **Tracing**: Track execution flow through your agents
-- **Prompt Management**: Version and manage prompts centrally
-- **Evaluations**: Assess agent performance with datasets
+- Observability: Monitor agent performance and behavior
+- Tracing: Track execution flow through your agents
+- Prompt Management: Version and manage prompts centrally
+- Evaluations: Assess agent performance with datasets
 
 ## Prerequisites
 
-- **All prompts must be stored in LangFuse** - this integration assumes prompts are already managed in your LangFuse instance
+- All prompts must be stored in LangFuse - this integration assumes prompts are already managed in your LangFuse instance
 - LangFuse account (Cloud or self-hosted)
 - Valid API credentials
 
@@ -42,8 +42,8 @@ LANGFUSE_FLUSH_INTERVAL=1000
 
 ### Getting LangFuse Credentials
 
-1. **Cloud Option**: Sign up at [LangFuse Cloud](https://cloud.langfuse.com)
-2. **Self-hosted Option**: Deploy LangFuse using Docker:
+1. Cloud Option: Sign up at [LangFuse Cloud](https://cloud.langfuse.com)
+2. Self-hosted Option: Deploy LangFuse using Docker:
    ```bash
    git clone https://github.com/langfuse/langfuse.git
    cd langfuse
@@ -61,7 +61,7 @@ The following prompts must exist in your LangFuse instance:
 
 ## Features
 
-### 1. Agent Tracing
+### Agent Tracing
 
 All agents are automatically instrumented with LangFuse tracing:
 
@@ -85,7 +85,7 @@ const result = await siteAnalysisAgent.analyze('example.com', {
 // Returns: { finalResponse, finalResponseParsed, totalIterations, functionCalls, traceId }
 ```
 
-### 2. Prompt Management
+### Prompt Management
 
 Prompts are retrieved directly from LangFuse with caching:
 
@@ -118,7 +118,7 @@ const finalPrompt = promptService.injectVariables(prompt, {
 });
 ```
 
-### 3. Event Logging
+### Event Logging
 
 Log custom events for tracking:
 
@@ -134,7 +134,7 @@ langfuseService.logEvent('custom_event', {
 });
 ```
 
-### 4. Manual Traces
+### Manual Traces
 
 Create custom traces for complex workflows:
 
@@ -152,7 +152,7 @@ if (trace) {
 
 ## Agent Integration
 
-### Updated Agent Methods
+### Agent Methods
 
 All agents now support additional options for tracing:
 
@@ -193,7 +193,7 @@ const result = await agent.generateEmailContent(tenantId, leadId, contactId, {
 
 ## Monitoring & Evaluation
 
-### Automatic Metrics
+### Metrics
 
 Each agent automatically logs:
 - Execution start/completion events
@@ -202,7 +202,7 @@ Each agent automatically logs:
 - Function call traces
 - Token usage (when available)
 
-### Performance Scoring
+### Scoring
 
 Agents automatically score their performance:
 - Successful completions: 0.8
@@ -218,7 +218,7 @@ langfuseService.score(traceId, 'custom_metric', 0.95, 'Excellent output quality'
 
 ## Startup & Health Checks
 
-### Automatic Setup
+### Setup
 
 The server automatically:
 1. Initializes LangFuse connection
@@ -239,7 +239,7 @@ console.log(health);
 
 ## Testing
 
-### Integration Tests
+### Tests
 
 Run the LangFuse integration tests:
 
@@ -270,7 +270,7 @@ try {
 }
 ```
 
-### LangFuse Connection Issues
+### Connection Issues
 
 The service gracefully handles connection issues:
 - Agents will fail with clear error messages if prompts can't be retrieved
@@ -281,17 +281,17 @@ The service gracefully handles connection issues:
 
 ### Common Issues
 
-1. **LangFuse not connecting**
+1. LangFuse not connecting
    - Check credentials are correct
    - Verify network connectivity to LangFuse host
    - Check logs for initialization errors
 
-2. **Prompts not found**
+2. Prompts not found
    - Ensure all required prompts exist in LangFuse
    - Check prompt names match exactly
    - Verify LangFuse dashboard for uploaded prompts
 
-3. **Missing traces**
+3. Missing traces
    - Confirm `LANGFUSE_ENABLED=true`
    - Check if agents are created with `enableTracing: true`
    - Verify callback handlers are properly attached
@@ -347,11 +347,11 @@ The LangFuse client maintains an internal buffer for events. Monitor memory usag
 
 ## Best Practices
 
-1. **Prompt Management**: Use semantic versioning for prompts
-2. **Error Handling**: Always handle LangFuse errors gracefully
-3. **Performance Monitoring**: Monitor trace creation and flushing performance
-4. **Evaluation**: Regularly review and score agent performance
-5. **Caching**: Use appropriate cache TTL for your use case
+1. Prompt Management: Use semantic versioning for prompts
+2. Error Handling: Always handle LangFuse errors gracefully
+3. Performance Monitoring: Monitor trace creation and flushing performance
+4. Evaluation: Regularly review and score agent performance
+5. Caching: Use appropriate cache TTL for your use case
 
 ## Required Prompt Structure
 
@@ -367,9 +367,9 @@ Output your response as JSON matching this schema:
 ## Support
 
 For issues with:
-- **LangFuse integration**: Check this documentation and logs
-- **LangFuse platform**: Visit [LangFuse Documentation](https://langfuse.com/docs)
-- **Agent performance**: Use LangFuse dashboard for analysis
+- LangFuse integration: Check this documentation and logs
+- LangFuse platform: Visit [LangFuse Documentation](https://langfuse.com/docs)
+- Agent performance: Use LangFuse dashboard for analysis
 
 ## Migration Notes
 
