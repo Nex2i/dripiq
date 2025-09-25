@@ -22,4 +22,7 @@ export const PointOfContactResponseSchema = Type.Object({
   createdAt: Type.String({ format: 'date-time', description: 'Created timestamp' }),
   updatedAt: Type.String({ format: 'date-time', description: 'Updated timestamp' }),
   strategyStatus: Type.Optional(Type.String({ description: 'Strategy status' })),
+  isUnsubscribed: Type.Optional(
+    Type.Boolean({ description: 'Whether the contact has been unsubscribed' })
+  ),
 });

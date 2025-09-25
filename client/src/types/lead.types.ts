@@ -17,6 +17,7 @@ export interface LeadPointOfContact {
   sourceUrl?: string
   manuallyReviewed: boolean
   strategyStatus?: 'none' | 'generating' | 'completed' | 'failed'
+  isUnsubscribed?: boolean
   createdAt: string
   updatedAt: string
 }
