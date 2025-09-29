@@ -202,29 +202,6 @@ export class ContactStrategyTracingService {
       logger.error('Failed to record error in trace', err);
     }
   }
-
-  /**
-   * Records validation errors for campaign plan mapping
-   */
-  recordValidationError(trace: any, stage: string, validationError: any) {
-    try {
-      trace.event({
-        name: 'validation_error',
-        metadata: {
-          stage,
-          error: validationError,
-        },
-        level: 'ERROR',
-      });
-
-      logger.warn('Recorded validation error in trace', {
-        traceId: trace.id,
-        stage,
-      });
-    } catch (error) {
-      logger.error('Failed to record validation error', error);
-    }
-  }
 }
 
 export const contactStrategyTracingService = new ContactStrategyTracingService();

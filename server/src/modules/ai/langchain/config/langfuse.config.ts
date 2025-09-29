@@ -23,11 +23,3 @@ export function getLangfuseClient(): Langfuse {
 
   return langfuseClient;
 }
-
-export async function shutdownLangfuse(): Promise<void> {
-  if (langfuseClient) {
-    await langfuseClient.shutdownAsync();
-    logger.info('LangFuse client shut down');
-    langfuseClient = null;
-  }
-}
