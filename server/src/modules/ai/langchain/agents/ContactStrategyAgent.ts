@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import {
   leadPointOfContactRepository,
@@ -11,6 +10,11 @@ import {
   siteEmbeddingRepository,
 } from '@/repositories';
 import { TenantService } from '@/modules/tenant.service';
+import { promptManagementService } from '../services/promptManagement.service';
+import {
+  contactStrategyTracingService,
+  type ContactStrategyTraceMetadata,
+} from '../services/contactStrategyTracing.service';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -89,25 +93,66 @@ export class ContactStrategyAgent {
     leadId: string,
     contactId: string
   ): Promise<ContactStrategyResult> {
-    let systemPrompt: string;
-    try {
-      systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
-    } catch (error) {
-      logger.error('Error preparing prompt variables', error);
-      throw new Error(
-        `Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    const startTime = Date.now();
+
+    // Gather metadata for tracing
+    const leadDetails = await this.getLeadDetails(tenantId, leadId);
+    const contactDetails = await this.getContactDetails(contactId);
+    const partnerDetails = await this.getPartnerDetails(tenantId);
+
+    const traceMetadata: ContactStrategyTraceMetadata = {
+      tenantId,
+      leadId,
+      contactId,
+      leadName: leadDetails.value.name,
+      contactName: contactDetails.value.name,
+      partnerName: partnerDetails.value.name,
+    };
+
+    // Create trace for observability
+    const trace = contactStrategyTracingService.createTrace(traceMetadata);
 
     try {
+      // Fetch prompt from LangFuse
+      const prompt = await promptManagementService.fetchPrompt('contact_strategy', {
+        cacheTtlSeconds: 300, // Cache for 5 minutes
+      });
+
+      // Compile prompt (no variables needed for this prompt)
+      const systemPrompt = prompt.compile({});
+
+      // Prepare input data
+      const partnerProducts = await this.getPartnerProducts(tenantId, leadId);
+      const salesman = await this.getSalesman(tenantId, leadId);
+
+      const inputData = {
+        system_prompt: systemPrompt,
+        lead_details: leadDetails,
+        contact_details: contactDetails,
+        partner_details: partnerDetails,
+        partner_products: partnerProducts,
+        salesman: salesman,
+        output_schema: `${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
+        maxIterations: this.config.maxIterations,
+      };
+
+      // Create generation span for LLM call
+      const generation = contactStrategyTracingService.createGeneration(
+        trace,
+        systemPrompt,
+        this.config.model,
+        inputData
+      );
+
+      // Invoke the agent
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
-        lead_details: await this.getLeadDetails(tenantId, leadId),
-        contact_details: await this.getContactDetails(contactId),
-        partner_details: await this.getPartnerDetails(tenantId),
-        partner_products: await this.getPartnerProducts(tenantId, leadId),
-        salesman: await this.getSalesman(tenantId, leadId),
-        output_schema: `${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
+        lead_details: leadDetails,
+        contact_details: contactDetails,
+        partner_details: partnerDetails,
+        partner_products: partnerProducts,
+        salesman: salesman,
+        output_schema: inputData.output_schema,
       });
 
       let finalResponse = getContentFromMessage(result.output);
@@ -115,11 +160,53 @@ export class ContactStrategyAgent {
       // If agent didn't provide a direct response, try to generate from steps
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
         logger.error('Agent did not provide a direct response, trying direct model approach');
+        contactStrategyTracingService.recordError(
+          trace,
+          new Error('Agent did not provide a direct response'),
+          'agent_execution'
+        );
         throw new Error('Agent did not provide a direct response');
       }
 
       // Enhanced JSON parsing with better error handling
       const parsedResult = parseWithSchema(finalResponse);
+
+      // End generation span with output
+      contactStrategyTracingService.endGeneration(generation, JSON.stringify(parsedResult));
+
+      // Record tool calls
+      if (result.intermediateSteps && result.intermediateSteps.length > 0) {
+        result.intermediateSteps.forEach((step: any) => {
+          if (step.action?.tool) {
+            contactStrategyTracingService.recordToolCall(
+              trace,
+              step.action.tool,
+              step.action.toolInput,
+              step.observation
+            );
+          }
+        });
+      }
+
+      // Record successful result
+      const executionTimeMs = Date.now() - startTime;
+      contactStrategyTracingService.recordResult(trace, {
+        success: true,
+        totalIterations: result.intermediateSteps?.length ?? 0,
+        executionTimeMs,
+        emailsGenerated: parsedResult.emails?.length ?? 0,
+        promptVersion: prompt.version,
+        functionCallsCount: result.intermediateSteps?.length ?? 0,
+      });
+
+      logger.info('Successfully generated contact strategy with LangFuse', {
+        leadId,
+        contactId,
+        tenantId,
+        emailsGenerated: parsedResult.emails?.length ?? 0,
+        executionTimeMs,
+        promptVersion: prompt.version,
+      });
 
       return {
         finalResponse: result.output || finalResponse || 'Email content generation completed',
@@ -128,7 +215,27 @@ export class ContactStrategyAgent {
         functionCalls: result.intermediateSteps,
       };
     } catch (error) {
-      logger.error('Email content generation failed:', error);
+      const executionTimeMs = Date.now() - startTime;
+
+      // Record error in trace
+      contactStrategyTracingService.recordError(trace, error as Error, 'email_generation');
+
+      // Record failed result
+      contactStrategyTracingService.recordResult(trace, {
+        success: false,
+        totalIterations: 0,
+        executionTimeMs,
+        emailsGenerated: 0,
+        error: (error as Error).message,
+      });
+
+      logger.error('Email content generation failed:', {
+        error,
+        leadId,
+        contactId,
+        tenantId,
+        executionTimeMs,
+      });
 
       throw error;
     }
