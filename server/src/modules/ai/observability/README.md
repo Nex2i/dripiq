@@ -1,23 +1,25 @@
-# LangFuse + LangChain Integration for AI Agent Observability
+# LangFuse-First AI Agent Observability System
 
-This module provides comprehensive observability, tracing, and prompt management for all AI agents using LangFuse.
+This module provides a comprehensive LangFuse-first observability system for all AI agents. **No backward compatibility** - this is a complete replacement of the old prompt system.
 
-## Features
+## 🚨 Breaking Changes - LangFuse Required
 
-- **Complete Observability**: Full visibility into agent performance and behavior
-- **Distributed Tracing**: Track execution flow through all agent operations
-- **Prompt Management**: Centralized version control and management of prompts in LangFuse
-- **Enhanced Error Handling**: Graceful degradation when LangFuse is unavailable
-- **Type Safety**: Full TypeScript support with proper error handling
+**IMPORTANT**: This system requires LangFuse to be configured and available. There are **no fallbacks** to local prompts.
+
+- ✅ **LangFuse Required**: All agents require LangFuse observability to function
+- ✅ **Prompts in LangFuse**: All prompts must be configured in LangFuse dashboard
+- ✅ **No Local Fallbacks**: System will fail fast if LangFuse is unavailable
+- ✅ **Enhanced Tracing**: Full execution tracing for all agent operations
+- ✅ **Required Parameters**: All agent methods now require `AgentExecutionOptions`
 
 ## Quick Start
 
 ### 1. Environment Configuration
 
-Add the following environment variables to your `.env` file:
+**Required** environment variables in your `.env` file:
 
 ```bash
-# LangFuse Core (Required)
+# LangFuse Core (REQUIRED)
 LANGFUSE_PUBLIC_KEY=pk-lf-xxx
 LANGFUSE_SECRET_KEY=sk-lf-xxx
 LANGFUSE_HOST=https://cloud.langfuse.com
@@ -29,65 +31,58 @@ LANGFUSE_FLUSH_AT=10
 LANGFUSE_FLUSH_INTERVAL=1000
 ```
 
-### 2. Basic Usage
+### 2. Initialize Observability System
 
-#### Before (Legacy Agent Usage)
-```typescript
-const result = await siteAnalysisAgent.analyze('example.com');
-```
-
-#### After (Enhanced Agent Usage with Observability)
-```typescript
-const result = await siteAnalysisAgent.analyze('example.com', {
-  tenantId: 'tenant-123',
-  userId: 'user-456',
-  sessionId: 'session-789',
-  enableTracing: true,
-  metadata: { campaign: 'Q1-2024', source: 'webapp' }
-});
-
-// Returns enhanced result with tracing information:
-// {
-//   finalResponse: string,
-//   finalResponseParsed: T,
-//   totalIterations: number,
-//   functionCalls: any[],
-//   traceId: string | null,
-//   metadata: {
-//     executionTimeMs: number,
-//     agentMetadata: {...},
-//     errors?: [...]
-//   }
-// }
-```
-
-### 3. Initialize Observability Services
+**REQUIRED** during application startup:
 
 ```typescript
-import { initializeObservability } from '@/modules/ai/observability';
+import { initializeObservability, initializeAgents } from '@/modules/ai';
 
-// Initialize during application startup
-const services = await initializeObservability();
+// Initialize observability services first
+await initializeObservability();
 
-// Check service health
-const healthChecks = await services.performHealthChecks();
-console.log('Observability Status:', healthChecks);
+// Then initialize agents (will fail if observability not available)
+await initializeAgents();
+
+console.log('AI system ready with LangFuse observability');
 ```
 
-## Agent-Specific Usage
+### 3. Configure Prompts in LangFuse
+
+**REQUIRED**: Create these prompts in your LangFuse dashboard:
+
+| Prompt Name | Environment Tags | Variables |
+|-------------|------------------|-----------|
+| `summarize_site` | `local`, `production` | `{{domain}}` |
+| `vendor_fit` | `local`, `production` | `{{partner_details}}`, `{{opportunity_details}}` |
+| `extract_contacts` | `local`, `production` | `{{domain}}`, `{{webdata_contacts}}` |
+| `contact_strategy` | `local`, `production` | None (structured data) |
+
+## Agent Usage (New API)
 
 ### Site Analysis Agent
 
 ```typescript
 import { siteAnalysisAgent } from '@/modules/ai';
 
+// REQUIRED: AgentExecutionOptions parameter
 const result = await siteAnalysisAgent.analyze('example.com', {
-  tenantId: 'tenant-123',
-  enableTracing: true,
-  metadata: { source: 'manual-analysis' }
+  tenantId: 'tenant-123',           // Required for tracing
+  userId: 'user-456',               // Optional but recommended
+  sessionId: 'session-789',         // Optional but recommended
+  metadata: { 
+    source: 'manual-analysis',      // Custom metadata
+    campaign: 'Q1-2024' 
+  },
+  promptCacheTtl: 300,             // Optional: Custom cache TTL
 });
 
-console.log('Analysis completed with trace ID:', result.traceId);
+// Enhanced result with tracing
+console.log('Analysis completed:', {
+  traceId: result.traceId,          // LangFuse trace ID
+  executionTime: result.metadata?.executionTimeMs,
+  domain: result.finalResponseParsed.summary
+});
 ```
 
 ### Vendor Fit Agent
@@ -99,9 +94,8 @@ const result = await vendorFitAgent.analyzeVendorFit(
   partnerInfo,
   opportunityContext,
   {
-    tenantId: 'tenant-123',
+    tenantId: 'tenant-123',         // Required
     userId: 'user-456',
-    enableTracing: true,
     metadata: { dealId: 'deal-789' }
   }
 );
@@ -113,9 +107,9 @@ const result = await vendorFitAgent.analyzeVendorFit(
 import { contactExtractionAgent } from '@/modules/ai';
 
 const result = await contactExtractionAgent.extractContacts('example.com', {
-  tenantId: 'tenant-123',
-  enableTracing: true,
-  promptCacheTtl: 600, // Cache prompts for 10 minutes
+  tenantId: 'tenant-123',           // Required
+  metadata: { source: 'lead-analysis' },
+  promptCacheTtl: 600,              // 10 minutes cache
 });
 ```
 
@@ -129,234 +123,32 @@ const result = await contactStrategyAgent.generateEmailContent(
   leadId,
   contactId,
   {
-    enableTracing: true,
+    tenantId: 'tenant-123',         // Required (can be same as first param)
     metadata: { campaignType: 'cold-outreach' }
   }
 );
 ```
 
-## Prompt Management
+## Enhanced Result Structure
 
-### LangFuse-First Approach
-
-All prompts are now managed in LangFuse with no local fallbacks:
-
-```typescript
-import { getObservabilityServices } from '@/modules/ai/observability';
-
-const { promptService } = await getObservabilityServices();
-
-// Basic prompt retrieval
-const { prompt } = await promptService.getPrompt('summarize_site');
-
-// With custom cache TTL
-const { prompt } = await promptService.getPrompt('summarize_site', {
-  cacheTtlSeconds: 300
-});
-
-// Variable injection
-const finalPrompt = promptService.injectVariables(template, {
-  domain: 'example.com',
-  additional_context: 'Enterprise focus'
-});
-```
-
-### Required Prompts in LangFuse
-
-Set up these prompts in your LangFuse dashboard:
-
-| Prompt Name | Agent | Description |
-|------------|-------|-------------|
-| `summarize_site` | SiteAnalysisAgent | Website analysis and summarization |
-| `vendor_fit` | VendorFitAgent | Partner-opportunity fit analysis |
-| `extract_contacts` | ContactExtractionAgent | Contact information extraction |
-| `contact_strategy` | ContactStrategyAgent | Email campaign generation |
-
-### Environment-Based Prompts
-
-LangFuse supports environment-specific prompts:
-- **Local Development**: Use prompts tagged with `local` environment
-- **Production**: Use prompts tagged with `production` environment
-
-## Observability Features
-
-### Automatic Event Logging
-
-The system automatically logs:
-- **Agent Start/Stop**: Execution lifecycle tracking
-- **Error Events**: Detailed error context and stack traces
-- **Performance Metrics**: Execution time, iteration counts, token usage
-- **Custom Events**: Business-specific tracking capabilities
-
-### Trace Management
-
-```typescript
-// Traces are automatically created for every agent execution
-const result = await siteAnalysisAgent.analyze('example.com', {
-  enableTracing: true,
-  tenantId: 'tenant-123',
-  sessionId: 'session-abc'
-});
-
-// Access trace information
-console.log('Trace ID:', result.traceId);
-console.log('Execution time:', result.metadata?.executionTimeMs);
-```
-
-### Manual Tracing for Complex Workflows
-
-```typescript
-import { getObservabilityServices } from '@/modules/ai/observability';
-
-const { langfuseService } = await getObservabilityServices();
-
-if (langfuseService.isAvailable()) {
-  const { trace } = langfuseService.createTrace('custom-workflow', { input });
-  
-  // Log custom events
-  langfuseService.logEvent(trace, 'step-completed', { step: 1 });
-  
-  // Create spans for detailed tracking
-  const span = langfuseService.createSpan(trace, 'data-processing', { records: 100 });
-  langfuseService.updateSpan(span, { processed: 100 }, { success: true });
-  
-  // Update trace with final results
-  langfuseService.updateTrace(trace, { result }, { success: true });
-}
-```
-
-## Error Handling
-
-### Graceful Degradation
-
-The system continues to work even when LangFuse is unavailable:
-
-```typescript
-// If LangFuse is down, agents will:
-// 1. Fall back to local prompts
-// 2. Continue without tracing
-// 3. Log warnings but not fail
-// 4. Return results with traceId: null
-
-const result = await siteAnalysisAgent.analyze('example.com');
-// Will work regardless of LangFuse availability
-```
-
-### Error Tracing
-
-All errors are automatically traced:
-
-```typescript
-try {
-  const result = await siteAnalysisAgent.analyze('invalid-domain', {
-    enableTracing: true
-  });
-} catch (error) {
-  // Error details are automatically logged to LangFuse
-  console.log('Error trace ID:', error.traceId);
-  console.log('Error metadata:', error.metadata);
-}
-```
-
-## Health Monitoring
-
-### Service Health Checks
-
-```typescript
-import { observabilityStartup } from '@/modules/ai/observability';
-
-const healthChecks = await observabilityStartup.performHealthChecks();
-
-healthChecks.forEach(check => {
-  console.log(`${check.service}: ${check.healthy ? 'OK' : 'FAIL'}`);
-  if (check.details) {
-    console.log('Details:', check.details);
-  }
-});
-```
-
-### Cache Statistics
-
-```typescript
-const { promptService } = await getObservabilityServices();
-const stats = promptService.getCacheStats();
-
-console.log('Prompt cache:', {
-  totalEntries: stats.totalEntries,
-  expiredEntries: stats.entries.filter(e => e.expired).length
-});
-```
-
-## Advanced Configuration
-
-### Custom LangFuse Configuration
-
-```typescript
-import { LangFuseService } from '@/modules/ai/observability';
-
-const customConfig = {
-  publicKey: 'custom-pk',
-  secretKey: 'custom-sk',
-  host: 'https://custom.langfuse.com',
-  enabled: true,
-  debug: true,
-  flushAt: 5,
-  flushInterval: 500
-};
-
-const langfuseService = new LangFuseService(customConfig);
-```
-
-### Custom Prompt Service
-
-```typescript
-import { PromptService } from '@/modules/ai/observability';
-
-const promptService = new PromptService(langfuseService);
-
-// Clear cache manually
-promptService.clearCache('summarize_site');
-
-// Get cache statistics
-const stats = promptService.getCacheStats();
-```
-
-## Migration Guide
-
-### Breaking Changes
-
-⚠️ **Important**: This is a full replacement approach with no backwards compatibility for old prompt systems.
-
-### Updated Agent Signatures
-
-All agent methods now accept an optional `AgentExecutionOptions` parameter:
-
-```typescript
-// Old signature
-async analyze(domain: string): Promise<SiteAnalysisResult>
-
-// New signature
-async analyze(
-  domain: string, 
-  options: AgentExecutionOptions = {}
-): Promise<SiteAnalysisResult>
-```
-
-### Enhanced Return Types
-
-All agents now return `EnhancedAgentResult<T>` with additional metadata:
+All agents return `EnhancedAgentResult<T>`:
 
 ```typescript
 interface EnhancedAgentResult<T> {
-  finalResponse: string;
-  finalResponseParsed: T;
-  totalIterations: number;
-  functionCalls: any[];
-  traceId: string | null;        // NEW
-  metadata?: {                   // NEW
-    executionTimeMs?: number;
-    agentMetadata?: Record<string, any>;
-    errors?: Array<{
+  finalResponse: string;                    // Raw agent response
+  finalResponseParsed: T;                   // Parsed & validated result
+  totalIterations: number;                  // Tool call iterations
+  functionCalls: any[];                     // All tool calls made
+  traceId: string;                          // LangFuse trace ID (always present)
+  metadata: {
+    executionTimeMs: number;                // Total execution time
+    agentMetadata: {                        // Agent-specific metadata
+      domain?: string;
+      promptVersion?: string;
+      promptCached?: boolean;
+      // ... more agent-specific data
+    };
+    errors?: Array<{                        // Error details if any
       message: string;
       phase: string;
       timestamp: string;
@@ -365,49 +157,236 @@ interface EnhancedAgentResult<T> {
 }
 ```
 
+## Error Handling
+
+### Fail-Fast Approach
+
+The system fails immediately if LangFuse is not available:
+
+```typescript
+try {
+  const result = await siteAnalysisAgent.analyze('example.com', {
+    tenantId: 'tenant-123'
+  });
+} catch (error) {
+  // Error will include trace ID and detailed context
+  console.error('Analysis failed:', {
+    message: error.message,
+    traceId: error.traceId,           // LangFuse trace ID
+    metadata: error.metadata          // Execution context
+  });
+}
+```
+
+### Required Configuration Errors
+
+```typescript
+// If LangFuse not configured:
+// Error: LangFuse service is not available. Site analysis requires observability services.
+
+// If prompt not found in LangFuse:
+// Error: LangFuse prompt retrieval not yet implemented for 'summarize_site'. 
+// Please configure the prompt 'summarize_site' in your LangFuse dashboard.
+```
+
+## Observability Features
+
+### Automatic Tracing
+
+Every agent execution creates a detailed LangFuse trace:
+
+```typescript
+// Trace includes:
+// - Agent execution lifecycle
+// - Prompt retrieval (cached/fresh)
+// - Tool calls and results
+// - Performance metrics
+// - Error context
+// - Business metadata (tenant, user, session)
+```
+
+### Health Monitoring
+
+```typescript
+import { observabilityStartup } from '@/modules/ai/observability';
+
+const healthChecks = await observabilityStartup.performHealthChecks();
+
+healthChecks.forEach(check => {
+  console.log(`${check.service}: ${check.healthy ? 'OK' : 'FAIL'}`);
+  if (!check.healthy) {
+    throw new Error(`${check.service} is unhealthy: ${check.message}`);
+  }
+});
+```
+
+### Prompt Management
+
+```typescript
+import { getObservabilityServices } from '@/modules/ai/observability';
+
+const { promptService } = await getObservabilityServices();
+
+// Get prompt with variables
+const { prompt } = await promptService.getPromptWithVariables(
+  'summarize_site',
+  { domain: 'example.com' },
+  { cacheTtlSeconds: 300 }
+);
+
+// Cache statistics
+const stats = promptService.getCacheStats();
+console.log(`Cached prompts: ${stats.totalEntries}`);
+```
+
+## Migration from Old System
+
+### Breaking Changes Summary
+
+1. **No Optional Parameters**: All agent methods require `AgentExecutionOptions`
+2. **No Local Prompts**: All prompts must be in LangFuse
+3. **Required Tracing**: All executions must have valid trace context
+4. **Fail Fast**: No graceful degradation - system requires LangFuse
+
+### Old vs New API
+
+```typescript
+// ❌ OLD (no longer supported)
+const result = await siteAnalysisAgent.analyze('example.com');
+
+// ✅ NEW (required)
+const result = await siteAnalysisAgent.analyze('example.com', {
+  tenantId: 'tenant-123'  // Minimum required
+});
+```
+
+### Required Migration Steps
+
+1. **Configure LangFuse**: Set up LangFuse account and get API keys
+2. **Create Prompts**: Upload all 4 required prompts to LangFuse dashboard
+3. **Update Code**: Add required `AgentExecutionOptions` to all agent calls
+4. **Initialize System**: Call `initializeObservability()` and `initializeAgents()` at startup
+5. **Handle Errors**: Update error handling for new fail-fast behavior
+
+## Production Deployment
+
+### Startup Sequence
+
+```typescript
+// 1. Initialize observability first
+await initializeObservability();
+
+// 2. Verify health
+const health = await observabilityStartup.performHealthChecks();
+if (health.some(check => !check.healthy)) {
+  throw new Error('Observability system not healthy');
+}
+
+// 3. Initialize agents
+await initializeAgents();
+
+// 4. Ready to handle requests
+console.log('AI system ready for production');
+```
+
+### Environment-Specific Prompts
+
+LangFuse automatically selects prompts based on `NODE_ENV`:
+
+- **Development**: Prompts tagged with `local` environment
+- **Production**: Prompts tagged with `production` environment
+
+### Monitoring & Alerts
+
+Set up monitoring for:
+
+- ✅ LangFuse connectivity (health checks)
+- ✅ Agent execution times (performance)
+- ✅ Error rates (reliability)
+- ✅ Prompt cache hit rates (efficiency)
+
+## Advanced Configuration
+
+### Custom Observability Config
+
+```typescript
+import { LangFuseService } from '@/modules/ai/observability';
+
+const customConfig = {
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+  secretKey: process.env.LANGFUSE_SECRET_KEY,
+  host: process.env.LANGFUSE_HOST,
+  enabled: true,
+  debug: process.env.NODE_ENV === 'development',
+  flushAt: 5,                    // Flush after 5 traces
+  flushInterval: 500,            // Flush every 500ms
+};
+
+const langfuseService = new LangFuseService(customConfig);
+```
+
+### Performance Tuning
+
+```typescript
+// High-volume settings
+LANGFUSE_FLUSH_AT=20
+LANGFUSE_FLUSH_INTERVAL=2000
+LANGFUSE_DEBUG=false
+
+// Development settings  
+LANGFUSE_FLUSH_AT=1
+LANGFUSE_FLUSH_INTERVAL=100
+LANGFUSE_DEBUG=true
+```
+
 ## Troubleshooting
 
 ### Common Issues
 
-1. **LangFuse Connection Failed**
+1. **"LangFuse service is not available"**
    - Check environment variables
-   - Verify network connectivity
-   - Ensure API keys are valid
+   - Verify API keys are valid
+   - Ensure network connectivity to LangFuse
 
-2. **Prompts Not Found**
-   - Verify prompts exist in LangFuse dashboard
-   - Check environment-specific prompt tags
-   - Ensure prompt names match exactly
+2. **"Prompt 'X' not found in LangFuse dashboard"**
+   - Create the prompt in LangFuse dashboard
+   - Ensure environment tags match (`local`/`production`)
+   - Verify prompt name spelling
 
-3. **Slow Performance**
-   - Adjust `LANGFUSE_FLUSH_AT` and `LANGFUSE_FLUSH_INTERVAL`
-   - Increase prompt cache TTL
-   - Monitor trace volume
+3. **"Agent execution failed"**
+   - Check LangFuse trace ID in error for details
+   - Verify all required parameters provided
+   - Check agent-specific logs
 
 ### Debug Mode
 
-Enable debug logging:
+Enable comprehensive logging:
 
 ```bash
 LANGFUSE_DEBUG=true
+NODE_ENV=development
 ```
 
-This will provide detailed logs of all LangFuse operations.
-
-## Best Practices
-
-1. **Always Use Tracing**: Enable tracing for production workloads to monitor performance
-2. **Proper Error Handling**: Always handle agent errors gracefully
-3. **Cache Management**: Use appropriate cache TTLs for prompts
-4. **Metadata**: Include relevant business context in trace metadata
-5. **Health Monitoring**: Regularly check observability service health
+This provides detailed logs of:
+- ✅ LangFuse API calls
+- ✅ Prompt retrieval and caching
+- ✅ Agent execution steps
+- ✅ Error contexts
 
 ## Business Impact
 
-### Immediate Benefits
+### Enterprise Benefits
 
-- **Complete Observability**: Full visibility into agent performance and behavior
-- **Centralized Management**: All prompts managed in LangFuse dashboard
-- **Quality Assurance**: Automatic scoring and performance tracking
-- **Debugging Capabilities**: Detailed traces and error context
-- **Performance Monitoring**: Real-time metrics and analytics
+- ✅ **100% Observability**: Every agent execution fully traced
+- ✅ **Centralized Control**: All prompts managed in LangFuse dashboard
+- ✅ **Quality Assurance**: Automatic performance tracking and scoring
+- ✅ **Debugging Power**: Detailed error context and execution traces
+- ✅ **Scalability**: Built for high-volume production workloads
+- ✅ **Compliance**: Full audit trail of AI operations
+
+### Operational Excellence
+
+- ✅ **Fail Fast**: Immediate detection of configuration issues
+- ✅ **No Silent Failures**: System requires proper setup
+- ✅ **Performance Monitoring**: Real-time metrics and analytics
+- ✅ **Version Control**: Prompt versioning and rollback capabilities

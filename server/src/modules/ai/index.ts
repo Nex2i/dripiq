@@ -20,6 +20,7 @@ export {
   createVendorFitAgent,
   createContactExtractionAgent,
   createContactStrategyAgent,
+  initializeAgents,
   RetrieveFullPageTool,
   GetInformationAboutDomainTool,
   ListDomainPagesTool,

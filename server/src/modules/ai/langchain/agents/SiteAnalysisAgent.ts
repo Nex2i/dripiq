@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
@@ -18,6 +17,16 @@ import {
 
 export type SiteAnalysisResult = EnhancedAgentResult<z.infer<typeof reportOutputSchema>>;
 
+/**
+ * LangFuse-First Site Analysis Agent
+ * 
+ * Features:
+ * - Required LangFuse observability (no fallbacks)
+ * - LangFuse-managed prompts only
+ * - Full tracing and performance monitoring
+ * - Enhanced error handling with trace context
+ * - Clean, modern API design
+ */
 export class SiteAnalysisAgent {
   private agent: AgentExecutor;
   private config: LangChainConfig;
@@ -53,163 +62,241 @@ export class SiteAnalysisAgent {
     });
   }
 
+  /**
+   * Analyze a website domain with full LangFuse observability
+   * 
+   * @param domain - The domain to analyze
+   * @param options - Execution options including tracing context
+   * @returns Enhanced analysis result with trace information
+   * @throws Error if observability services are not available
+   */
   async analyze(
     domain: string,
-    options: AgentExecutionOptions = {}
+    options: AgentExecutionOptions
   ): Promise<SiteAnalysisResult> {
     const startTime = Date.now();
-    let trace: any = null;
-    let observabilityServices: any = null;
+
+    // Require observability services - fail fast if not available
+    const observabilityServices = await getObservabilityServices();
+    
+    if (!observabilityServices.langfuseService.isAvailable()) {
+      throw new Error(
+        'LangFuse service is not available. Site analysis requires observability services. ' +
+        'Please check your LangFuse configuration.'
+      );
+    }
+
+    // Create trace - required for all executions
+    const traceResult = observabilityServices.langfuseService.createTrace(
+      'site-analysis',
+      { domain },
+      {
+        agentName: 'SiteAnalysisAgent',
+        agentVersion: '2.0.0-langfuse-first',
+        input: { domain },
+        tenantId: options.tenantId,
+        userId: options.userId,
+        sessionId: options.sessionId,
+        custom: options.metadata,
+      }
+    );
+    
+    const trace = traceResult.trace;
+    if (!trace) {
+      throw new Error('Failed to create LangFuse trace for site analysis');
+    }
 
     try {
-      // Try to initialize observability services if tracing is enabled
-      if (options.enableTracing !== false) {
-        try {
-          observabilityServices = await getObservabilityServices();
-        } catch (error) {
-          logger.debug('Observability services not available - continuing without tracing', {
-            domain,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      }
+      logger.info('Site analysis started with LangFuse tracing', {
+        domain,
+        traceId: traceResult.traceId,
+        tenantId: options.tenantId,
+      });
 
-      // Create trace if observability is available
-      if (observabilityServices?.langfuseService?.isAvailable()) {
-        const traceResult = observabilityServices.langfuseService.createTrace(
-          'site-analysis',
-          { domain },
-          {
-            agentName: 'SiteAnalysisAgent',
-            agentVersion: '1.0.0-enhanced',
-            input: { domain },
-            tenantId: options.tenantId,
-            userId: options.userId,
-            sessionId: options.sessionId,
-            custom: options.metadata,
-          }
-        );
-        trace = traceResult.trace;
-      }
+      // Get prompt from LangFuse - required, no fallbacks
+      const promptResult = await observabilityServices.promptService.getPromptWithVariables(
+        'summarize_site',
+        { domain },
+        { cacheTtlSeconds: options.promptCacheTtl }
+      );
 
-      // Get prompt (fallback to old system if observability not available)
-      let systemPrompt: string;
-      try {
-        if (observabilityServices?.promptService) {
-          const promptResult = await observabilityServices.promptService.getPromptWithVariables(
-            'summarize_site',
-            { domain },
-            { cacheTtlSeconds: options.promptCacheTtl }
-          );
-          systemPrompt = promptResult.prompt;
-        } else {
-          // Fallback to old prompt system
-          const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-          systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
-            domain,
-            output_schema: outputSchemaJson,
-          });
+      // Log prompt retrieval
+      observabilityServices.langfuseService.logEvent(
+        trace,
+        'prompt-retrieved',
+        { promptName: 'summarize_site', domain },
+        { 
+          cached: promptResult.cached,
+          version: promptResult.version,
+          source: promptResult.metadata?.source,
         }
-      } catch (error) {
-        logger.warn('Failed to get prompt from observability system, using fallback', { domain, error });
-        // Fallback to old prompt system
-        const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-        systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
+      );
+
+      // Log agent execution start
+      observabilityServices.langfuseService.logEvent(
+        trace,
+        'agent-execution-start',
+        { 
           domain,
-          output_schema: outputSchemaJson,
-        });
-      }
+          systemPromptLength: promptResult.prompt.length,
+          maxIterations: this.config.maxIterations,
+        }
+      );
 
+      // Execute the agent
       const result = await this.agent.invoke({
-        system_prompt: systemPrompt,
+        system_prompt: promptResult.prompt,
       });
 
       let finalResponse = getContentFromMessage(result.output);
 
+      // Handle partial results if needed
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt);
-      }
-
-      const finalResponseParsed = parseWithSchema(finalResponse, domain);
-      const executionTimeMs = Date.now() - startTime;
-
-      // Update trace with success
-      if (trace) {
-        observabilityServices.langfuseService.updateTrace(
+        observabilityServices.langfuseService.logEvent(
           trace,
-          { finalResponse: finalResponseParsed, executionTimeMs },
-          { success: true, domain }
+          'partial-result-handling',
+          { intermediateStepsCount: result.intermediateSteps.length }
+        );
+
+        finalResponse = await this.summarizePartialSteps(
+          result, 
+          domain, 
+          promptResult.prompt, 
+          trace, 
+          observabilityServices
         );
       }
+
+      // Parse the final result
+      const finalResponseParsed = this.parseWithSchema(finalResponse, domain);
+      const executionTimeMs = Date.now() - startTime;
+
+      // Log successful completion
+      observabilityServices.langfuseService.logEvent(
+        trace,
+        'agent-execution-complete',
+        {
+          domain,
+          totalIterations: result.intermediateSteps?.length ?? 0,
+          executionTimeMs,
+        },
+        {
+          success: true,
+          finalResponseLength: finalResponse.length,
+          parsedSuccessfully: true,
+        }
+      );
+
+      // Update the trace with final results
+      observabilityServices.langfuseService.updateTrace(
+        trace,
+        {
+          finalResponse: finalResponseParsed,
+          totalIterations: result.intermediateSteps?.length ?? 0,
+          executionTimeMs,
+        },
+        {
+          success: true,
+          domain,
+        }
+      );
 
       return {
         finalResponse,
         finalResponseParsed,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps ?? [],
-        traceId: trace?.id || null,
+        traceId: traceResult.traceId,
         metadata: {
           executionTimeMs,
-          agentMetadata: { domain },
+          agentMetadata: {
+            domain,
+            promptVersion: promptResult.version,
+            promptCached: promptResult.cached,
+          },
         },
       };
+
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
       
-      logger.error('Error in site analysis:', error);
+      logger.error('Site analysis failed', {
+        domain,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        executionTimeMs,
+        traceId: traceResult.traceId,
+      });
 
       // Log error to trace
-      if (trace && observabilityServices) {
-        observabilityServices.langfuseService.logError(trace, error as Error, {
-          phase: 'agent-execution',
-          domain,
-        });
-        observabilityServices.langfuseService.updateTrace(
-          trace,
-          null,
-          { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
-        );
-      }
+      observabilityServices.langfuseService.logError(trace, error as Error, {
+        phase: 'agent-execution',
+        domain,
+        executionTimeMs,
+      });
 
-      return {
-        finalResponse: `Error occurred during site analysis: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        totalIterations: 1,
-        functionCalls: [],
-        finalResponseParsed: getFallbackResult(domain, error),
-        traceId: trace?.id || null,
-        metadata: {
+      observabilityServices.langfuseService.updateTrace(
+        trace,
+        null,
+        {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          domain,
           executionTimeMs,
-          errors: [{
-            message: error instanceof Error ? error.message : 'Unknown error',
-            phase: 'agent-execution',
-            timestamp: new Date().toISOString(),
-          }],
-        },
+        }
+      );
+
+      // Enhanced error with trace context
+      const enhancedError = new Error(
+        `Site analysis failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      
+      (enhancedError as any).traceId = traceResult.traceId;
+      (enhancedError as any).metadata = {
+        executionTimeMs,
+        domain,
+        errors: [{
+          message: error instanceof Error ? error.message : 'Unknown error',
+          phase: 'agent-execution',
+          timestamp: new Date().toISOString(),
+        }],
       };
+
+      throw enhancedError;
     }
   }
 
   private async summarizePartialSteps(
     result: any,
     domain: string,
-    systemPrompt: string
+    systemPrompt: string,
+    trace: any,
+    observabilityServices: any
   ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
+    const span = observabilityServices.langfuseService.createSpan(
+      trace,
+      'partial-steps-summary',
+      {
+        domain,
+        intermediateStepsCount: result.intermediateSteps?.length ?? 0,
+      }
+    );
 
-    const gatheredInfo = (result.intermediateSteps || [])
-      .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
-          step.observation || 'No result'
-        }\n`;
-      })
-      .join('\n---\n');
+    try {
+      const structuredModel = createChatModel({
+        model: this.config.model,
+      }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
 
-    const summaryPrompt = `
+      const gatheredInfo = (result.intermediateSteps || [])
+        .map((step: any) => {
+          return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
+            step.observation || 'No result'
+          }\n`;
+        })
+        .join('\n---\n');
+
+      const summaryPrompt = `
 You are a website analysis expert. Based on the partial research conducted below, provide a comprehensive website analysis for ${domain}.
+
 Research conducted so far:
 ${gatheredInfo}
 
@@ -217,39 +304,58 @@ ${systemPrompt}
 
 Even though the research may be incomplete, provide the best possible analysis based on the available information.
 Return your answer as valid JSON matching the provided schema.
-    `;
+      `;
 
-    const summary = await structuredModel.invoke([
-      {
-        role: 'system',
-        content: summaryPrompt,
-      },
-    ]);
-    return getContentFromMessage(summary.content ?? summary);
+      const summary = await structuredModel.invoke([
+        {
+          role: 'system',
+          content: summaryPrompt,
+        },
+      ]);
+
+      const summaryResult = getContentFromMessage(summary.content ?? summary);
+
+      if (span) {
+        observabilityServices.langfuseService.updateSpan(
+          span,
+          { summaryLength: summaryResult.length },
+          { success: true }
+        );
+      }
+
+      return summaryResult;
+    } catch (error) {
+      if (span) {
+        observabilityServices.langfuseService.updateSpan(
+          span,
+          null,
+          { 
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        );
+      }
+      throw error;
+    }
   }
-}
 
-// -- Helpers --
-function parseWithSchema(content: string, domain: string) {
-  try {
-    // Remove markdown code fencing and whitespace if present
-    const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
-    return reportOutputSchema.parse(JSON.parse(jsonText));
-  } catch (error) {
-    logger.warn('Parsing failed, returning fallback.', error);
-    return getFallbackResult(domain, error);
+  private parseWithSchema(content: string, domain: string) {
+    try {
+      // Remove markdown code fencing and whitespace if present
+      const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
+      return reportOutputSchema.parse(JSON.parse(jsonText));
+    } catch (error) {
+      logger.error('Site analysis JSON parsing failed', { 
+        domain, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        contentPreview: content.substring(0, 200),
+      });
+      
+      throw new Error(
+        `Failed to parse site analysis results for ${domain}: ${
+          error instanceof Error ? error.message : 'Unknown parsing error'
+        }`
+      );
+    }
   }
-}
-
-function getFallbackResult(domain: string, error: unknown) {
-  return {
-    summary: `Unable to analyze website ${domain} due to an error: ${
-      error instanceof Error ? error.message : 'Unknown error'
-    }`,
-    products: [],
-    services: [],
-    differentiators: [],
-    targetMarket: 'Unknown',
-    tone: 'Unknown',
-  };
 }

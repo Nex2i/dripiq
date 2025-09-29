@@ -34,4 +34,5 @@ export {
   createVendorFitAgent,
   createContactExtractionAgent,
   createContactStrategyAgent,
+  initializeAgents,
 } from './factories/AgentFactory';

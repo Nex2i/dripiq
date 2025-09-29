@@ -257,62 +257,15 @@ export class PromptService {
   }
 
   private async fetchPromptFromLangFuse(name: PromptName): Promise<PromptResult> {
-    // Since the LangFuse SDK doesn't have built-in prompt management yet,
-    // we'll temporarily fall back to local prompts while the LangFuse
-    // prompt management system is being configured.
+    // TODO: Implement actual LangFuse prompt retrieval when LangFuse SDK supports it
+    // For now, we'll use a placeholder that indicates LangFuse integration
+    // In production, this would call LangFuse's prompt management API
     
-    // Import local prompts as temporary fallback
-    const localPrompts = await this.getLocalPromptFallback(name);
-    
-    logger.warn('Using local prompt fallback - LangFuse prompt management not yet configured', {
-      name,
-      environment: this.environment,
-    });
-
-    return {
-      prompt: localPrompts.prompt,
-      version: 'local-fallback',
-      metadata: {
-        source: 'local-fallback',
-        environment: this.environment,
-        note: 'Temporary fallback until LangFuse prompts are configured',
-      },
-    };
-  }
-
-  private async getLocalPromptFallback(name: PromptName): Promise<{ prompt: string }> {
-    try {
-      let prompt: string;
-      
-      switch (name) {
-        case 'summarize_site':
-          const { default: summarizeSite } = await import('@/prompts/summarize_site.prompt');
-          prompt = summarizeSite;
-          break;
-        case 'vendor_fit':
-          const { default: vendorFit } = await import('@/prompts/vendor_fit.prompt');
-          prompt = vendorFit;
-          break;
-        case 'extract_contacts':
-          const { default: extractContacts } = await import('@/prompts/extractContacts.prompt');
-          prompt = extractContacts;
-          break;
-        case 'contact_strategy':
-          const { default: contactStrategy } = await import('@/prompts/contact_strategy.prompt');
-          prompt = contactStrategy;
-          break;
-        default:
-          throw new Error(`Unknown prompt name: ${name}`);
-      }
-
-      return { prompt };
-    } catch (error) {
-      throw new Error(
-        `Failed to load local prompt fallback for '${name}': ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-    }
+    throw new Error(
+      `LangFuse prompt retrieval not yet implemented for '${name}'. ` +
+      `Please configure the prompt '${name}' in your LangFuse dashboard for environment '${this.environment}'. ` +
+      `This system requires all prompts to be managed in LangFuse - no local fallbacks are supported.`
+    );
   }
 }
 
