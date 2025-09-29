@@ -1,5 +1,6 @@
+import { Langfuse } from 'langfuse';
 import { logger } from '@/libs/logger';
-import { getLangfuseClient } from '../config/langfuse.config';
+import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
 
 export interface PromptFetchOptions {
   version?: number;
@@ -8,6 +9,24 @@ export interface PromptFetchOptions {
 }
 
 export class PromptManagementService {
+  private langfuse: Langfuse;
+
+  constructor() {
+    if (!LANGFUSE_PUBLIC_KEY || !LANGFUSE_SECRET_KEY) {
+      throw new Error(
+        'LangFuse credentials not configured. Please set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY environment variables.'
+      );
+    }
+
+    this.langfuse = new Langfuse({
+      publicKey: LANGFUSE_PUBLIC_KEY,
+      secretKey: LANGFUSE_SECRET_KEY,
+      baseUrl: LANGFUSE_HOST || 'https://cloud.langfuse.com',
+    });
+
+    logger.info('LangFuse prompt management service initialized');
+  }
+
   /**
    * Fetches a prompt from LangFuse by name
    * @param promptName - The name of the prompt in LangFuse
@@ -16,9 +35,7 @@ export class PromptManagementService {
    */
   async fetchPrompt(promptName: string, options: PromptFetchOptions = {}) {
     try {
-      const langfuse = getLangfuseClient();
-
-      const prompt = await langfuse.getPrompt(promptName, options.version, {
+      const prompt = await this.langfuse.getPrompt(promptName, options.version, {
         label: options.label,
         cacheTtlSeconds: options.cacheTtlSeconds,
       });

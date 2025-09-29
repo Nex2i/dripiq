@@ -6,10 +6,8 @@ import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { createChatModel } from './langchain/config/langchain.config';
 import { getContentFromMessage } from './langchain/utils/messageUtils';
 import { promptManagementService } from './langchain/services/promptManagement.service';
-import {
-  smartFilterTracingService,
-  type SmartFilterTraceMetadata,
-} from './langchain/services/smartFilterTracing.service';
+import { CallbackHandler } from 'langfuse-langchain';
+import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
 
 const smartFilterSiteMapSchema = z.object({
   urls: z.array(z.string()).describe('The filtered list of URLs'),
@@ -53,21 +51,25 @@ export const SiteScrapeService = {
       return siteMap.map((url) => url.url);
     }
 
-    // Create trace for observability
-    const traceMetadata: SmartFilterTraceMetadata = {
-      tenantId: options.tenantId,
-      userId: options.userId,
-      sessionId: options.sessionId,
-      domain: options.domain,
-      siteType,
-      inputUrlCount: siteMap.length,
-      minUrls,
-      maxUrls,
-    };
-
-    const trace = smartFilterTracingService.createTrace(traceMetadata);
-
     try {
+      // Create LangFuse callback handler for automatic tracing
+      const langfuseHandler = new CallbackHandler({
+        publicKey: LANGFUSE_PUBLIC_KEY,
+        secretKey: LANGFUSE_SECRET_KEY,
+        baseUrl: LANGFUSE_HOST,
+        sessionId: options.sessionId,
+        userId: options.userId || options.tenantId,
+        metadata: {
+          tenantId: options.tenantId,
+          domain: options.domain,
+          siteType,
+          inputUrlCount: siteMap.length,
+          minUrls,
+          maxUrls,
+        },
+        tags: ['smart_filter', 'site_scrape', siteType],
+      });
+
       // Fetch prompt from LangFuse
       const prompt = await promptManagementService.fetchPrompt('smart_filter', {
         cacheTtlSeconds: 300, // Cache for 5 minutes
@@ -90,30 +92,22 @@ export const SiteScrapeService = {
         model: 'gpt-5-nano',
       }).withStructuredOutput(z.toJSONSchema(smartFilterSiteMapSchema));
 
-      // Create generation span for LLM call
-      const generation = smartFilterTracingService.createGeneration(
-        trace,
-        compiledPrompt,
-        'gpt-5-nano'
-      );
-
-      // Invoke the LLM
-      const response = await chatModel.invoke([
+      // Invoke the LLM with callback handler for automatic tracing
+      const response = await chatModel.invoke(
+        [
+          {
+            role: 'system',
+            content: compiledPrompt,
+          },
+        ],
         {
-          role: 'system',
-          content: compiledPrompt,
-        },
-      ]);
+          callbacks: [langfuseHandler],
+          runName: 'smart_filter_site_map',
+        }
+      );
 
       // Parse response
       const parsedResponse = parseWithSchema(response);
-
-      // End generation span with output
-      smartFilterTracingService.endGeneration(
-        generation,
-        JSON.stringify(parsedResponse)
-        // Note: Token usage would need to be extracted from response if available
-      );
 
       // Apply business rules for URL count
       let finalUrls = parsedResponse.urls;
@@ -134,15 +128,7 @@ export const SiteScrapeService = {
         finalUrls = parsedResponse.urls.slice(0, maxUrls);
       }
 
-      // Record successful result
       const executionTimeMs = Date.now() - startTime;
-      smartFilterTracingService.recordResult(trace, {
-        outputUrlCount: finalUrls.length,
-        executionTimeMs,
-        success: true,
-        usedFallback: finalUrls.length === siteMap.length,
-        promptVersion: prompt.version,
-      });
 
       logger.info('Successfully filtered site map with LangFuse prompt', {
         inputCount: siteMap.length,
@@ -151,21 +137,12 @@ export const SiteScrapeService = {
         promptVersion: prompt.version,
       });
 
+      // Flush LangFuse events
+      await langfuseHandler.flushAsync();
+
       return finalUrls;
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
-
-      // Record error in trace
-      smartFilterTracingService.recordError(trace, error as Error);
-
-      // Record failed result
-      smartFilterTracingService.recordResult(trace, {
-        outputUrlCount: siteMap.length,
-        executionTimeMs,
-        success: false,
-        error: (error as Error).message,
-        usedFallback: true,
-      });
 
       logger.error('Failed to smart filter site map, falling back to all URLs', {
         error,
