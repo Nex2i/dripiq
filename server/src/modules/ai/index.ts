@@ -38,9 +38,11 @@ export {
 export {
   LangFuseService,
   PromptService,
-  observabilityStartup,
   initializeObservability,
   getObservabilityServices,
+  isObservabilityReady,
+  getLangFuseStatus,
+  shutdownObservability,
   type LangFuseConfig,
   type PromptConfig,
   type PromptResult,
@@ -49,5 +51,4 @@ export {
   type EnhancedAgentResult,
   type AgentExecutionOptions,
   type AgentTraceMetadata,
-  type HealthCheck,
 } from './observability';

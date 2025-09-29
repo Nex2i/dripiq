@@ -12,8 +12,8 @@ import {
   vendorFitAgent,
   contactExtractionAgent,
   contactStrategyAgent,
-  observabilityStartup,
   getObservabilityServices,
+  getLangFuseStatus,
   type AgentExecutionOptions,
 } from '@/modules/ai';
 import { logger } from '@/libs/logger';
@@ -30,14 +30,11 @@ export const initializeAISystem = async (): Promise<void> => {
     await initializeObservability();
     logger.info('Observability services initialized');
 
-    // Step 2: Verify health
-    const healthChecks = await observabilityStartup.performHealthChecks();
-    const unhealthyServices = healthChecks.filter((check) => !check.healthy);
+    // Step 2: Verify LangFuse status
+    const status = getLangFuseStatus();
 
-    if (unhealthyServices.length > 0) {
-      throw new Error(
-        `Unhealthy services detected: ${unhealthyServices.map((s) => s.service).join(', ')}`
-      );
+    if (!status.available) {
+      throw new Error('LangFuse service is not available - check configuration');
     }
 
     // Step 3: Initialize agents (will fail if LangFuse not available)
@@ -288,18 +285,15 @@ export const errorHandlingExample = async (): Promise<void> => {
  */
 export const healthMonitoringExample = async (): Promise<void> => {
   try {
-    const healthChecks = await observabilityStartup.performHealthChecks();
+    const status = getLangFuseStatus();
 
     console.log('System Health Status:');
-    healthChecks.forEach((check) => {
-      console.log(`📊 ${check.service}: ${check.healthy ? '✅ Healthy' : '❌ Unhealthy'}`);
-      if (check.message) {
-        console.log(`   Message: ${check.message}`);
-      }
-      if (check.details) {
-        console.log(`   Details:`, check.details);
-      }
-    });
+    console.log(`📊 LangFuse: ${status.available ? '✅ Healthy' : '❌ Unhealthy'}`);
+    console.log(`   Initialized: ${status.initialized}`);
+    if (status.config) {
+      console.log(`   Host: ${status.config.host}`);
+      console.log(`   Enabled: ${status.config.enabled}`);
+    }
 
     // Check prompt cache statistics
     const { promptService } = await getObservabilityServices();

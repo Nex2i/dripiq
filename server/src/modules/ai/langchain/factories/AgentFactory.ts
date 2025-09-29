@@ -48,18 +48,23 @@ export const createContactStrategyAgent = (
 };
 
 /**
- * Initialize all default agents and verify observability is available
- * Call this during application startup to ensure everything is properly configured
+ * Initialize AI agents (simplified)
+ * Verifies that observability services are available
  */
 export const initializeAgents = async (): Promise<void> => {
   logger.info('Initializing LangFuse-first AI agents...');
 
   try {
     // Import here to avoid circular dependencies
-    const { getObservabilityServices } = await import('../../observability');
-    const services = await getObservabilityServices();
+    const { getObservabilityServices, getLangFuseStatus } = await import('../../observability');
 
-    if (!services.langfuseService.isAvailable()) {
+    // Initialize observability services
+    await getObservabilityServices();
+
+    // Check LangFuse status
+    const status = getLangFuseStatus();
+
+    if (!status.available) {
       throw new Error('LangFuse service is not available');
     }
 

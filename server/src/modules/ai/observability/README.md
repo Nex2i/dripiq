@@ -36,12 +36,18 @@ LANGFUSE_FLUSH_INTERVAL=1000
 **REQUIRED** during application startup:
 
 ```typescript
-import { initializeObservability, initializeAgents } from '@/modules/ai';
+import { initializeObservability, initializeAgents, getLangFuseStatus } from '@/modules/ai';
 
 // Initialize observability services first
 await initializeObservability();
 
-// Then initialize agents (will fail if observability not available)
+// Verify LangFuse is available
+const status = getLangFuseStatus();
+if (!status.available) {
+  throw new Error('LangFuse not available - check configuration');
+}
+
+// Initialize agents (will fail if observability not available)
 await initializeAgents();
 
 console.log('AI system ready with LangFuse observability');
@@ -208,16 +214,20 @@ Every agent execution creates a detailed LangFuse trace:
 ### Health Monitoring
 
 ```typescript
-import { observabilityStartup } from '@/modules/ai/observability';
+import { getLangFuseStatus, getObservabilityServices } from '@/modules/ai';
 
-const healthChecks = await observabilityStartup.performHealthChecks();
+// Check LangFuse status
+const status = getLangFuseStatus();
+console.log(`LangFuse: ${status.available ? 'OK' : 'FAIL'}`);
 
-healthChecks.forEach(check => {
-  console.log(`${check.service}: ${check.healthy ? 'OK' : 'FAIL'}`);
-  if (!check.healthy) {
-    throw new Error(`${check.service} is unhealthy: ${check.message}`);
-  }
-});
+if (!status.available) {
+  throw new Error('LangFuse service not available');
+}
+
+// Check prompt cache
+const { promptService } = await getObservabilityServices();
+const cacheStats = promptService.getCacheStats();
+console.log(`Prompt cache: ${cacheStats.totalEntries} entries`);
 ```
 
 ### Prompt Management
@@ -276,10 +286,10 @@ const result = await siteAnalysisAgent.analyze('example.com', {
 // 1. Initialize observability first
 await initializeObservability();
 
-// 2. Verify health
-const health = await observabilityStartup.performHealthChecks();
-if (health.some(check => !check.healthy)) {
-  throw new Error('Observability system not healthy');
+// 2. Verify LangFuse status
+const status = getLangFuseStatus();
+if (!status.available) {
+  throw new Error('LangFuse service not available');
 }
 
 // 3. Initialize agents
