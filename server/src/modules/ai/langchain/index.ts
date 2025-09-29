@@ -29,6 +29,7 @@ export {
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
+  contactStrategyAgent,
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,

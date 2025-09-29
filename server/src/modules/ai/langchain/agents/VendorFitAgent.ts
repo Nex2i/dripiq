@@ -11,13 +11,13 @@ import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import vendorFitOutputSchema from '../../schemas/vendorFitOutputSchema';
 import vendorFitInputSchema from '../../schemas/vendorFitInputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import {
+  getObservabilityServices,
+  type EnhancedAgentResult,
+  type AgentExecutionOptions,
+} from '../../observability';
 
-export type VendorFitResult = {
-  finalResponse: string;
-  finalResponseParsed: z.infer<typeof vendorFitOutputSchema>;
-  totalIterations: number;
-  functionCalls: any[];
-};
+export type VendorFitResult = EnhancedAgentResult<z.infer<typeof vendorFitOutputSchema>>;
 
 export class VendorFitAgent {
   private agent: AgentExecutor;
@@ -53,15 +53,82 @@ export class VendorFitAgent {
     });
   }
 
-  async analyzeVendorFit(partnerInfo: any, opportunityContext: string): Promise<VendorFitResult> {
-    const systemPrompt = promptHelper.getPromptAndInject('vendor_fit', {
-      input_schema: JSON.stringify(z.toJSONSchema(vendorFitInputSchema), null, 2),
-      partner_details: JSON.stringify(partnerInfo, null, 2),
-      opportunity_details: opportunityContext,
-      output_schema: JSON.stringify(z.toJSONSchema(vendorFitOutputSchema), null, 2),
-    });
+  async analyzeVendorFit(
+    partnerInfo: any,
+    opportunityContext: string,
+    options: AgentExecutionOptions = {}
+  ): Promise<VendorFitResult> {
+    const startTime = Date.now();
+    let trace: any = null;
+    let observabilityServices: any = null;
 
     try {
+      // Try to initialize observability services if tracing is enabled
+      if (options.enableTracing !== false) {
+        try {
+          observabilityServices = await getObservabilityServices();
+        } catch (error) {
+          logger.debug('Observability services not available - continuing without tracing', {
+            partnerDomain: partnerInfo?.domain,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Create trace if observability is available
+      if (observabilityServices?.langfuseService?.isAvailable()) {
+        const traceResult = observabilityServices.langfuseService.createTrace(
+          'vendor-fit-analysis',
+          { 
+            partnerInfo: partnerInfo?.domain || 'unknown',
+            opportunityContext: opportunityContext.substring(0, 100) + '...',
+          },
+          {
+            agentName: 'VendorFitAgent',
+            agentVersion: '1.0.0-enhanced',
+            input: { partnerInfo, opportunityContext },
+            tenantId: options.tenantId,
+            userId: options.userId,
+            sessionId: options.sessionId,
+            custom: options.metadata,
+          }
+        );
+        trace = traceResult.trace;
+      }
+
+      // Get prompt (fallback to old system if observability not available)
+      let systemPrompt: string;
+      try {
+        if (observabilityServices?.promptService) {
+          const promptResult = await observabilityServices.promptService.getPromptWithVariables(
+            'vendor_fit',
+            {
+              partner_details: JSON.stringify(partnerInfo, null, 2),
+              opportunity_details: opportunityContext,
+            },
+            { cacheTtlSeconds: options.promptCacheTtl }
+          );
+          systemPrompt = promptResult.prompt;
+        } else {
+          // Fallback to old prompt system
+          systemPrompt = promptHelper.getPromptAndInject('vendor_fit', {
+            input_schema: JSON.stringify(z.toJSONSchema(vendorFitInputSchema), null, 2),
+            partner_details: JSON.stringify(partnerInfo, null, 2),
+            opportunity_details: opportunityContext,
+            output_schema: JSON.stringify(z.toJSONSchema(vendorFitOutputSchema), null, 2),
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to get prompt from observability system, using fallback', { error });
+        // Fallback to old prompt system
+        systemPrompt = promptHelper.getPromptAndInject('vendor_fit', {
+          input_schema: JSON.stringify(z.toJSONSchema(vendorFitInputSchema), null, 2),
+          partner_details: JSON.stringify(partnerInfo, null, 2),
+          opportunity_details: opportunityContext,
+          output_schema: JSON.stringify(z.toJSONSchema(vendorFitOutputSchema), null, 2),
+        });
+      }
+
       const result = await this.agent.invoke({
         input: {
           partner_details: partnerInfo,
@@ -77,15 +144,49 @@ export class VendorFitAgent {
       }
 
       const finalResponseParsed = parseWithSchema(finalResponse, partnerInfo);
+      const executionTimeMs = Date.now() - startTime;
+
+      // Update trace with success
+      if (trace) {
+        observabilityServices.langfuseService.updateTrace(
+          trace,
+          { finalResponse: finalResponseParsed, executionTimeMs },
+          { success: true, partnerDomain: partnerInfo?.domain }
+        );
+      }
 
       return {
         finalResponse,
         finalResponseParsed,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps ?? [],
+        traceId: trace?.id || null,
+        metadata: {
+          executionTimeMs,
+          agentMetadata: { 
+            partnerDomain: partnerInfo?.domain,
+            opportunityLength: opportunityContext.length,
+          },
+        },
       };
     } catch (error) {
+      const executionTimeMs = Date.now() - startTime;
+      
       logger.error('Error in vendor fit analysis:', error);
+
+      // Log error to trace
+      if (trace && observabilityServices) {
+        observabilityServices.langfuseService.logError(trace, error as Error, {
+          phase: 'agent-execution',
+          partnerDomain: partnerInfo?.domain,
+        });
+        observabilityServices.langfuseService.updateTrace(
+          trace,
+          null,
+          { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+        );
+      }
+
       return {
         finalResponse: `Error occurred during vendor fit analysis: ${
           error instanceof Error ? error.message : 'Unknown error'
@@ -93,6 +194,15 @@ export class VendorFitAgent {
         totalIterations: 1,
         functionCalls: [],
         finalResponseParsed: getFallbackResult(partnerInfo, error),
+        traceId: trace?.id || null,
+        metadata: {
+          executionTimeMs,
+          errors: [{
+            message: error instanceof Error ? error.message : 'Unknown error',
+            phase: 'agent-execution',
+            timestamp: new Date().toISOString(),
+          }],
+        },
       };
     }
   }

@@ -20,13 +20,13 @@ import contactExtractionOutputSchema, {
   ContactExtractionOutput,
 } from '../../schemas/contactExtractionSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
+import {
+  getObservabilityServices,
+  type EnhancedAgentResult,
+  type AgentExecutionOptions,
+} from '../../observability';
 
-export type ContactExtractionResult = {
-  finalResponse: string;
-  finalResponseParsed: ContactExtractionOutput;
-  totalIterations: number;
-  functionCalls: any[];
-};
+export type ContactExtractionResult = EnhancedAgentResult<ContactExtractionOutput>;
 
 export class ContactExtractionAgent {
   private agent: AgentExecutor;
@@ -61,20 +61,95 @@ export class ContactExtractionAgent {
     });
   }
 
-  async extractContacts(domain: string): Promise<ContactExtractionResult> {
-    // First, fetch webData contacts to include in the prompt
-    logger.info('Fetching webData contacts for extraction', { domain });
-    const webDataSummary = await fetchWebDataContacts(domain);
-    logger.info('WebData contacts fetched', { domain, webDataSummary });
-    const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
-
-    const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
-      domain,
-      webdata_contacts: webDataContactsText,
-      output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
-    });
+  async extractContacts(
+    domain: string,
+    options: AgentExecutionOptions = {}
+  ): Promise<ContactExtractionResult> {
+    const startTime = Date.now();
+    let trace: any = null;
+    let observabilityServices: any = null;
 
     try {
+      // Try to initialize observability services if tracing is enabled
+      if (options.enableTracing !== false) {
+        try {
+          observabilityServices = await getObservabilityServices();
+        } catch (error) {
+          logger.debug('Observability services not available - continuing without tracing', {
+            domain,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Create trace if observability is available
+      if (observabilityServices?.langfuseService?.isAvailable()) {
+        const traceResult = observabilityServices.langfuseService.createTrace(
+          'contact-extraction',
+          { domain },
+          {
+            agentName: 'ContactExtractionAgent',
+            agentVersion: '1.0.0-enhanced',
+            input: { domain },
+            tenantId: options.tenantId,
+            userId: options.userId,
+            sessionId: options.sessionId,
+            custom: options.metadata,
+          }
+        );
+        trace = traceResult.trace;
+      }
+
+      // First, fetch webData contacts to include in the prompt
+      logger.info('Fetching webData contacts for extraction', { domain });
+      const webDataSummary = await fetchWebDataContacts(domain);
+      logger.info('WebData contacts fetched', { domain, webDataSummary });
+      const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
+
+      // Log webData retrieval
+      if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'webdata-contacts-fetched',
+          { domain },
+          { 
+            contactCount: webDataSummary.contacts.length,
+            hasContacts: webDataSummary.contacts.length > 0,
+          }
+        );
+      }
+
+      // Get prompt (fallback to old system if observability not available)
+      let systemPrompt: string;
+      try {
+        if (observabilityServices?.promptService) {
+          const promptResult = await observabilityServices.promptService.getPromptWithVariables(
+            'extract_contacts',
+            {
+              domain,
+              webdata_contacts: webDataContactsText,
+            },
+            { cacheTtlSeconds: options.promptCacheTtl }
+          );
+          systemPrompt = promptResult.prompt;
+        } else {
+          // Fallback to old prompt system
+          systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
+            domain,
+            webdata_contacts: webDataContactsText,
+            output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to get prompt from observability system, using fallback', { domain, error });
+        // Fallback to old prompt system
+        systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
+          domain,
+          webdata_contacts: webDataContactsText,
+          output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
+        });
+      }
+
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
       });
@@ -86,6 +161,19 @@ export class ContactExtractionAgent {
       }
 
       const aiParsedResult = parseWithSchema(finalResponse, domain);
+
+      // Log AI parsing result
+      if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'ai-contacts-parsed',
+          { domain },
+          { 
+            aiContactCount: aiParsedResult.contacts.length,
+            hasPriorityContact: aiParsedResult.priorityContactId !== null,
+          }
+        );
+      }
 
       // Merge AI contacts with webData contacts - webData first approach
       const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
@@ -125,6 +213,35 @@ export class ContactExtractionAgent {
         summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
       };
 
+      const executionTimeMs = Date.now() - startTime;
+
+      // Log merge completion
+      if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'contact-merge-completed',
+          {
+            domain,
+            originalAI: aiParsedResult.contacts.length,
+            originalWebData: webDataSummary.contacts.length,
+          },
+          {
+            webDataPreserved: mergeResult.webDataContacts.length,
+            enrichedContacts: mergeResult.enrichedContacts.length,
+            aiOnlyContacts: mergeResult.aiOnlyContacts.length,
+            finalTotal: finalContacts.length,
+            priorityContactIndex: updatedPriorityContactId,
+          }
+        );
+
+        // Update trace with success
+        observabilityServices.langfuseService.updateTrace(
+          trace,
+          { finalResponse: finalParsedResult, executionTimeMs },
+          { success: true, domain, totalContacts: finalContacts.length }
+        );
+      }
+
       logger.info('Contact extraction and merge completed', {
         domain,
         originalAI: aiParsedResult.contacts.length,
@@ -141,17 +258,52 @@ export class ContactExtractionAgent {
         finalResponseParsed: finalParsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        traceId: trace?.id || null,
+        metadata: {
+          executionTimeMs,
+          agentMetadata: {
+            domain,
+            webDataContactCount: webDataSummary.contacts.length,
+            finalContactCount: finalContacts.length,
+          },
+        },
       };
     } catch (error) {
+      const executionTimeMs = Date.now() - startTime;
+      
       logger.error('Contact extraction failed:', error);
 
+      // Log error to trace
+      if (trace && observabilityServices) {
+        observabilityServices.langfuseService.logError(trace, error as Error, {
+          phase: 'contact-extraction',
+          domain,
+        });
+        observabilityServices.langfuseService.updateTrace(
+          trace,
+          null,
+          { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+        );
+      }
+
       // Return fallback result with webData contacts if available
+      const webDataSummary = await fetchWebDataContacts(domain).catch(() => ({ contacts: [] }));
       const fallbackResult = getFallbackResultWithWebData(domain, error, webDataSummary);
+      
       return {
         finalResponse: `Contact extraction failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         finalResponseParsed: fallbackResult,
         totalIterations: 0,
         functionCalls: [],
+        traceId: trace?.id || null,
+        metadata: {
+          executionTimeMs,
+          errors: [{
+            message: error instanceof Error ? error.message : 'Unknown error',
+            phase: 'contact-extraction',
+            timestamp: new Date().toISOString(),
+          }],
+        },
       };
     }
   }

@@ -29,13 +29,13 @@ import {
 } from '../../schemas/contactCampaignStrategyInputSchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
 import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
+import {
+  getObservabilityServices,
+  type EnhancedAgentResult,
+  type AgentExecutionOptions,
+} from '../../observability';
 
-export type ContactStrategyResult = {
-  finalResponse: string;
-  finalResponseParsed: EmailContentOutput;
-  totalIterations: number;
-  functionCalls: any[];
-};
+export type ContactStrategyResult = EnhancedAgentResult<EmailContentOutput>;
 
 type ValueSchema<T> = {
   description: string;
@@ -87,26 +87,109 @@ export class ContactStrategyAgent {
   async generateEmailContent(
     tenantId: string,
     leadId: string,
-    contactId: string
+    contactId: string,
+    options: AgentExecutionOptions = {}
   ): Promise<ContactStrategyResult> {
-    let systemPrompt: string;
-    try {
-      systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
-    } catch (error) {
-      logger.error('Error preparing prompt variables', error);
-      throw new Error(
-        `Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    const startTime = Date.now();
+    let trace: any = null;
+    let observabilityServices: any = null;
 
     try {
+      // Try to initialize observability services if tracing is enabled
+      if (options.enableTracing !== false) {
+        try {
+          observabilityServices = await getObservabilityServices();
+        } catch (error) {
+          logger.debug('Observability services not available - continuing without tracing', {
+            tenantId,
+            leadId,
+            contactId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+
+      // Create trace if observability is available
+      if (observabilityServices?.langfuseService?.isAvailable()) {
+        const traceResult = observabilityServices.langfuseService.createTrace(
+          'contact-strategy',
+          { tenantId, leadId, contactId },
+          {
+            agentName: 'ContactStrategyAgent',
+            agentVersion: '1.0.0-enhanced',
+            input: { tenantId, leadId, contactId },
+            tenantId: options.tenantId || tenantId,
+            userId: options.userId,
+            sessionId: options.sessionId,
+            custom: options.metadata,
+          }
+        );
+        trace = traceResult.trace;
+      }
+
+      // Get prompt (fallback to old system if observability not available)
+      let systemPrompt: string;
+      try {
+        if (observabilityServices?.promptService) {
+          const promptResult = await observabilityServices.promptService.getPrompt(
+            'contact_strategy',
+            { cacheTtlSeconds: options.promptCacheTtl }
+          );
+          systemPrompt = promptResult.prompt;
+        } else {
+          // Fallback to old prompt system
+          systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
+        }
+      } catch (error) {
+        logger.warn('Failed to get prompt from observability system, using fallback', { error });
+        systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
+      }
+
+      // Fetch all required data with tracing
+      const leadDetailsSpan = trace ? observabilityServices.langfuseService.createSpan(
+        trace,
+        'fetch-lead-details',
+        { tenantId, leadId }
+      ) : null;
+
+      const leadDetails = await this.getLeadDetails(tenantId, leadId);
+      
+      if (leadDetailsSpan) {
+        observabilityServices.langfuseService.updateSpan(
+          leadDetailsSpan,
+          { leadName: leadDetails.value.name },
+          { success: true }
+        );
+      }
+
+      const contactDetails = await this.getContactDetails(contactId);
+      const partnerDetails = await this.getPartnerDetails(tenantId);
+      const partnerProducts = await this.getPartnerProducts(tenantId, leadId);
+      const salesman = await this.getSalesman(tenantId, leadId);
+
+      // Log data retrieval
+      if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'data-retrieved',
+          { tenantId, leadId, contactId },
+          {
+            leadName: leadDetails.value.name,
+            contactName: contactDetails.value.name,
+            partnerName: partnerDetails.value.name,
+            productCount: partnerProducts.value.length,
+            salesmanName: salesman.value.name,
+          }
+        );
+      }
+
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
-        lead_details: await this.getLeadDetails(tenantId, leadId),
-        contact_details: await this.getContactDetails(contactId),
-        partner_details: await this.getPartnerDetails(tenantId),
-        partner_products: await this.getPartnerProducts(tenantId, leadId),
-        salesman: await this.getSalesman(tenantId, leadId),
+        lead_details: leadDetails,
+        contact_details: contactDetails,
+        partner_details: partnerDetails,
+        partner_products: partnerProducts,
+        salesman: salesman,
         output_schema: `${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
       });
 
@@ -115,22 +198,110 @@ export class ContactStrategyAgent {
       // If agent didn't provide a direct response, try to generate from steps
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
         logger.error('Agent did not provide a direct response, trying direct model approach');
+        
+        if (trace) {
+          observabilityServices.langfuseService.logEvent(
+            trace,
+            'no-direct-response',
+            { intermediateStepsCount: result.intermediateSteps.length }
+          );
+        }
+        
         throw new Error('Agent did not provide a direct response');
       }
 
       // Enhanced JSON parsing with better error handling
       const parsedResult = parseWithSchema(finalResponse);
+      const executionTimeMs = Date.now() - startTime;
+
+      // Log successful completion
+      if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'email-generation-completed',
+          { tenantId, leadId, contactId },
+          {
+            emailCount: parsedResult.emails?.length || 0,
+            executionTimeMs,
+            success: true,
+          }
+        );
+
+        // Update trace with success
+        observabilityServices.langfuseService.updateTrace(
+          trace,
+          { finalResponse: parsedResult, executionTimeMs },
+          { 
+            success: true, 
+            tenantId, 
+            leadId, 
+            contactId,
+            emailCount: parsedResult.emails?.length || 0,
+          }
+        );
+      }
 
       return {
         finalResponse: result.output || finalResponse || 'Email content generation completed',
         finalResponseParsed: parsedResult,
         totalIterations: result.intermediateSteps?.length ?? 0,
         functionCalls: result.intermediateSteps,
+        traceId: trace?.id || null,
+        metadata: {
+          executionTimeMs,
+          agentMetadata: {
+            tenantId,
+            leadId,
+            contactId,
+            emailCount: parsedResult.emails?.length || 0,
+          },
+        },
       };
     } catch (error) {
+      const executionTimeMs = Date.now() - startTime;
+      
       logger.error('Email content generation failed:', error);
 
-      throw error;
+      // Log error to trace
+      if (trace && observabilityServices) {
+        observabilityServices.langfuseService.logError(trace, error as Error, {
+          phase: 'email-generation',
+          tenantId,
+          leadId,
+          contactId,
+        });
+        observabilityServices.langfuseService.updateTrace(
+          trace,
+          null,
+          { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Unknown error',
+            tenantId,
+            leadId,
+            contactId,
+          }
+        );
+      }
+
+      // Rethrow error with enhanced context
+      const enhancedError = new Error(
+        `Email content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      
+      (enhancedError as any).traceId = trace?.id || null;
+      (enhancedError as any).metadata = {
+        executionTimeMs,
+        tenantId,
+        leadId,
+        contactId,
+        errors: [{
+          message: error instanceof Error ? error.message : 'Unknown error',
+          phase: 'email-generation',
+          timestamp: new Date().toISOString(),
+        }],
+      };
+
+      throw enhancedError;
     }
   }
 

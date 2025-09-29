@@ -2,7 +2,6 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
@@ -14,11 +13,22 @@ import {
   getObservabilityServices,
   type EnhancedAgentResult,
   type AgentExecutionOptions,
+  type AgentTraceMetadata,
 } from '../../observability';
 
 export type SiteAnalysisResult = EnhancedAgentResult<z.infer<typeof reportOutputSchema>>;
 
-export class SiteAnalysisAgent {
+/**
+ * Enhanced Site Analysis Agent with full LangFuse observability integration
+ * 
+ * Features:
+ * - Full LangFuse tracing and observability
+ * - LangFuse-first prompt management
+ * - Enhanced execution context with metadata
+ * - Error tracking and performance metrics
+ * - Graceful degradation when observability is unavailable
+ */
+export class EnhancedSiteAnalysisAgent {
   private agent: AgentExecutor;
   private config: LangChainConfig;
 
@@ -53,6 +63,9 @@ export class SiteAnalysisAgent {
     });
   }
 
+  /**
+   * Analyze a domain with enhanced observability
+   */
   async analyze(
     domain: string,
     options: AgentExecutionOptions = {}
@@ -62,12 +75,12 @@ export class SiteAnalysisAgent {
     let observabilityServices: any = null;
 
     try {
-      // Try to initialize observability services if tracing is enabled
+      // Initialize observability services
       if (options.enableTracing !== false) {
         try {
           observabilityServices = await getObservabilityServices();
         } catch (error) {
-          logger.debug('Observability services not available - continuing without tracing', {
+          logger.warn('Observability services not available - continuing without tracing', {
             domain,
             error: error instanceof Error ? error.message : 'Unknown error',
           });
@@ -76,69 +89,140 @@ export class SiteAnalysisAgent {
 
       // Create trace if observability is available
       if (observabilityServices?.langfuseService?.isAvailable()) {
+        const traceMetadata: AgentTraceMetadata = {
+          agentName: 'SiteAnalysisAgent',
+          agentVersion: '2.0.0-enhanced',
+          input: { domain },
+          tenantId: options.tenantId,
+          userId: options.userId,
+          sessionId: options.sessionId,
+          custom: options.metadata,
+        };
+
         const traceResult = observabilityServices.langfuseService.createTrace(
           'site-analysis',
           { domain },
-          {
-            agentName: 'SiteAnalysisAgent',
-            agentVersion: '1.0.0-enhanced',
-            input: { domain },
-            tenantId: options.tenantId,
-            userId: options.userId,
-            sessionId: options.sessionId,
-            custom: options.metadata,
-          }
+          traceMetadata
         );
         trace = traceResult.trace;
+
+        logger.info('Site analysis trace created', {
+          domain,
+          traceId: traceResult.traceId,
+          tenantId: options.tenantId,
+        });
       }
 
-      // Get prompt (fallback to old system if observability not available)
+      // Get prompt from LangFuse/local fallback
       let systemPrompt: string;
       try {
         if (observabilityServices?.promptService) {
           const promptResult = await observabilityServices.promptService.getPromptWithVariables(
             'summarize_site',
-            { domain },
+            {
+              domain,
+              // Note: Ignoring output_schema as per requirements
+            },
             { cacheTtlSeconds: options.promptCacheTtl }
           );
           systemPrompt = promptResult.prompt;
+
+          // Log prompt retrieval event
+          if (trace) {
+            observabilityServices.langfuseService.logEvent(
+              trace,
+              'prompt-retrieved',
+              { promptName: 'summarize_site' },
+              { 
+                cached: promptResult.cached,
+                version: promptResult.version,
+                source: promptResult.metadata?.source,
+              }
+            );
+          }
         } else {
-          // Fallback to old prompt system
-          const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-          systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
-            domain,
-            output_schema: outputSchemaJson,
-          });
+          throw new Error('Prompt service not available');
         }
       } catch (error) {
-        logger.warn('Failed to get prompt from observability system, using fallback', { domain, error });
-        // Fallback to old prompt system
-        const outputSchemaJson = JSON.stringify(z.toJSONSchema(reportOutputSchema), null, 2);
-        systemPrompt = promptHelper.getPromptAndInject('summarize_site', {
-          domain,
-          output_schema: outputSchemaJson,
-        });
+        logger.error('Failed to retrieve prompt, using fallback', { domain, error });
+        // Fallback to basic prompt structure
+        systemPrompt = `Analyze the website ${domain} and provide a comprehensive summary.`;
+        
+        if (trace) {
+          observabilityServices.langfuseService.logError(trace, error as Error, {
+            phase: 'prompt-retrieval',
+            domain,
+          });
+        }
       }
 
+      // Log agent execution start
+      if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'agent-execution-start',
+          { 
+            domain,
+            systemPromptLength: systemPrompt.length,
+            maxIterations: this.config.maxIterations,
+          }
+        );
+      }
+
+      // Execute the agent
       const result = await this.agent.invoke({
         system_prompt: systemPrompt,
       });
 
       let finalResponse = getContentFromMessage(result.output);
 
+      // Handle partial results if needed
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt);
+        if (trace) {
+          observabilityServices.langfuseService.logEvent(
+            trace,
+            'partial-result-handling',
+            { intermediateStepsCount: result.intermediateSteps.length }
+          );
+        }
+
+        finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt, trace, observabilityServices);
       }
 
+      // Parse the final result
       const finalResponseParsed = parseWithSchema(finalResponse, domain);
+
       const executionTimeMs = Date.now() - startTime;
 
-      // Update trace with success
+      // Log successful completion
       if (trace) {
+        observabilityServices.langfuseService.logEvent(
+          trace,
+          'agent-execution-complete',
+          {
+            domain,
+            totalIterations: result.intermediateSteps?.length ?? 0,
+            executionTimeMs,
+          },
+          {
+            success: true,
+            finalResponseLength: finalResponse.length,
+            parsedSuccessfully: true,
+          }
+        );
+
+        // Update the trace with final results
         observabilityServices.langfuseService.updateTrace(
           trace,
-          { finalResponse: finalResponseParsed, executionTimeMs },
-          { success: true, domain }
+          {
+            finalResponse: finalResponseParsed,
+            totalIterations: result.intermediateSteps?.length ?? 0,
+            executionTimeMs,
+          },
+          {
+            success: true,
+            domain,
+          }
         );
       }
 
@@ -150,27 +234,43 @@ export class SiteAnalysisAgent {
         traceId: trace?.id || null,
         metadata: {
           executionTimeMs,
-          agentMetadata: { domain },
+          agentMetadata: {
+            domain,
+            promptVersion: 'local-fallback', // Will be dynamic when LangFuse prompts are configured
+          },
         },
       };
+
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
       
-      logger.error('Error in site analysis:', error);
+      logger.error('Error in enhanced site analysis:', {
+        domain,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        executionTimeMs,
+      });
 
       // Log error to trace
       if (trace && observabilityServices) {
         observabilityServices.langfuseService.logError(trace, error as Error, {
           phase: 'agent-execution',
           domain,
+          executionTimeMs,
         });
+
         observabilityServices.langfuseService.updateTrace(
           trace,
           null,
-          { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+          {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            domain,
+            executionTimeMs,
+          }
         );
       }
 
+      // Return fallback result
       return {
         finalResponse: `Error occurred during site analysis: ${
           error instanceof Error ? error.message : 'Unknown error'
@@ -194,21 +294,33 @@ export class SiteAnalysisAgent {
   private async summarizePartialSteps(
     result: any,
     domain: string,
-    systemPrompt: string
+    systemPrompt: string,
+    trace: any,
+    observabilityServices: any
   ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
+    const span = trace ? observabilityServices.langfuseService.createSpan(
+      trace,
+      'partial-steps-summary',
+      {
+        domain,
+        intermediateStepsCount: result.intermediateSteps?.length ?? 0,
+      }
+    ) : null;
 
-    const gatheredInfo = (result.intermediateSteps || [])
-      .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
-          step.observation || 'No result'
-        }\n`;
-      })
-      .join('\n---\n');
+    try {
+      const structuredModel = createChatModel({
+        model: this.config.model,
+      }).withStructuredOutput(z.toJSONSchema(reportOutputSchema));
 
-    const summaryPrompt = `
+      const gatheredInfo = (result.intermediateSteps || [])
+        .map((step: any) => {
+          return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
+            step.observation || 'No result'
+          }\n`;
+        })
+        .join('\n---\n');
+
+      const summaryPrompt = `
 You are a website analysis expert. Based on the partial research conducted below, provide a comprehensive website analysis for ${domain}.
 Research conducted so far:
 ${gatheredInfo}
@@ -217,15 +329,39 @@ ${systemPrompt}
 
 Even though the research may be incomplete, provide the best possible analysis based on the available information.
 Return your answer as valid JSON matching the provided schema.
-    `;
+      `;
 
-    const summary = await structuredModel.invoke([
-      {
-        role: 'system',
-        content: summaryPrompt,
-      },
-    ]);
-    return getContentFromMessage(summary.content ?? summary);
+      const summary = await structuredModel.invoke([
+        {
+          role: 'system',
+          content: summaryPrompt,
+        },
+      ]);
+
+      const result = getContentFromMessage(summary.content ?? summary);
+
+      if (span) {
+        observabilityServices.langfuseService.updateSpan(
+          span,
+          { summaryLength: result.length },
+          { success: true }
+        );
+      }
+
+      return result;
+    } catch (error) {
+      if (span) {
+        observabilityServices.langfuseService.updateSpan(
+          span,
+          null,
+          { 
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        );
+      }
+      throw error;
+    }
   }
 }
 

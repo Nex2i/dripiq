@@ -8,6 +8,7 @@ import { defaultLangChainConfig } from '../config/langchain.config';
 export const siteAnalysisAgent = new SiteAnalysisAgent(defaultLangChainConfig);
 export const vendorFitAgent = new VendorFitAgent(defaultLangChainConfig);
 export const contactExtractionAgent = new ContactExtractionAgent(defaultLangChainConfig);
+export const contactStrategyAgent = new ContactStrategyAgent(defaultLangChainConfig);
 
 // Factory functions
 export const createSiteAnalysisAgent = (config = defaultLangChainConfig) => {

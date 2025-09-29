@@ -15,6 +15,7 @@ export {
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
+  contactStrategyAgent,
   createSiteAnalysisAgent,
   createVendorFitAgent,
   createContactExtractionAgent,
@@ -31,3 +32,21 @@ export {
   type ContactExtractionResult,
   type ContactStrategyResult,
 } from './langchain';
+
+// Export observability services
+export {
+  LangFuseService,
+  PromptService,
+  observabilityStartup,
+  initializeObservability,
+  getObservabilityServices,
+  type LangFuseConfig,
+  type PromptConfig,
+  type PromptResult,
+  type PromptName,
+  type ObservabilityServices,
+  type EnhancedAgentResult,
+  type AgentExecutionOptions,
+  type AgentTraceMetadata,
+  type HealthCheck,
+} from './observability';
