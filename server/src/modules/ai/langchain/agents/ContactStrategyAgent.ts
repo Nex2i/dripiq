@@ -45,44 +45,13 @@ type ValueSchema<T> = {
 };
 
 export class ContactStrategyAgent {
-  private agent: AgentExecutor;
   private config: LangChainConfig;
+  private tools: DynamicStructuredTool[];
 
   constructor(config: LangChainConfig) {
     this.config = config;
 
-    const model = createChatModel(config);
-
-    const tools: DynamicStructuredTool[] = [
-      ListDomainPagesTool,
-      GetInformationAboutDomainTool,
-      RetrieveFullPageTool,
-    ];
-
-    const prompt = ChatPromptTemplate.fromMessages([
-      ['system', `{system_prompt}`],
-      ['system', `{lead_details}`],
-      ['system', `{contact_details}`],
-      ['system', `{partner_details}`],
-      ['system', `{partner_products}`],
-      ['system', `{salesman}`],
-      ['system', `{output_schema}`],
-      ['placeholder', '{agent_scratchpad}'],
-    ]);
-
-    const agent = createToolCallingAgent({
-      llm: model,
-      tools,
-      prompt,
-    });
-
-    this.agent = new AgentExecutor({
-      agent,
-      maxIterations: config.maxIterations,
-      tools,
-      verbose: false,
-      returnIntermediateSteps: true,
-    });
+    this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
   }
 
   async generateEmailContent(
@@ -96,6 +65,8 @@ export class ContactStrategyAgent {
     const leadDetails = await this.getLeadDetails(tenantId, leadId);
     const contactDetails = await this.getContactDetails(contactId);
     const partnerDetails = await this.getPartnerDetails(tenantId);
+    const partnerProducts = await this.getPartnerProducts(tenantId, leadId);
+    const salesman = await this.getSalesman(tenantId, leadId);
 
     try {
       // Create LangFuse callback handler for automatic tracing
@@ -114,28 +85,82 @@ export class ContactStrategyAgent {
       });
 
       // Fetch prompt from LangFuse
-      const prompt = await promptManagementService.fetchPrompt('contact_strategy', {
+      const langfusePrompt = await promptManagementService.fetchPrompt('contact_strategy', {
         cacheTtlSeconds: 300, // Cache for 5 minutes
       });
 
-      // Compile prompt (no variables needed for this prompt)
-      const systemPrompt = prompt.compile({});
+      // Convert LangFuse prompt to LangChain format
+      const systemPromptText = langfusePrompt.getLangchainPrompt();
 
-      // Prepare input data
-      const partnerProducts = await this.getPartnerProducts(tenantId, leadId);
-      const salesman = await this.getSalesman(tenantId, leadId);
+      // Prepare input variables as formatted strings
+      const leadDetailsFormatted = `# Lead Details
+${JSON.stringify(leadDetails.value, null, 2)}
+Schema: ${JSON.stringify(leadDetails.schema, null, 2)}`;
+
+      const contactDetailsFormatted = `# Contact Details
+${JSON.stringify(contactDetails.value, null, 2)}
+Schema: ${JSON.stringify(contactDetails.schema, null, 2)}`;
+
+      const partnerDetailsFormatted = `# Partner Details
+${JSON.stringify(partnerDetails.value, null, 2)}
+Schema: ${JSON.stringify(partnerDetails.schema, null, 2)}`;
+
+      const partnerProductsFormatted = `# Partner Products
+${JSON.stringify(partnerProducts.value, null, 2)}
+Schema: ${JSON.stringify(partnerProducts.schema, null, 2)}`;
+
+      const salesmanFormatted = `# Salesman
+${JSON.stringify(salesman.value, null, 2)}
+Schema: ${JSON.stringify(salesman.schema, null, 2)}`;
+
+      const outputSchemaFormatted = `# Output Schema
+${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}
+
+IMPORTANT: You must respond with valid JSON only.`;
+
+      // Create a combined system message with all context
+      const fullSystemPrompt = `${systemPromptText}
+
+${leadDetailsFormatted}
+
+${contactDetailsFormatted}
+
+${partnerDetailsFormatted}
+
+${partnerProductsFormatted}
+
+${salesmanFormatted}
+
+${outputSchemaFormatted}`;
+
+      // Create prompt template for the agent
+      const prompt = ChatPromptTemplate.fromMessages([
+        ['system', fullSystemPrompt],
+        ['placeholder', '{agent_scratchpad}'],
+      ]);
+
+      // Create model
+      const model = createChatModel(this.config);
+
+      // Create agent with the prompt
+      const agent = createToolCallingAgent({
+        llm: model,
+        tools: this.tools,
+        prompt,
+      });
+
+      // Create agent executor
+      const agentExecutor = new AgentExecutor({
+        agent,
+        maxIterations: this.config.maxIterations,
+        tools: this.tools,
+        verbose: false,
+        returnIntermediateSteps: true,
+      });
 
       // Invoke the agent with callback handler
-      const result = await this.agent.invoke(
-        {
-          system_prompt: systemPrompt,
-          lead_details: leadDetails,
-          contact_details: contactDetails,
-          partner_details: partnerDetails,
-          partner_products: partnerProducts,
-          salesman: salesman,
-          output_schema: `${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
-        },
+      const result = await agentExecutor.invoke(
+        {},
         {
           callbacks: [langfuseHandler],
           runName: 'contact_strategy_generation',
@@ -161,7 +186,7 @@ export class ContactStrategyAgent {
         tenantId,
         emailsGenerated: parsedResult.emails?.length ?? 0,
         executionTimeMs,
-        promptVersion: prompt.version,
+        promptVersion: langfusePrompt.version,
       });
 
       return {
