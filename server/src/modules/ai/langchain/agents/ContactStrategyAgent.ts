@@ -2,6 +2,7 @@ import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
+import { CallbackHandler } from '@langfuse/langchain';
 import { logger } from '@/libs/logger';
 import {
   leadPointOfContactRepository,
@@ -11,8 +12,6 @@ import {
 } from '@/repositories';
 import { TenantService } from '@/modules/tenant.service';
 import { promptManagementService } from '../services/promptManagement.service';
-import { CallbackHandler } from 'langfuse-langchain';
-import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -100,12 +99,10 @@ export class ContactStrategyAgent {
 
     try {
       // Create LangFuse callback handler for automatic tracing
+      // v4 SDK automatically uses LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, and LANGFUSE_BASE_URL from env
       const langfuseHandler = new CallbackHandler({
-        publicKey: LANGFUSE_PUBLIC_KEY,
-        secretKey: LANGFUSE_SECRET_KEY,
-        baseUrl: LANGFUSE_HOST,
         userId: tenantId,
-        metadata: {
+        traceMetadata: {
           tenantId,
           leadId,
           contactId,
@@ -166,9 +163,6 @@ export class ContactStrategyAgent {
         executionTimeMs,
         promptVersion: prompt.version,
       });
-
-      // Flush LangFuse events
-      await langfuseHandler.flushAsync();
 
       return {
         finalResponse: result.output || finalResponse || 'Email content generation completed',

@@ -1,13 +1,12 @@
 import { URL } from 'url';
 import z from 'zod';
 import { type SearchResultWeb } from '@mendable/firecrawl-js';
+import { CallbackHandler } from '@langfuse/langchain';
 import { logger } from '@/libs/logger';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { createChatModel } from './langchain/config/langchain.config';
 import { getContentFromMessage } from './langchain/utils/messageUtils';
 import { promptManagementService } from './langchain/services/promptManagement.service';
-import { CallbackHandler } from 'langfuse-langchain';
-import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
 
 const smartFilterSiteMapSchema = z.object({
   urls: z.array(z.string()).describe('The filtered list of URLs'),
@@ -53,13 +52,11 @@ export const SiteScrapeService = {
 
     try {
       // Create LangFuse callback handler for automatic tracing
+      // v4 SDK automatically uses LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, and LANGFUSE_BASE_URL from env
       const langfuseHandler = new CallbackHandler({
-        publicKey: LANGFUSE_PUBLIC_KEY,
-        secretKey: LANGFUSE_SECRET_KEY,
-        baseUrl: LANGFUSE_HOST,
         sessionId: options.sessionId,
         userId: options.userId || options.tenantId,
-        metadata: {
+        traceMetadata: {
           tenantId: options.tenantId,
           domain: options.domain,
           siteType,
@@ -136,9 +133,6 @@ export const SiteScrapeService = {
         executionTimeMs,
         promptVersion: prompt.version,
       });
-
-      // Flush LangFuse events
-      await langfuseHandler.flushAsync();
 
       return finalUrls;
     } catch (error) {
