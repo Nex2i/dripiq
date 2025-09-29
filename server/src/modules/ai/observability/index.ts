@@ -15,9 +15,7 @@ export {
 export {
   PromptService,
   createPromptService,
-  type PromptConfig,
   type PromptResult,
-  type PromptCache,
   type PromptName,
 } from './prompt.service';
 
@@ -28,11 +26,7 @@ export {
 } from './types';
 
 // Debug utilities
-export {
-  debugLangFuseConfig,
-  isLangFuseConfigured,
-  getLangFuseConfigInfo,
-} from './debug';
+export { debugLangFuseConfig, isLangFuseConfigured, getLangFuseConfigInfo } from './debug';
 
 // Simple observability services interface
 export interface ObservabilityServices {
@@ -177,9 +171,6 @@ export async function shutdownObservability(): Promise<void> {
   try {
     // Shutdown LangFuse service
     await servicesInstance.langfuseService.shutdown();
-
-    // Clear prompt cache
-    servicesInstance.promptService.clearCache();
 
     servicesInstance = null;
 

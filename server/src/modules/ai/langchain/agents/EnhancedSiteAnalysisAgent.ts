@@ -119,8 +119,7 @@ export class EnhancedSiteAnalysisAgent {
             {
               domain,
               // Note: Ignoring output_schema as per requirements
-            },
-            { cacheTtlSeconds: options.promptCacheTtl }
+            }
           );
           systemPrompt = promptResult.prompt;
 

@@ -47,7 +47,6 @@ export {
   isLangFuseConfigured,
   getLangFuseConfigInfo,
   type LangFuseConfig,
-  type PromptConfig,
   type PromptResult,
   type PromptName,
   type ObservabilityServices,

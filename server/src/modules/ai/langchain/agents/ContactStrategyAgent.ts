@@ -150,9 +150,7 @@ export class ContactStrategyAgent {
       });
 
       // Get prompt from LangFuse - required, no fallbacks
-      const promptResult = await observabilityServices.promptService.getPrompt('contact_strategy', {
-        cacheTtlSeconds: options.promptCacheTtl,
-      });
+      const promptResult = await observabilityServices.promptService.getPrompt('contact_strategy');
 
       // Log prompt retrieval
       observabilityServices.langfuseService.logEvent(
@@ -165,9 +163,8 @@ export class ContactStrategyAgent {
           contactId,
         },
         {
-          cached: promptResult.cached,
           version: promptResult.version,
-          source: promptResult.metadata?.source,
+          type: promptResult.metadata?.type,
         }
       );
 
@@ -285,7 +282,7 @@ export class ContactStrategyAgent {
             contactId,
             emailCount: parsedResult.emails?.length || 0,
             promptVersion: promptResult.version,
-            promptCached: promptResult.cached,
+            promptType: promptResult.metadata?.type,
           },
         },
       };

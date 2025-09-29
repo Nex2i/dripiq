@@ -122,8 +122,7 @@ export class VendorFitAgent {
         {
           partner_details: JSON.stringify(partnerInfo, null, 2),
           opportunity_details: opportunityContext,
-        },
-        { cacheTtlSeconds: options.promptCacheTtl }
+        }
       );
 
       // Log prompt retrieval and input data
@@ -136,9 +135,8 @@ export class VendorFitAgent {
           opportunityLength: opportunityContext.length,
         },
         {
-          cached: promptResult.cached,
           version: promptResult.version,
-          source: promptResult.metadata?.source,
+          type: promptResult.metadata?.type,
         }
       );
 
@@ -220,7 +218,7 @@ export class VendorFitAgent {
             partnerDomain: partnerInfo?.domain,
             opportunityLength: opportunityContext.length,
             promptVersion: promptResult.version,
-            promptCached: promptResult.cached,
+            promptType: promptResult.metadata?.type,
           },
         },
       };

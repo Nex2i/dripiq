@@ -149,8 +149,7 @@ export class ContactExtractionAgent {
         {
           domain,
           webdata_contacts: webDataContactsText,
-        },
-        { cacheTtlSeconds: options.promptCacheTtl }
+        }
       );
 
       // Log prompt retrieval and webData results
@@ -163,9 +162,8 @@ export class ContactExtractionAgent {
           webDataContactCount: webDataSummary.contacts.length,
         },
         {
-          cached: promptResult.cached,
           version: promptResult.version,
-          source: promptResult.metadata?.source,
+          type: promptResult.metadata?.type,
           hasWebDataContacts: webDataSummary.contacts.length > 0,
         }
       );
@@ -310,7 +308,7 @@ export class ContactExtractionAgent {
             webDataContactCount: webDataSummary.contacts.length,
             finalContactCount: finalContacts.length,
             promptVersion: promptResult.version,
-            promptCached: promptResult.cached,
+            promptType: promptResult.metadata?.type,
           },
         },
       };

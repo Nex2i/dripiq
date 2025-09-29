@@ -1,71 +1,37 @@
 import { logger } from '@/libs/logger';
 import { LangFuseService } from './langfuse.service';
 
-export interface PromptConfig {
-  cacheTtlSeconds?: number;
-}
-
 export interface PromptResult {
   prompt: string;
   version?: string;
   metadata?: Record<string, any>;
-  cached?: boolean;
-}
-
-export interface PromptCache {
-  prompt: string;
-  version?: string;
-  metadata?: Record<string, any>;
-  cachedAt: number;
-  expiresAt: number;
 }
 
 export type PromptName = 'summarize_site' | 'vendor_fit' | 'extract_contacts' | 'contact_strategy';
 
 /**
- * Prompt Service - LangFuse-first prompt management with intelligent caching
- * 
+ * Prompt Service - LangFuse-first prompt management
+ *
  * Features:
- * - LangFuse-first prompt retrieval (no local fallbacks)
+ * - Direct LangFuse prompt retrieval (no caching)
  * - Always uses latest production prompt version
  * - Built-in variable injection system with {{variable}} syntax
- * - Intelligent caching with configurable TTL
  * - Comprehensive error handling and logging
  */
 export class PromptService {
   private langfuseService: LangFuseService;
-  private cache: Map<string, PromptCache> = new Map();
-  private defaultCacheTtlSeconds: number = 300; // 5 minutes default
 
   constructor(langfuseService: LangFuseService) {
     this.langfuseService = langfuseService;
   }
 
   /**
-   * Retrieve a prompt from LangFuse with optional caching
+   * Retrieve a prompt from LangFuse (always fresh, no caching)
    */
-  public async getPrompt(name: PromptName, config?: PromptConfig): Promise<PromptResult> {
-    const cacheKey = name; // Simplified cache key without environment
-    const cacheTtl = config?.cacheTtlSeconds || this.defaultCacheTtlSeconds;
-
-    // Check cache first
-    const cached = this.getCachedPrompt(cacheKey);
-    if (cached) {
-      logger.debug('Prompt retrieved from cache', {
-        name,
-        version: cached.version,
-      });
-      return {
-        prompt: cached.prompt,
-        version: cached.version,
-        metadata: cached.metadata,
-        cached: true,
-      };
-    }
-
-    // Fetch from LangFuse
+  public async getPrompt(name: PromptName): Promise<PromptResult> {
+    // Require LangFuse to be available
     if (!this.langfuseService.isAvailable()) {
-      const errorMessage = 'LangFuse is not available and no cached prompt found';
+      const errorMessage = 'LangFuse is not available';
       logger.error(errorMessage, { name });
       throw new Error(`${errorMessage} for prompt: ${name}`);
     }
@@ -73,19 +39,12 @@ export class PromptService {
     try {
       const promptResult = await this.fetchPromptFromLangFuse(name);
 
-      // Cache the result
-      this.cachePrompt(cacheKey, promptResult, cacheTtl);
-
       logger.info('Prompt retrieved from LangFuse', {
         name,
         version: promptResult.version,
-        cached: false,
       });
 
-      return {
-        ...promptResult,
-        cached: false,
-      };
+      return promptResult;
     } catch (error) {
       logger.error('Failed to retrieve prompt from LangFuse', {
         name,
@@ -149,10 +108,9 @@ export class PromptService {
    */
   public async getPromptWithVariables(
     name: PromptName,
-    variables: Record<string, string>,
-    config?: PromptConfig
+    variables: Record<string, string>
   ): Promise<PromptResult> {
-    const promptResult = await this.getPrompt(name, config);
+    const promptResult = await this.getPrompt(name);
     const injectedPrompt = this.injectVariables(promptResult.prompt, variables);
 
     return {
@@ -162,92 +120,77 @@ export class PromptService {
   }
 
   /**
-   * Clear cached prompt for a specific name
+   * Fetch prompt from LangFuse using the official SDK
    */
-  public clearCache(name?: PromptName): void {
-    if (name) {
-      this.cache.delete(name);
-      logger.debug('Prompt cache cleared', { name });
-    } else {
-      this.cache.clear();
-      logger.debug('All prompt cache cleared');
-    }
-  }
-
-  /**
-   * Get cache statistics for monitoring
-   */
-  public getCacheStats(): {
-    totalEntries: number;
-    entries: Array<{
-      key: string;
-      cachedAt: Date;
-      expiresAt: Date;
-      expired: boolean;
-    }>;
-  } {
-    const now = Date.now();
-    const entries = Array.from(this.cache.entries()).map(([key, cache]) => ({
-      key,
-      cachedAt: new Date(cache.cachedAt),
-      expiresAt: new Date(cache.expiresAt),
-      expired: now > cache.expiresAt,
-    }));
-
-    return {
-      totalEntries: this.cache.size,
-      entries,
-    };
-  }
-
-  // Removed getCacheKey method - using name directly as cache key
-
-  private getCachedPrompt(cacheKey: string): PromptCache | null {
-    const cached = this.cache.get(cacheKey);
-    if (!cached) {
-      return null;
-    }
-
-    // Check if expired
-    if (Date.now() > cached.expiresAt) {
-      this.cache.delete(cacheKey);
-      logger.debug('Expired prompt removed from cache', { cacheKey });
-      return null;
-    }
-
-    return cached;
-  }
-
-  private cachePrompt(cacheKey: string, promptResult: PromptResult, ttlSeconds: number): void {
-    const now = Date.now();
-    const cache: PromptCache = {
-      prompt: promptResult.prompt,
-      version: promptResult.version,
-      metadata: promptResult.metadata,
-      cachedAt: now,
-      expiresAt: now + ttlSeconds * 1000,
-    };
-
-    this.cache.set(cacheKey, cache);
-    logger.debug('Prompt cached', {
-      cacheKey,
-      ttlSeconds,
-      version: promptResult.version,
-    });
-  }
-
   private async fetchPromptFromLangFuse(name: PromptName): Promise<PromptResult> {
-    // TODO: Implement actual LangFuse prompt retrieval when LangFuse SDK supports it
-    // For now, we'll use a placeholder that indicates LangFuse integration
-    // In production, this would call LangFuse's prompt management API
-    // Always uses the latest production version - no environment logic
+    try {
+      // Get the LangFuse client from the service
+      const client = this.langfuseService.getClient();
 
-    throw new Error(
-      `LangFuse prompt retrieval not yet implemented for '${name}'. ` +
-      `Please configure the prompt '${name}' in your LangFuse dashboard. ` +
-      `The system will automatically use the latest production version. ` +
-      `This system requires all prompts to be managed in LangFuse - no local fallbacks are supported.`
-    );
+      if (!client) {
+        throw new Error('LangFuse client not available');
+      }
+
+      // Fetch the prompt using LangFuse SDK
+      // According to docs: langfuse.prompt.get("prompt-name")
+      const langfusePrompt = await client.prompt.get(name);
+
+      if (!langfusePrompt) {
+        throw new Error(`Prompt '${name}' not found in LangFuse`);
+      }
+
+      // For chat prompts, we need to extract the system message content
+      let promptContent: string;
+
+      if (langfusePrompt.type === 'chat') {
+        // Chat prompt - extract system message content
+        const messages = langfusePrompt.prompt;
+        if (Array.isArray(messages)) {
+          const systemMessage = messages.find((msg: any) => msg.role === 'system');
+          if (systemMessage && systemMessage.content) {
+            promptContent = systemMessage.content;
+          } else {
+            throw new Error(`No system message found in chat prompt '${name}'`);
+          }
+        } else {
+          throw new Error(`Invalid chat prompt format for '${name}'`);
+        }
+      } else if (langfusePrompt.type === 'text') {
+        // Text prompt - use directly
+        promptContent = langfusePrompt.prompt;
+      } else {
+        throw new Error(`Unsupported prompt type '${langfusePrompt.type}' for prompt '${name}'`);
+      }
+
+      logger.debug('LangFuse prompt fetched successfully', {
+        name,
+        type: langfusePrompt.type,
+        version: langfusePrompt.version,
+        promptLength: promptContent.length,
+      });
+
+      return {
+        prompt: promptContent,
+        version: langfusePrompt.version?.toString(),
+        metadata: {
+          type: langfusePrompt.type,
+          langfuseId: langfusePrompt.id,
+          config: langfusePrompt.config,
+          labels: langfusePrompt.labels,
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to fetch prompt from LangFuse', {
+        name,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      throw new Error(
+        `Failed to fetch prompt '${name}' from LangFuse: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }. Please ensure the prompt exists in your LangFuse dashboard.`
+      );
+    }
   }
 }
 

@@ -1,4 +1,3 @@
-import { logger } from '@/libs/logger';
 import { getLangFuseStatus, getObservabilityServices } from './index';
 
 /**
@@ -9,8 +8,12 @@ export const debugLangFuseConfig = async (): Promise<void> => {
 
   // Check environment variables
   console.log('📋 Environment Variables:');
-  console.log(`  LANGFUSE_PUBLIC_KEY: ${process.env.LANGFUSE_PUBLIC_KEY ? `${process.env.LANGFUSE_PUBLIC_KEY.substring(0, 10)}...` : '❌ NOT SET'}`);
-  console.log(`  LANGFUSE_SECRET_KEY: ${process.env.LANGFUSE_SECRET_KEY ? `${process.env.LANGFUSE_SECRET_KEY.substring(0, 10)}...` : '❌ NOT SET'}`);
+  console.log(
+    `  LANGFUSE_PUBLIC_KEY: ${process.env.LANGFUSE_PUBLIC_KEY ? `${process.env.LANGFUSE_PUBLIC_KEY.substring(0, 10)}...` : '❌ NOT SET'}`
+  );
+  console.log(
+    `  LANGFUSE_SECRET_KEY: ${process.env.LANGFUSE_SECRET_KEY ? `${process.env.LANGFUSE_SECRET_KEY.substring(0, 10)}...` : '❌ NOT SET'}`
+  );
   console.log(`  LANGFUSE_HOST: ${process.env.LANGFUSE_HOST || '❌ NOT SET'}`);
   console.log(`  LANGFUSE_ENABLED: ${process.env.LANGFUSE_ENABLED || '❌ NOT SET'}`);
   console.log(`  LANGFUSE_DEBUG: ${process.env.LANGFUSE_DEBUG || 'false'}`);
@@ -18,9 +21,14 @@ export const debugLangFuseConfig = async (): Promise<void> => {
   console.log(`  LANGFUSE_FLUSH_INTERVAL: ${process.env.LANGFUSE_FLUSH_INTERVAL || '1000'}`);
 
   // Check required variables
-  const required = ['LANGFUSE_PUBLIC_KEY', 'LANGFUSE_SECRET_KEY', 'LANGFUSE_HOST', 'LANGFUSE_ENABLED'];
-  const missing = required.filter(key => !process.env[key]);
-  
+  const required = [
+    'LANGFUSE_PUBLIC_KEY',
+    'LANGFUSE_SECRET_KEY',
+    'LANGFUSE_HOST',
+    'LANGFUSE_ENABLED',
+  ];
+  const missing = required.filter((key) => !process.env[key]);
+
   if (missing.length > 0) {
     console.log(`\n❌ Missing Required Variables: ${missing.join(', ')}`);
   } else {
@@ -33,14 +41,16 @@ export const debugLangFuseConfig = async (): Promise<void> => {
     const status = getLangFuseStatus();
     console.log(`  Initialized: ${status.initialized ? '✅' : '❌'}`);
     console.log(`  Available: ${status.available ? '✅' : '❌'}`);
-    
+
     if (status.config) {
       console.log(`  Host: ${status.config.host}`);
       console.log(`  Enabled: ${status.config.enabled}`);
       console.log(`  Debug: ${status.config.debug}`);
     }
   } catch (error) {
-    console.log(`  ❌ Error getting status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.log(
+      `  ❌ Error getting status: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 
   // Try to initialize services
@@ -48,12 +58,12 @@ export const debugLangFuseConfig = async (): Promise<void> => {
   try {
     const services = await getObservabilityServices();
     console.log('  ✅ Services initialized successfully');
-    
+
     if (services.langfuseService.isAvailable()) {
       console.log('  ✅ LangFuse client is available and ready');
     } else {
       console.log('  ❌ LangFuse client is not available');
-      
+
       // Additional diagnostics
       const config = services.langfuseService.getConfig();
       console.log('  🔍 Config details:');
@@ -62,24 +72,26 @@ export const debugLangFuseConfig = async (): Promise<void> => {
       console.log(`    - Has valid config: ${!!config.enabled && !!config.host}`);
     }
   } catch (error) {
-    console.log(`  ❌ Service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.log(
+      `  ❌ Service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 
   // Test trace creation
   console.log('\n🧪 Trace Creation Test:');
   try {
     const services = await getObservabilityServices();
-    
+
     if (services.langfuseService.isAvailable()) {
       const traceResult = services.langfuseService.createTrace(
         'debug-test',
         { test: 'debug' },
         { source: 'debug-utility' }
       );
-      
+
       if (traceResult.traceId) {
         console.log(`  ✅ Trace created successfully: ${traceResult.traceId}`);
-        
+
         // Clean up test trace
         if (traceResult.trace) {
           services.langfuseService.updateTrace(
@@ -95,7 +107,9 @@ export const debugLangFuseConfig = async (): Promise<void> => {
       console.log('  ⏭️  Skipped - LangFuse not available');
     }
   } catch (error) {
-    console.log(`  ❌ Trace creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.log(
+      `  ❌ Trace creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 
   console.log('\n🏁 Debug complete\n');
@@ -105,10 +119,15 @@ export const debugLangFuseConfig = async (): Promise<void> => {
  * Simple function to check if LangFuse is properly configured
  */
 export const isLangFuseConfigured = (): boolean => {
-  const required = ['LANGFUSE_PUBLIC_KEY', 'LANGFUSE_SECRET_KEY', 'LANGFUSE_HOST', 'LANGFUSE_ENABLED'];
-  const hasAllRequired = required.every(key => !!process.env[key]);
+  const required = [
+    'LANGFUSE_PUBLIC_KEY',
+    'LANGFUSE_SECRET_KEY',
+    'LANGFUSE_HOST',
+    'LANGFUSE_ENABLED',
+  ];
+  const hasAllRequired = required.every((key) => !!process.env[key]);
   const isEnabled = process.env.LANGFUSE_ENABLED === 'true';
-  
+
   return hasAllRequired && isEnabled;
 };
 

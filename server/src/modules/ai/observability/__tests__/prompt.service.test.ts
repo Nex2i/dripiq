@@ -25,6 +25,7 @@ describe('PromptService', () => {
       flush: jest.fn(),
       shutdown: jest.fn(),
       getConfig: jest.fn().mockReturnValue(mockConfig),
+      getClient: jest.fn(),
     } as any;
 
     promptService = new PromptService(mockLangfuseService);
@@ -82,31 +83,101 @@ describe('PromptService', () => {
     });
   });
 
-  describe('cache management', () => {
-    it('should clear specific cache entry', () => {
-      promptService.clearCache('summarize_site');
-      expect(promptService.getCacheStats().totalEntries).toBe(0);
-    });
-
-    it('should clear all cache entries', () => {
-      promptService.clearCache();
-      expect(promptService.getCacheStats().totalEntries).toBe(0);
-    });
-
-    it('should return cache statistics', () => {
-      const stats = promptService.getCacheStats();
-      expect(stats).toHaveProperty('totalEntries');
-      expect(stats).toHaveProperty('entries');
-      expect(Array.isArray(stats.entries)).toBe(true);
-    });
-  });
-
   describe('prompt retrieval when LangFuse unavailable', () => {
-    it('should throw error when LangFuse is not available and no cache', async () => {
+    it('should throw error when LangFuse is not available', async () => {
       mockLangfuseService.isAvailable.mockReturnValue(false);
 
       await expect(promptService.getPrompt('summarize_site')).rejects.toThrow(
-        'LangFuse is not available and no cached prompt found for prompt: summarize_site'
+        'LangFuse is not available for prompt: summarize_site'
+      );
+    });
+  });
+
+  describe('LangFuse prompt retrieval', () => {
+    beforeEach(() => {
+      mockLangfuseService.isAvailable.mockReturnValue(true);
+    });
+
+    it('should fetch chat prompt from LangFuse', async () => {
+      const mockClient = {
+        prompt: {
+          get: jest.fn().mockResolvedValue({
+            id: 'prompt-123',
+            type: 'chat',
+            prompt: [
+              { role: 'system', content: 'You are a helpful assistant analyzing {{domain}}' },
+            ],
+            version: 1,
+            config: { model: 'gpt-4' },
+            labels: ['production'],
+          }),
+        },
+      };
+
+      mockLangfuseService.getClient.mockReturnValue(mockClient);
+
+      const result = await promptService.getPrompt('summarize_site');
+
+      expect(result.prompt).toBe('You are a helpful assistant analyzing {{domain}}');
+      expect(result.version).toBe('1');
+      expect(result.metadata?.type).toBe('chat');
+      expect(mockClient.prompt.get).toHaveBeenCalledWith('summarize_site');
+    });
+
+    it('should fetch text prompt from LangFuse', async () => {
+      const mockClient = {
+        prompt: {
+          get: jest.fn().mockResolvedValue({
+            id: 'prompt-456',
+            type: 'text',
+            prompt: 'Analyze the website {{domain}} and provide insights.',
+            version: 2,
+            config: { temperature: 0.7 },
+            labels: ['production'],
+          }),
+        },
+      };
+
+      mockLangfuseService.getClient.mockReturnValue(mockClient);
+
+      const result = await promptService.getPrompt('vendor_fit');
+
+      expect(result.prompt).toBe('Analyze the website {{domain}} and provide insights.');
+      expect(result.version).toBe('2');
+      expect(result.metadata?.type).toBe('text');
+    });
+
+    it('should handle missing system message in chat prompt', async () => {
+      const mockClient = {
+        prompt: {
+          get: jest.fn().mockResolvedValue({
+            type: 'chat',
+            prompt: [{ role: 'user', content: 'Hello' }],
+          }),
+        },
+      };
+
+      mockLangfuseService.getClient.mockReturnValue(mockClient);
+
+      await expect(promptService.getPrompt('summarize_site')).rejects.toThrow(
+        'No system message found in chat prompt'
+      );
+    });
+
+    it('should handle unsupported prompt type', async () => {
+      const mockClient = {
+        prompt: {
+          get: jest.fn().mockResolvedValue({
+            type: 'unknown',
+            prompt: 'some content',
+          }),
+        },
+      };
+
+      mockLangfuseService.getClient.mockReturnValue(mockClient);
+
+      await expect(promptService.getPrompt('summarize_site')).rejects.toThrow(
+        'Unsupported prompt type'
       );
     });
   });

@@ -59,9 +59,6 @@ export interface AgentExecutionOptions {
 
   /** Additional metadata to include in traces */
   metadata?: Record<string, string>;
-
-  /** Custom cache TTL for prompts (seconds) */
-  promptCacheTtl?: number;
 }
 
 /**

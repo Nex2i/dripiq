@@ -12,7 +12,6 @@ import {
   vendorFitAgent,
   contactExtractionAgent,
   contactStrategyAgent,
-  getObservabilityServices,
   getLangFuseStatus,
   type AgentExecutionOptions,
 } from '@/modules/ai';
@@ -61,7 +60,6 @@ export const analyzeSiteExample = async (): Promise<void> => {
       source: 'example-usage',
       campaign: 'demo',
     },
-    promptCacheTtl: 300, // 5 minutes
   };
 
   try {
@@ -152,7 +150,6 @@ export const extractContactsExample = async (): Promise<void> => {
       source: 'lead-qualification',
       priority: 'high',
     },
-    promptCacheTtl: 600, // 10 minutes cache for contact extraction
   };
 
   try {
@@ -295,13 +292,10 @@ export const healthMonitoringExample = async (): Promise<void> => {
       console.log(`   Enabled: ${status.config.enabled}`);
     }
 
-    // Check prompt cache statistics
-    const { promptService } = await getObservabilityServices();
-    const cacheStats = promptService.getCacheStats();
-
-    console.log('\n📋 Prompt Cache Statistics:');
-    console.log(`   Total Entries: ${cacheStats.totalEntries}`);
-    console.log(`   Expired Entries: ${cacheStats.entries.filter((e: any) => e.expired).length}`);
+    // LangFuse prompt system (no caching)
+    console.log('\n📋 Prompt System:');
+    console.log('   Type: Direct LangFuse retrieval (no caching)');
+    console.log('   Version: Always uses latest production prompts');
   } catch (error) {
     console.error('Health monitoring failed:', error);
   }

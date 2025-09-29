@@ -112,8 +112,7 @@ export class SiteAnalysisAgent {
       // Get prompt from LangFuse - required, no fallbacks
       const promptResult = await observabilityServices.promptService.getPromptWithVariables(
         'summarize_site',
-        { domain },
-        { cacheTtlSeconds: options.promptCacheTtl }
+        { domain }
       );
 
       // Log prompt retrieval
@@ -122,9 +121,8 @@ export class SiteAnalysisAgent {
         'prompt-retrieved',
         { promptName: 'summarize_site', domain },
         {
-          cached: promptResult.cached,
           version: promptResult.version,
-          source: promptResult.metadata?.source,
+          type: promptResult.metadata?.type,
         }
       );
 
@@ -202,7 +200,7 @@ export class SiteAnalysisAgent {
           agentMetadata: {
             domain,
             promptVersion: promptResult.version,
-            promptCached: promptResult.cached,
+            promptType: promptResult.metadata?.type,
           },
         },
       };

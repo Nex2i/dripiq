@@ -349,6 +349,17 @@ export class LangFuseService {
       flushInterval: this.config.flushInterval,
     };
   }
+
+  /**
+   * Get the underlying LangFuse client for advanced operations
+   * Used internally by PromptService for direct API access
+   */
+  public getClient(): any {
+    if (!this.isAvailable()) {
+      throw new Error('LangFuse client is not available');
+    }
+    return this.client;
+  }
 }
 
 // Create and export singleton instance
