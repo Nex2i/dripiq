@@ -24,10 +24,10 @@ export type PromptName = 'summarize_site' | 'vendor_fit' | 'extract_contacts' | 
 
 /**
  * Prompt Service - LangFuse-first prompt management with intelligent caching
- *
+ * 
  * Features:
  * - LangFuse-first prompt retrieval (no local fallbacks)
- * - Environment-based prompt selection (local vs prod)
+ * - Always uses latest production prompt version
  * - Built-in variable injection system with {{variable}} syntax
  * - Intelligent caching with configurable TTL
  * - Comprehensive error handling and logging
@@ -36,18 +36,16 @@ export class PromptService {
   private langfuseService: LangFuseService;
   private cache: Map<string, PromptCache> = new Map();
   private defaultCacheTtlSeconds: number = 300; // 5 minutes default
-  private environment: string;
 
   constructor(langfuseService: LangFuseService) {
     this.langfuseService = langfuseService;
-    this.environment = process.env.NODE_ENV || 'local';
   }
 
   /**
    * Retrieve a prompt from LangFuse with optional caching
    */
   public async getPrompt(name: PromptName, config?: PromptConfig): Promise<PromptResult> {
-    const cacheKey = this.getCacheKey(name, this.environment);
+    const cacheKey = name; // Simplified cache key without environment
     const cacheTtl = config?.cacheTtlSeconds || this.defaultCacheTtlSeconds;
 
     // Check cache first
@@ -55,7 +53,6 @@ export class PromptService {
     if (cached) {
       logger.debug('Prompt retrieved from cache', {
         name,
-        environment: this.environment,
         version: cached.version,
       });
       return {
@@ -69,7 +66,7 @@ export class PromptService {
     // Fetch from LangFuse
     if (!this.langfuseService.isAvailable()) {
       const errorMessage = 'LangFuse is not available and no cached prompt found';
-      logger.error(errorMessage, { name, environment: this.environment });
+      logger.error(errorMessage, { name });
       throw new Error(`${errorMessage} for prompt: ${name}`);
     }
 
@@ -81,7 +78,6 @@ export class PromptService {
 
       logger.info('Prompt retrieved from LangFuse', {
         name,
-        environment: this.environment,
         version: promptResult.version,
         cached: false,
       });
@@ -93,7 +89,6 @@ export class PromptService {
     } catch (error) {
       logger.error('Failed to retrieve prompt from LangFuse', {
         name,
-        environment: this.environment,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
@@ -167,13 +162,12 @@ export class PromptService {
   }
 
   /**
-   * Clear cached prompt for a specific name and environment
+   * Clear cached prompt for a specific name
    */
   public clearCache(name?: PromptName): void {
     if (name) {
-      const cacheKey = this.getCacheKey(name, this.environment);
-      this.cache.delete(cacheKey);
-      logger.debug('Prompt cache cleared', { name, environment: this.environment });
+      this.cache.delete(name);
+      logger.debug('Prompt cache cleared', { name });
     } else {
       this.cache.clear();
       logger.debug('All prompt cache cleared');
@@ -206,9 +200,7 @@ export class PromptService {
     };
   }
 
-  private getCacheKey(name: PromptName, environment: string): string {
-    return `${name}:${environment}`;
-  }
+  // Removed getCacheKey method - using name directly as cache key
 
   private getCachedPrompt(cacheKey: string): PromptCache | null {
     const cached = this.cache.get(cacheKey);
@@ -248,11 +240,13 @@ export class PromptService {
     // TODO: Implement actual LangFuse prompt retrieval when LangFuse SDK supports it
     // For now, we'll use a placeholder that indicates LangFuse integration
     // In production, this would call LangFuse's prompt management API
+    // Always uses the latest production version - no environment logic
 
     throw new Error(
       `LangFuse prompt retrieval not yet implemented for '${name}'. ` +
-        `Please configure the prompt '${name}' in your LangFuse dashboard for environment '${this.environment}'. ` +
-        `This system requires all prompts to be managed in LangFuse - no local fallbacks are supported.`
+      `Please configure the prompt '${name}' in your LangFuse dashboard. ` +
+      `The system will automatically use the latest production version. ` +
+      `This system requires all prompts to be managed in LangFuse - no local fallbacks are supported.`
     );
   }
 }

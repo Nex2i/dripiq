@@ -9,6 +9,7 @@ The observability system has been simplified by removing the startup module and 
 - `ObservabilityStartup` class
 - `observabilityStartup` singleton instance
 - Complex health check system
+- Environment-based prompt logic (local vs production)
 
 ### ✅ **Simplified API**
 

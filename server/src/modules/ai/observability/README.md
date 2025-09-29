@@ -57,12 +57,14 @@ console.log('AI system ready with LangFuse observability');
 
 **REQUIRED**: Create these prompts in your LangFuse dashboard:
 
-| Prompt Name | Environment Tags | Variables |
-|-------------|------------------|-----------|
-| `summarize_site` | `local`, `production` | `{{domain}}` |
-| `vendor_fit` | `local`, `production` | `{{partner_details}}`, `{{opportunity_details}}` |
-| `extract_contacts` | `local`, `production` | `{{domain}}`, `{{webdata_contacts}}` |
-| `contact_strategy` | `local`, `production` | None (structured data) |
+| Prompt Name | Variables |
+|-------------|-----------|
+| `summarize_site` | `{{domain}}` |
+| `vendor_fit` | `{{partner_details}}`, `{{opportunity_details}}` |
+| `extract_contacts` | `{{domain}}`, `{{webdata_contacts}}` |
+| `contact_strategy` | None (structured data) |
+
+**Note**: The system always uses the **latest production version** of each prompt. No environment-specific versions are needed.
 
 ## Agent Usage (New API)
 
@@ -278,6 +280,8 @@ const result = await siteAnalysisAgent.analyze('example.com', {
 4. **Initialize System**: Call `initializeObservability()` and `initializeAgents()` at startup
 5. **Handle Errors**: Update error handling for new fail-fast behavior
 
+**Note**: Always uses latest production prompt version - no environment tagging needed.
+
 ## Production Deployment
 
 ### Startup Sequence
@@ -299,12 +303,13 @@ await initializeAgents();
 console.log('AI system ready for production');
 ```
 
-### Environment-Specific Prompts
+### Prompt Versioning
 
-LangFuse automatically selects prompts based on `NODE_ENV`:
+LangFuse automatically uses the **latest production version** of each prompt:
 
-- **Development**: Prompts tagged with `local` environment
-- **Production**: Prompts tagged with `production` environment
+- **Single Version**: No environment-specific versions needed
+- **Production Ready**: Always uses the most current prompt version
+- **Automatic Updates**: System automatically picks up new prompt versions
 
 ### Monitoring & Alerts
 
