@@ -89,53 +89,62 @@ export class ContactStrategyAgent {
         cacheTtlSeconds: 300, // Cache for 5 minutes
       });
 
-      // Convert LangFuse prompt to LangChain format
-      const systemPromptText = langfusePrompt.getLangchainPrompt();
+      // Prepare variables for prompt injection
+      const variables = {
+        lead_details: JSON.stringify(
+          {
+            description: leadDetails.description,
+            value: leadDetails.value,
+            schema: leadDetails.schema,
+          },
+          null,
+          2
+        ),
+        contact_details: JSON.stringify(
+          {
+            description: contactDetails.description,
+            value: contactDetails.value,
+            schema: contactDetails.schema,
+          },
+          null,
+          2
+        ),
+        partner_details: JSON.stringify(
+          {
+            description: partnerDetails.description,
+            value: partnerDetails.value,
+            schema: partnerDetails.schema,
+          },
+          null,
+          2
+        ),
+        partner_products: JSON.stringify(
+          {
+            description: partnerProducts.description,
+            value: partnerProducts.value,
+            schema: partnerProducts.schema,
+          },
+          null,
+          2
+        ),
+        salesman: JSON.stringify(
+          {
+            description: salesman.description,
+            value: salesman.value,
+            schema: salesman.schema,
+          },
+          null,
+          2
+        ),
+        output_schema: JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2),
+      };
 
-      // Prepare input variables as formatted strings
-      const leadDetailsFormatted = `# Lead Details
-${JSON.stringify(leadDetails.value, null, 2)}
-Schema: ${JSON.stringify(leadDetails.schema, null, 2)}`;
+      // Compile prompt with variables (handles {{variable}} injection)
+      const compiledPrompt = langfusePrompt.compile(variables);
 
-      const contactDetailsFormatted = `# Contact Details
-${JSON.stringify(contactDetails.value, null, 2)}
-Schema: ${JSON.stringify(contactDetails.schema, null, 2)}`;
-
-      const partnerDetailsFormatted = `# Partner Details
-${JSON.stringify(partnerDetails.value, null, 2)}
-Schema: ${JSON.stringify(partnerDetails.schema, null, 2)}`;
-
-      const partnerProductsFormatted = `# Partner Products
-${JSON.stringify(partnerProducts.value, null, 2)}
-Schema: ${JSON.stringify(partnerProducts.schema, null, 2)}`;
-
-      const salesmanFormatted = `# Salesman
-${JSON.stringify(salesman.value, null, 2)}
-Schema: ${JSON.stringify(salesman.schema, null, 2)}`;
-
-      const outputSchemaFormatted = `# Output Schema
-${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}
-
-IMPORTANT: You must respond with valid JSON only.`;
-
-      // Create a combined system message with all context
-      const fullSystemPrompt = `${systemPromptText}
-
-${leadDetailsFormatted}
-
-${contactDetailsFormatted}
-
-${partnerDetailsFormatted}
-
-${partnerProductsFormatted}
-
-${salesmanFormatted}
-
-${outputSchemaFormatted}`;
-
-      // Create prompt template for the agent
+      // Create prompt template with compiled content
       const prompt = ChatPromptTemplate.fromMessages([
-        ['system', fullSystemPrompt],
+        ['system', compiledPrompt],
         ['placeholder', '{agent_scratchpad}'],
       ]);
 
