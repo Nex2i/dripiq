@@ -27,6 +27,13 @@ export {
   type AgentTraceMetadata,
 } from './types';
 
+// Debug utilities
+export {
+  debugLangFuseConfig,
+  isLangFuseConfigured,
+  getLangFuseConfigInfo,
+} from './debug';
+
 // Simple observability services interface
 export interface ObservabilityServices {
   langfuseService: LangFuseService;

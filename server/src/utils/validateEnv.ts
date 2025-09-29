@@ -17,6 +17,14 @@ export const schema = {
     REDIS_URL: { type: 'string' },
     BULLMQ_PREFIX: { type: 'string' },
     ENCRYPTION_KEY: { type: 'string' },
+    // LangFuse Configuration
+    LANGFUSE_PUBLIC_KEY: { type: 'string' },
+    LANGFUSE_SECRET_KEY: { type: 'string' },
+    LANGFUSE_HOST: { type: 'string' },
+    LANGFUSE_ENABLED: { type: 'string' },
+    LANGFUSE_DEBUG: { type: 'string' },
+    LANGFUSE_FLUSH_AT: { type: 'string' },
+    LANGFUSE_FLUSH_INTERVAL: { type: 'string' },
   },
   required: ['PORT', 'NODE_ENV', 'REDIS_URL'],
 } as const;
