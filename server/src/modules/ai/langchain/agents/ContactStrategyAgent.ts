@@ -44,7 +44,7 @@ type ValueSchema<T> = {
 
 /**
  * LangFuse-First Contact Strategy Agent
- * 
+ *
  * Features:
  * - Required LangFuse observability (no fallbacks)
  * - LangFuse-managed prompts only
@@ -96,9 +96,9 @@ export class ContactStrategyAgent {
 
   /**
    * Generate email content with full LangFuse observability
-   * 
+   *
    * @param tenantId - The tenant ID
-   * @param leadId - The lead ID 
+   * @param leadId - The lead ID
    * @param contactId - The contact ID
    * @param options - Execution options including tracing context
    * @returns Enhanced email content generation result with trace information
@@ -114,11 +114,11 @@ export class ContactStrategyAgent {
 
     // Require observability services - fail fast if not available
     const observabilityServices = await getObservabilityServices();
-    
+
     if (!observabilityServices.langfuseService.isAvailable()) {
       throw new Error(
         'LangFuse service is not available. Contact strategy generation requires observability services. ' +
-        'Please check your LangFuse configuration.'
+          'Please check your LangFuse configuration.'
       );
     }
 
@@ -129,14 +129,13 @@ export class ContactStrategyAgent {
       {
         agentName: 'ContactStrategyAgent',
         agentVersion: '2.0.0-langfuse-first',
-        input: { tenantId, leadId, contactId },
         tenantId: options.tenantId || tenantId,
         userId: options.userId,
         sessionId: options.sessionId,
-        custom: options.metadata,
+        ...options.metadata,
       }
     );
-    
+
     const trace = traceResult.trace;
     if (!trace) {
       throw new Error('Failed to create LangFuse trace for contact strategy generation');
@@ -151,22 +150,21 @@ export class ContactStrategyAgent {
       });
 
       // Get prompt from LangFuse - required, no fallbacks
-      const promptResult = await observabilityServices.promptService.getPrompt(
-        'contact_strategy',
-        { cacheTtlSeconds: options.promptCacheTtl }
-      );
+      const promptResult = await observabilityServices.promptService.getPrompt('contact_strategy', {
+        cacheTtlSeconds: options.promptCacheTtl,
+      });
 
       // Log prompt retrieval
       observabilityServices.langfuseService.logEvent(
         trace,
         'prompt-retrieved',
-        { 
+        {
           promptName: 'contact_strategy',
           tenantId,
           leadId,
           contactId,
         },
-        { 
+        {
           cached: promptResult.cached,
           version: promptResult.version,
           source: promptResult.metadata?.source,
@@ -180,7 +178,7 @@ export class ContactStrategyAgent {
         { tenantId, leadId, contactId }
       );
 
-      const [leadDetails, contactDetails, partnerDetails, partnerProducts, salesman] = 
+      const [leadDetails, contactDetails, partnerDetails, partnerProducts, salesman] =
         await Promise.all([
           this.getLeadDetails(tenantId, leadId),
           this.getContactDetails(contactId),
@@ -230,15 +228,13 @@ export class ContactStrategyAgent {
 
       // Check for direct response
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        observabilityServices.langfuseService.logEvent(
-          trace,
-          'no-direct-response',
-          { intermediateStepsCount: result.intermediateSteps.length }
-        );
-        
+        observabilityServices.langfuseService.logEvent(trace, 'no-direct-response', {
+          intermediateStepsCount: result.intermediateSteps.length,
+        });
+
         throw new Error(
           'Agent did not provide a direct response for email content generation. ' +
-          'This typically indicates a prompt or configuration issue.'
+            'This typically indicates a prompt or configuration issue.'
         );
       }
 
@@ -266,10 +262,10 @@ export class ContactStrategyAgent {
           totalIterations: result.intermediateSteps?.length ?? 0,
           executionTimeMs,
         },
-        { 
-          success: true, 
-          tenantId, 
-          leadId, 
+        {
+          success: true,
+          tenantId,
+          leadId,
           contactId,
           emailCount: parsedResult.emails?.length || 0,
         }
@@ -293,10 +289,9 @@ export class ContactStrategyAgent {
           },
         },
       };
-
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
-      
+
       logger.error('Email content generation failed', {
         tenantId,
         leadId,
@@ -315,35 +310,33 @@ export class ContactStrategyAgent {
         executionTimeMs,
       });
 
-      observabilityServices.langfuseService.updateTrace(
-        trace,
-        null,
-        { 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Unknown error',
-          tenantId,
-          leadId,
-          contactId,
-          executionTimeMs,
-        }
-      );
+      observabilityServices.langfuseService.updateTrace(trace, null, {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        tenantId,
+        leadId,
+        contactId,
+        executionTimeMs,
+      });
 
       // Enhanced error with trace context
       const enhancedError = new Error(
         `Email content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      
+
       (enhancedError as any).traceId = traceResult.traceId;
       (enhancedError as any).metadata = {
         executionTimeMs,
         tenantId,
         leadId,
         contactId,
-        errors: [{
-          message: error instanceof Error ? error.message : 'Unknown error',
-          phase: 'email-generation',
-          timestamp: new Date().toISOString(),
-        }],
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            phase: 'email-generation',
+            timestamp: new Date().toISOString(),
+          },
+        ],
       };
 
       throw enhancedError;

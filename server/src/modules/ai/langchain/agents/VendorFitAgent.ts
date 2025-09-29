@@ -19,7 +19,7 @@ export type VendorFitResult = EnhancedAgentResult<z.infer<typeof vendorFitOutput
 
 /**
  * LangFuse-First Vendor Fit Analysis Agent
- * 
+ *
  * Features:
  * - Required LangFuse observability (no fallbacks)
  * - LangFuse-managed prompts only
@@ -63,7 +63,7 @@ export class VendorFitAgent {
 
   /**
    * Analyze vendor fit between partner and opportunity with full LangFuse observability
-   * 
+   *
    * @param partnerInfo - Information about the partner organization
    * @param opportunityContext - Context about the opportunity
    * @param options - Execution options including tracing context
@@ -79,32 +79,31 @@ export class VendorFitAgent {
 
     // Require observability services - fail fast if not available
     const observabilityServices = await getObservabilityServices();
-    
+
     if (!observabilityServices.langfuseService.isAvailable()) {
       throw new Error(
         'LangFuse service is not available. Vendor fit analysis requires observability services. ' +
-        'Please check your LangFuse configuration.'
+          'Please check your LangFuse configuration.'
       );
     }
 
     // Create trace - required for all executions
     const traceResult = observabilityServices.langfuseService.createTrace(
       'vendor-fit-analysis',
-      { 
+      {
         partnerDomain: partnerInfo?.domain || 'unknown',
         opportunityLength: opportunityContext.length,
       },
       {
         agentName: 'VendorFitAgent',
         agentVersion: '2.0.0-langfuse-first',
-        input: { partnerInfo, opportunityContext },
         tenantId: options.tenantId,
         userId: options.userId,
         sessionId: options.sessionId,
-        custom: options.metadata,
+        ...options.metadata,
       }
     );
-    
+
     const trace = traceResult.trace;
     if (!trace) {
       throw new Error('Failed to create LangFuse trace for vendor fit analysis');
@@ -131,12 +130,12 @@ export class VendorFitAgent {
       observabilityServices.langfuseService.logEvent(
         trace,
         'prompt-retrieved',
-        { 
+        {
           promptName: 'vendor_fit',
           partnerDomain: partnerInfo?.domain,
           opportunityLength: opportunityContext.length,
         },
-        { 
+        {
           cached: promptResult.cached,
           version: promptResult.version,
           source: promptResult.metadata?.source,
@@ -144,15 +143,11 @@ export class VendorFitAgent {
       );
 
       // Log analysis start
-      observabilityServices.langfuseService.logEvent(
-        trace,
-        'vendor-fit-analysis-start',
-        { 
-          partnerDomain: partnerInfo?.domain,
-          systemPromptLength: promptResult.prompt.length,
-          maxIterations: this.config.maxIterations,
-        }
-      );
+      observabilityServices.langfuseService.logEvent(trace, 'vendor-fit-analysis-start', {
+        partnerDomain: partnerInfo?.domain,
+        systemPromptLength: promptResult.prompt.length,
+        maxIterations: this.config.maxIterations,
+      });
 
       // Execute the agent
       const result = await this.agent.invoke({
@@ -167,16 +162,14 @@ export class VendorFitAgent {
 
       // Handle partial results if needed
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        observabilityServices.langfuseService.logEvent(
-          trace,
-          'partial-result-handling',
-          { intermediateStepsCount: result.intermediateSteps.length }
-        );
+        observabilityServices.langfuseService.logEvent(trace, 'partial-result-handling', {
+          intermediateStepsCount: result.intermediateSteps.length,
+        });
 
         finalResponse = await this.summarizePartialSteps(
-          result, 
-          promptResult.prompt, 
-          trace, 
+          result,
+          promptResult.prompt,
+          trace,
           observabilityServices
         );
       }
@@ -231,10 +224,9 @@ export class VendorFitAgent {
           },
         },
       };
-
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
-      
+
       logger.error('Vendor fit analysis failed', {
         partnerDomain: partnerInfo?.domain,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -249,31 +241,29 @@ export class VendorFitAgent {
         executionTimeMs,
       });
 
-      observabilityServices.langfuseService.updateTrace(
-        trace,
-        null,
-        {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          partnerDomain: partnerInfo?.domain,
-          executionTimeMs,
-        }
-      );
+      observabilityServices.langfuseService.updateTrace(trace, null, {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        partnerDomain: partnerInfo?.domain,
+        executionTimeMs,
+      });
 
       // Enhanced error with trace context
       const enhancedError = new Error(
         `Vendor fit analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      
+
       (enhancedError as any).traceId = traceResult.traceId;
       (enhancedError as any).metadata = {
         executionTimeMs,
         partnerDomain: partnerInfo?.domain,
-        errors: [{
-          message: error instanceof Error ? error.message : 'Unknown error',
-          phase: 'vendor-fit-analysis',
-          timestamp: new Date().toISOString(),
-        }],
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            phase: 'vendor-fit-analysis',
+            timestamp: new Date().toISOString(),
+          },
+        ],
       };
 
       throw enhancedError;
@@ -281,18 +271,14 @@ export class VendorFitAgent {
   }
 
   private async summarizePartialSteps(
-    result: any, 
+    result: any,
     systemPrompt: string,
     trace: any,
     observabilityServices: any
   ): Promise<string> {
-    const span = observabilityServices.langfuseService.createSpan(
-      trace,
-      'partial-steps-summary',
-      {
-        intermediateStepsCount: result.intermediateSteps?.length ?? 0,
-      }
-    );
+    const span = observabilityServices.langfuseService.createSpan(trace, 'partial-steps-summary', {
+      intermediateStepsCount: result.intermediateSteps?.length ?? 0,
+    });
 
     try {
       const structuredModel = createChatModel({
@@ -339,14 +325,10 @@ Return your answer as valid JSON matching the provided schema.
       return summaryResult;
     } catch (error) {
       if (span) {
-        observabilityServices.langfuseService.updateSpan(
-          span,
-          null,
-          { 
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          }
-        );
+        observabilityServices.langfuseService.updateSpan(span, null, {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
       throw error;
     }
@@ -358,12 +340,12 @@ Return your answer as valid JSON matching the provided schema.
       const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
       return vendorFitOutputSchema.parse(JSON.parse(jsonText));
     } catch (error) {
-      logger.error('Vendor fit analysis JSON parsing failed', { 
+      logger.error('Vendor fit analysis JSON parsing failed', {
         partnerDomain: partnerInfo?.domain,
         error: error instanceof Error ? error.message : 'Unknown error',
         contentPreview: content.substring(0, 200),
       });
-      
+
       throw new Error(
         `Failed to parse vendor fit analysis results: ${
           error instanceof Error ? error.message : 'Unknown parsing error'

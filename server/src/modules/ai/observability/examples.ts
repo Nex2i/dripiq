@@ -1,19 +1,20 @@
 /**
  * LangFuse-First AI Agent Usage Examples
- * 
+ *
  * This file demonstrates how to use the new LangFuse-first AI agents.
  * All examples require LangFuse to be properly configured.
  */
 
-import { 
-  initializeObservability, 
+import {
+  initializeObservability,
   initializeAgents,
   siteAnalysisAgent,
   vendorFitAgent,
   contactExtractionAgent,
   contactStrategyAgent,
   observabilityStartup,
-  type AgentExecutionOptions 
+  getObservabilityServices,
+  type AgentExecutionOptions,
 } from '@/modules/ai';
 import { logger } from '@/libs/logger';
 
@@ -26,22 +27,22 @@ export const initializeAISystem = async (): Promise<void> => {
     logger.info('Initializing LangFuse-first AI system...');
 
     // Step 1: Initialize observability services
-    const services = await initializeObservability();
+    await initializeObservability();
     logger.info('Observability services initialized');
 
     // Step 2: Verify health
     const healthChecks = await observabilityStartup.performHealthChecks();
-    const unhealthyServices = healthChecks.filter(check => !check.healthy);
-    
+    const unhealthyServices = healthChecks.filter((check) => !check.healthy);
+
     if (unhealthyServices.length > 0) {
       throw new Error(
-        `Unhealthy services detected: ${unhealthyServices.map(s => s.service).join(', ')}`
+        `Unhealthy services detected: ${unhealthyServices.map((s) => s.service).join(', ')}`
       );
     }
 
     // Step 3: Initialize agents (will fail if LangFuse not available)
     await initializeAgents();
-    
+
     logger.info('AI system fully initialized and ready for use');
   } catch (error) {
     logger.error('AI system initialization failed:', error);
@@ -54,7 +55,7 @@ export const initializeAISystem = async (): Promise<void> => {
  */
 export const analyzeSiteExample = async (): Promise<void> => {
   const domain = 'example.com';
-  
+
   const options: AgentExecutionOptions = {
     tenantId: 'tenant-123',
     userId: 'user-456',
@@ -87,7 +88,6 @@ export const analyzeSiteExample = async (): Promise<void> => {
       targetMarket: result.finalResponseParsed.targetMarket,
       executionTime: result.metadata?.executionTimeMs,
     });
-
   } catch (error) {
     logger.error('Site analysis failed', {
       domain,
@@ -127,18 +127,13 @@ export const analyzeVendorFitExample = async (): Promise<void> => {
   };
 
   try {
-    const result = await vendorFitAgent.analyzeVendorFit(
-      partnerInfo,
-      opportunityContext,
-      options
-    );
+    const result = await vendorFitAgent.analyzeVendorFit(partnerInfo, opportunityContext, options);
 
     logger.info('Vendor fit analysis completed', {
       traceId: result.traceId,
       headline: result.finalResponseParsed.headline,
       executionTime: result.metadata?.executionTimeMs,
     });
-
   } catch (error) {
     logger.error('Vendor fit analysis failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -153,7 +148,7 @@ export const analyzeVendorFitExample = async (): Promise<void> => {
  */
 export const extractContactsExample = async (): Promise<void> => {
   const domain = 'target-company.com';
-  
+
   const options: AgentExecutionOptions = {
     tenantId: 'tenant-123',
     metadata: {
@@ -183,7 +178,6 @@ export const extractContactsExample = async (): Promise<void> => {
         isPriority: index === result.finalResponseParsed.priorityContactId,
       });
     });
-
   } catch (error) {
     logger.error('Contact extraction failed', {
       domain,
@@ -201,7 +195,7 @@ export const generateEmailStrategyExample = async (): Promise<void> => {
   const tenantId = 'tenant-123';
   const leadId = 'lead-456';
   const contactId = 'contact-789';
-  
+
   const options: AgentExecutionOptions = {
     tenantId,
     userId: 'user-456',
@@ -235,7 +229,6 @@ export const generateEmailStrategyExample = async (): Promise<void> => {
         bodyPreview: email.body.substring(0, 100) + '...',
       });
     });
-
   } catch (error) {
     logger.error('Email strategy generation failed', {
       tenantId,
@@ -279,8 +272,12 @@ export const errorHandlingExample = async (): Promise<void> => {
 
       // Check if it's a prompt error
       if (error.message.includes('prompt retrieval not yet implemented')) {
-        console.error('Prompt Configuration Error: Please configure required prompts in LangFuse dashboard');
-        console.error('Required prompts: summarize_site, vendor_fit, extract_contacts, contact_strategy');
+        console.error(
+          'Prompt Configuration Error: Please configure required prompts in LangFuse dashboard'
+        );
+        console.error(
+          'Required prompts: summarize_site, vendor_fit, extract_contacts, contact_strategy'
+        );
       }
     }
   }
@@ -292,9 +289,9 @@ export const errorHandlingExample = async (): Promise<void> => {
 export const healthMonitoringExample = async (): Promise<void> => {
   try {
     const healthChecks = await observabilityStartup.performHealthChecks();
-    
+
     console.log('System Health Status:');
-    healthChecks.forEach(check => {
+    healthChecks.forEach((check) => {
       console.log(`📊 ${check.service}: ${check.healthy ? '✅ Healthy' : '❌ Unhealthy'}`);
       if (check.message) {
         console.log(`   Message: ${check.message}`);
@@ -305,13 +302,12 @@ export const healthMonitoringExample = async (): Promise<void> => {
     });
 
     // Check prompt cache statistics
-    const { promptService } = await require('@/modules/ai/observability').getObservabilityServices();
+    const { promptService } = await getObservabilityServices();
     const cacheStats = promptService.getCacheStats();
-    
+
     console.log('\n📋 Prompt Cache Statistics:');
     console.log(`   Total Entries: ${cacheStats.totalEntries}`);
-    console.log(`   Expired Entries: ${cacheStats.entries.filter(e => e.expired).length}`);
-    
+    console.log(`   Expired Entries: ${cacheStats.entries.filter((e: any) => e.expired).length}`);
   } catch (error) {
     console.error('Health monitoring failed:', error);
   }
@@ -338,14 +334,13 @@ export const batchProcessingExample = async (): Promise<void> => {
 
     try {
       const result = await siteAnalysisAgent.analyze(domain, options);
-      
+
       logger.info(`Batch item ${index + 1}/${domains.length} completed`, {
         domain,
         traceId: result.traceId,
         sessionId,
         executionTime: result.metadata?.executionTimeMs,
       });
-
     } catch (error) {
       logger.error(`Batch item ${index + 1}/${domains.length} failed`, {
         domain,
@@ -370,7 +365,7 @@ export const runAllExamples = async (): Promise<void> => {
     await generateEmailStrategyExample();
     await healthMonitoringExample();
     await batchProcessingExample();
-    
+
     console.log('🎉 All examples completed successfully!');
   } catch (error) {
     console.error('❌ Example execution failed:', error);

@@ -1,17 +1,17 @@
+import { logger } from '@/libs/logger';
 import { SiteAnalysisAgent } from '../agents/SiteAnalysisAgent';
 import { VendorFitAgent } from '../agents/VendorFitAgent';
 import { ContactExtractionAgent } from '../agents/ContactExtractionAgent';
 import { ContactStrategyAgent } from '../agents/ContactStrategyAgent';
 import { defaultLangChainConfig } from '../config/langchain.config';
-import { logger } from '@/libs/logger';
 
 /**
  * LangFuse-First Agent Factory
- * 
+ *
  * All agents now require LangFuse observability services to be available.
  * These factory functions create agents that will fail fast if observability
  * is not properly configured.
- * 
+ *
  * NOTE: The singleton instances below are provided for convenience but
  * should only be used after ensuring observability services are initialized.
  */
@@ -33,12 +33,16 @@ export const createVendorFitAgent = (config = defaultLangChainConfig): VendorFit
   return new VendorFitAgent(config);
 };
 
-export const createContactExtractionAgent = (config = defaultLangChainConfig): ContactExtractionAgent => {
+export const createContactExtractionAgent = (
+  config = defaultLangChainConfig
+): ContactExtractionAgent => {
   logger.debug('Creating ContactExtractionAgent with LangFuse-first configuration');
   return new ContactExtractionAgent(config);
 };
 
-export const createContactStrategyAgent = (config = defaultLangChainConfig): ContactStrategyAgent => {
+export const createContactStrategyAgent = (
+  config = defaultLangChainConfig
+): ContactStrategyAgent => {
   logger.debug('Creating ContactStrategyAgent with LangFuse-first configuration');
   return new ContactStrategyAgent(config);
 };
@@ -49,22 +53,22 @@ export const createContactStrategyAgent = (config = defaultLangChainConfig): Con
  */
 export const initializeAgents = async (): Promise<void> => {
   logger.info('Initializing LangFuse-first AI agents...');
-  
+
   try {
     // Import here to avoid circular dependencies
     const { getObservabilityServices } = await import('../../observability');
     const services = await getObservabilityServices();
-    
+
     if (!services.langfuseService.isAvailable()) {
       throw new Error('LangFuse service is not available');
     }
-    
+
     logger.info('AI agents initialized successfully with LangFuse observability');
   } catch (error) {
     logger.error('Failed to initialize AI agents', error);
     throw new Error(
       `AI agent initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
-      'Please ensure LangFuse is properly configured before using AI agents.'
+        'Please ensure LangFuse is properly configured before using AI agents.'
     );
   }
 };

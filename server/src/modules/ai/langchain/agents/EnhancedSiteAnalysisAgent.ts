@@ -20,7 +20,7 @@ export type SiteAnalysisResult = EnhancedAgentResult<z.infer<typeof reportOutput
 
 /**
  * Enhanced Site Analysis Agent with full LangFuse observability integration
- * 
+ *
  * Features:
  * - Full LangFuse tracing and observability
  * - LangFuse-first prompt management
@@ -66,10 +66,7 @@ export class EnhancedSiteAnalysisAgent {
   /**
    * Analyze a domain with enhanced observability
    */
-  async analyze(
-    domain: string,
-    options: AgentExecutionOptions = {}
-  ): Promise<SiteAnalysisResult> {
+  async analyze(domain: string, options: AgentExecutionOptions = {}): Promise<SiteAnalysisResult> {
     const startTime = Date.now();
     let trace: any = null;
     let observabilityServices: any = null;
@@ -133,7 +130,7 @@ export class EnhancedSiteAnalysisAgent {
               trace,
               'prompt-retrieved',
               { promptName: 'summarize_site' },
-              { 
+              {
                 cached: promptResult.cached,
                 version: promptResult.version,
                 source: promptResult.metadata?.source,
@@ -147,7 +144,7 @@ export class EnhancedSiteAnalysisAgent {
         logger.error('Failed to retrieve prompt, using fallback', { domain, error });
         // Fallback to basic prompt structure
         systemPrompt = `Analyze the website ${domain} and provide a comprehensive summary.`;
-        
+
         if (trace) {
           observabilityServices.langfuseService.logError(trace, error as Error, {
             phase: 'prompt-retrieval',
@@ -158,15 +155,11 @@ export class EnhancedSiteAnalysisAgent {
 
       // Log agent execution start
       if (trace) {
-        observabilityServices.langfuseService.logEvent(
-          trace,
-          'agent-execution-start',
-          { 
-            domain,
-            systemPromptLength: systemPrompt.length,
-            maxIterations: this.config.maxIterations,
-          }
-        );
+        observabilityServices.langfuseService.logEvent(trace, 'agent-execution-start', {
+          domain,
+          systemPromptLength: systemPrompt.length,
+          maxIterations: this.config.maxIterations,
+        });
       }
 
       // Execute the agent
@@ -179,14 +172,18 @@ export class EnhancedSiteAnalysisAgent {
       // Handle partial results if needed
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
         if (trace) {
-          observabilityServices.langfuseService.logEvent(
-            trace,
-            'partial-result-handling',
-            { intermediateStepsCount: result.intermediateSteps.length }
-          );
+          observabilityServices.langfuseService.logEvent(trace, 'partial-result-handling', {
+            intermediateStepsCount: result.intermediateSteps.length,
+          });
         }
 
-        finalResponse = await this.summarizePartialSteps(result, domain, systemPrompt, trace, observabilityServices);
+        finalResponse = await this.summarizePartialSteps(
+          result,
+          domain,
+          systemPrompt,
+          trace,
+          observabilityServices
+        );
       }
 
       // Parse the final result
@@ -240,10 +237,9 @@ export class EnhancedSiteAnalysisAgent {
           },
         },
       };
-
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
-      
+
       logger.error('Error in enhanced site analysis:', {
         domain,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -258,16 +254,12 @@ export class EnhancedSiteAnalysisAgent {
           executionTimeMs,
         });
 
-        observabilityServices.langfuseService.updateTrace(
-          trace,
-          null,
-          {
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            domain,
-            executionTimeMs,
-          }
-        );
+        observabilityServices.langfuseService.updateTrace(trace, null, {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          domain,
+          executionTimeMs,
+        });
       }
 
       // Return fallback result
@@ -281,11 +273,13 @@ export class EnhancedSiteAnalysisAgent {
         traceId: trace?.id || null,
         metadata: {
           executionTimeMs,
-          errors: [{
-            message: error instanceof Error ? error.message : 'Unknown error',
-            phase: 'agent-execution',
-            timestamp: new Date().toISOString(),
-          }],
+          errors: [
+            {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              phase: 'agent-execution',
+              timestamp: new Date().toISOString(),
+            },
+          ],
         },
       };
     }
@@ -298,14 +292,12 @@ export class EnhancedSiteAnalysisAgent {
     trace: any,
     observabilityServices: any
   ): Promise<string> {
-    const span = trace ? observabilityServices.langfuseService.createSpan(
-      trace,
-      'partial-steps-summary',
-      {
-        domain,
-        intermediateStepsCount: result.intermediateSteps?.length ?? 0,
-      }
-    ) : null;
+    const span = trace
+      ? observabilityServices.langfuseService.createSpan(trace, 'partial-steps-summary', {
+          domain,
+          intermediateStepsCount: result.intermediateSteps?.length ?? 0,
+        })
+      : null;
 
     try {
       const structuredModel = createChatModel({
@@ -338,27 +330,23 @@ Return your answer as valid JSON matching the provided schema.
         },
       ]);
 
-      const result = getContentFromMessage(summary.content ?? summary);
+      const summaryResult = getContentFromMessage(summary.content ?? summary);
 
       if (span) {
         observabilityServices.langfuseService.updateSpan(
           span,
-          { summaryLength: result.length },
+          { summaryLength: summaryResult.length },
           { success: true }
         );
       }
 
-      return result;
+      return summaryResult;
     } catch (error) {
       if (span) {
-        observabilityServices.langfuseService.updateSpan(
-          span,
-          null,
-          { 
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          }
-        );
+        observabilityServices.langfuseService.updateSpan(span, null, {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
       throw error;
     }

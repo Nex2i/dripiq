@@ -104,10 +104,10 @@ describe('PromptService', () => {
   describe('prompt retrieval when LangFuse unavailable', () => {
     it('should throw error when LangFuse is not available and no cache', async () => {
       mockLangfuseService.isAvailable.mockReturnValue(false);
-      
-      await expect(promptService.getPrompt('summarize_site'))
-        .rejects
-        .toThrow('LangFuse is not available and no cached prompt found for prompt: summarize_site');
+
+      await expect(promptService.getPrompt('summarize_site')).rejects.toThrow(
+        'LangFuse is not available and no cached prompt found for prompt: summarize_site'
+      );
     });
   });
 
@@ -115,7 +115,7 @@ describe('PromptService', () => {
     it('should handle missing variables gracefully', () => {
       const template = 'Hello {{name}} and {{friend}}!';
       const variables = { name: 'Alice' };
-      
+
       expect(() => {
         promptService.injectVariables(template, variables);
       }).toThrow('Missing required variables for prompt injection: friend');

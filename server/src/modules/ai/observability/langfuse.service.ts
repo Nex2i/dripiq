@@ -35,7 +35,7 @@ export interface TraceResult {
 
 /**
  * LangFuse Service - Centralized LangFuse client management
- * 
+ *
  * Provides enterprise-grade observability, tracing, and analytics for AI agents.
  * Features:
  * - Automatic trace creation and management
@@ -73,7 +73,6 @@ export class LangFuseService {
         publicKey: this.config.publicKey,
         secretKey: this.config.secretKey,
         baseUrl: this.config.host,
-        debug: this.config.debug || false,
         flushAt: this.config.flushAt || 10,
         flushInterval: this.config.flushInterval || 1000,
       });
@@ -101,11 +100,7 @@ export class LangFuseService {
   /**
    * Create a new trace for agent execution
    */
-  public createTrace(
-    name: string,
-    input?: any,
-    metadata?: TraceMetadata
-  ): TraceResult {
+  public createTrace(name: string, input?: any, metadata?: TraceMetadata): TraceResult {
     if (!this.isAvailable()) {
       logger.debug('LangFuse not available - skipping trace creation', { name });
       return { traceId: null, trace: null };
@@ -122,10 +117,10 @@ export class LangFuseService {
         },
       });
 
-      logger.debug('Trace created successfully', { 
-        name, 
+      logger.debug('Trace created successfully', {
+        name,
         traceId: trace.id,
-        metadata 
+        metadata,
       });
 
       return { traceId: trace.id, trace };
@@ -138,11 +133,7 @@ export class LangFuseService {
   /**
    * Update an existing trace with results
    */
-  public updateTrace(
-    trace: any,
-    output?: any,
-    metadata?: Record<string, any>
-  ): void {
+  public updateTrace(trace: any, output?: any, metadata?: Record<string, any>): void {
     if (!this.isAvailable() || !trace) {
       return;
     }
@@ -156,10 +147,10 @@ export class LangFuseService {
         },
       });
 
-      logger.debug('Trace updated successfully', { 
+      logger.debug('Trace updated successfully', {
         traceId: trace.id,
         hasOutput: !!output,
-        metadata 
+        metadata,
       });
     } catch (error) {
       logger.error('Failed to update trace', { traceId: trace.id, error });
@@ -191,16 +182,16 @@ export class LangFuseService {
         },
       });
 
-      logger.debug('Event logged successfully', { 
+      logger.debug('Event logged successfully', {
         traceId: trace.id,
         eventName: name,
-        metadata 
+        metadata,
       });
     } catch (error) {
-      logger.error('Failed to log event', { 
-        traceId: trace.id, 
-        eventName: name, 
-        error 
+      logger.error('Failed to log event', {
+        traceId: trace.id,
+        eventName: name,
+        error,
       });
     }
   }
@@ -208,11 +199,7 @@ export class LangFuseService {
   /**
    * Log an error event within a trace
    */
-  public logError(
-    trace: any,
-    error: Error,
-    context?: Record<string, any>
-  ): void {
+  public logError(trace: any, error: Error, context?: Record<string, any>): void {
     if (!this.isAvailable() || !trace) {
       return;
     }
@@ -235,16 +222,16 @@ export class LangFuseService {
         },
       });
 
-      logger.debug('Error event logged successfully', { 
+      logger.debug('Error event logged successfully', {
         traceId: trace.id,
         errorName: error.name,
-        errorMessage: error.message 
+        errorMessage: error.message,
       });
     } catch (logError) {
-      logger.error('Failed to log error event', { 
-        traceId: trace.id, 
+      logger.error('Failed to log error event', {
+        traceId: trace.id,
         originalError: error.message,
-        logError 
+        logError,
       });
     }
   }
@@ -272,18 +259,18 @@ export class LangFuseService {
         },
       });
 
-      logger.debug('Span created successfully', { 
+      logger.debug('Span created successfully', {
         traceId: trace.id,
         spanName: name,
-        spanId: span.id 
+        spanId: span.id,
       });
 
       return span;
     } catch (error) {
-      logger.error('Failed to create span', { 
-        traceId: trace.id, 
-        spanName: name, 
-        error 
+      logger.error('Failed to create span', {
+        traceId: trace.id,
+        spanName: name,
+        error,
       });
       return null;
     }
@@ -292,11 +279,7 @@ export class LangFuseService {
   /**
    * Update a span with results
    */
-  public updateSpan(
-    span: any,
-    output?: any,
-    metadata?: Record<string, any>
-  ): void {
+  public updateSpan(span: any, output?: any, metadata?: Record<string, any>): void {
     if (!this.isAvailable() || !span) {
       return;
     }
@@ -310,9 +293,9 @@ export class LangFuseService {
         },
       });
 
-      logger.debug('Span updated successfully', { 
+      logger.debug('Span updated successfully', {
         spanId: span.id,
-        hasOutput: !!output 
+        hasOutput: !!output,
       });
     } catch (error) {
       logger.error('Failed to update span', { spanId: span.id, error });

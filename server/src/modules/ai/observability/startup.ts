@@ -1,6 +1,6 @@
+import { logger } from '@/libs/logger';
 import { LangFuseService, LangFuseConfig, createLangFuseService } from './langfuse.service';
 import { PromptService, createPromptService } from './prompt.service';
-import { logger } from '@/libs/logger';
 
 export interface ObservabilityServices {
   langfuseService: LangFuseService;
@@ -16,7 +16,7 @@ export interface HealthCheck {
 
 /**
  * Observability Startup Module
- * 
+ *
  * Handles initialization, configuration, and health checks for all observability services.
  * Provides centralized service management and graceful degradation.
  */
@@ -38,10 +38,10 @@ export class ObservabilityStartup {
     try {
       // Load configuration from environment
       const config = this.loadConfiguration();
-      
+
       // Initialize LangFuse service
       const langfuseService = createLangFuseService(config);
-      
+
       // Initialize Prompt service
       const promptService = createPromptService(langfuseService);
 
@@ -54,11 +54,11 @@ export class ObservabilityStartup {
 
       // Perform health checks
       const healthChecks = await this.performHealthChecks();
-      const unhealthyServices = healthChecks.filter(check => !check.healthy);
+      const unhealthyServices = healthChecks.filter((check) => !check.healthy);
 
       if (unhealthyServices.length > 0) {
         logger.warn('Some observability services are unhealthy', {
-          unhealthyServices: unhealthyServices.map(s => s.service),
+          unhealthyServices: unhealthyServices.map((s) => s.service),
           checks: healthChecks,
         });
       } else {
@@ -98,11 +98,13 @@ export class ObservabilityStartup {
    */
   public async performHealthChecks(): Promise<HealthCheck[]> {
     if (!this.isReady()) {
-      return [{
-        service: 'observability',
-        healthy: false,
-        message: 'Services not initialized',
-      }];
+      return [
+        {
+          service: 'observability',
+          healthy: false,
+          message: 'Services not initialized',
+        },
+      ];
     }
 
     const checks: HealthCheck[] = [];
@@ -112,7 +114,7 @@ export class ObservabilityStartup {
     try {
       const isAvailable = langfuseService.isAvailable();
       const config = langfuseService.getConfig();
-      
+
       checks.push({
         service: 'langfuse',
         healthy: isAvailable,
@@ -140,7 +142,7 @@ export class ObservabilityStartup {
         message: 'Ready',
         details: {
           cacheEntries: cacheStats.totalEntries,
-          expiredEntries: cacheStats.entries.filter(e => e.expired).length,
+          expiredEntries: cacheStats.entries.filter((e) => e.expired).length,
         },
       });
     } catch (error) {
@@ -193,12 +195,14 @@ export class ObservabilityStartup {
       enabled: process.env.LANGFUSE_ENABLED === 'true',
       debug: process.env.LANGFUSE_DEBUG === 'true',
       flushAt: process.env.LANGFUSE_FLUSH_AT ? parseInt(process.env.LANGFUSE_FLUSH_AT, 10) : 10,
-      flushInterval: process.env.LANGFUSE_FLUSH_INTERVAL ? parseInt(process.env.LANGFUSE_FLUSH_INTERVAL, 10) : 1000,
+      flushInterval: process.env.LANGFUSE_FLUSH_INTERVAL
+        ? parseInt(process.env.LANGFUSE_FLUSH_INTERVAL, 10)
+        : 1000,
     };
 
     // Validate required configuration
     const requiredFields = ['publicKey', 'secretKey', 'host'];
-    const missingFields = requiredFields.filter(field => !config[field as keyof LangFuseConfig]);
+    const missingFields = requiredFields.filter((field) => !config[field as keyof LangFuseConfig]);
 
     if (config.enabled && missingFields.length > 0) {
       logger.warn('LangFuse enabled but missing required configuration', {

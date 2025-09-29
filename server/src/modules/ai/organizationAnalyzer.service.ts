@@ -37,7 +37,9 @@ export const OrganizationAnalyzerService = {
     // };
 
     // const _siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
-    const aiOutput = await siteAnalysisAgent.analyze(website.cleanWebsiteUrl());
+    const aiOutput = await siteAnalysisAgent.analyze(website.cleanWebsiteUrl(), {
+      tenantId: 'system',
+    });
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');

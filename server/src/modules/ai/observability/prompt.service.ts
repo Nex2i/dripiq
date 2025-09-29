@@ -1,5 +1,5 @@
-import { LangFuseService } from './langfuse.service';
 import { logger } from '@/libs/logger';
+import { LangFuseService } from './langfuse.service';
 
 export interface PromptConfig {
   cacheTtlSeconds?: number;
@@ -20,15 +20,11 @@ export interface PromptCache {
   expiresAt: number;
 }
 
-export type PromptName = 
-  | 'summarize_site'
-  | 'vendor_fit'
-  | 'extract_contacts'
-  | 'contact_strategy';
+export type PromptName = 'summarize_site' | 'vendor_fit' | 'extract_contacts' | 'contact_strategy';
 
 /**
  * Prompt Service - LangFuse-first prompt management with intelligent caching
- * 
+ *
  * Features:
  * - LangFuse-first prompt retrieval (no local fallbacks)
  * - Environment-based prompt selection (local vs prod)
@@ -50,20 +46,17 @@ export class PromptService {
   /**
    * Retrieve a prompt from LangFuse with optional caching
    */
-  public async getPrompt(
-    name: PromptName,
-    config?: PromptConfig
-  ): Promise<PromptResult> {
+  public async getPrompt(name: PromptName, config?: PromptConfig): Promise<PromptResult> {
     const cacheKey = this.getCacheKey(name, this.environment);
     const cacheTtl = config?.cacheTtlSeconds || this.defaultCacheTtlSeconds;
 
     // Check cache first
     const cached = this.getCachedPrompt(cacheKey);
     if (cached) {
-      logger.debug('Prompt retrieved from cache', { 
-        name, 
+      logger.debug('Prompt retrieved from cache', {
+        name,
         environment: this.environment,
-        version: cached.version 
+        version: cached.version,
       });
       return {
         prompt: cached.prompt,
@@ -82,15 +75,15 @@ export class PromptService {
 
     try {
       const promptResult = await this.fetchPromptFromLangFuse(name);
-      
+
       // Cache the result
       this.cachePrompt(cacheKey, promptResult, cacheTtl);
-      
-      logger.info('Prompt retrieved from LangFuse', { 
-        name, 
+
+      logger.info('Prompt retrieved from LangFuse', {
+        name,
         environment: this.environment,
         version: promptResult.version,
-        cached: false 
+        cached: false,
       });
 
       return {
@@ -98,12 +91,12 @@ export class PromptService {
         cached: false,
       };
     } catch (error) {
-      logger.error('Failed to retrieve prompt from LangFuse', { 
-        name, 
+      logger.error('Failed to retrieve prompt from LangFuse', {
+        name,
         environment: this.environment,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       throw new Error(
         `Failed to retrieve prompt '${name}' from LangFuse: ${
           error instanceof Error ? error.message : 'Unknown error'
@@ -115,13 +108,10 @@ export class PromptService {
   /**
    * Inject variables into a prompt template using {{variable}} syntax
    */
-  public injectVariables(
-    template: string,
-    variables: Record<string, string>
-  ): string {
+  public injectVariables(template: string, variables: Record<string, string>): string {
     // Find all variables in the template
     const variableMatches = template.match(/{{(.*?)}}/g);
-    
+
     if (!variableMatches) {
       return template;
     }
@@ -146,12 +136,14 @@ export class PromptService {
     for (const match of variableMatches) {
       const variableName = match.slice(2, -2).trim();
       const value = variables[variableName];
-      result = result.replace(new RegExp(match.replace(/[{}]/g, '\\$&'), 'g'), value);
+      if (value !== undefined) {
+        result = result.replace(new RegExp(match.replace(/[{}]/g, '\\$&'), 'g'), value);
+      }
     }
 
-    logger.debug('Variables injected into prompt', { 
+    logger.debug('Variables injected into prompt', {
       variableCount: Object.keys(variables).length,
-      variables: Object.keys(variables)
+      variables: Object.keys(variables),
     });
 
     return result;
@@ -234,25 +226,21 @@ export class PromptService {
     return cached;
   }
 
-  private cachePrompt(
-    cacheKey: string,
-    promptResult: PromptResult,
-    ttlSeconds: number
-  ): void {
+  private cachePrompt(cacheKey: string, promptResult: PromptResult, ttlSeconds: number): void {
     const now = Date.now();
     const cache: PromptCache = {
       prompt: promptResult.prompt,
       version: promptResult.version,
       metadata: promptResult.metadata,
       cachedAt: now,
-      expiresAt: now + (ttlSeconds * 1000),
+      expiresAt: now + ttlSeconds * 1000,
     };
 
     this.cache.set(cacheKey, cache);
-    logger.debug('Prompt cached', { 
-      cacheKey, 
+    logger.debug('Prompt cached', {
+      cacheKey,
       ttlSeconds,
-      version: promptResult.version 
+      version: promptResult.version,
     });
   }
 
@@ -260,11 +248,11 @@ export class PromptService {
     // TODO: Implement actual LangFuse prompt retrieval when LangFuse SDK supports it
     // For now, we'll use a placeholder that indicates LangFuse integration
     // In production, this would call LangFuse's prompt management API
-    
+
     throw new Error(
       `LangFuse prompt retrieval not yet implemented for '${name}'. ` +
-      `Please configure the prompt '${name}' in your LangFuse dashboard for environment '${this.environment}'. ` +
-      `This system requires all prompts to be managed in LangFuse - no local fallbacks are supported.`
+        `Please configure the prompt '${name}' in your LangFuse dashboard for environment '${this.environment}'. ` +
+        `This system requires all prompts to be managed in LangFuse - no local fallbacks are supported.`
     );
   }
 }

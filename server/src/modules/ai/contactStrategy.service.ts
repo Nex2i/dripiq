@@ -60,7 +60,9 @@ export const generateContactStrategy = async (
     // Execute agent analysis to generate email content
     try {
       const agent = createContactStrategyAgent({ ...defaultLangChainConfig });
-      const emailContentResult = await agent.generateEmailContent(tenantId, leadId, contactId);
+      const emailContentResult = await agent.generateEmailContent(tenantId, leadId, contactId, {
+        tenantId,
+      });
 
       // Map email content to static campaign template
       let campaignPlan: CampaignPlanOutput;

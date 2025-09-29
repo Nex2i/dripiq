@@ -23,7 +23,9 @@ Differentiators: ${opportunity.differentiators.join(', ')}
 Tone: ${opportunity.tone}
     `.trim();
 
-    const vendorFitReport = await vendorFitAgent.analyzeVendorFit(partner, opportunityDescription);
+    const vendorFitReport = await vendorFitAgent.analyzeVendorFit(partner, opportunityDescription, {
+      tenantId: 'system',
+    });
 
     // TODO SAVE TO LEAD
 

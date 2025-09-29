@@ -8,8 +8,6 @@ import {
   fetchWebDataContacts,
   formatWebDataContactsForPrompt,
   mergeContactSources,
-  WebDataContactSummary,
-  convertWebDataToExtractedContact,
 } from '../../webDataContactHelper';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -28,7 +26,7 @@ export type ContactExtractionResult = EnhancedAgentResult<ContactExtractionOutpu
 
 /**
  * LangFuse-First Contact Extraction Agent
- * 
+ *
  * Features:
  * - Required LangFuse observability (no fallbacks)
  * - LangFuse-managed prompts only
@@ -72,7 +70,7 @@ export class ContactExtractionAgent {
 
   /**
    * Extract contacts from a website domain with full LangFuse observability
-   * 
+   *
    * @param domain - The domain to extract contacts from
    * @param options - Execution options including tracing context
    * @returns Enhanced contact extraction result with trace information
@@ -86,11 +84,11 @@ export class ContactExtractionAgent {
 
     // Require observability services - fail fast if not available
     const observabilityServices = await getObservabilityServices();
-    
+
     if (!observabilityServices.langfuseService.isAvailable()) {
       throw new Error(
         'LangFuse service is not available. Contact extraction requires observability services. ' +
-        'Please check your LangFuse configuration.'
+          'Please check your LangFuse configuration.'
       );
     }
 
@@ -101,14 +99,13 @@ export class ContactExtractionAgent {
       {
         agentName: 'ContactExtractionAgent',
         agentVersion: '2.0.0-langfuse-first',
-        input: { domain },
         tenantId: options.tenantId,
         userId: options.userId,
         sessionId: options.sessionId,
-        custom: options.metadata,
+        ...options.metadata,
       }
     );
-    
+
     const trace = traceResult.trace;
     if (!trace) {
       throw new Error('Failed to create LangFuse trace for contact extraction');
@@ -134,16 +131,16 @@ export class ContactExtractionAgent {
 
       observabilityServices.langfuseService.updateSpan(
         webDataSpan,
-        { 
+        {
           contactCount: webDataSummary.contacts.length,
           hasContacts: webDataSummary.contacts.length > 0,
         },
         { success: true }
       );
 
-      logger.info('WebData contacts fetched', { 
-        domain, 
-        contactCount: webDataSummary.contacts.length 
+      logger.info('WebData contacts fetched', {
+        domain,
+        contactCount: webDataSummary.contacts.length,
       });
 
       // Get prompt from LangFuse - required, no fallbacks
@@ -160,12 +157,12 @@ export class ContactExtractionAgent {
       observabilityServices.langfuseService.logEvent(
         trace,
         'prompt-and-webdata-ready',
-        { 
+        {
           promptName: 'extract_contacts',
           domain,
           webDataContactCount: webDataSummary.contacts.length,
         },
-        { 
+        {
           cached: promptResult.cached,
           version: promptResult.version,
           source: promptResult.metadata?.source,
@@ -182,8 +179,8 @@ export class ContactExtractionAgent {
 
       if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
         finalResponse = await this.generateSummaryFromSteps(
-          domain, 
-          result, 
+          domain,
+          result,
           promptResult.prompt,
           trace,
           observabilityServices
@@ -198,21 +195,17 @@ export class ContactExtractionAgent {
         trace,
         'ai-contacts-parsed',
         { domain },
-        { 
+        {
           aiContactCount: aiParsedResult.contacts.length,
           hasPriorityContact: aiParsedResult.priorityContactId !== null,
         }
       );
 
       // Merge AI contacts with webData contacts with tracing
-      const mergeSpan = observabilityServices.langfuseService.createSpan(
-        trace,
-        'contact-merge',
-        {
-          aiContactCount: aiParsedResult.contacts.length,
-          webDataContactCount: webDataSummary.contacts.length,
-        }
-      );
+      const mergeSpan = observabilityServices.langfuseService.createSpan(trace, 'contact-merge', {
+        aiContactCount: aiParsedResult.contacts.length,
+        webDataContactCount: webDataSummary.contacts.length,
+      });
 
       const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
       const finalContacts = [...mergeResult.enrichedContacts, ...mergeResult.aiOnlyContacts];
@@ -286,9 +279,9 @@ export class ContactExtractionAgent {
           totalIterations: result.intermediateSteps?.length ?? 0,
           executionTimeMs,
         },
-        { 
-          success: true, 
-          domain, 
+        {
+          success: true,
+          domain,
           totalContacts: finalContacts.length,
         }
       );
@@ -321,10 +314,9 @@ export class ContactExtractionAgent {
           },
         },
       };
-
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
-      
+
       logger.error('Contact extraction failed', {
         domain,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -339,31 +331,29 @@ export class ContactExtractionAgent {
         executionTimeMs,
       });
 
-      observabilityServices.langfuseService.updateTrace(
-        trace,
-        null,
-        {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          domain,
-          executionTimeMs,
-        }
-      );
+      observabilityServices.langfuseService.updateTrace(trace, null, {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        domain,
+        executionTimeMs,
+      });
 
       // Enhanced error with trace context
       const enhancedError = new Error(
         `Contact extraction failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      
+
       (enhancedError as any).traceId = traceResult.traceId;
       (enhancedError as any).metadata = {
         executionTimeMs,
         domain,
-        errors: [{
-          message: error instanceof Error ? error.message : 'Unknown error',
-          phase: 'contact-extraction',
-          timestamp: new Date().toISOString(),
-        }],
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            phase: 'contact-extraction',
+            timestamp: new Date().toISOString(),
+          },
+        ],
       };
 
       throw enhancedError;
@@ -377,14 +367,10 @@ export class ContactExtractionAgent {
     trace: any,
     observabilityServices: any
   ): Promise<string> {
-    const span = observabilityServices.langfuseService.createSpan(
-      trace,
-      'partial-steps-summary',
-      {
-        domain,
-        intermediateStepsCount: result.intermediateSteps?.length ?? 0,
-      }
-    );
+    const span = observabilityServices.langfuseService.createSpan(trace, 'partial-steps-summary', {
+      domain,
+      intermediateStepsCount: result.intermediateSteps?.length ?? 0,
+    });
 
     try {
       const structuredModel = createChatModel({
@@ -428,14 +414,10 @@ Return your answer as valid JSON matching the provided schema.
 
       return summaryResult;
     } catch (error) {
-      observabilityServices.langfuseService.updateSpan(
-        span,
-        null,
-        { 
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }
-      );
+      observabilityServices.langfuseService.updateSpan(span, null, {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       throw error;
     }
   }
@@ -446,12 +428,12 @@ Return your answer as valid JSON matching the provided schema.
       const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
       return contactExtractionOutputSchema.parse(JSON.parse(jsonText));
     } catch (error) {
-      logger.error('Contact extraction JSON parsing failed', { 
+      logger.error('Contact extraction JSON parsing failed', {
         domain,
         error: error instanceof Error ? error.message : 'Unknown error',
         contentPreview: content.substring(0, 200),
       });
-      
+
       throw new Error(
         `Failed to parse contact extraction results for ${domain}: ${
           error instanceof Error ? error.message : 'Unknown parsing error'
