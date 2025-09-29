@@ -1,19 +1,22 @@
 import { logger } from '@/libs/logger';
 import summarizeSite from './summarize_site.prompt';
 import vendorFit from './vendor_fit.prompt';
-import smartFilterSite from './smart_filter_site.prompt';
 import contactStrategyPrompt from './contact_strategy.prompt';
+
+// DEPRECATED: smart_filter_site is now managed via LangFuse
+// Import kept for backward compatibility but not recommended for new code
+import smartFilterSite from './smart_filter_site.prompt';
 
 export type PromptTypes =
   | 'summarize_site'
   | 'vendor_fit'
-  | 'smart_filter_site'
+  | 'smart_filter_site' // DEPRECATED: Use LangFuse prompt 'smart_filter' instead
   | 'contact_strategy';
 
 const prompts: Record<string, string> = {
   summarize_site: summarizeSite,
   vendor_fit: vendorFit,
-  smart_filter_site: smartFilterSite,
+  smart_filter_site: smartFilterSite, // DEPRECATED: Use LangFuse for smart_filter instead
   contact_strategy: contactStrategyPrompt,
 };
 
