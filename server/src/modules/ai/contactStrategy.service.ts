@@ -11,7 +11,6 @@ import {
 
 // Updated result type that returns the complete campaign plan
 export type ContactStrategyServiceResult = {
-  finalResponse: string;
   finalResponseParsed: CampaignPlanOutput;
   totalIterations: number;
   functionCalls: any[];
@@ -108,7 +107,6 @@ export const generateContactStrategy = async (
 
       // Return result in the expected format (backwards compatible)
       const result = {
-        finalResponse: emailContentResult.finalResponse,
         finalResponseParsed: campaignPlan, // Now returns the complete campaign plan
         totalIterations: emailContentResult.totalIterations,
         functionCalls: emailContentResult.functionCalls,
@@ -203,7 +201,6 @@ export const retrieveContactStrategyFromDatabase = async (
 
     // Reconstruct ContactStrategyServiceResult from database data
     const result: ContactStrategyServiceResult = {
-      finalResponse: 'Retrieved from database',
       finalResponseParsed: latestPlanVersion.planJson as CampaignPlanOutput,
       totalIterations: 1,
       functionCalls: [],
@@ -270,7 +267,6 @@ export const updateContactStrategy = async (
 
     // Return the updated plan in the expected format
     const result: ContactStrategyServiceResult = {
-      finalResponse: 'Plan updated successfully',
       finalResponseParsed: validatedPlan,
       totalIterations: 1,
       functionCalls: [],

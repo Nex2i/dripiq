@@ -30,9 +30,9 @@ import {
 } from '../../schemas/contactCampaignStrategyInputSchemas';
 import { getContentFromMessage } from '../utils/messageUtils';
 import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
+import { AgentExecuter } from './AgentExecuter';
 
 export type ContactStrategyResult = {
-  finalResponse: string;
   finalResponseParsed: EmailContentOutput;
   totalIterations: number;
   functionCalls: any[];
@@ -69,26 +69,6 @@ export class ContactStrategyAgent {
     const salesman = await this.getSalesman(tenantId, leadId);
 
     try {
-      // Create LangFuse callback handler for automatic tracing
-      // v4 SDK automatically uses LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, and LANGFUSE_BASE_URL from env
-      const langfuseHandler = new CallbackHandler({
-        userId: tenantId,
-        traceMetadata: {
-          tenantId,
-          leadId,
-          contactId,
-          leadName: leadDetails.value.name,
-          contactName: contactDetails.value.name,
-          partnerName: partnerDetails.value.name,
-        },
-        tags: ['contact_strategy', 'email_generation', 'campaign_creation'],
-      });
-
-      // Fetch prompt from LangFuse
-      const langfusePrompt = await promptManagementService.fetchPrompt('contact_strategy', {
-        cacheTtlSeconds: 300, // Cache for 5 minutes
-      });
-
       // Prepare variables for prompt injection
       const variables = {
         lead_details: JSON.stringify(
@@ -136,56 +116,25 @@ export class ContactStrategyAgent {
           null,
           2
         ),
-        output_schema: JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2),
       };
 
-      // Compile prompt with variables (handles {{variable}} injection)
-      const compiledPrompt = langfusePrompt.compile(variables);
-
-      // Create prompt template with compiled content
-      const prompt = ChatPromptTemplate.fromMessages([
-        ['system', compiledPrompt],
-        ['placeholder', '{agent_scratchpad}'],
-      ]);
-
-      // Create model
-      const model = createChatModel(this.config);
-
-      // Create agent with the prompt
-      const agent = createToolCallingAgent({
-        llm: model,
-        tools: this.tools,
-        prompt,
-      });
-
-      // Create agent executor
-      const agentExecutor = new AgentExecutor({
-        agent,
-        maxIterations: this.config.maxIterations,
-        tools: this.tools,
-        verbose: false,
-        returnIntermediateSteps: true,
-      });
-
-      // Invoke the agent with callback handler
-      const result = await agentExecutor.invoke(
-        {},
+      const agentResult = await AgentExecuter<EmailContentOutput>(
+        'contact_strategy',
+        tenantId,
+        variables,
+        this.config,
+        emailContentOutputSchema,
+        this.tools,
         {
-          callbacks: [langfuseHandler],
-          runName: 'contact_strategy_generation',
-        }
+          tenantId,
+          leadId,
+          contactId,
+          leadName: leadDetails.value.name,
+          contactName: contactDetails.value.name,
+          partnerName: partnerDetails.value.name,
+        },
+        ['contact_strategy', 'email_generation', 'campaign_creation']
       );
-
-      let finalResponse = getContentFromMessage(result.output);
-
-      // If agent didn't provide a direct response, try to generate from steps
-      if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        logger.error('Agent did not provide a direct response');
-        throw new Error('Agent did not provide a direct response');
-      }
-
-      // Enhanced JSON parsing with better error handling
-      const parsedResult = parseWithSchema(finalResponse);
 
       const executionTimeMs = Date.now() - startTime;
 
@@ -193,16 +142,14 @@ export class ContactStrategyAgent {
         leadId,
         contactId,
         tenantId,
-        emailsGenerated: parsedResult.emails?.length ?? 0,
+        emailsGenerated: agentResult.output.emails?.length ?? 0,
         executionTimeMs,
-        promptVersion: langfusePrompt.version,
       });
 
       return {
-        finalResponse: result.output || finalResponse || 'Email content generation completed',
-        finalResponseParsed: parsedResult,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        functionCalls: result.intermediateSteps,
+        finalResponseParsed: agentResult.output,
+        totalIterations: agentResult.intermediateSteps?.length ?? 0,
+        functionCalls: agentResult.intermediateSteps,
       };
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;

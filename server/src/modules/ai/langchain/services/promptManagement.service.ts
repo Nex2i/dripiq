@@ -1,6 +1,9 @@
-import { LangfuseClient } from '@langfuse/client';
+import { ChatPromptClient, LangfuseClient } from '@langfuse/client';
+
 import { logger } from '@/libs/logger';
 import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { Trace } from '@langfuse/core';
 
 export interface PromptFetchOptions {
   version?: number;
@@ -9,7 +12,7 @@ export interface PromptFetchOptions {
 }
 
 export class PromptManagementService {
-  private langfuse: LangfuseClient;
+  private langfuseClient: LangfuseClient;
 
   constructor() {
     if (!LANGFUSE_PUBLIC_KEY || !LANGFUSE_SECRET_KEY) {
@@ -18,7 +21,7 @@ export class PromptManagementService {
       );
     }
 
-    this.langfuse = new LangfuseClient({
+    this.langfuseClient = new LangfuseClient({
       publicKey: LANGFUSE_PUBLIC_KEY,
       secretKey: LANGFUSE_SECRET_KEY,
       baseUrl: LANGFUSE_HOST || 'https://cloud.langfuse.com',
@@ -33,23 +36,34 @@ export class PromptManagementService {
    * @param options - Optional configuration for version, label, or cache TTL
    * @returns The prompt object from LangFuse
    */
-  async fetchPrompt(promptName: string, options: PromptFetchOptions = {}) {
+  async toLangChainPrompt(prompt: ChatPromptClient): Promise<ChatPromptTemplate<any, any>> {
     try {
-      const prompt = await this.langfuse.prompt.get(promptName, {
+      // Create prompt template with compiled content
+      const langChainPrompt = ChatPromptTemplate.fromMessages(
+        prompt.getLangchainPrompt().concat(['placeholder', '{agent_scratchpad}'])
+      );
+      return langChainPrompt;
+    } catch (error) {
+      logger.error(`Failed to convert prompt to LangChain format`, error);
+      throw error;
+    }
+  }
+
+  async fetchPrompt(
+    promptName: string,
+    options: PromptFetchOptions = {}
+  ): Promise<ChatPromptClient> {
+    try {
+      const prompt = await this.langfuseClient.prompt.get(promptName, {
         version: options.version,
         label: options.label,
         cacheTtlSeconds: options.cacheTtlSeconds,
-        type: 'text', // Specify text prompt type
+        type: 'chat',
       });
 
       if (!prompt) {
         throw new Error(`Prompt '${promptName}' not found in LangFuse`);
       }
-
-      logger.info(`Successfully fetched prompt '${promptName}' from LangFuse (v4)`, {
-        promptName,
-        version: prompt.version,
-      });
 
       return prompt;
     } catch (error) {
