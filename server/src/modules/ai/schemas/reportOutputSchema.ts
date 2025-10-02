@@ -13,4 +13,6 @@ const reportOutputSchema = z.object({
   tone: z.string().describe('The tone of the company'),
 });
 
+export type ReportOutput = z.infer<typeof reportOutputSchema>;
+
 export default reportOutputSchema;
