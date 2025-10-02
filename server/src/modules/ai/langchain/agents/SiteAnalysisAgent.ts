@@ -25,7 +25,7 @@ export class SiteAnalysisAgent {
     this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
   }
 
-  async analyze(
+  async execute(
     domain: string,
     tenantId: string,
     metadata: Record<string, any>

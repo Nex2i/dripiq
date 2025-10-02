@@ -49,7 +49,7 @@ export const LeadAnalyzerService = {
     );
 
     // Run site analysis
-    const aiOutput = await siteAnalysisAgent.analyze(domain, tenantId, {
+    const aiOutput = await siteAnalysisAgent.execute(domain, tenantId, {
       tenantId,
       leadId,
       domain,

@@ -13,6 +13,11 @@ export const defaultLangChainConfig: LangChainConfig = {
   timeout: 60000, // 60 seconds
 };
 
+export const defaultLowIntelligenceLangchainConfig: LangChainConfig = {
+  ...defaultLangChainConfig,
+  model: 'gpt-5-nano',
+};
+
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
   const finalConfig = { ...defaultLangChainConfig, ...config };
 

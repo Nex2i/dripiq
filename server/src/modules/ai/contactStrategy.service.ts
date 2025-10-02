@@ -3,7 +3,7 @@ import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repo
 import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
 import { mapEmailContentToCampaignPlan } from '../campaign/campaignContentMapper.service';
 import { updateContactStrategyStatus } from '../contact.service';
-import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
+import { contactStrategyAgent } from './langchain';
 import {
   CampaignPlanOutput,
   campaignPlanOutputSchema,
@@ -58,8 +58,7 @@ export const generateContactStrategy = async (
 
     // Execute agent analysis to generate email content
     try {
-      const agent = createContactStrategyAgent({ ...defaultLangChainConfig });
-      const emailContentResult = await agent.generateEmailContent(tenantId, leadId, contactId);
+      const emailContentResult = await contactStrategyAgent.execute(tenantId, leadId, contactId);
 
       // Map email content to static campaign template
       let campaignPlan: CampaignPlanOutput;

@@ -30,7 +30,7 @@ export class ContactExtractionAgent {
     this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
   }
 
-  async extractContacts(
+  async execute(
     domain: string,
     tenantId: string,
     metadata: Record<string, any>

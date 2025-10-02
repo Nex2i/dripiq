@@ -1,16 +1,8 @@
 import { URL } from 'url';
-import z from 'zod';
 import { type SearchResultWeb } from '@mendable/firecrawl-js';
-import { CallbackHandler } from '@langfuse/langchain';
 import { logger } from '@/libs/logger';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { createChatModel } from './langchain/config/langchain.config';
-import { getContentFromMessage } from './langchain/utils/messageUtils';
-import { promptManagementService } from './langchain/services/promptManagement.service';
-
-const smartFilterSiteMapSchema = z.object({
-  urls: z.array(z.string()).describe('The filtered list of URLs'),
-});
+import { smartUrlFilterAgent } from './langchain';
 
 type SiteType = 'lead_site' | 'organization_site';
 
@@ -51,78 +43,28 @@ export const SiteScrapeService = {
     }
 
     try {
-      // Create LangFuse callback handler for automatic tracing
-      // v4 SDK automatically uses LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, and LANGFUSE_BASE_URL from env
-      const langfuseHandler = new CallbackHandler({
-        sessionId: options.sessionId,
-        userId: options.userId || options.tenantId,
-        traceMetadata: {
-          tenantId: options.tenantId,
-          domain: options.domain,
-          siteType,
-          inputUrlCount: siteMap.length,
-          minUrls,
-          maxUrls,
-        },
-        tags: ['smart_filter', 'site_scrape', siteType],
-      });
-
-      // Fetch prompt from LangFuse
-      const prompt = await promptManagementService.fetchPrompt('smart_filter', {
-        cacheTtlSeconds: 300, // Cache for 5 minutes
-      });
-
-      // Prepare variables for prompt compilation
-      const variables = {
-        urls: JSON.stringify(siteMap, null, 2),
-        output_schema: JSON.stringify(z.toJSONSchema(smartFilterSiteMapSchema), null, 2),
-        min_urls: minUrls.toString(),
-        max_urls: maxUrls.toString(),
-        site_type: siteType,
-      };
-
-      // Compile prompt with variables
-      const compiledPrompt = prompt.compile(variables);
-
-      // Create chat model with structured output
-      const chatModel = createChatModel({
-        model: 'gpt-5-nano',
-      }).withStructuredOutput(z.toJSONSchema(smartFilterSiteMapSchema));
-
-      // Invoke the LLM with callback handler for automatic tracing
-      const response = await chatModel.invoke(
-        [
-          {
-            role: 'system',
-            content: compiledPrompt,
-          },
-        ],
-        {
-          callbacks: [langfuseHandler],
-          runName: 'smart_filter_site_map',
-        }
+      let finalUrls = await smartUrlFilterAgent.execute(
+        siteMap.map((url) => url.url),
+        siteType,
+        options,
+        minUrls,
+        maxUrls
       );
 
-      // Parse response
-      const parsedResponse = parseWithSchema(response);
-
-      // Apply business rules for URL count
-      let finalUrls = parsedResponse.urls;
-
-      if (parsedResponse.urls.length < minUrls) {
+      if (finalUrls.length < minUrls) {
         logger.warn('LLM returned fewer URLs than minimum, using all input URLs', {
-          returnedCount: parsedResponse.urls.length,
+          returnedCount: finalUrls.length,
           minUrls,
         });
         finalUrls = siteMap.map((url) => url.url);
       }
 
-      if (parsedResponse.urls.length > maxUrls) {
+      if (finalUrls.length > maxUrls) {
         logger.info('LLM returned more URLs than maximum, truncating', {
-          returnedCount: parsedResponse.urls.length,
+          returnedCount: finalUrls.length,
           maxUrls,
         });
-        finalUrls = parsedResponse.urls.slice(0, maxUrls);
+        finalUrls = finalUrls.slice(0, maxUrls);
       }
 
       const executionTimeMs = Date.now() - startTime;
@@ -131,7 +73,6 @@ export const SiteScrapeService = {
         inputCount: siteMap.length,
         outputCount: finalUrls.length,
         executionTimeMs,
-        promptVersion: prompt.version,
       });
 
       return finalUrls;
@@ -160,18 +101,6 @@ export const SiteScrapeService = {
     });
   },
 };
-
-function parseWithSchema(response: any) {
-  try {
-    const content = getContentFromMessage(response);
-    // Remove markdown code fencing and whitespace if present
-    const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
-    return smartFilterSiteMapSchema.parse(JSON.parse(jsonText));
-  } catch (error) {
-    logger.warn('Parsing failed, returning fallback.', error);
-    throw error;
-  }
-}
 
 const excludePathPattern = [
   '^/blog(?:/.*)?$',

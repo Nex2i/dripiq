@@ -49,7 +49,7 @@ export class ContactStrategyAgent {
     this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
   }
 
-  async generateEmailContent(
+  async execute(
     tenantId: string,
     leadId: string,
     contactId: string

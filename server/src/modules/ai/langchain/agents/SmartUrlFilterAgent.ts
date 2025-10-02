@@ -1,0 +1,50 @@
+import { logger } from '@/libs/logger';
+import { LangChainConfig } from '../config/langchain.config';
+import {
+  SmartFilterSiteMapOutput,
+  smartFilterSiteMapSchema,
+} from '../../schemas/smartFilterSchemas';
+import { DefaultAgentExecuter } from './AgentExecuter';
+
+export class SmartUrlFilterAgent {
+  private config: LangChainConfig;
+
+  constructor(config: LangChainConfig) {
+    this.config = config;
+  }
+
+  async execute(
+    urls: string[],
+    tenantId: string,
+    metadata: Record<string, any>,
+    minUrls: number,
+    maxUrls: number
+  ): Promise<string[]> {
+    const startTime = Date.now();
+    try {
+      const variables = {
+        urls: JSON.stringify(urls, null, 2),
+        min_urls: minUrls.toString(),
+        max_urls: maxUrls.toString(),
+      };
+      const agentResult = await DefaultAgentExecuter<SmartFilterSiteMapOutput>(
+        'smart_url_filter',
+        tenantId,
+        variables,
+        this.config,
+        smartFilterSiteMapSchema
+      );
+
+      return agentResult.output.urls;
+    } catch (error) {
+      const executionTimeMs = Date.now() - startTime;
+      logger.error('Smart URL filter failed:', {
+        error,
+        urls,
+        tenantId,
+        executionTimeMs,
+      });
+      throw error;
+    }
+  }
+}
