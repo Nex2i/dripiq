@@ -2,6 +2,11 @@ import type { ReactNode } from 'react'
 import { Navigate } from '@tanstack/react-router'
 import { useAuth } from '../contexts/AuthContext'
 import { HOME_URL } from '../constants/navigation'
+import {
+  getStoredPreviousRoute,
+  storePreviousRoute,
+  clearStoredPreviousRoute,
+} from '../utils/routeStorage'
 
 interface AuthGuardProps {
   children: ReactNode
@@ -23,6 +28,8 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
   }
 
   if (!session || !user) {
+    // Store the current route before redirecting to login
+    storePreviousRoute()
     return <Navigate to="/auth/login" replace />
   }
 
@@ -35,6 +42,8 @@ interface PublicOnlyGuardProps {
 
 export function PublicOnlyGuard({ children }: PublicOnlyGuardProps) {
   const { user, loading, session } = useAuth()
+  const isValidUserSession = session && user
+  const isLocationAuth = location.pathname.startsWith('/auth')
 
   if (loading) {
     return (
@@ -45,8 +54,15 @@ export function PublicOnlyGuard({ children }: PublicOnlyGuardProps) {
     )
   }
 
-  if (session && user) {
-    return <Navigate to={HOME_URL} replace />
+  if (isValidUserSession && isLocationAuth) {
+    // Try to redirect to the stored previous route, otherwise fallback to HOME_URL
+    const previousRoute = getStoredPreviousRoute()
+    const redirectTo = previousRoute || HOME_URL
+    return <Navigate to={redirectTo} replace />
+  }
+
+  if (isValidUserSession && !isLocationAuth) {
+    clearStoredPreviousRoute()
   }
 
   return <>{children}</>
