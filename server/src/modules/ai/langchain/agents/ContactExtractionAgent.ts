@@ -47,16 +47,16 @@ export class ContactExtractionAgent {
         webdata_contacts: webDataContactsText,
       };
 
-      const agentResult = await DefaultAgentExecuter<ContactExtractionOutput>(
-        'contact_extraction',
+      const agentResult = await DefaultAgentExecuter<ContactExtractionOutput>({
+        promptName: 'contact_extraction',
         tenantId,
         variables,
-        this.config,
-        contactExtractionOutputSchema,
-        this.tools,
+        config: this.config,
+        outputSchema: contactExtractionOutputSchema,
+        tools: this.tools,
         metadata,
-        ['contact_extraction']
-      );
+        tags: ['contact_extraction'],
+      });
 
       const mergeResult = mergeContactSources(webDataSummary, agentResult.output.contacts);
 

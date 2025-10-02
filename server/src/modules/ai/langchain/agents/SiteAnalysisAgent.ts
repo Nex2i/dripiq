@@ -35,15 +35,15 @@ export class SiteAnalysisAgent {
         domain: domain.cleanWebsiteUrl(),
       };
 
-      const agentResult = await DefaultAgentExecuter<ReportOutput>(
-        'summarize_site',
+      const agentResult = await DefaultAgentExecuter<ReportOutput>({
+        promptName: 'summarize_site',
         tenantId,
         variables,
-        this.config,
-        reportOutputSchema,
-        this.tools,
-        metadata
-      );
+        config: this.config,
+        outputSchema: reportOutputSchema,
+        tools: this.tools,
+        metadata,
+      });
 
       return {
         finalResponse: agentResult.output.summary,

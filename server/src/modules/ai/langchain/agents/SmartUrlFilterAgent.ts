@@ -27,16 +27,16 @@ export class SmartUrlFilterAgent {
         min_urls: minUrls.toString(),
         max_urls: maxUrls.toString(),
       };
-      const agentResult = await DefaultAgentExecuter<SmartUrlFilterMapSchemaOutput>(
-        'smart_url_filter',
+      const agentResult = await DefaultAgentExecuter<SmartUrlFilterMapSchemaOutput>({
+        promptName: 'smart_url_filter',
         tenantId,
         variables,
-        this.config,
-        smartUrlFilterMapSchema,
-        [],
+        config: this.config,
+        outputSchema: smartUrlFilterMapSchema,
+        tools: [],
         metadata,
-        ['smart_url_filter']
-      );
+        tags: ['smart_url_filter'],
+      });
 
       return agentResult.output.urls;
     } catch (error) {

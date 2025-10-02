@@ -119,14 +119,14 @@ export class ContactStrategyAgent {
         ),
       };
 
-      const agentResult = await DefaultAgentExecuter<EmailContentOutput>(
-        'contact_strategy',
+      const agentResult = await DefaultAgentExecuter<EmailContentOutput>({
+        promptName: 'contact_strategy',
         tenantId,
         variables,
-        this.config,
-        emailContentOutputSchema,
-        this.tools,
-        {
+        config: this.config,
+        outputSchema: emailContentOutputSchema,
+        tools: this.tools,
+        metadata: {
           tenantId,
           leadId,
           contactId,
@@ -134,8 +134,8 @@ export class ContactStrategyAgent {
           contactName: contactDetails.value.name,
           partnerName: partnerDetails.value.name,
         },
-        ['contact_strategy']
-      );
+        tags: ['contact_strategy'],
+      });
 
       const executionTimeMs = Date.now() - startTime;
 

@@ -13,16 +13,27 @@ type AgentRunResult<T> = {
   raw: any; // full agent return for debugging
 };
 
-export async function DefaultAgentExecuter<T extends Record<string, any>>(
-  promptName: string,
-  tenantId: string,
-  variables: Record<string, any>,
-  config: LangChainConfig,
-  outputSchema: z.ZodSchema,
-  tools: DynamicStructuredTool[] = [],
-  metadata: Record<string, any> = {},
-  tags: string[] = []
-): Promise<AgentRunResult<T>> {
+interface AgentExecutorParams<T> {
+  promptName: string;
+  tenantId: string;
+  config: LangChainConfig;
+  variables?: Record<string, any>;
+  outputSchema: z.ZodSchema;
+  tools?: DynamicStructuredTool[];
+  metadata?: Record<string, any>;
+  tags?: string[];
+}
+
+export async function DefaultAgentExecuter<T extends Record<string, any>>({
+  promptName,
+  tenantId,
+  variables = {},
+  config,
+  outputSchema,
+  tools = [],
+  metadata = {},
+  tags = [],
+}: AgentExecutorParams<T>): Promise<AgentRunResult<T>> {
   const prompt = await promptManagementService.fetchPrompt(promptName);
   const langChainPrompt = await promptManagementService.toLangChainPrompt(prompt);
 
