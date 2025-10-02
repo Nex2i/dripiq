@@ -366,39 +366,6 @@ class LeadsService {
     return result
   }
 
-  // Vendor Fit a lead
-  async vendorFitLead(
-    id: string,
-  ): Promise<{ message: string; leadId: string; report?: any }> {
-    const authHeaders = await authService.getAuthHeaders()
-
-    const response = await fetch(`${this.baseUrl}/leads/${id}/vendor-fit`, {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-      },
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to run vendor fit')
-    }
-
-    const result = await response.json()
-
-    // Invalidate and refetch lead data after vendor fit if queryClient is available
-    if (this.queryClient) {
-      this.queryClient.invalidateQueries({
-        queryKey: leadQueryKeys.detail(id),
-      })
-      this.queryClient.invalidateQueries({
-        queryKey: leadQueryKeys.lists(),
-      })
-    }
-
-    return result
-  }
-
   // Assign owner to a lead
   async assignLeadOwner(
     id: string,

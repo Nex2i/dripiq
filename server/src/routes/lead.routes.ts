@@ -2,7 +2,6 @@ import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fas
 import { HttpMethods } from '@/utils/HttpMethods';
 import { LeadInitialProcessingPublisher } from '@/modules/messages/leadInitialProcessing.publisher.service';
 import { defaultRouteResponse } from '@/types/response';
-import { LeadVendorFitService } from '@/modules/ai/leadVendorFit.service';
 import {
   generateContactStrategy,
   updateContactStrategy,
@@ -39,7 +38,6 @@ import {
   LeadDeleteSchema,
   LeadBulkDeleteSchema,
   LeadAssignOwnerSchema,
-  LeadVendorFitSchema,
   LeadResyncSchema,
   LeadContactStrategySchema,
   LeadAttachProductsSchema,
@@ -585,44 +583,6 @@ export default async function LeadRoutes(fastify: FastifyInstance, _opts: RouteO
         logger.error(`Error bulk deleting leads: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to bulk delete leads',
-          error: error.message,
-        });
-      }
-    },
-  });
-
-  // Vendor fit route
-  fastify.route({
-    method: HttpMethods.POST,
-    url: `${basePath}/:id/vendor-fit`,
-    preHandler: [fastify.authPrehandler],
-    schema: {
-      tags: ['Leads'],
-      summary: 'Generate Vendor Fit Report',
-      ...LeadVendorFitSchema,
-      response: {
-        ...defaultRouteResponse(),
-        ...LeadVendorFitSchema.response,
-      },
-    },
-    handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      try {
-        const authenticatedRequest = request as AuthenticatedRequest;
-        const { id } = request.params;
-
-        const vendorFitReport = await LeadVendorFitService.generateVendorFitReport(
-          authenticatedRequest.tenantId,
-          id
-        );
-
-        reply.status(200).send({
-          message: 'Vendor fit report generated successfully',
-          vendorFitReport,
-        });
-      } catch (error: any) {
-        logger.error(`Error generating vendor fit report: ${error.message}`);
-        reply.status(500).send({
-          message: 'Failed to generate vendor fit report',
           error: error.message,
         });
       }

@@ -481,27 +481,6 @@ export function useCheckUrlExists() {
   })
 }
 
-// Hook to vendor fit a lead
-export function useVendorFitLead() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (id: string) => leadsService.vendorFitLead(id),
-    onSuccess: (_, id) => {
-      // Invalidate and refetch lead data
-      queryClient.invalidateQueries({
-        queryKey: leadQueryKeys.detail(id),
-      })
-      queryClient.invalidateQueries({
-        queryKey: leadQueryKeys.lists(),
-      })
-    },
-    onError: (error) => {
-      console.error('Error running vendor fit:', error)
-    },
-  })
-}
-
 // Hook to get users for the current tenant
 export function useUsers(page = 1, limit = 25) {
   return useQuery({

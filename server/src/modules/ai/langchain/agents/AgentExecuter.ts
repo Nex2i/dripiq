@@ -13,7 +13,7 @@ type AgentRunResult<T> = {
   raw: any; // full agent return for debugging
 };
 
-interface AgentExecutorParams<T> {
+interface AgentExecutorParams {
   promptName: string;
   tenantId: string;
   config: LangChainConfig;
@@ -33,7 +33,7 @@ export async function DefaultAgentExecuter<T extends Record<string, any>>({
   tools = [],
   metadata = {},
   tags = [],
-}: AgentExecutorParams<T>): Promise<AgentRunResult<T>> {
+}: AgentExecutorParams): Promise<AgentRunResult<T>> {
   const prompt = await promptManagementService.fetchPrompt(promptName);
   const langChainPrompt = await promptManagementService.toLangChainPrompt(prompt);
 
