@@ -1,11 +1,11 @@
 import { logger } from '@/libs/logger';
+import { SiteType } from '@/modules/ai/siteScrape.service';
 import { LangChainConfig } from '../config/langchain.config';
 import {
   SmartUrlFilterMapSchemaOutput,
   smartUrlFilterMapSchema,
 } from '../../schemas/smartFilters/urlSmartFilterSchemas';
 import { DefaultAgentExecuter } from './AgentExecuter';
-import { SiteType } from '@/modules/ai/siteScrape.service';
 
 export class SmartUrlFilterAgent {
   private config: LangChainConfig;
