@@ -4,9 +4,9 @@ import { formatPhoneForStorage, normalizePhoneForComparison } from '@/libs/phone
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { createContact } from '../lead.service';
-import { contactExtractionAgent } from './langchain';
-import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { ExtractedContact } from './schemas/contactExtraction/contactExtractionSchema';
 import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
+import { contactExtractionAgent } from './langchain';
 
 /**
  * Helper function to identify if a contact is from webData
@@ -29,7 +29,10 @@ export const ContactExtractionService = {
       logger.info(`Starting contact extraction for domain: ${domain}, leadId: ${leadId}`);
 
       // Extract contacts using the agent
-      const extractionResult = await contactExtractionAgent.extractContacts(domain);
+      const extractionResult = await contactExtractionAgent.execute(domain, tenantId, {
+        leadId,
+        domain,
+      });
 
       if (!extractionResult.finalResponseParsed?.contacts) {
         logger.warn(`No contacts found for domain: ${domain}`);

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Globe, Users, RefreshCw, Edit } from 'lucide-react'
+import { Globe, RefreshCw, Edit } from 'lucide-react'
 import Tooltip from './Tooltip'
 import LeadStatusBadges from './LeadStatusBadges'
 import type { Lead } from '../types/lead.types'
@@ -8,20 +8,16 @@ interface LeadViewHeaderProps {
   lead: Lead
   formatDate: (dateString: string) => string
   onResync: () => void
-  onVendorFit: () => void
   onStartEdit: () => void
   isResyncing: boolean
-  isVendorFitting: boolean
 }
 
 const LeadViewHeader: React.FC<LeadViewHeaderProps> = ({
   lead,
   formatDate,
   onResync,
-  onVendorFit,
   onStartEdit,
   isResyncing,
-  isVendorFitting,
 }) => {
   return (
     <div className="flex justify-between items-start">
@@ -70,16 +66,6 @@ const LeadViewHeader: React.FC<LeadViewHeaderProps> = ({
             className={`h-4 w-4 mr-2 ${isResyncing ? 'animate-spin' : ''}`}
           />
           {isResyncing ? 'Resyncing...' : 'Resync'}
-        </button>
-        <button
-          onClick={onVendorFit}
-          disabled={isVendorFitting}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary-500)] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Users
-            className={`h-4 w-4 mr-2 ${isVendorFitting ? 'animate-spin' : ''}`}
-          />
-          {isVendorFitting ? 'Running...' : 'Vendor Fit'}
         </button>
         <button
           onClick={onStartEdit}

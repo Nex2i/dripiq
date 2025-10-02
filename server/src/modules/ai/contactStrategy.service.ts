@@ -3,15 +3,14 @@ import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repo
 import { contactCampaignPlanService } from '../campaign/contactCampaignPlan.service';
 import { mapEmailContentToCampaignPlan } from '../campaign/campaignContentMapper.service';
 import { updateContactStrategyStatus } from '../contact.service';
-import { createContactStrategyAgent, defaultLangChainConfig } from './langchain';
+import { contactStrategyAgent } from './langchain';
 import {
   CampaignPlanOutput,
   campaignPlanOutputSchema,
-} from './schemas/contactCampaignStrategySchema';
+} from './schemas/contactStrategy/contactCampaignStrategySchema';
 
 // Updated result type that returns the complete campaign plan
 export type ContactStrategyServiceResult = {
-  finalResponse: string;
   finalResponseParsed: CampaignPlanOutput;
   totalIterations: number;
   functionCalls: any[];
@@ -59,8 +58,7 @@ export const generateContactStrategy = async (
 
     // Execute agent analysis to generate email content
     try {
-      const agent = createContactStrategyAgent({ ...defaultLangChainConfig });
-      const emailContentResult = await agent.generateEmailContent(tenantId, leadId, contactId);
+      const emailContentResult = await contactStrategyAgent.execute(tenantId, leadId, contactId);
 
       // Map email content to static campaign template
       let campaignPlan: CampaignPlanOutput;
@@ -108,7 +106,6 @@ export const generateContactStrategy = async (
 
       // Return result in the expected format (backwards compatible)
       const result = {
-        finalResponse: emailContentResult.finalResponse,
         finalResponseParsed: campaignPlan, // Now returns the complete campaign plan
         totalIterations: emailContentResult.totalIterations,
         functionCalls: emailContentResult.functionCalls,
@@ -203,7 +200,6 @@ export const retrieveContactStrategyFromDatabase = async (
 
     // Reconstruct ContactStrategyServiceResult from database data
     const result: ContactStrategyServiceResult = {
-      finalResponse: 'Retrieved from database',
       finalResponseParsed: latestPlanVersion.planJson as CampaignPlanOutput,
       totalIterations: 1,
       functionCalls: [],
@@ -270,7 +266,6 @@ export const updateContactStrategy = async (
 
     // Return the updated plan in the expected format
     const result: ContactStrategyServiceResult = {
-      finalResponse: 'Plan updated successfully',
       finalResponseParsed: validatedPlan,
       totalIterations: 1,
       functionCalls: [],

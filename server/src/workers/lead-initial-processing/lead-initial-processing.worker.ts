@@ -153,7 +153,12 @@ async function processLeadInitialProcessing(
     try {
       smartFilteredUrls = await SiteScrapeService.smartFilterSiteMap(
         basicFilteredUrls,
-        'lead_site'
+        'lead_site',
+        {
+          tenantId,
+          userId: leadId, // Using leadId as identifier for this context
+          domain,
+        }
       );
       logger.info('[LeadInitialProcessingWorker] Smart filter applied', {
         jobId: job.id,

@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import {
-  useLead,
-  useResyncLead,
-  useVendorFitLead,
-} from '../hooks/useLeadsQuery'
+import { useLead, useResyncLead } from '../hooks/useLeadsQuery'
 import {
   ArrowLeft,
   Users,
@@ -14,7 +10,6 @@ import {
   Package,
   AlertCircle,
 } from 'lucide-react'
-import VendorFitModal from '../components/VendorFitModal'
 import Tabs from '../components/Tabs'
 import ContactsTab from '../components/tabs/ContactsTab'
 import AIDetailsTab from '../components/tabs/AIDetailsTab'
@@ -32,11 +27,7 @@ const LeadDetailPage: React.FC = () => {
   const { leadId } = useParams({ from: '/protected/leads/$leadId' })
   const { data: lead, isLoading, error } = useLead(leadId)
   const resyncLead = useResyncLead()
-  const vendorFitLead = useVendorFitLead()
   const [resyncMessage, setResyncMessage] = useState<string | null>(null)
-  const [vendorFitMessage, setVendorFitMessage] = useState<string | null>(null)
-  const [vendorFitModalOpen, setVendorFitModalOpen] = useState(false)
-  const [vendorFitData, setVendorFitData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState('contacts')
 
   // Edit state management
@@ -177,30 +168,6 @@ const LeadDetailPage: React.FC = () => {
         setResyncMessage('Failed to resync lead')
         setTimeout(() => {
           setResyncMessage(null)
-        }, 3000)
-      },
-    })
-  }
-
-  const handleVendorFit = () => {
-    if (!lead?.id) return
-
-    setVendorFitMessage(null)
-
-    vendorFitLead.mutate(lead.id, {
-      onSuccess: (result) => {
-        setVendorFitMessage(result.message || 'Vendor fit completed')
-        setVendorFitData(result)
-        setVendorFitModalOpen(true)
-        setTimeout(() => {
-          setVendorFitMessage(null)
-        }, 3000)
-      },
-      onError: (error) => {
-        console.error('Error running vendor fit:', error)
-        setVendorFitMessage('Failed to run vendor fit')
-        setTimeout(() => {
-          setVendorFitMessage(null)
         }, 3000)
       },
     })
@@ -380,10 +347,8 @@ const LeadDetailPage: React.FC = () => {
               lead={lead}
               formatDate={formatDate}
               onResync={handleResync}
-              onVendorFit={handleVendorFit}
               onStartEdit={handleStartEdit}
               isResyncing={resyncLead.isPending}
-              isVendorFitting={vendorFitLead.isPending}
             />
           ) : (
             <LeadEditForm
@@ -421,19 +386,6 @@ const LeadDetailPage: React.FC = () => {
           </div>
         )}
 
-        {vendorFitMessage && (
-          <div
-            className={`mb-6 p-4 rounded-lg border ${
-              vendorFitMessage.includes('Failed') ||
-              vendorFitMessage.includes('Error')
-                ? 'bg-red-50 border-red-200 text-red-700'
-                : 'bg-green-50 border-green-200 text-green-700'
-            }`}
-          >
-            <p className="text-sm font-medium">{vendorFitMessage}</p>
-          </div>
-        )}
-
         {updateMessage && (
           <div
             className={`mb-6 p-4 rounded-lg border ${
@@ -452,13 +404,6 @@ const LeadDetailPage: React.FC = () => {
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab}>
           {renderTabContent()}
         </Tabs>
-
-        {/* Vendor Fit Modal */}
-        <VendorFitModal
-          isOpen={vendorFitModalOpen}
-          onClose={() => setVendorFitModalOpen(false)}
-          data={vendorFitData}
-        />
       </div>
     </div>
   )

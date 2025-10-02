@@ -11,6 +11,7 @@
  *   tsx src/workers/worker.run.ts  # Direct execution
  */
 
+import '../bootstrap';
 import { logger } from '@/libs/logger';
 import { createRedisConnection } from '@/libs/bullmq';
 import { shutdownDatabaseConnections, shutdownRedisConnections } from '@/libs/shutdown';

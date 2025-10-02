@@ -1,6 +1,6 @@
 import { EmailExecutionService } from '../email-execution.service';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 
 // Mock only the external dependencies, not the core logic we're testing
 jest.mock('@/repositories', () => ({

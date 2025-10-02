@@ -8,7 +8,7 @@ import {
   EXAMPLE_EMAIL_CONTENT_OUTPUT,
   type EmailContent,
   type EmailContentOutput,
-} from '../schemas/emailContentSchema';
+} from '../schemas/contactStrategy/emailContentSchema';
 
 // Mock the logger to capture log calls
 jest.mock('@/libs/logger', () => ({

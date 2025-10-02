@@ -1,6 +1,6 @@
 import { campaignTransitionRepository, contactCampaignRepository } from '@/repositories';
 import { CampaignPlanExecutionService } from '../campaignPlanExecution.service';
-import type { CampaignPlanOutput } from '../../ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '../../ai/schemas/contactStrategy/contactCampaignStrategySchema';
 
 // Mock the repositories
 jest.mock('@/repositories', () => ({

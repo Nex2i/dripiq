@@ -49,7 +49,11 @@ export const LeadAnalyzerService = {
     );
 
     // Run site analysis
-    const aiOutput = await siteAnalysisAgent.analyze(domain);
+    const aiOutput = await siteAnalysisAgent.execute(domain, tenantId, {
+      tenantId,
+      leadId,
+      domain,
+    });
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');

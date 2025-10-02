@@ -1,4 +1,4 @@
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import {
   normalizeCampaignPlanIds,
   validatePlanReferences,

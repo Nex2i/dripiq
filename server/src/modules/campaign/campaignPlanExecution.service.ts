@@ -20,7 +20,7 @@ import { JOB_NAMES, QUEUE_NAMES } from '@/constants/queues';
 import type {
   CampaignPlanOutput,
   CampaignPlanNode,
-} from '../ai/schemas/contactCampaignStrategySchema';
+} from '../ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { calculateScheduleTime, parseIsoDuration, applyQuietHours } from './scheduleUtils';
 
 export interface CampaignExecutionContext {

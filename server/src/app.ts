@@ -8,7 +8,6 @@ import fastifyHelmet from '@fastify/helmet';
 import { schemaErrorFormatter } from '@/utils/schemaErrorFormatter';
 import { CREDENTIALS } from '@/config';
 import { schema } from '@/utils/validateEnv';
-import '@/extensions';
 import initIac from '@/utils/iac';
 import { logger, loggerOptions } from '@/libs/logger';
 import { globalErrorHandler } from '@/utils/globalErrorHandler';

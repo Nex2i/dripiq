@@ -11,12 +11,6 @@ export const ContactStrategyParamsSchema = Type.Object({
   contactId: Type.String({ description: 'Contact ID' }),
 });
 
-// Response schema for vendor fit report
-export const VendorFitResponseSchema = Type.Object({
-  message: Type.String({ description: 'Success message' }),
-  vendorFitReport: Type.Any({ description: 'Vendor fit report data' }),
-});
-
 // Response schema for resync lead
 export const ResyncLeadResponseSchema = Type.Object({
   message: Type.String(),
@@ -28,12 +22,6 @@ export const ResyncLeadResponseSchema = Type.Object({
 export const ContactStrategyResponseSchema = Type.Any();
 
 // Complete schemas for analysis routes
-export const LeadVendorFitSchema = {
-  params: AnalyzeLeadParamsSchema,
-  response: {
-    200: VendorFitResponseSchema,
-  },
-} as const;
 
 export const LeadResyncSchema = {
   params: AnalyzeLeadParamsSchema,

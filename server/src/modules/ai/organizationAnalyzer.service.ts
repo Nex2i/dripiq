@@ -37,7 +37,10 @@ export const OrganizationAnalyzerService = {
     // };
 
     // const _siteAnalyzerResult = await SiteAnalyzerService.analyzeSite(siteAnalyzerDto);
-    const aiOutput = await siteAnalysisAgent.analyze(website.cleanWebsiteUrl());
+    const aiOutput = await siteAnalysisAgent.execute(website, tenantId, {
+      tenantId,
+      domain: website,
+    });
 
     if (!aiOutput?.finalResponseParsed) {
       throw new Error('AI output is required');

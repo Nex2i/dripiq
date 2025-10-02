@@ -1,17 +1,17 @@
 import { URL } from 'url';
-import z from 'zod';
 import { type SearchResultWeb } from '@mendable/firecrawl-js';
 import { logger } from '@/libs/logger';
-import { promptHelper } from '@/prompts/prompt.helper';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
-import { createChatModel } from './langchain/config/langchain.config';
-import { getContentFromMessage } from './langchain/utils/messageUtils';
+import { smartUrlFilterAgent } from './langchain';
 
-const smartFilterSiteMapSchema = z.object({
-  urls: z.array(z.string()).describe('The filtered list of URLs'),
-});
+export type SiteType = 'lead_site' | 'organization_site';
 
-type SiteType = 'lead_site' | 'organization_site';
+export interface SmartFilterOptions {
+  tenantId?: string;
+  userId?: string;
+  sessionId?: string;
+  domain?: string;
+}
 
 export const SiteScrapeService = {
   scrapeSite: async (url: string, metadata: Record<string, string>, siteType: SiteType) => {
@@ -24,46 +24,69 @@ export const SiteScrapeService = {
     await firecrawlClient.batchScrapeUrls(siteUrls, metadata);
   },
 
-  smartFilterSiteMap: async (siteMap: SearchResultWeb[], siteType: SiteType): Promise<string[]> => {
+  smartFilterSiteMap: async (
+    siteMap: SearchResultWeb[],
+    siteType: SiteType,
+    options: SmartFilterOptions = {}
+  ): Promise<string[]> => {
     const minUrls = 45;
     const maxUrls = 75;
+    const startTime = Date.now();
+
+    // If sitemap is small enough, skip filtering
     if (siteMap.length <= minUrls) {
+      logger.info('Sitemap size below minimum, skipping smart filter', {
+        siteMapLength: siteMap.length,
+        minUrls,
+      });
       return siteMap.map((url) => url.url);
     }
 
     try {
-      const chatModel = createChatModel({
-        model: 'gpt-5-nano',
-      }).withStructuredOutput(z.toJSONSchema(smartFilterSiteMapSchema));
+      let finalUrls = await smartUrlFilterAgent.execute(
+        siteMap.map((url) => url.url),
+        siteType,
+        options,
+        minUrls,
+        maxUrls,
+        siteType
+      );
 
-      const initialPrompt = promptHelper.getPromptAndInject('smart_filter_site', {
-        urls: JSON.stringify(siteMap, null, 2),
-        output_schema: JSON.stringify(z.toJSONSchema(smartFilterSiteMapSchema), null, 2),
-        min_urls: minUrls.toString(),
-        max_urls: maxUrls.toString(),
-        site_type: siteType,
+      if (finalUrls.length < minUrls) {
+        logger.warn('LLM returned fewer URLs than minimum, using all input URLs', {
+          returnedCount: finalUrls.length,
+          minUrls,
+        });
+        finalUrls = siteMap.map((url) => url.url);
+      }
+
+      if (finalUrls.length > maxUrls) {
+        logger.info('LLM returned more URLs than maximum, truncating', {
+          returnedCount: finalUrls.length,
+          maxUrls,
+        });
+        finalUrls = finalUrls.slice(0, maxUrls);
+      }
+
+      const executionTimeMs = Date.now() - startTime;
+
+      logger.info('Successfully filtered site map with LangFuse prompt', {
+        inputCount: siteMap.length,
+        outputCount: finalUrls.length,
+        executionTimeMs,
       });
 
-      const response = await chatModel.invoke([
-        {
-          role: 'system',
-          content: initialPrompt,
-        },
-      ]);
-
-      const parsedResponse = parseWithSchema(response);
-
-      if (parsedResponse.urls.length < minUrls) {
-        return siteMap.map((url) => url.url);
-      }
-
-      if (parsedResponse.urls.length > maxUrls) {
-        return parsedResponse.urls.slice(0, maxUrls);
-      }
-
-      return parsedResponse.urls;
+      return finalUrls;
     } catch (error) {
-      logger.error('Failed to smart filter site map', error);
+      const executionTimeMs = Date.now() - startTime;
+
+      logger.error('Failed to smart filter site map, falling back to all URLs', {
+        error,
+        siteMapLength: siteMap.length,
+        executionTimeMs,
+      });
+
+      // Fallback: return all URLs
       return siteMap.map((url) => url.url);
     }
   },
@@ -79,18 +102,6 @@ export const SiteScrapeService = {
     });
   },
 };
-
-function parseWithSchema(response: any) {
-  try {
-    const content = getContentFromMessage(response);
-    // Remove markdown code fencing and whitespace if present
-    const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
-    return smartFilterSiteMapSchema.parse(JSON.parse(jsonText));
-  } catch (error) {
-    logger.warn('Parsing failed, returning fallback.', error);
-    throw error;
-  }
-}
 
 const excludePathPattern = [
   '^/blog(?:/.*)?$',

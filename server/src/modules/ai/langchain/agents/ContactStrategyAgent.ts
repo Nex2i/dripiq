@@ -1,8 +1,5 @@
-import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
 import {
   leadPointOfContactRepository,
@@ -11,7 +8,7 @@ import {
   siteEmbeddingRepository,
 } from '@/repositories';
 import { TenantService } from '@/modules/tenant.service';
-import { createChatModel, LangChainConfig } from '../config/langchain.config';
+import { LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
@@ -26,12 +23,14 @@ import {
   partnerProductSchema,
   salesmanSchema,
   Salesman,
-} from '../../schemas/contactCampaignStrategyInputSchemas';
-import { getContentFromMessage } from '../utils/messageUtils';
-import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
+} from '../../schemas/contactStrategy/contactCampaignStrategyInputSchemas';
+import {
+  EmailContentOutput,
+  emailContentOutputSchema,
+} from '../../schemas/contactStrategy/emailContentSchema';
+import { DefaultAgentExecuter } from './AgentExecuter';
 
 export type ContactStrategyResult = {
-  finalResponse: string;
   finalResponseParsed: EmailContentOutput;
   totalIterations: number;
   functionCalls: any[];
@@ -44,91 +43,125 @@ type ValueSchema<T> = {
 };
 
 export class ContactStrategyAgent {
-  private agent: AgentExecutor;
   private config: LangChainConfig;
+  private tools: DynamicStructuredTool[];
 
   constructor(config: LangChainConfig) {
     this.config = config;
 
-    const model = createChatModel(config);
-
-    const tools: DynamicStructuredTool[] = [
-      ListDomainPagesTool,
-      GetInformationAboutDomainTool,
-      RetrieveFullPageTool,
-    ];
-
-    const prompt = ChatPromptTemplate.fromMessages([
-      ['system', `{system_prompt}`],
-      ['system', `{lead_details}`],
-      ['system', `{contact_details}`],
-      ['system', `{partner_details}`],
-      ['system', `{partner_products}`],
-      ['system', `{salesman}`],
-      ['system', `{output_schema}`],
-      ['placeholder', '{agent_scratchpad}'],
-    ]);
-
-    const agent = createToolCallingAgent({
-      llm: model,
-      tools,
-      prompt,
-    });
-
-    this.agent = new AgentExecutor({
-      agent,
-      maxIterations: config.maxIterations,
-      tools,
-      verbose: false,
-      returnIntermediateSteps: true,
-    });
+    this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
   }
 
-  async generateEmailContent(
+  async execute(
     tenantId: string,
     leadId: string,
     contactId: string
   ): Promise<ContactStrategyResult> {
-    let systemPrompt: string;
-    try {
-      systemPrompt = promptHelper.getPromptAndInject('contact_strategy', {});
-    } catch (error) {
-      logger.error('Error preparing prompt variables', error);
-      throw new Error(
-        `Failed to prepare prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    const startTime = Date.now();
+
+    // Gather metadata for tracing
+    const [leadDetails, contactDetails, partnerDetails, partnerProducts, salesman] =
+      await Promise.all([
+        this.getLeadDetails(tenantId, leadId),
+        this.getContactDetails(contactId),
+        this.getPartnerDetails(tenantId),
+        this.getPartnerProducts(tenantId, leadId),
+        this.getSalesman(tenantId, leadId),
+      ]);
 
     try {
-      const result = await this.agent.invoke({
-        system_prompt: systemPrompt,
-        lead_details: await this.getLeadDetails(tenantId, leadId),
-        contact_details: await this.getContactDetails(contactId),
-        partner_details: await this.getPartnerDetails(tenantId),
-        partner_products: await this.getPartnerProducts(tenantId, leadId),
-        salesman: await this.getSalesman(tenantId, leadId),
-        output_schema: `${JSON.stringify(z.toJSONSchema(emailContentOutputSchema), null, 2)}\n\nIMPORTANT: You must respond with valid JSON only.`,
+      // Prepare variables for prompt injection
+      const variables = {
+        lead_details: JSON.stringify(
+          {
+            description: leadDetails.description,
+            value: leadDetails.value,
+            schema: leadDetails.schema,
+          },
+          null,
+          2
+        ),
+        contact_details: JSON.stringify(
+          {
+            description: contactDetails.description,
+            value: contactDetails.value,
+            schema: contactDetails.schema,
+          },
+          null,
+          2
+        ),
+        partner_details: JSON.stringify(
+          {
+            description: partnerDetails.description,
+            value: partnerDetails.value,
+            schema: partnerDetails.schema,
+          },
+          null,
+          2
+        ),
+        partner_products: JSON.stringify(
+          {
+            description: partnerProducts.description,
+            value: partnerProducts.value,
+            schema: partnerProducts.schema,
+          },
+          null,
+          2
+        ),
+        salesman: JSON.stringify(
+          {
+            description: salesman.description,
+            value: salesman.value,
+            schema: salesman.schema,
+          },
+          null,
+          2
+        ),
+      };
+
+      const agentResult = await DefaultAgentExecuter<EmailContentOutput>({
+        promptName: 'contact_strategy',
+        tenantId,
+        variables,
+        config: this.config,
+        outputSchema: emailContentOutputSchema,
+        tools: this.tools,
+        metadata: {
+          tenantId,
+          leadId,
+          contactId,
+          leadName: leadDetails.value.name,
+          contactName: contactDetails.value.name,
+          partnerName: partnerDetails.value.name,
+        },
+        tags: ['contact_strategy'],
       });
 
-      let finalResponse = getContentFromMessage(result.output);
+      const executionTimeMs = Date.now() - startTime;
 
-      // If agent didn't provide a direct response, try to generate from steps
-      if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        logger.error('Agent did not provide a direct response, trying direct model approach');
-        throw new Error('Agent did not provide a direct response');
-      }
-
-      // Enhanced JSON parsing with better error handling
-      const parsedResult = parseWithSchema(finalResponse);
+      logger.info('Successfully generated contact strategy', {
+        leadId,
+        contactId,
+        tenantId,
+        emailsGenerated: agentResult.output.emails?.length ?? 0,
+        executionTimeMs,
+      });
 
       return {
-        finalResponse: result.output || finalResponse || 'Email content generation completed',
-        finalResponseParsed: parsedResult,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        functionCalls: result.intermediateSteps,
+        finalResponseParsed: agentResult.output,
+        totalIterations: agentResult.intermediateSteps?.length ?? 0,
+        functionCalls: agentResult.intermediateSteps,
       };
     } catch (error) {
-      logger.error('Email content generation failed:', error);
+      const executionTimeMs = Date.now() - startTime;
+
+      logger.error('Email content generation failed:', {
+        error,
+        leadId,
+        contactId,
+        tenantId,
+        executionTimeMs,
+      });
 
       throw error;
     }
@@ -259,44 +292,5 @@ export class ContactStrategyAgent {
       },
       schema: z.toJSONSchema(salesmanSchema),
     };
-  }
-}
-
-// -- Helpers --
-function parseWithSchema(content: string): EmailContentOutput {
-  try {
-    // First, try to find JSON in the content with multiple strategies
-    let jsonText = content;
-
-    // Remove markdown code fencing
-    jsonText = jsonText.replace(/^```(?:json)?|```$/gm, '').trim();
-
-    // Look for JSON object patterns
-    const jsonMatches = jsonText.match(/\{[\s\S]*\}/);
-    if (jsonMatches) {
-      jsonText = jsonMatches[0];
-    }
-
-    // Clean up common formatting issues
-    jsonText = jsonText.trim();
-
-    // Log what we're trying to parse for debugging
-    logger.info('Attempting to parse email content JSON', {
-      contentLength: content.length,
-      extractedLength: jsonText.length,
-      preview: jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''),
-    });
-
-    const parsed = JSON.parse(jsonText);
-    return emailContentOutputSchema.parse(parsed);
-  } catch (parseError) {
-    logger.warn('Email content JSON parsing failed', {
-      error: parseError instanceof Error ? parseError.message : 'Unknown error',
-      contentPreview: content.substring(0, 500) + (content.length > 500 ? '...' : ''),
-      contentLength: content.length,
-    });
-
-    // Try to extract individual fields if JSON parsing completely fails
-    throw new Error('Email content JSON parsing failed');
   }
 }

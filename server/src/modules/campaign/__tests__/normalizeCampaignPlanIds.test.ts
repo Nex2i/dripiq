@@ -1,5 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
-import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { normalizeCampaignPlanIds } from '../planIdNormalizer';
 
 // Mock the createId function to make tests deterministic

@@ -5,7 +5,7 @@ import {
   WebDataCompanyEmployeesResult,
 } from '@/libs/webData/interfaces/webData.interface';
 import { logger } from '@/libs/logger';
-import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { ExtractedContact } from './schemas/contactExtraction/contactExtractionSchema';
 import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
 
 export interface FormattedWebDataContact {

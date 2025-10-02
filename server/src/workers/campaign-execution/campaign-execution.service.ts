@@ -5,7 +5,7 @@ import type { CampaignExecutionJobPayload } from '@/modules/messages/campaignExe
 import {
   CampaignPlanNode,
   CampaignPlanOutput,
-} from '@/modules/ai/schemas/contactCampaignStrategySchema';
+} from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { EmailExecutionService } from './email-execution.service';
 
 export type CampaignExecutionJobResult = {
