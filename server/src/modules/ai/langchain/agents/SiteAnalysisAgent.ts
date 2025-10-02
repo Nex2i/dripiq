@@ -43,6 +43,7 @@ export class SiteAnalysisAgent {
         outputSchema: reportOutputSchema,
         tools: this.tools,
         metadata,
+        tags: ['summarize_site'],
       });
 
       return {

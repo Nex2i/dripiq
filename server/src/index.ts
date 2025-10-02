@@ -1,10 +1,9 @@
-import dotenv from 'dotenv';
+import './bootstrap';
 import { getNetworkAddress } from '@/utils/network';
 import { setupGracefulShutdown } from '@/libs/shutdown';
 import App from './app';
 import { logger } from './libs/logger';
 
-dotenv.config();
 const PORT: number = Number(process.env.PORT || 3001);
 
 (async () => {
