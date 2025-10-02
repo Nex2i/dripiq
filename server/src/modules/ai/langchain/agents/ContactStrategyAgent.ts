@@ -25,7 +25,7 @@ import {
   Salesman,
 } from '../../schemas/contactCampaignStrategyInputSchemas';
 import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
-import { AgentExecuter } from './AgentExecuter';
+import { DefaultAgentExecuter } from './AgentExecuter';
 
 export type ContactStrategyResult = {
   finalResponseParsed: EmailContentOutput;
@@ -116,7 +116,7 @@ export class ContactStrategyAgent {
         ),
       };
 
-      const agentResult = await AgentExecuter<EmailContentOutput>(
+      const agentResult = await DefaultAgentExecuter<EmailContentOutput>(
         'contact_strategy',
         tenantId,
         variables,

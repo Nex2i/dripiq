@@ -13,7 +13,7 @@ type AgentRunResult<T> = {
   raw: any; // full agent return for debugging
 };
 
-export async function AgentExecuter<T extends Record<string, any>>(
+export async function DefaultAgentExecuter<T extends Record<string, any>>(
   promptName: string,
   tenantId: string,
   variables: Record<string, any>,
