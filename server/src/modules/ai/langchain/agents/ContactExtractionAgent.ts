@@ -1,17 +1,12 @@
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { z } from 'zod';
-import { promptHelper } from '@/prompts/prompt.helper';
 import { logger } from '@/libs/logger';
-import extractContactsPrompt from '@/prompts/extractContacts.prompt';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import {
   fetchWebDataContacts,
   formatWebDataContactsForPrompt,
   mergeContactSources,
-  WebDataContactSummary,
-  convertWebDataToExtractedContact,
 } from '../../webDataContactHelper';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
@@ -19,10 +14,9 @@ import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import contactExtractionOutputSchema, {
   ContactExtractionOutput,
 } from '../../schemas/contactExtractionSchema';
-import { getContentFromMessage } from '../utils/messageUtils';
+import { DefaultAgentExecuter } from './AgentExecuter';
 
 export type ContactExtractionResult = {
-  finalResponse: string;
   finalResponseParsed: ContactExtractionOutput;
   totalIterations: number;
   functionCalls: any[];
@@ -31,17 +25,14 @@ export type ContactExtractionResult = {
 export class ContactExtractionAgent {
   private agent: AgentExecutor;
   private config: LangChainConfig;
+  private tools: DynamicStructuredTool[];
 
   constructor(config: LangChainConfig) {
     this.config = config;
 
     const model = createChatModel(config);
 
-    const tools: DynamicStructuredTool[] = [
-      ListDomainPagesTool,
-      GetInformationAboutDomainTool,
-      RetrieveFullPageTool,
-    ];
+    this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
 
     const prompt = ChatPromptTemplate.fromMessages([
       ['system', `{system_prompt}`],
@@ -50,53 +41,53 @@ export class ContactExtractionAgent {
 
     const agent = createToolCallingAgent({
       llm: model,
-      tools,
+      tools: this.tools,
       prompt,
     });
 
     this.agent = new AgentExecutor({
       agent,
       maxIterations: config.maxIterations,
-      tools,
+      tools: this.tools,
     });
   }
 
-  async extractContacts(domain: string): Promise<ContactExtractionResult> {
-    // First, fetch webData contacts to include in the prompt
-    logger.info('Fetching webData contacts for extraction', { domain });
-    const webDataSummary = await fetchWebDataContacts(domain);
-    logger.info('WebData contacts fetched', { domain, webDataSummary });
-    const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
-
-    const systemPrompt = promptHelper.injectInputVariables(extractContactsPrompt, {
-      domain,
-      webdata_contacts: webDataContactsText,
-      output_schema: JSON.stringify(z.toJSONSchema(contactExtractionOutputSchema), null, 2),
-    });
-
+  async extractContacts(
+    domain: string,
+    tenantId: string,
+    metadata: Record<string, any>
+  ): Promise<ContactExtractionResult> {
+    const startTime = Date.now();
     try {
-      const result = await this.agent.invoke({
-        system_prompt: systemPrompt,
-      });
+      logger.info('Fetching webData contacts for extraction', { domain });
+      const webDataSummary = await fetchWebDataContacts(domain);
+      logger.info('WebData contacts fetched', { domain, webDataSummary });
+      const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
 
-      let finalResponse = getContentFromMessage(result.output);
+      const variables = {
+        domain,
+        webdata_contacts: webDataContactsText,
+      };
 
-      if (!finalResponse && result.intermediateSteps && result.intermediateSteps.length > 0) {
-        finalResponse = await this.generateSummaryFromSteps(domain, result, systemPrompt);
-      }
+      const agentResult = await DefaultAgentExecuter<ContactExtractionOutput>(
+        'contact_extraction',
+        tenantId,
+        variables,
+        this.config,
+        contactExtractionOutputSchema,
+        this.tools,
+        metadata,
+        ['contact_extraction']
+      );
 
-      const aiParsedResult = parseWithSchema(finalResponse, domain);
+      const mergeResult = mergeContactSources(webDataSummary, agentResult.output.contacts);
 
-      // Merge AI contacts with webData contacts - webData first approach
-      const mergeResult = mergeContactSources(webDataSummary, aiParsedResult.contacts);
-
-      // Combine contacts: enriched webData contacts first, then AI-only contacts
       const finalContacts = [...mergeResult.enrichedContacts, ...mergeResult.aiOnlyContacts];
 
       // Update priority contact index after merging
-      let updatedPriorityContactId = aiParsedResult.priorityContactId;
-      if (updatedPriorityContactId !== null && aiParsedResult.contacts.length > 0) {
-        const originalPriorityContact = aiParsedResult.contacts[updatedPriorityContactId];
+      let updatedPriorityContactId = agentResult.output.priorityContactId;
+      if (updatedPriorityContactId !== null && agentResult.output.contacts.length > 0) {
+        const originalPriorityContact = agentResult.output.contacts[updatedPriorityContactId];
         if (originalPriorityContact) {
           // Find the priority contact in the final list
           const finalIndex = finalContacts.findIndex(
@@ -122,120 +113,33 @@ export class ContactExtractionAgent {
       const finalParsedResult: ContactExtractionOutput = {
         contacts: finalContacts,
         priorityContactId: updatedPriorityContactId,
-        summary: `${aiParsedResult.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
+        summary: `${agentResult.output.summary} WebData contacts preserved: ${mergeResult.webDataContacts.length}, AI enrichments: ${mergeResult.enrichedContacts.length}, AI-only contacts: ${mergeResult.aiOnlyContacts.length}.`,
       };
+
+      const endTime = Date.now();
 
       logger.info('Contact extraction and merge completed', {
         domain,
-        originalAI: aiParsedResult.contacts.length,
+        originalAI: agentResult.output.contacts.length,
         originalWebData: webDataSummary.contacts.length,
         webDataPreserved: mergeResult.webDataContacts.length,
         enrichedContacts: mergeResult.enrichedContacts.length,
         aiOnlyContacts: mergeResult.aiOnlyContacts.length,
         finalTotal: finalContacts.length,
         priorityContactIndex: updatedPriorityContactId,
+        duration: endTime - startTime,
       });
 
       return {
-        finalResponse: result.output || 'Contact extraction completed',
         finalResponseParsed: finalParsedResult,
-        totalIterations: result.intermediateSteps?.length ?? 0,
-        functionCalls: result.intermediateSteps,
+        totalIterations: agentResult.intermediateSteps?.length ?? 0,
+        functionCalls: agentResult.intermediateSteps,
       };
     } catch (error) {
       logger.error('Contact extraction failed:', error);
-
-      // Return fallback result with webData contacts if available
-      const fallbackResult = getFallbackResultWithWebData(domain, error, webDataSummary);
-      return {
-        finalResponse: `Contact extraction failed for ${domain}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        finalResponseParsed: fallbackResult,
-        totalIterations: 0,
-        functionCalls: [],
-      };
+      throw new Error(
+        `Contact extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-
-  private async generateSummaryFromSteps(
-    domain: string,
-    result: any,
-    systemPrompt: string
-  ): Promise<string> {
-    const structuredModel = createChatModel({
-      model: this.config.model,
-    }).withStructuredOutput(z.toJSONSchema(contactExtractionOutputSchema));
-
-    const gatheredInfo = (result.intermediateSteps || [])
-      .map((step: any) => {
-        return `Tool: ${step.action?.tool || 'unknown'}\nResult: ${
-          step.observation || 'No result'
-        }\n`;
-      })
-      .join('\n---\n');
-
-    const summaryPrompt = `
-You are a contact extraction expert. Based on the research conducted below, extract all available contact information for ${domain}.
-
-Research conducted so far:
-${gatheredInfo}
-
-${systemPrompt}
-
-Even if the research is incomplete, extract all available contact information based on what was found.
-Return your answer as valid JSON matching the provided schema.
-    `;
-
-    const summary = await structuredModel.invoke([
-      {
-        role: 'system',
-        content: summaryPrompt,
-      },
-    ]);
-    return getContentFromMessage(summary.content ?? summary);
-  }
-}
-
-// -- Helpers --
-function parseWithSchema(content: string, domain: string): ContactExtractionOutput {
-  try {
-    // Remove markdown code fencing and whitespace if present
-    const jsonText = content.replace(/^```(?:json)?|```$/g, '').trim();
-    return contactExtractionOutputSchema.parse(JSON.parse(jsonText));
-  } catch (error) {
-    logger.warn('Contact extraction parsing failed, returning fallback.', error);
-    return getFallbackResult(domain, error);
-  }
-}
-
-function getFallbackResult(domain: string, error: unknown): ContactExtractionOutput {
-  return {
-    contacts: [],
-    priorityContactId: null,
-    summary: `Unable to extract contacts from ${domain} due to an error: ${
-      error instanceof Error ? error.message : 'Unknown error'
-    }`,
-  };
-}
-
-function getFallbackResultWithWebData(
-  domain: string,
-  error: unknown,
-  webDataSummary: WebDataContactSummary
-): ContactExtractionOutput {
-  // If we have webData contacts, use them as fallback
-  if (webDataSummary.contacts.length > 0) {
-    const webDataAsExtracted = webDataSummary.contacts.map(convertWebDataToExtractedContact);
-    const priorityIndex = webDataAsExtracted.findIndex((contact) => contact.isPriorityContact);
-
-    return {
-      contacts: webDataAsExtracted,
-      priorityContactId: priorityIndex >= 0 ? priorityIndex : null,
-      summary: `AI extraction failed for ${domain}, but ${webDataSummary.contacts.length} webData contacts were preserved. Error: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`,
-    };
-  }
-
-  // No webData contacts available, return empty result
-  return getFallbackResult(domain, error);
 }

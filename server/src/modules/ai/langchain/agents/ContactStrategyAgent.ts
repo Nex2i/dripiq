@@ -131,12 +131,12 @@ export class ContactStrategyAgent {
           contactName: contactDetails.value.name,
           partnerName: partnerDetails.value.name,
         },
-        ['contact_strategy', 'email_generation', 'campaign_creation']
+        ['contact_strategy']
       );
 
       const executionTimeMs = Date.now() - startTime;
 
-      logger.info('Successfully generated contact strategy with LangFuse', {
+      logger.info('Successfully generated contact strategy', {
         leadId,
         contactId,
         tenantId,
