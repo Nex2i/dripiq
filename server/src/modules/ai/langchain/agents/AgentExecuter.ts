@@ -3,7 +3,6 @@ import { JsonOutputParser } from '@langchain/core/output_parsers';
 import { CallbackHandler } from '@langfuse/langchain';
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 import z from 'zod';
-import { Guid } from '@/utils/Guid';
 import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { promptManagementService } from '../services/promptManagement.service';
 
