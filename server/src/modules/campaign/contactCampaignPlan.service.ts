@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { contactCampaignRepository, campaignPlanVersionRepository } from '@/repositories';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
 import { normalizeCampaignPlanIds, isPlanNormalized } from './planIdNormalizer';
 

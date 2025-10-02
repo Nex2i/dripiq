@@ -2,8 +2,8 @@ import z from 'zod';
 import { getLeadById } from '../lead.service';
 import { TenantService } from '../tenant.service';
 import { vendorFitAgent } from './langchain';
-import vendorFitInputSchema from './schemas/vendorFitInputSchema';
-import vendorFitOutputSchema from './schemas/vendorFitOutputSchema';
+import vendorFitInputSchema from './schemas/vendorFit/vendorFitInputSchema';
+import vendorFitOutputSchema from './schemas/vendorFit/vendorFitOutputSchema';
 
 export const LeadVendorFitService = {
   generateVendorFitReport: async (

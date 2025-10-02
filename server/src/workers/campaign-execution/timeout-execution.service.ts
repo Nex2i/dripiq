@@ -5,7 +5,7 @@ import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExe
 import { calendarClickValidationService } from '@/modules/calendarClickValidation.service';
 import { CAMPAIGN_EVENT_TYPES } from '@/constants/campaign-events';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
-import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 
 export interface TimeoutJobResult {
   success: boolean;

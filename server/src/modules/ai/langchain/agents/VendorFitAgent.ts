@@ -8,8 +8,8 @@ import { createChatModel, LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import vendorFitOutputSchema from '../../schemas/vendorFitOutputSchema';
-import vendorFitInputSchema from '../../schemas/vendorFitInputSchema';
+import vendorFitOutputSchema from '../../schemas/vendorFit/vendorFitOutputSchema';
+import vendorFitInputSchema from '../../schemas/vendorFit/vendorFitInputSchema';
 import { getContentFromMessage } from '../utils/messageUtils';
 
 export type VendorFitResult = {

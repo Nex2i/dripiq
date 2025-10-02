@@ -8,7 +8,7 @@ import {
 import { SendGridWebhookValidator } from '@/libs/email/sendgrid.webhook.validator';
 import { NewWebhookDelivery, NewMessageEvent } from '@/db/schema';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import type { MessageEvent, OutboundMessage, ContactCampaign } from '@/db/schema';
 import {
   normalizeEventTypeForCampaign,

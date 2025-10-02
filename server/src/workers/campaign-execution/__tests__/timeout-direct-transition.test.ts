@@ -9,7 +9,7 @@ import {
 
 import type { Job } from 'bullmq';
 import type { TimeoutJobPayload } from '@/types/timeout.types';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { calendarClickValidationService } from '@/modules/calendarClickValidation.service';
 
 // Mock dependencies

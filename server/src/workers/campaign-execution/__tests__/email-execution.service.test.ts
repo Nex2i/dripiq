@@ -1,7 +1,7 @@
 import { EmailExecutionService } from '../email-execution.service';
 import { scheduledActionRepository } from '@/repositories';
 import { parseIsoDuration } from '@/modules/campaign/scheduleUtils';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 
 // Mock dependencies
 jest.mock('@/repositories', () => ({

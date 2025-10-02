@@ -23,8 +23,11 @@ import {
   partnerProductSchema,
   salesmanSchema,
   Salesman,
-} from '../../schemas/contactCampaignStrategyInputSchemas';
-import { EmailContentOutput, emailContentOutputSchema } from '../../schemas/emailContentSchema';
+} from '../../schemas/contactStrategy/contactCampaignStrategyInputSchemas';
+import {
+  EmailContentOutput,
+  emailContentOutputSchema,
+} from '../../schemas/contactStrategy/emailContentSchema';
 import { DefaultAgentExecuter } from './AgentExecuter';
 
 export type ContactStrategyResult = {

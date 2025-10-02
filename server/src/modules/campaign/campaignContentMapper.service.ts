@@ -4,12 +4,15 @@ import {
   EMAIL_CONTENT_NODE_IDS,
   validateCampaignTemplate,
 } from '@/constants/staticCampaignTemplate';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
-import type { EmailContentOutput, EmailContent } from '@/modules/ai/schemas/emailContentSchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
+import type {
+  EmailContentOutput,
+  EmailContent,
+} from '@/modules/ai/schemas/contactStrategy/emailContentSchema';
 import {
   validateEmailContentIds,
   filterAndLogInvalidEmailIds,
-} from '@/modules/ai/schemas/emailContentSchema';
+} from '@/modules/ai/schemas/contactStrategy/emailContentSchema';
 
 /**
  * Service responsible for mapping AI-generated email content to the static campaign template.

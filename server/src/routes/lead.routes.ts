@@ -8,7 +8,7 @@ import {
   updateContactStrategy,
   retrieveContactStrategyFromDatabase,
 } from '@/modules/ai';
-import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { logger } from '@/libs/logger';
 import {
   getLeads,

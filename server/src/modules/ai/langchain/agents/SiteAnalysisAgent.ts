@@ -5,7 +5,7 @@ import { LangChainConfig } from '../config/langchain.config';
 import { RetrieveFullPageTool } from '../tools/RetrieveFullPageTool';
 import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomainTool';
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
-import reportOutputSchema, { ReportOutput } from '../../schemas/reportOutputSchema';
+import reportOutputSchema, { ReportOutput } from '../../schemas/siteAnalysis/reportOutputSchema';
 import { DefaultAgentExecuter } from './AgentExecuter';
 
 export type SiteAnalysisResult = {

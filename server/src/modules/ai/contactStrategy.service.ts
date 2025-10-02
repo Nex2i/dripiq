@@ -7,7 +7,7 @@ import { contactStrategyAgent } from './langchain';
 import {
   CampaignPlanOutput,
   campaignPlanOutputSchema,
-} from './schemas/contactCampaignStrategySchema';
+} from './schemas/contactStrategy/contactCampaignStrategySchema';
 
 // Updated result type that returns the complete campaign plan
 export type ContactStrategyServiceResult = {

@@ -5,7 +5,7 @@ import { createContact } from '@/modules/contact.service';
 import { createLead } from '@/modules/lead.service';
 import { ContactCampaignPlanService } from '@/modules/campaign/contactCampaignPlan.service';
 import { logger } from '@/libs/logger';
-import { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import { BulkContactsCreateSchema } from './apiSchema/bulkContacts/bulkContacts.schema';
 
 const basePath = '/bulk-contacts';

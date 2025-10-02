@@ -19,7 +19,7 @@ import {
 } from '@/constants/timeout-jobs';
 import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
 import type { ContactCampaign, MailAccount, LeadPointOfContact } from '@/db/schema';
-import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactCampaignStrategySchema';
+import type { CampaignPlanOutput } from '@/modules/ai/schemas/contactStrategy/contactCampaignStrategySchema';
 import type { TimeoutJobParams, TimeoutJobPayload } from '@/types/timeout.types';
 import { JOB_NAMES } from '@/constants/queues';
 import { CAMPAIGN_EVENT_TYPES, TIMEOUT_EVENT_TYPES } from '@/constants/campaign-events';

@@ -1,9 +1,9 @@
 import { logger } from '@/libs/logger';
 import { LangChainConfig } from '../config/langchain.config';
 import {
-  SmartFilterSiteMapOutput,
-  smartFilterSiteMapSchema,
-} from '../../schemas/smartFilterSchemas';
+  SmartUrlFilterMapSchemaOutput,
+  smartUrlFilterMapSchema,
+} from '../../schemas/smartFilters/urlSmartFilterSchemas';
 import { DefaultAgentExecuter } from './AgentExecuter';
 
 export class SmartUrlFilterAgent {
@@ -27,12 +27,15 @@ export class SmartUrlFilterAgent {
         min_urls: minUrls.toString(),
         max_urls: maxUrls.toString(),
       };
-      const agentResult = await DefaultAgentExecuter<SmartFilterSiteMapOutput>(
+      const agentResult = await DefaultAgentExecuter<SmartUrlFilterMapSchemaOutput>(
         'smart_url_filter',
         tenantId,
         variables,
         this.config,
-        smartFilterSiteMapSchema
+        smartUrlFilterMapSchema,
+        [],
+        metadata,
+        ['smart_url_filter']
       );
 
       return agentResult.output.urls;

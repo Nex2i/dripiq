@@ -11,7 +11,7 @@ import { GetInformationAboutDomainTool } from '../tools/GetInformationAboutDomai
 import { ListDomainPagesTool } from '../tools/ListDomainPagesTool';
 import contactExtractionOutputSchema, {
   ContactExtractionOutput,
-} from '../../schemas/contactExtractionSchema';
+} from '../../schemas/contactExtraction/contactExtractionSchema';
 import { DefaultAgentExecuter } from './AgentExecuter';
 
 export type ContactExtractionResult = {

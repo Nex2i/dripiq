@@ -4,7 +4,7 @@ import { formatPhoneForStorage, normalizePhoneForComparison } from '@/libs/phone
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { createContact } from '../lead.service';
-import { ExtractedContact } from './schemas/contactExtractionSchema';
+import { ExtractedContact } from './schemas/contactExtraction/contactExtractionSchema';
 import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
 import { contactExtractionAgent } from './langchain';
 
