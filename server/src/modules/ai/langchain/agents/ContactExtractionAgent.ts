@@ -1,8 +1,6 @@
-import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { logger } from '@/libs/logger';
-import { createChatModel, LangChainConfig } from '../config/langchain.config';
+import { LangChainConfig } from '../config/langchain.config';
 import {
   fetchWebDataContacts,
   formatWebDataContactsForPrompt,
@@ -23,33 +21,13 @@ export type ContactExtractionResult = {
 };
 
 export class ContactExtractionAgent {
-  private agent: AgentExecutor;
   private config: LangChainConfig;
   private tools: DynamicStructuredTool[];
 
   constructor(config: LangChainConfig) {
     this.config = config;
 
-    const model = createChatModel(config);
-
     this.tools = [ListDomainPagesTool, GetInformationAboutDomainTool, RetrieveFullPageTool];
-
-    const prompt = ChatPromptTemplate.fromMessages([
-      ['system', `{system_prompt}`],
-      ['placeholder', '{agent_scratchpad}'],
-    ]);
-
-    const agent = createToolCallingAgent({
-      llm: model,
-      tools: this.tools,
-      prompt,
-    });
-
-    this.agent = new AgentExecutor({
-      agent,
-      maxIterations: config.maxIterations,
-      tools: this.tools,
-    });
   }
 
   async extractContacts(
