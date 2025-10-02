@@ -5,6 +5,7 @@ import {
   smartUrlFilterMapSchema,
 } from '../../schemas/smartFilters/urlSmartFilterSchemas';
 import { DefaultAgentExecuter } from './AgentExecuter';
+import { SiteType } from '@/modules/ai/siteScrape.service';
 
 export class SmartUrlFilterAgent {
   private config: LangChainConfig;
@@ -18,7 +19,8 @@ export class SmartUrlFilterAgent {
     tenantId: string,
     metadata: Record<string, any>,
     minUrls: number,
-    maxUrls: number
+    maxUrls: number,
+    siteType: SiteType
   ): Promise<string[]> {
     const startTime = Date.now();
     try {
@@ -26,6 +28,7 @@ export class SmartUrlFilterAgent {
         urls: JSON.stringify(urls, null, 2),
         min_urls: minUrls.toString(),
         max_urls: maxUrls.toString(),
+        site_type: siteType,
       };
       const agentResult = await DefaultAgentExecuter<SmartUrlFilterMapSchemaOutput>({
         promptName: 'smart_url_filter',

@@ -4,7 +4,7 @@ import { logger } from '@/libs/logger';
 import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
 import { smartUrlFilterAgent } from './langchain';
 
-type SiteType = 'lead_site' | 'organization_site';
+export type SiteType = 'lead_site' | 'organization_site';
 
 export interface SmartFilterOptions {
   tenantId?: string;
