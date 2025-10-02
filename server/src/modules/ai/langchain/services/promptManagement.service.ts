@@ -1,9 +1,8 @@
 import { ChatPromptClient, LangfuseClient } from '@langfuse/client';
 
+import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { logger } from '@/libs/logger';
 import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
-import { ChatPromptTemplate } from '@langchain/core/prompts';
-import { Trace } from '@langfuse/core';
 
 export interface PromptFetchOptions {
   version?: number;
