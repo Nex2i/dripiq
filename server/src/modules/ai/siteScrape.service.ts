@@ -48,7 +48,8 @@ export const SiteScrapeService = {
         siteType,
         options,
         minUrls,
-        maxUrls
+        maxUrls,
+        siteType
       );
 
       if (finalUrls.length < minUrls) {
