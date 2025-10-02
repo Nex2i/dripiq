@@ -37,11 +37,32 @@ export async function DefaultAgentExecuter<T extends Record<string, any>>({
   const prompt = await promptManagementService.fetchPrompt(promptName);
   const langChainPrompt = await promptManagementService.toLangChainPrompt(prompt);
 
+  // Generate sessionId from business context to group related traces
+  const sessionId = [
+    promptName,
+    tenantId,
+    metadata?.leadId,
+    metadata?.contactId,
+    new Date().toISOString().split('T')[0], // Group by day
+  ]
+    .filter(Boolean)
+    .join('-');
+
+  const agentMetadata = {
+    ...metadata,
+    ...config,
+    promptName,
+    langfuse_session_id: sessionId,
+    langfuse_user_id: tenantId,
+  };
+
+  const agentTags = [promptName, ...tags];
+
   const langfuseHandler = new CallbackHandler({
     userId: tenantId,
-    traceMetadata: { tenantId, ...metadata, ...config },
-    tags,
-    sessionId: Guid(),
+    sessionId,
+    tags: agentTags,
+    traceMetadata: agentMetadata,
   });
 
   const model = createChatModel(config);
@@ -68,8 +89,8 @@ export async function DefaultAgentExecuter<T extends Record<string, any>>({
     {
       callbacks: [langfuseHandler],
       runName: promptName,
-      tags: [promptName, ...tags],
-      metadata: { ...metadata, promptName, tags, ...config },
+      tags: agentTags,
+      metadata: agentMetadata,
     }
   );
 
