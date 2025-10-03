@@ -1,5 +1,6 @@
-import { emailVerificationResultEnum } from '@/db';
 import axios, { AxiosInstance } from 'axios';
+import { emailVerificationResultEnum } from '@/db';
+import { logger } from '@/libs/logger';
 
 /**
 Documentation: https://api.emaillistverify.com/api-doc
@@ -42,9 +43,16 @@ class EmailListVerifyClient {
       emails.map((email) => this.verifyEmailDetailed(email))
     );
     return responses.reduce(
-      (acc, response) => {
-        if (response.status === 'fulfilled') {
+      (acc, response, index) => {
+        if (response.status === 'fulfilled' && response.value.result) {
           acc[response.value.email] = response.value.result;
+        } else if (response.status === 'rejected') {
+          const email = emails[index];
+          logger.warn('Email verification failed', {
+            email,
+            error: response.reason,
+            errorMessage: response.reason?.message || String(response.reason),
+          });
         }
         return acc;
       },
