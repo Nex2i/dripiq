@@ -278,7 +278,6 @@ export default async function Debug(fastify: FastifyInstance, _opts: RouteOption
           sitemapFetchTimeMs,
         });
 
-        // Step 2: Apply basic filtering
         const basicFiltered = SiteScrapeService.filterUrls(sitemap);
 
         logger.info('[Debug] Basic filtering applied', {
@@ -289,7 +288,7 @@ export default async function Debug(fastify: FastifyInstance, _opts: RouteOption
 
         // Step 3: Apply smart filtering
         const smartFilterStart = Date.now();
-        const smartFiltered = await SiteScrapeService.smartFilterSiteMap(basicFiltered, siteType, {
+        const smartFiltered = await SiteScrapeService.smartFilterSiteMap(sitemap, siteType, {
           domain: new URL(site).hostname,
         });
         const smartFilterTimeMs = Date.now() - smartFilterStart;
