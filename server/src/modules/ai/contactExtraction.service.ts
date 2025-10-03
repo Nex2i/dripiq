@@ -3,11 +3,11 @@ import { logger } from '@/libs/logger';
 import { formatPhoneForStorage, normalizePhoneForComparison } from '@/libs/phoneFormatter';
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
+import { emailListVerifyClient } from '@/libs/email/emailListVerify.client';
 import { createContact } from '../lead.service';
 import { ExtractedContact } from './schemas/contactExtraction/contactExtractionSchema';
 import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
 import { contactExtractionAgent } from './langchain';
-import { emailListVerifyClient } from '@/libs/email/emailListVerify.client';
 
 /**
  * Helper function to identify if a contact is from webData
@@ -268,6 +268,31 @@ export const ContactExtractionService = {
   },
 
   /**
+   * Helper to assign email verification results to contacts
+   */
+  assignEmailVerificationResults: <T>(
+    contacts: T[],
+    getEmail: (contact: T) => string | null | undefined,
+    setResult: (
+      contact: T,
+      result: 'valid' | 'invalid' | 'unknown' | 'ok_for_all' | 'inferred'
+    ) => void,
+    emailListVerifyResponses: Record<string, any>
+  ): void => {
+    for (const contact of contacts) {
+      const email = getEmail(contact);
+      if (email) {
+        const verificationResult = emailListVerifyResponses[email];
+        if (verificationResult) {
+          const mappedResult =
+            emailListVerifyClient.mapResultToEmailVerificationResult(verificationResult);
+          setResult(contact, mappedResult);
+        }
+      }
+    }
+  },
+
+  /**
    * Clean Emails and assigned email validation
    */
   cleanEmailsAndAssignedEmailValidation: async (
@@ -284,24 +309,23 @@ export const ContactExtractionService = {
     const emailListVerifyResponses =
       await emailListVerifyClient.verifyEmailDetailedBatch(allEmails);
 
-    for (const contact of contactsToCreate) {
-      if (contact.email) {
-        const verificationResult = emailListVerifyResponses[contact.email];
-        if (verificationResult) {
-          contact.emailVerificationResult =
-            emailListVerifyClient.mapResultToEmailVerificationResult(verificationResult);
-        }
-      }
-    }
-    for (const contact of contactsToUpdate) {
-      if (contact.data.email) {
-        const verificationResult = emailListVerifyResponses[contact.data.email];
-        if (verificationResult) {
-          contact.data.emailVerificationResult =
-            emailListVerifyClient.mapResultToEmailVerificationResult(verificationResult);
-        }
-      }
-    }
+    ContactExtractionService.assignEmailVerificationResults(
+      contactsToCreate,
+      (contact) => contact.email,
+      (contact, result) => {
+        contact.emailVerificationResult = result;
+      },
+      emailListVerifyResponses
+    );
+
+    ContactExtractionService.assignEmailVerificationResults(
+      contactsToUpdate,
+      (contact) => contact.data.email,
+      (contact, result) => {
+        contact.data.emailVerificationResult = result;
+      },
+      emailListVerifyResponses
+    );
   },
 
   /**
