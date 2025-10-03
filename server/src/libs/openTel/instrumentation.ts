@@ -8,6 +8,7 @@ const sdk = new NodeSDK({
       publicKey: LANGFUSE_PUBLIC_KEY,
       secretKey: LANGFUSE_SECRET_KEY,
       baseUrl: LANGFUSE_HOST || 'https://cloud.langfuse.com',
+      environment: process.env.NODE_ENV || 'development',
       // Filter out noisy low-level spans
       shouldExportSpan: (span) => {
         const spanName = span.otelSpan.name?.toLowerCase() || '';

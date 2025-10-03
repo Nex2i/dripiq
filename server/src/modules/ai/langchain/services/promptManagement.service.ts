@@ -41,6 +41,11 @@ export class PromptManagementService {
       const langChainPrompt = ChatPromptTemplate.fromMessages(
         prompt.getLangchainPrompt().concat(['placeholder', '{agent_scratchpad}'])
       );
+
+      // Set metadata to link the prompt to LangFuse traces
+      // This enables prompt-to-trace linking for observability and metrics
+      langChainPrompt.metadata = { langfusePrompt: prompt } as any;
+
       return langChainPrompt;
     } catch (error) {
       logger.error(`Failed to convert prompt to LangChain format`, error);
