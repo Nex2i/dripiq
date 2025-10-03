@@ -1,34 +1,21 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { LangfuseSpanProcessor } from '@langfuse/otel';
-import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST } from '@/config';
 
 const sdk = new NodeSDK({
+  instrumentations: getNodeAutoInstrumentations({
+    '@opentelemetry/instrumentation-http': { enabled: false },
+    '@opentelemetry/instrumentation-undici': { enabled: false },
+    '@opentelemetry/instrumentation-net': { enabled: false },
+    '@opentelemetry/instrumentation-dns': { enabled: false },
+  }),
   spanProcessors: [
     new LangfuseSpanProcessor({
-      publicKey: LANGFUSE_PUBLIC_KEY,
-      secretKey: LANGFUSE_SECRET_KEY,
-      baseUrl: LANGFUSE_HOST || 'https://cloud.langfuse.com',
-      // Filter out noisy low-level spans
-      shouldExportSpan: (span) => {
-        const spanName = span.otelSpan.name?.toLowerCase() || '';
-
-        // Filter out low-level network operations that fragment traces
-        const noisyOperations = [
-          'dns.lookup',
-          'tls.connect',
-          'tcp.connect',
-          'net.connect',
-          'http.request',
-          'https.request',
-          'POST',
-          'GET',
-        ];
-
-        // Keep the span if it's NOT a noisy operation
-        return !noisyOperations.some((op) => spanName.includes(op));
-      },
+      publicKey: process.env.LANGFUSE_PUBLIC_KEY!,
+      secretKey: process.env.LANGFUSE_SECRET_KEY!,
+      baseUrl: process.env.LANGFUSE_HOST || 'https://cloud.langfuse.com',
+      environment: process.env.NODE_ENV || 'development',
     }),
   ],
 });
-
 sdk.start();

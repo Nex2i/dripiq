@@ -1,0 +1,1 @@
+ALTER TYPE "dripiq_app"."email_verification_result" ADD VALUE 'inferred';
