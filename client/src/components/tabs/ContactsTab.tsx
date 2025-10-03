@@ -15,6 +15,10 @@ import {
   Plus,
   UserX,
   MailX,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-react'
 import { Menu, MenuItem, MenuSeparator } from '../ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -22,6 +26,7 @@ import CopyButton from '../CopyButton'
 import ContactStrategyModal from '../ContactStrategyModal'
 import CreateContactModal from '../CreateContactModal'
 import AnimatedCheckbox from '../AnimatedCheckbox'
+import Tooltip from '../Tooltip'
 import type { LeadPointOfContact } from '../../types/lead.types'
 import { getLeadsService } from '../../services/leads.service'
 import {
@@ -36,6 +41,48 @@ interface ContactsTabProps {
   primaryContactId?: string
   leadId: string
   companyName?: string
+}
+
+// Helper function to get email verification badge configuration
+const getEmailVerificationBadge = (
+  verificationResult?: LeadPointOfContact['emailVerificationResult']
+) => {
+  if (!verificationResult || verificationResult === 'unknown') {
+    return null
+  }
+
+  const configs = {
+    valid: {
+      icon: CheckCircle2,
+      className: 'bg-green-100 text-green-700',
+      label: 'Verified',
+      tooltip:
+        'This email has been verified as valid and deliverable through our email verification service.',
+    },
+    invalid: {
+      icon: XCircle,
+      className: 'bg-red-100 text-red-700',
+      label: 'Invalid',
+      tooltip:
+        'This email has been flagged as invalid or undeliverable. It may not exist or could be a catch-all address.',
+    },
+    ok_for_all: {
+      icon: ShieldCheck,
+      className: 'bg-blue-100 text-blue-700',
+      label: 'Catch-All',
+      tooltip:
+        'This domain accepts all emails (catch-all). The specific address may or may not exist.',
+    },
+    inferred: {
+      icon: Sparkles,
+      className: 'bg-purple-100 text-purple-700',
+      label: 'Inferred',
+      tooltip:
+        'This email was automatically inferred from available information and has not been verified.',
+    },
+  }
+
+  return configs[verificationResult]
 }
 
 const ContactsTab: React.FC<ContactsTabProps> = ({
@@ -767,6 +814,23 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                                   Unsubscribed
                                 </span>
                               )}
+                              {(() => {
+                                const badge = getEmailVerificationBadge(
+                                  contact.emailVerificationResult
+                                )
+                                if (!badge) return null
+                                const Icon = badge.icon
+                                return (
+                                  <Tooltip content={badge.tooltip}>
+                                    <span
+                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${badge.className} cursor-help`}
+                                    >
+                                      <Icon className="h-3 w-3 mr-1" />
+                                      {badge.label}
+                                    </span>
+                                  </Tooltip>
+                                )
+                              })()}
                             </p>
                             <a
                               href={`mailto:${contact.email}`}
