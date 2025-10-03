@@ -69,20 +69,43 @@ if (typeof process.env.NEXT_RUNTIME === 'undefined' || process.env.NEXT_RUNTIME 
   }
 }
 
+/**
+ * Properly serialize an Error object for logging
+ * Extracts all properties including non-enumerable ones
+ */
+const serializeError = (error: Error): Record<string, any> => {
+  const errorObj: Record<string, any> = {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+  };
+
+  // Extract all enumerable properties
+  for (const key of Object.keys(error)) {
+    errorObj[key] = (error as any)[key];
+  }
+
+  // Extract common error properties that might be non-enumerable
+  // Only check for properties if error is an object
+  if (typeof error === 'object' && error !== null) {
+    if ('code' in error) errorObj.code = (error as any).code;
+    if ('cause' in error) errorObj.cause = (error as any).cause;
+  }
+
+  return errorObj;
+};
+
 // Create a logger interface that maintains compatibility with your existing code
 const createLoggerWithOverride = (logger: Logger) => {
   return {
     warn: (message: string, payload?: any) => {
       if (payload && typeof payload === 'object') {
-        // Ensure error objects are properly serialized
+        // Use pino's serializer by mapping 'error' to 'err' key
         const serializedPayload = { ...payload };
-        if (serializedPayload.error && serializedPayload.error instanceof Error) {
-          serializedPayload.error = {
-            name: serializedPayload.error.name,
-            message: serializedPayload.error.message,
-            stack: serializedPayload.error.stack,
-            ...serializedPayload.error,
-          };
+        if (serializedPayload.error) {
+          serializedPayload.err = serializedPayload.error;
+          serializedPayload.errorDetails = serializeError(serializedPayload.error);
+          delete serializedPayload.error;
         }
         logger.warn(serializedPayload, message);
       } else {
@@ -92,13 +115,10 @@ const createLoggerWithOverride = (logger: Logger) => {
     info: (message: string, payload?: any) => {
       if (payload && typeof payload === 'object') {
         const serializedPayload = { ...payload };
-        if (serializedPayload.error && serializedPayload.error instanceof Error) {
-          serializedPayload.error = {
-            name: serializedPayload.error.name,
-            message: serializedPayload.error.message,
-            stack: serializedPayload.error.stack,
-            ...serializedPayload.error,
-          };
+        if (serializedPayload.error) {
+          serializedPayload.err = serializedPayload.error;
+          serializedPayload.errorDetails = serializeError(serializedPayload.error);
+          delete serializedPayload.error;
         }
         logger.info(serializedPayload, message);
       } else {
@@ -108,13 +128,10 @@ const createLoggerWithOverride = (logger: Logger) => {
     error: (message: string, payload?: any) => {
       if (payload && typeof payload === 'object') {
         const serializedPayload = { ...payload };
-        if (serializedPayload.error && serializedPayload.error instanceof Error) {
-          serializedPayload.error = {
-            name: serializedPayload.error.name,
-            message: serializedPayload.error.message,
-            stack: serializedPayload.error.stack,
-            ...serializedPayload.error,
-          };
+        if (serializedPayload.error) {
+          serializedPayload.err = serializedPayload.error;
+          serializedPayload.errorDetails = serializeError(serializedPayload.error);
+          delete serializedPayload.error;
         }
         logger.error(serializedPayload, message);
       } else {
@@ -124,13 +141,10 @@ const createLoggerWithOverride = (logger: Logger) => {
     debug: (message: string, payload?: any) => {
       if (payload && typeof payload === 'object') {
         const serializedPayload = { ...payload };
-        if (serializedPayload.error && serializedPayload.error instanceof Error) {
-          serializedPayload.error = {
-            name: serializedPayload.error.name,
-            message: serializedPayload.error.message,
-            stack: serializedPayload.error.stack,
-            ...serializedPayload.error,
-          };
+        if (serializedPayload.error) {
+          serializedPayload.err = serializedPayload.error;
+          serializedPayload.errorDetails = serializeError(serializedPayload.error);
+          delete serializedPayload.error;
         }
         logger.debug(serializedPayload, message);
       } else {

@@ -16,6 +16,7 @@ export const defaultLangChainConfig: LangChainConfig = {
 export const defaultLowIntelligenceLangchainConfig: LangChainConfig = {
   ...defaultLangChainConfig,
   model: 'gpt-5-nano',
+  timeout: 120000, // 120 seconds for smart URL filtering (handles large sitemaps)
 };
 
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
