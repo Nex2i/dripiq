@@ -81,7 +81,7 @@ export const SiteScrapeService = {
       const executionTimeMs = Date.now() - startTime;
       const isTimeout = error instanceof Error && error.name === 'TimeoutError';
 
-      logger.error('Failed to smart filter site map, falling back to URLs with max limit', {
+      logger.error('Failed to smart filter site map', {
         error,
         errorName: error instanceof Error ? error.name : 'Unknown',
         errorMessage: error instanceof Error ? error.message : String(error),
