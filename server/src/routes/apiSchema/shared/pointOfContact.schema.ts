@@ -14,6 +14,15 @@ export const PointOfContactResponseSchema = Type.Object({
   id: Type.String({ description: 'Contact ID' }),
   name: Type.String({ description: 'Contact name' }),
   email: Type.String({ description: 'Contact email' }),
+  emailVerificationResult: Type.Optional(
+    Type.Union([
+      Type.Literal('valid'),
+      Type.Literal('invalid'),
+      Type.Literal('unknown'),
+      Type.Literal('ok_for_all'),
+      Type.Literal('inferred'),
+    ], { description: 'Email verification result' })
+  ),
   phone: Type.Optional(Type.String({ description: 'Contact phone' })),
   title: Type.Optional(Type.String({ description: 'Contact job title' })),
   company: Type.Optional(Type.String({ description: 'Contact company' })),
