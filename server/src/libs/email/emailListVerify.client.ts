@@ -1,3 +1,4 @@
+import { emailVerificationResultEnum } from '@/db';
 import axios, { AxiosInstance } from 'axios';
 
 /**
@@ -36,6 +37,21 @@ class EmailListVerifyClient {
     });
   }
 
+  async verifyEmailDetailedBatch(emails: string[]): Promise<Record<string, EmailListVerifyResult>> {
+    const responses = await Promise.allSettled(
+      emails.map((email) => this.verifyEmailDetailed(email))
+    );
+    return responses.reduce(
+      (acc, response) => {
+        if (response.status === 'fulfilled') {
+          acc[response.value.email] = response.value.result;
+        }
+        return acc;
+      },
+      {} as Record<string, EmailListVerifyResult>
+    );
+  }
+
   async verifyEmailDetailed(email: string): Promise<EmailListVerifyResponse> {
     if (!email.isValidEmail()) {
       throw new Error('EmailListVerifyClient:verifyEmailDetailed Invalid email address');
@@ -54,6 +70,23 @@ class EmailListVerifyClient {
 
   isResultOk(result: EmailListVerifyResult): boolean {
     return result === 'ok';
+  }
+
+  mapResultToEmailVerificationResult(
+    result: EmailListVerifyResult
+  ): (typeof emailVerificationResultEnum)['enumValues'][number] {
+    switch (result) {
+      case 'ok':
+        return 'valid' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      case 'ok_for_all':
+        return 'ok_for_all' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      case 'invalid_syntax':
+        return 'invalid' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      case 'unknown':
+        return 'unknown' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      default:
+        return 'invalid' as (typeof emailVerificationResultEnum)['enumValues'][number];
+    }
   }
 }
 

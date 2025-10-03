@@ -159,4 +159,44 @@ export class LeadPointOfContactRepository extends BaseRepository<
       .returning();
     return result;
   }
+
+  /**
+   * Batch update contacts with tenant validation
+   */
+  async updateMultipleByIdsForTenant(
+    updates: Array<{ id: string; data: Partial<Omit<NewLeadPointOfContact, 'leadId'>> }>,
+    tenantId: string
+  ): Promise<LeadPointOfContact[]> {
+    if (updates.length === 0) return [];
+
+    return await this.db.transaction(async (tx) => {
+      const updatedContacts: LeadPointOfContact[] = [];
+
+      // Verify all contacts belong to leads in the tenant first
+      const contactIds = updates.map((update) => update.id);
+      const contacts = await tx
+        .select()
+        .from(this.table)
+        .innerJoin(leads, eq(this.table.leadId, leads.id))
+        .where(and(eq(leads.tenantId, tenantId), inArray(this.table.id, contactIds)));
+
+      if (contacts.length !== updates.length) {
+        throw new Error('Some contacts not found or do not belong to tenant');
+      }
+
+      // Update each contact
+      for (const update of updates) {
+        const [result] = await tx
+          .update(this.table)
+          .set(update.data)
+          .where(eq(this.table.id, update.id))
+          .returning();
+        if (result) {
+          updatedContacts.push(result);
+        }
+      }
+
+      return updatedContacts;
+    });
+  }
 }
