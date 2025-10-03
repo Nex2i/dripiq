@@ -199,16 +199,30 @@ export const ContactExtractionService = {
       similarContact: LeadPointOfContact | null;
     }> = [];
 
+    // Track which existing contacts have been matched to prevent duplicates
+    const matchedContactIds = new Set<string>();
+
     for (let i = 0; i < extractedContacts.length; i++) {
       const extractedContact = extractedContacts[i];
       if (!extractedContact) continue;
 
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(extractedContact);
+
+        // Filter out already matched contacts
+        const availableExistingContacts = existingContacts.filter(
+          (contact) => !matchedContactIds.has(contact.id)
+        );
+
         const similarContact = ContactExtractionService.findSimilarContact(
           leadContact,
-          existingContacts
+          availableExistingContacts
         );
+
+        // Mark this contact as matched if a similar one was found
+        if (similarContact) {
+          matchedContactIds.add(similarContact.id);
+        }
 
         contactsToProcess.push({
           extractedContact,

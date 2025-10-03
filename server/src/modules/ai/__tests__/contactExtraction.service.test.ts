@@ -1140,5 +1140,120 @@ describe('ContactExtractionService', () => {
       // Assert
       expect(result).toHaveLength(2);
     });
+
+    it('should prevent duplicate matching of the same existing contact to multiple extracted contacts', () => {
+      // Arrange - This scenario mimics the real issue where multiple extracted contacts
+      // could match the same existing contact, causing duplicate updates
+      const extractedContacts: ExtractedContact[] = [
+        {
+          name: 'James Helm',
+          email: 'ryanhutchison@filevine.com',
+          phone: '+18002157211',
+          title: 'Founder, Attorney',
+          company: 'Helm Law Group, LLC',
+          contactType: 'individual',
+          context: 'Founder profile referenced on the site',
+          isPriorityContact: false,
+          address: null,
+          linkedinUrl: null,
+          websiteUrl: null,
+          sourceUrl: 'https://topdoglaw.com/attorneys/',
+          confidence: 'high',
+        },
+        {
+          name: 'Intake / Client Intake Team',
+          email: 'intake@TopDogLaw.com',
+          phone: '+18445762116',
+          title: 'Client Intake',
+          company: null,
+          contactType: 'department',
+          context: 'Primary intake email and phone listed on the Contact page',
+          isPriorityContact: false,
+          address: null,
+          linkedinUrl: null,
+          websiteUrl: null,
+          sourceUrl: 'https://topdoglaw.com/contact/',
+          confidence: 'high',
+        },
+      ];
+
+      const existingContacts: LeadPointOfContact[] = [
+        {
+          id: 'd2buudrhd8n0wyaogju8l9am',
+          leadId: 'tc9kqk8m9gldal6dnauef8c7',
+          name: 'James Helm',
+          email: 'ryanhutchison@filevine.com',
+          phone: '+18445762116', // Same phone as the Intake contact
+          title: 'Founder',
+          company: null,
+          sourceUrl: 'https://www.topdoglaw.com/',
+          emailVerificationResult: 'ok_for_all',
+          manuallyReviewed: false,
+          strategyStatus: 'completed',
+          createdAt: new Date('2025-10-02T17:43:23.638Z'),
+          updatedAt: new Date('2025-10-02T18:52:07.192Z'),
+        },
+        {
+          id: 'p1tznzmpltfc4hsna9njn0lj',
+          leadId: 'tc9kqk8m9gldal6dnauef8c7',
+          name: 'Phoenix Office',
+          email: 'ryanzhutch@gmail.com',
+          phone: '+16024289331',
+          title: 'Regional Office',
+          company: 'Helm Law Group, LLC',
+          sourceUrl: 'https://www.topdoglaw.com',
+          emailVerificationResult: 'unknown',
+          manuallyReviewed: false,
+          strategyStatus: 'completed',
+          createdAt: new Date('2025-10-02T17:49:38.381Z'),
+          updatedAt: new Date('2025-10-02T18:36:10.705Z'),
+        },
+      ];
+
+      // Act
+      const result = ContactExtractionService.transformAndMatchContacts(
+        extractedContacts,
+        existingContacts
+      );
+
+      // Assert - Check that no duplicate contact IDs are matched
+      const matchedContactIds = result
+        .map((r) => r.similarContact?.id)
+        .filter((id): id is string => id !== null && id !== undefined);
+
+      const uniqueMatchedIds = new Set(matchedContactIds);
+      expect(matchedContactIds.length).toBe(uniqueMatchedIds.size);
+
+      // Verify both extracted contacts were processed
+      expect(result).toHaveLength(2);
+
+      // One should be matched (James Helm to existing James Helm)
+      const jamesResult = result.find((r) => r.extractedContact.name === 'James Helm');
+      expect(jamesResult?.similarContact).not.toBeNull();
+      expect(jamesResult?.similarContact?.id).toBe('d2buudrhd8n0wyaogju8l9am');
+
+      // The other should be a new contact (Intake Team)
+      const intakeResult = result.find(
+        (r) => r.extractedContact.name === 'Intake / Client Intake Team'
+      );
+      expect(intakeResult?.similarContact).toBeNull();
+
+      // Now verify that groupContactsForBatchOperations produces no duplicate IDs
+      const { contactsToCreate, contactsToUpdate } =
+        ContactExtractionService.groupContactsForBatchOperations(result);
+
+      // Extract all update IDs
+      const updateIds = contactsToUpdate.map((u) => u.id);
+      const uniqueUpdateIds = new Set(updateIds);
+
+      // Verify no duplicates in updates
+      expect(updateIds.length).toBe(uniqueUpdateIds.size);
+      expect(updateIds).toHaveLength(1); // Only James Helm should be updated
+      expect(updateIds[0]).toBe('d2buudrhd8n0wyaogju8l9am');
+
+      // Verify the Intake contact is in the create list
+      expect(contactsToCreate).toHaveLength(1);
+      expect(contactsToCreate[0]?.name).toBe('Intake / Client Intake Team');
+    });
   });
 });
