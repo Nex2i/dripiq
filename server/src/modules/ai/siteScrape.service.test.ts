@@ -52,18 +52,16 @@ describe('SiteScrapeService.smartFilterSiteMap', () => {
       expect(result).toEqual(mockFilteredUrls.slice(0, 75));
     });
 
-    it('should enforce max limit of 75 when smart filter fails and falls back', async () => {
-      const mockUrls = createMockUrls(398); // Simulate the reported bug scenario
+    it('should throw error when smart filter fails', async () => {
+      const mockUrls = createMockUrls(100);
 
       (smartUrlFilterAgent.execute as jest.Mock).mockRejectedValue(
         new Error('Smart filter failed')
       );
 
-      const result = await SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site');
-
-      expect(result).toHaveLength(75);
-      expect(result[0]).toBe('https://example.com/page-1');
-      expect(result[74]).toBe('https://example.com/page-75');
+      await expect(
+        SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')
+      ).rejects.toThrow('Smart filter failed');
     });
 
     it('should enforce max limit of 75 when smart filter throws exception', async () => {
