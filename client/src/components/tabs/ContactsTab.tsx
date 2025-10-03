@@ -19,6 +19,7 @@ import {
   XCircle,
   ShieldCheck,
   Sparkles,
+  HelpCircle,
 } from 'lucide-react'
 import { Menu, MenuItem, MenuSeparator } from '../ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -45,9 +46,9 @@ interface ContactsTabProps {
 
 // Helper function to get email verification badge configuration
 const getEmailVerificationBadge = (
-  verificationResult?: LeadPointOfContact['emailVerificationResult']
+  verificationResult?: LeadPointOfContact['emailVerificationResult'],
 ) => {
-  if (!verificationResult || verificationResult === 'unknown') {
+  if (!verificationResult) {
     return null
   }
 
@@ -79,6 +80,13 @@ const getEmailVerificationBadge = (
       label: 'Inferred',
       tooltip:
         'This email was automatically inferred from available information and has not been verified.',
+    },
+    unknown: {
+      icon: HelpCircle,
+      className: 'bg-gray-100 text-gray-700',
+      label: 'Unknown',
+      tooltip:
+        'This email has not yet been verified. Verification status is currently unknown.',
     },
   }
 
@@ -816,7 +824,7 @@ const ContactsTab: React.FC<ContactsTabProps> = ({
                               )}
                               {(() => {
                                 const badge = getEmailVerificationBadge(
-                                  contact.emailVerificationResult
+                                  contact.emailVerificationResult,
                                 )
                                 if (!badge) return null
                                 const Icon = badge.icon
