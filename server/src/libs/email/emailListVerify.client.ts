@@ -1,4 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
+import { emailVerificationResultEnum } from '@/db';
+import { logger } from '@/libs/logger';
 
 /**
 Documentation: https://api.emaillistverify.com/api-doc
@@ -36,6 +38,28 @@ class EmailListVerifyClient {
     });
   }
 
+  async verifyEmailDetailedBatch(emails: string[]): Promise<Record<string, EmailListVerifyResult>> {
+    const responses = await Promise.allSettled(
+      emails.map((email) => this.verifyEmailDetailed(email))
+    );
+    return responses.reduce(
+      (acc, response, index) => {
+        if (response.status === 'fulfilled' && response.value.result) {
+          acc[response.value.email] = response.value.result;
+        } else if (response.status === 'rejected') {
+          const email = emails[index];
+          logger.warn('Email verification failed', {
+            email,
+            error: response.reason,
+            errorMessage: response.reason?.message || String(response.reason),
+          });
+        }
+        return acc;
+      },
+      {} as Record<string, EmailListVerifyResult>
+    );
+  }
+
   async verifyEmailDetailed(email: string): Promise<EmailListVerifyResponse> {
     if (!email.isValidEmail()) {
       throw new Error('EmailListVerifyClient:verifyEmailDetailed Invalid email address');
@@ -54,6 +78,23 @@ class EmailListVerifyClient {
 
   isResultOk(result: EmailListVerifyResult): boolean {
     return result === 'ok';
+  }
+
+  mapResultToEmailVerificationResult(
+    result: EmailListVerifyResult
+  ): (typeof emailVerificationResultEnum)['enumValues'][number] {
+    switch (result) {
+      case 'ok':
+        return 'valid' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      case 'ok_for_all':
+        return 'ok_for_all' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      case 'invalid_syntax':
+        return 'invalid' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      case 'unknown':
+        return 'unknown' as (typeof emailVerificationResultEnum)['enumValues'][number];
+      default:
+        return 'invalid' as (typeof emailVerificationResultEnum)['enumValues'][number];
+    }
   }
 }
 

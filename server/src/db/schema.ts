@@ -18,6 +18,39 @@ import { DEFAULT_CALENDAR_TIE_IN } from '../constants';
 // Define the custom schema
 export const appSchema = pgSchema(DATABASE_SCHEMA);
 
+// Enums for Contact Campaigns
+// Note: Use 'campaign_channel' to align with DB enum created in migrations
+export const channelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
+export const emailVerificationResultEnum = appSchema.enum('email_verification_result', [
+  'valid',
+  'invalid',
+  'unknown',
+  'ok_for_all',
+  'inferred',
+]);
+export const campaignStatusEnum = appSchema.enum('campaign_status', [
+  'draft',
+  'active',
+  'paused',
+  'completed',
+  'stopped',
+  'error',
+]);
+export const scheduledActionStatusEnum = appSchema.enum('scheduled_action_status', [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+  'canceled',
+]);
+export const outboundMessageStateEnum = appSchema.enum('outbound_message_state', [
+  'queued',
+  'scheduled',
+  'sent',
+  'failed',
+  'canceled',
+]);
+
 // Users table
 export const users = appSchema.table('users', {
   id: text('id')
@@ -229,6 +262,9 @@ export const leadPointOfContacts = appSchema.table('lead_point_of_contacts', {
     .references(() => leads.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   email: text('email'), // Made nullable to allow contacts without email
+  emailVerificationResult: emailVerificationResultEnum('email_verification_result')
+    .default('unknown')
+    .notNull(), // The result of the email verification
   phone: text('phone'),
   title: text('title'), // Job title
   company: text('company'),
@@ -397,32 +433,6 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   leadProducts: many(leadProducts),
 }));
-
-// Enums for Contact Campaigns
-// Note: Use 'campaign_channel' to align with DB enum created in migrations
-export const channelEnum = appSchema.enum('campaign_channel', ['email', 'sms']);
-export const campaignStatusEnum = appSchema.enum('campaign_status', [
-  'draft',
-  'active',
-  'paused',
-  'completed',
-  'stopped',
-  'error',
-]);
-export const scheduledActionStatusEnum = appSchema.enum('scheduled_action_status', [
-  'pending',
-  'processing',
-  'completed',
-  'failed',
-  'canceled',
-]);
-export const outboundMessageStateEnum = appSchema.enum('outbound_message_state', [
-  'queued',
-  'scheduled',
-  'sent',
-  'failed',
-  'canceled',
-]);
 
 // Contact Campaigns table - core campaign instances
 export const contactCampaigns = appSchema.table(

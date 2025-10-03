@@ -3,6 +3,7 @@ import { logger } from '@/libs/logger';
 import { formatPhoneForStorage, normalizePhoneForComparison } from '@/libs/phoneFormatter';
 import { NewLeadPointOfContact, LeadPointOfContact } from '@/db/schema';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
+import { emailListVerifyClient } from '@/libs/email/emailListVerify.client';
 import { createContact } from '../lead.service';
 import { ExtractedContact } from './schemas/contactExtraction/contactExtractionSchema';
 import { CONTACT_CONTEXT, CONTACT_CONFIDENCE } from './constants/contactContext';
@@ -44,7 +45,6 @@ export const ContactExtractionService = {
       }
 
       const contacts = extractionResult.finalResponseParsed.contacts;
-      const priorityContactIndex = extractionResult.finalResponseParsed.priorityContactId;
 
       // Separate webData contacts from AI-only contacts based on context
       const webDataContacts = contacts.filter(isWebDataContact);
@@ -57,54 +57,27 @@ export const ContactExtractionService = {
       // Get existing contacts for the lead
       const existingContacts = await ContactExtractionService.getExistingContacts(leadId);
 
-      // Process all contacts without limits - webData first, then AI-only
-      const webDataToProcess = webDataContacts;
-      const aiOnlyToProcess = aiOnlyContacts; // No limits applied
-
       // Combine for final processing: webData first, then AI-only
-      const allToProcess = [...webDataToProcess, ...aiOnlyToProcess];
+      const allToProcess = [...webDataContacts, ...aiOnlyContacts];
 
       // Deduplicate the final list
-      const { deduplicatedContacts, updatedPriorityIndex } =
-        ContactExtractionService.deduplicateContacts(allToProcess, priorityContactIndex);
+      const deduplicatedContacts = ContactExtractionService.deduplicateContacts(allToProcess);
 
       logger.info(
-        `Processing all contacts for ${domain}: ${webDataToProcess.length} webData, ${aiOnlyToProcess.length} AI-only, ${deduplicatedContacts.length} after deduplication`
+        `Processing all contacts for ${domain}: ${webDataContacts.length} webData, ${aiOnlyContacts.length} AI-only, ${deduplicatedContacts.length} after deduplication`
       );
-
-      const toProcess = deduplicatedContacts;
-
-      // Compute priority index within the final list
-      const newPriorityIndex =
-        updatedPriorityIndex !== null &&
-        updatedPriorityIndex !== undefined &&
-        updatedPriorityIndex < toProcess.length
-          ? updatedPriorityIndex
-          : null;
 
       // Process and save contacts with merging
       const processedContacts = await ContactExtractionService.processAndMergeContacts(
         tenantId,
         leadId,
-        toProcess,
-        existingContacts,
-        newPriorityIndex
+        deduplicatedContacts,
+        existingContacts
       );
 
       logger.info(
         `Successfully processed ${processedContacts.created} new and ${processedContacts.updated} updated contacts for leadId: ${leadId}`
       );
-
-      // Set primary contact if priority contact was identified
-      if (processedContacts.primaryContactId) {
-        await ContactExtractionService.updateLeadPrimaryContact(
-          leadId,
-          processedContacts.primaryContactId
-        );
-        logger.info(
-          `Set primary contact ${processedContacts.primaryContactId} for leadId: ${leadId}`
-        );
-      }
 
       return {
         contactsCreated: processedContacts.created,
@@ -125,14 +98,10 @@ export const ContactExtractionService = {
   /**
    * Deduplicate contacts based on email, phone, and name similarity
    */
-  deduplicateContacts: (
-    contacts: ExtractedContact[],
-    priorityContactIndex?: number | null
-  ): { deduplicatedContacts: ExtractedContact[]; updatedPriorityIndex: number | null } => {
+  deduplicateContacts: (contacts: ExtractedContact[]): ExtractedContact[] => {
     const deduplicatedContacts: ExtractedContact[] = [];
     const seenEmails = new Set<string>();
     const seenPhones = new Set<string>();
-    let updatedPriorityIndex: number | null = null;
 
     for (let i = 0; i < contacts.length; i++) {
       const contact = contacts[i];
@@ -182,29 +151,9 @@ export const ContactExtractionService = {
       // Track seen values
       if (normalizedEmail) seenEmails.add(normalizedEmail);
       if (normalizedPhone) seenPhones.add(normalizedPhone);
-
-      // Update priority index if this was the priority contact
-      if (
-        priorityContactIndex !== null &&
-        priorityContactIndex !== undefined &&
-        i === priorityContactIndex
-      ) {
-        updatedPriorityIndex = deduplicatedContacts.length - 1;
-      }
     }
 
-    // If priority contact was filtered due to duplication, try to find a priority contact by flag
-    if (priorityContactIndex !== null && updatedPriorityIndex === null) {
-      const priorityContactByFlag = deduplicatedContacts.findIndex(
-        (contact) => contact.isPriorityContact
-      );
-      if (priorityContactByFlag >= 0) {
-        updatedPriorityIndex = priorityContactByFlag;
-        logger.info(`Priority contact index updated due to deduplication: ${updatedPriorityIndex}`);
-      }
-    }
-
-    return { deduplicatedContacts, updatedPriorityIndex };
+    return deduplicatedContacts;
   },
 
   /**
@@ -234,21 +183,24 @@ export const ContactExtractionService = {
   },
 
   /**
-   * Process extracted contacts and merge with existing ones
+   * Transform extracted contacts to lead contact format with similarity matching
    */
-  processAndMergeContacts: async (
-    tenantId: string,
-    leadId: string,
+  transformAndMatchContacts: (
     extractedContacts: ExtractedContact[],
-    existingContacts: LeadPointOfContact[],
-    priorityContactIndex?: number | null
-  ) => {
-    const results = {
-      created: 0,
-      updated: 0,
-      contacts: [] as LeadPointOfContact[],
-      primaryContactId: null as string | null,
-    };
+    existingContacts: LeadPointOfContact[]
+  ): Array<{
+    extractedContact: ExtractedContact;
+    leadContact: Omit<NewLeadPointOfContact, 'leadId'>;
+    similarContact: LeadPointOfContact | null;
+  }> => {
+    const contactsToProcess: Array<{
+      extractedContact: ExtractedContact;
+      leadContact: Omit<NewLeadPointOfContact, 'leadId'>;
+      similarContact: LeadPointOfContact | null;
+    }> = [];
+
+    // Track which existing contacts have been matched to prevent duplicates
+    const matchedContactIds = new Set<string>();
 
     for (let i = 0; i < extractedContacts.length; i++) {
       const extractedContact = extractedContacts[i];
@@ -257,77 +209,253 @@ export const ContactExtractionService = {
       try {
         const leadContact = ContactExtractionService.transformToLeadContact(extractedContact);
 
-        // Find similar existing contact
+        // Filter out already matched contacts
+        const availableExistingContacts = existingContacts.filter(
+          (contact) => !matchedContactIds.has(contact.id)
+        );
+
         const similarContact = ContactExtractionService.findSimilarContact(
           leadContact,
-          existingContacts
+          availableExistingContacts
         );
 
-        let contactId: string | undefined;
-
+        // Mark this contact as matched if a similar one was found
         if (similarContact) {
-          // Merge and update existing contact
-          const mergedContact = ContactExtractionService.mergeContacts(similarContact, leadContact);
-
-          const updatedContact = await ContactExtractionService.updateContact(
-            similarContact.id,
-            mergedContact
-          );
-
-          if (updatedContact) {
-            results.updated++;
-            results.contacts.push(updatedContact);
-            contactId = updatedContact.id;
-            logger.debug(`Updated contact: ${extractedContact.name} for leadId: ${leadId}`);
-          } else {
-            continue;
-          }
-        } else {
-          // Create new contact - no limits applied
-          const createdContact = await createContact(tenantId, leadId, leadContact);
-          results.created++;
-          results.contacts.push(createdContact);
-          contactId = createdContact.id;
-          logger.debug(`Created contact: ${extractedContact.name} for leadId: ${leadId}`);
+          matchedContactIds.add(similarContact.id);
         }
 
-        // Check if this is the priority contact
-        if (
-          priorityContactIndex !== null &&
-          priorityContactIndex !== undefined &&
-          i === priorityContactIndex &&
-          contactId
-        ) {
-          results.primaryContactId = contactId;
-          logger.info(
-            `Identified priority contact: ${extractedContact.name} (${contactId}) for leadId: ${leadId}`
-          );
-        }
+        contactsToProcess.push({
+          extractedContact,
+          leadContact,
+          similarContact,
+        });
       } catch (error) {
-        logger.warn(
-          `Failed to process contact ${extractedContact.name || 'unknown'} for leadId: ${leadId}:`,
-          error
-        );
+        logger.warn(`Failed to transform contact ${extractedContact.name || 'unknown'}:`, error);
         // Continue processing other contacts even if one fails
       }
     }
 
-    // Fallback: if no priority contact was explicitly identified, use the first contact with isPriorityContact=true
-    if (!results.primaryContactId && extractedContacts.length > 0) {
-      const priorityContact = extractedContacts.find((contact) => contact?.isPriorityContact);
-      if (priorityContact) {
-        const priorityIndex = extractedContacts.indexOf(priorityContact);
-        if (
-          priorityIndex >= 0 &&
-          priorityIndex < results.contacts.length &&
-          results.contacts[priorityIndex]
-        ) {
-          results.primaryContactId = results.contacts[priorityIndex].id;
-          logger.info(
-            `Fallback: Found priority contact by isPriorityContact flag: ${priorityContact.name} for leadId: ${leadId}`
-          );
+    return contactsToProcess;
+  },
+
+  /**
+   * Group contacts into create and update operations
+   */
+  groupContactsForBatchOperations: (
+    contactsToProcess: Array<{
+      extractedContact: ExtractedContact;
+      leadContact: Omit<NewLeadPointOfContact, 'leadId'>;
+      similarContact: LeadPointOfContact | null;
+    }>
+  ): {
+    contactsToCreate: Omit<NewLeadPointOfContact, 'leadId'>[];
+    contactsToUpdate: Array<{
+      id: string;
+      data: Partial<LeadPointOfContact>;
+    }>;
+  } => {
+    const contactsToCreate: Omit<NewLeadPointOfContact, 'leadId'>[] = [];
+    const contactsToUpdate: Array<{
+      id: string;
+      data: Partial<LeadPointOfContact>;
+    }> = [];
+
+    for (const contactProcess of contactsToProcess) {
+      if (contactProcess.similarContact) {
+        // Merge and prepare for update
+        const mergedContact = ContactExtractionService.mergeContacts(
+          contactProcess.similarContact,
+          contactProcess.leadContact
+        );
+
+        contactsToUpdate.push({
+          id: contactProcess.similarContact.id,
+          data: mergedContact,
+        });
+      } else {
+        // Prepare for creation
+        contactsToCreate.push(contactProcess.leadContact);
+      }
+    }
+
+    return { contactsToCreate, contactsToUpdate };
+  },
+
+  /**
+   * Helper to assign email verification results to contacts
+   */
+  assignEmailVerificationResults: <T>(
+    contacts: T[],
+    getEmail: (contact: T) => string | null | undefined,
+    setResult: (
+      contact: T,
+      result: 'valid' | 'invalid' | 'unknown' | 'ok_for_all' | 'inferred'
+    ) => void,
+    emailListVerifyResponses: Record<string, any>
+  ): void => {
+    for (const contact of contacts) {
+      const email = getEmail(contact);
+      if (email) {
+        const verificationResult = emailListVerifyResponses[email];
+        if (verificationResult) {
+          const mappedResult =
+            emailListVerifyClient.mapResultToEmailVerificationResult(verificationResult);
+          setResult(contact, mappedResult);
         }
       }
+    }
+  },
+
+  /**
+   * Clean Emails and assigned email validation
+   */
+  cleanEmailsAndAssignedEmailValidation: async (
+    contactsToCreate: Omit<NewLeadPointOfContact, 'leadId'>[],
+    contactsToUpdate: Array<{
+      id: string;
+      data: Partial<LeadPointOfContact>;
+    }>
+  ): Promise<void> => {
+    const allEmails = [
+      ...contactsToCreate.map((contact) => contact.email),
+      ...contactsToUpdate.map((contact) => contact.data.email),
+    ].filter((email) => email && email.isValidEmail() && email.trim() !== '') as string[];
+    const emailListVerifyResponses =
+      await emailListVerifyClient.verifyEmailDetailedBatch(allEmails);
+
+    ContactExtractionService.assignEmailVerificationResults(
+      contactsToCreate,
+      (contact) => contact.email,
+      (contact, result) => {
+        contact.emailVerificationResult = result;
+      },
+      emailListVerifyResponses
+    );
+
+    ContactExtractionService.assignEmailVerificationResults(
+      contactsToUpdate,
+      (contact) => contact.data.email,
+      (contact, result) => {
+        contact.data.emailVerificationResult = result;
+      },
+      emailListVerifyResponses
+    );
+  },
+
+  /**
+   * Execute batch operations for contact creation and updates
+   */
+  executeBatchContactOperations: async (
+    tenantId: string,
+    leadId: string,
+    contactsToCreate: Omit<NewLeadPointOfContact, 'leadId'>[],
+    contactsToUpdate: Array<{
+      id: string;
+      data: Partial<LeadPointOfContact>;
+    }>
+  ): Promise<{
+    created: number;
+    updated: number;
+    contacts: LeadPointOfContact[];
+  }> => {
+    let createdContacts: LeadPointOfContact[] = [];
+    let updatedContacts: LeadPointOfContact[] = [];
+
+    // Batch create contacts
+    if (contactsToCreate.length > 0) {
+      try {
+        // Use the existing createContact function for now, but we could optimize this further
+        // by using batch creation if available
+        const createPromises = contactsToCreate.map((leadContact) =>
+          createContact(tenantId, leadId, leadContact)
+        );
+        createdContacts = await Promise.all(createPromises);
+
+        logger.debug(`Batch created ${createdContacts.length} contacts for leadId: ${leadId}`);
+      } catch (error) {
+        logger.error(`Failed to batch create contacts for leadId: ${leadId}:`, error);
+        // Continue with updates even if creation fails
+      }
+    }
+
+    // Batch update contacts
+    if (contactsToUpdate.length > 0) {
+      try {
+        updatedContacts = await leadPointOfContactRepository.updateMultipleByIdsForTenant(
+          contactsToUpdate,
+          tenantId
+        );
+
+        logger.debug(`Batch updated ${updatedContacts.length} contacts for leadId: ${leadId}`);
+      } catch (error) {
+        logger.error(`Failed to batch update contacts for leadId: ${leadId}:`, error);
+        // Continue even if updates fail
+      }
+    }
+
+    return {
+      created: createdContacts.length,
+      updated: updatedContacts.length,
+      contacts: [...createdContacts, ...updatedContacts],
+    };
+  },
+
+  /**
+   * Process extracted contacts and merge with existing ones
+   */
+  processAndMergeContacts: async (
+    tenantId: string,
+    leadId: string,
+    extractedContacts: ExtractedContact[],
+    existingContacts: LeadPointOfContact[]
+  ) => {
+    const results = {
+      created: 0,
+      updated: 0,
+      contacts: [] as LeadPointOfContact[],
+      primaryContactId: null as string | null,
+    };
+
+    if (extractedContacts.length === 0) {
+      return results;
+    }
+
+    try {
+      // Transform and match contacts
+      const contactsToProcess = ContactExtractionService.transformAndMatchContacts(
+        extractedContacts,
+        existingContacts
+      );
+
+      // Group for batch operations
+      const { contactsToCreate, contactsToUpdate } =
+        ContactExtractionService.groupContactsForBatchOperations(contactsToProcess);
+
+      // Clean Emails and assign email validation
+      await ContactExtractionService.cleanEmailsAndAssignedEmailValidation(
+        contactsToCreate,
+        contactsToUpdate
+      );
+
+      // Execute batch operations
+      const batchResults = await ContactExtractionService.executeBatchContactOperations(
+        tenantId,
+        leadId,
+        contactsToCreate,
+        contactsToUpdate
+      );
+
+      results.created = batchResults.created;
+      results.updated = batchResults.updated;
+      results.contacts = batchResults.contacts;
+
+      // Log results
+      logger.info(
+        `Successfully processed ${results.created} new and ${results.updated} updated contacts for leadId: ${leadId}`
+      );
+    } catch (error) {
+      logger.error(`Error in batch contact processing for leadId: ${leadId}:`, error);
+      throw error;
     }
 
     return results;
@@ -407,16 +535,6 @@ export const ContactExtractionService = {
       );
       totalScore += nameScore * weights.name;
       totalWeight += weights.name;
-    }
-
-    // Company similarity
-    if (contact1.company && contact2.company) {
-      const companyScore = compareTwoStrings(
-        contact1.company.toLowerCase().trim(),
-        contact2.company.toLowerCase().trim()
-      );
-      totalScore += companyScore * weights.company;
-      totalWeight += weights.company;
     }
 
     // Return weighted average

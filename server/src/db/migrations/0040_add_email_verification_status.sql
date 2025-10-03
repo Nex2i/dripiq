@@ -1,0 +1,2 @@
+CREATE TYPE "dripiq_app"."email_verification_result" AS ENUM('valid', 'invalid', 'unknown', 'ok_for_all');--> statement-breakpoint
+ALTER TABLE "dripiq_app"."lead_point_of_contacts" ADD COLUMN "email_verification_result" "dripiq_app"."email_verification_result" DEFAULT 'unknown' NOT NULL;

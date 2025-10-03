@@ -64,6 +64,7 @@
     "@langfuse/tracing": "^4.2.0",
     "@mendable/firecrawl-js": "^4.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@opentelemetry/auto-instrumentations-node": "^0.64.6",
     "@opentelemetry/sdk-node": "^0.205.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@sendgrid/client": "^8.1.5",
