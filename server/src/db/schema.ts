@@ -26,6 +26,7 @@ export const emailVerificationResultEnum = appSchema.enum('email_verification_re
   'invalid',
   'unknown',
   'ok_for_all',
+  'inferred',
 ]);
 export const campaignStatusEnum = appSchema.enum('campaign_status', [
   'draft',
