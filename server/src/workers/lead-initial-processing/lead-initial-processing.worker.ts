@@ -176,6 +176,8 @@ async function processLeadInitialProcessing(
           basicFilteredCount: basicFilteredUrls.length,
         }
       );
+
+      throw error;
     }
 
     // Update status to syncing site
