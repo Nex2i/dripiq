@@ -167,12 +167,25 @@ async function processLeadInitialProcessing(
         smartFilteredCount: smartFilteredUrls.length,
       });
     } catch (error) {
-      logger.warn('[LeadInitialProcessingWorker] Smart filter failed, using basic filtered URLs', {
+      logger.warn(
+        '[LeadInitialProcessingWorker] Smart filter failed, using basic filtered URLs with max limit',
+        {
+          jobId: job.id,
+          leadId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          basicFilteredCount: basicFilteredUrls.length,
+        }
+      );
+      // Fallback to basic filtered URLs but enforce max limit of 75
+      const maxUrls = 75;
+      smartFilteredUrls = basicFilteredUrls.map((url) => url.url).slice(0, maxUrls);
+      logger.info('[LeadInitialProcessingWorker] Applied max limit to fallback URLs', {
         jobId: job.id,
         leadId,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        originalCount: basicFilteredUrls.length,
+        limitedCount: smartFilteredUrls.length,
+        maxUrls,
       });
-      smartFilteredUrls = basicFilteredUrls.map((url) => url.url);
     }
 
     // Update status to syncing site

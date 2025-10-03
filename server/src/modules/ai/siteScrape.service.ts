@@ -80,14 +80,23 @@ export const SiteScrapeService = {
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
 
-      logger.error('Failed to smart filter site map, falling back to all URLs', {
+      logger.error('Failed to smart filter site map, falling back to URLs with max limit', {
         error,
         siteMapLength: siteMap.length,
         executionTimeMs,
       });
 
-      // Fallback: return all URLs
-      return siteMap.map((url) => url.url);
+      // Fallback: return all URLs but enforce max limit
+      const fallbackUrls = siteMap.map((url) => url.url).slice(0, maxUrls);
+
+      logger.info('Applied max limit to fallback URLs after smart filter error', {
+        originalCount: siteMap.length,
+        limitedCount: fallbackUrls.length,
+        maxUrls,
+        executionTimeMs,
+      });
+
+      return fallbackUrls;
     }
   },
 
