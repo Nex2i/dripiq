@@ -59,21 +59,21 @@ describe('SiteScrapeService.smartFilterSiteMap', () => {
         new Error('Smart filter failed')
       );
 
-      await expect(
-        SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')
-      ).rejects.toThrow('Smart filter failed');
+      await expect(SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')).rejects.toThrow(
+        'Smart filter failed'
+      );
     });
 
-    it('should enforce max limit of 75 when smart filter throws exception', async () => {
+    it('should throw error when smart filter throws exception', async () => {
       const mockUrls = createMockUrls(200);
 
       (smartUrlFilterAgent.execute as jest.Mock).mockImplementation(() => {
         throw new Error('Unexpected error');
       });
 
-      const result = await SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site');
-
-      expect(result).toHaveLength(75);
+      await expect(SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')).rejects.toThrow(
+        'Unexpected error'
+      );
     });
 
     it('should return all URLs when count is below minimum (45)', async () => {
@@ -139,47 +139,47 @@ describe('SiteScrapeService.smartFilterSiteMap', () => {
       expect(smartUrlFilterAgent.execute).toHaveBeenCalled();
     });
 
-    it('should handle exactly 76 URLs and ensure max limit is enforced on error', async () => {
+    it('should throw error when handling exactly 76 URLs on error', async () => {
       const mockUrls = createMockUrls(76);
 
       (smartUrlFilterAgent.execute as jest.Mock).mockRejectedValue(new Error('Failed'));
 
-      const result = await SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site');
-
-      expect(result).toHaveLength(75);
+      await expect(SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')).rejects.toThrow(
+        'Failed'
+      );
     });
   });
 
   describe('Regression test for 398 pages bug', () => {
-    it('should never return more than 75 URLs even when smart filter fails with 398 input URLs', async () => {
+    it('should throw error when smart filter fails with 398 input URLs', async () => {
       const mockUrls = createMockUrls(398);
 
       (smartUrlFilterAgent.execute as jest.Mock).mockRejectedValue(
         new Error('Smart filter agent error')
       );
 
-      const result = await SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site');
-
-      expect(result).toHaveLength(75);
-      expect(result.length).toBeLessThanOrEqual(75);
+      await expect(SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')).rejects.toThrow(
+        'Smart filter agent error'
+      );
     });
   });
 
   describe('Timeout error handling', () => {
-    it('should handle TimeoutError and enforce max limit', async () => {
+    it('should throw TimeoutError when timeout occurs', async () => {
       const mockUrls = createMockUrls(200);
       const timeoutError = new Error('Request timed out');
       timeoutError.name = 'TimeoutError';
 
       (smartUrlFilterAgent.execute as jest.Mock).mockRejectedValue(timeoutError);
 
-      const result = await SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site');
+      await expect(SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')).rejects.toThrow(
+        'Request timed out'
+      );
 
-      expect(result).toHaveLength(75);
       expect(smartUrlFilterAgent.execute).toHaveBeenCalled();
     });
 
-    it('should log timeout errors with proper context', async () => {
+    it('should log timeout errors with proper context before throwing', async () => {
       const mockUrls = createMockUrls(150);
       const timeoutError = new Error('Request timed out after 60000ms');
       timeoutError.name = 'TimeoutError';
@@ -187,10 +187,12 @@ describe('SiteScrapeService.smartFilterSiteMap', () => {
       const { logger } = require('@/libs/logger');
       (smartUrlFilterAgent.execute as jest.Mock).mockRejectedValue(timeoutError);
 
-      await SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site');
+      await expect(SiteScrapeService.smartFilterSiteMap(mockUrls, 'lead_site')).rejects.toThrow(
+        'Request timed out after 60000ms'
+      );
 
       expect(logger.error).toHaveBeenCalledWith(
-        'Failed to smart filter site map, falling back to URLs with max limit',
+        'Failed to smart filter site map',
         expect.objectContaining({
           isTimeout: true,
           siteMapLength: 150,
