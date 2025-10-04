@@ -79,15 +79,20 @@ export const SiteScrapeService = {
       return finalUrls;
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
+      const isTimeout = error instanceof Error && error.name === 'TimeoutError';
 
-      logger.error('Failed to smart filter site map, falling back to all URLs', {
+      logger.error('Failed to smart filter site map', {
         error,
-        siteMapLength: siteMap.length,
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        isTimeout,
+        siteMapLength: siteMap?.length,
         executionTimeMs,
+        siteType,
+        domain: options.domain,
       });
 
-      // Fallback: return all URLs
-      return siteMap.map((url) => url.url);
+      throw error;
     }
   },
 

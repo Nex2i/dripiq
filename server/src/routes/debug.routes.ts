@@ -3,6 +3,8 @@ import { Type } from '@sinclair/typebox';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { cacheManager, cacheTestConnection, cacheInspectRedis } from '@/libs/cache';
 import { logger } from '@/libs/logger';
+import firecrawlClient from '@/libs/firecrawl/firecrawl.client';
+import { SiteScrapeService } from '@/modules/ai/siteScrape.service';
 
 const basePath = '/debug';
 
@@ -179,6 +181,180 @@ export default async function Debug(fastify: FastifyInstance, _opts: RouteOption
         reply.status(500).send({
           success: false,
           error: error.message || 'Failed to inspect Redis',
+        });
+      }
+    },
+  });
+
+  // Test smart filter
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/smart-filter/test`,
+    schema: {
+      querystring: Type.Object({
+        site: Type.String({ description: 'Website URL to test (e.g., https://example.com)' }),
+        siteType: Type.Optional(
+          Type.Union([Type.Literal('lead_site'), Type.Literal('organization_site')], {
+            description: 'Type of site to scrape',
+            default: 'lead_site',
+          })
+        ),
+      }),
+      response: {
+        200: Type.Object({
+          success: Type.Boolean(),
+          site: Type.String(),
+          siteType: Type.String(),
+          sitemap: Type.Object({
+            totalUrls: Type.Number(),
+            sampleUrls: Type.Array(Type.String()),
+          }),
+          filtering: Type.Object({
+            basicFiltered: Type.Number(),
+            smartFiltered: Type.Number(),
+            finalUrls: Type.Array(Type.String()),
+          }),
+          performance: Type.Object({
+            sitemapFetchTimeMs: Type.Number(),
+            smartFilterTimeMs: Type.Number(),
+            totalTimeMs: Type.Number(),
+          }),
+          skipped: Type.Optional(
+            Type.Object({
+              reason: Type.String(),
+              message: Type.String(),
+            })
+          ),
+          timestamp: Type.String(),
+        }),
+        400: Type.Object({
+          success: Type.Boolean(),
+          error: Type.String(),
+        }),
+        500: Type.Object({
+          success: Type.Boolean(),
+          error: Type.String(),
+          details: Type.Optional(Type.Any()),
+        }),
+      },
+      tags: ['Debug'],
+      summary: 'Test Smart Filter',
+      description:
+        'Test the smart filter functionality by fetching a sitemap and running the smart filter on it',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Querystring: {
+          site: string;
+          siteType?: 'lead_site' | 'organization_site';
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const startTime = Date.now();
+      const { site, siteType = 'lead_site' } = request.query;
+
+      try {
+        // Validate URL
+        try {
+          new URL(site);
+        } catch {
+          return reply.status(400).send({
+            success: false,
+            error: 'Invalid URL provided',
+          });
+        }
+
+        logger.info('[Debug] Testing smart filter', { site, siteType });
+
+        // Step 1: Fetch sitemap
+        const sitemapStart = Date.now();
+        let sitemap = await firecrawlClient.getSiteMap(site);
+        const sitemapFetchTimeMs = Date.now() - sitemapStart;
+
+        logger.info('[Debug] Sitemap fetched', {
+          site,
+          totalUrls: sitemap.length,
+          sitemapFetchTimeMs,
+        });
+
+        const basicFiltered = SiteScrapeService.filterUrls(sitemap);
+
+        logger.info('[Debug] Basic filtering applied', {
+          site,
+          originalCount: sitemap.length,
+          basicFilteredCount: basicFiltered.length,
+        });
+
+        // Step 3: Apply smart filtering
+        const smartFilterStart = Date.now();
+        const smartFiltered = await SiteScrapeService.smartFilterSiteMap(sitemap, siteType, {
+          domain: new URL(site).hostname,
+        });
+        const smartFilterTimeMs = Date.now() - smartFilterStart;
+
+        logger.info('[Debug] Smart filter applied', {
+          site,
+          basicFilteredCount: basicFiltered.length,
+          smartFilteredCount: smartFiltered.length,
+          smartFilterTimeMs,
+        });
+
+        const totalTimeMs = Date.now() - startTime;
+
+        // Check if smart filter was skipped
+        let skipped;
+        if (sitemap.length <= 45) {
+          skipped = {
+            reason: 'below_minimum',
+            message: `Sitemap size (${sitemap.length}) is below minimum (45), smart filter skipped`,
+          };
+        } else if (basicFiltered.length > 300) {
+          skipped = {
+            reason: 'above_maximum',
+            message: `Sitemap size (${basicFiltered.length}) is above maximum (300), smart filter skipped`,
+          };
+        }
+
+        reply.send({
+          success: true,
+          site,
+          siteType,
+          sitemap: {
+            totalUrls: sitemap.length,
+            sampleUrls: sitemap.slice(0, 5).map((u) => u.url),
+          },
+          filtering: {
+            basicFiltered: basicFiltered.length,
+            smartFiltered: smartFiltered.length,
+            finalUrls: smartFiltered,
+          },
+          performance: {
+            sitemapFetchTimeMs,
+            smartFilterTimeMs,
+            totalTimeMs,
+          },
+          ...(skipped && { skipped }),
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error: any) {
+        const totalTimeMs = Date.now() - startTime;
+
+        logger.error('[Debug] Smart filter test failed', {
+          error,
+          site,
+          siteType,
+          totalTimeMs,
+        });
+
+        reply.status(500).send({
+          success: false,
+          error: error.message || 'Smart filter test failed',
+          details: {
+            name: error.name,
+            message: error.message,
+            totalTimeMs,
+          },
         });
       }
     },

@@ -167,12 +167,17 @@ async function processLeadInitialProcessing(
         smartFilteredCount: smartFilteredUrls.length,
       });
     } catch (error) {
-      logger.warn('[LeadInitialProcessingWorker] Smart filter failed, using basic filtered URLs', {
-        jobId: job.id,
-        leadId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      smartFilteredUrls = basicFilteredUrls.map((url) => url.url);
+      logger.error(
+        '[LeadInitialProcessingWorker] Smart filter failed, using basic filtered URLs with max limit',
+        {
+          jobId: job.id,
+          leadId,
+          error,
+          basicFilteredCount: basicFilteredUrls.length,
+        }
+      );
+
+      throw error;
     }
 
     // Update status to syncing site

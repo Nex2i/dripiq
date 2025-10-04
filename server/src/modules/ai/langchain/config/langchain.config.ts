@@ -10,7 +10,7 @@ export interface LangChainConfig {
 export const defaultLangChainConfig: LangChainConfig = {
   model: 'gpt-5-mini',
   maxIterations: 20,
-  timeout: 60000, // 60 seconds
+  timeout: 1000 * 60 * 2.5, // 2.5 minutes
 };
 
 export const defaultLowIntelligenceLangchainConfig: LangChainConfig = {
