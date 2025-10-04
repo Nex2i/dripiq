@@ -73,26 +73,44 @@ if (typeof process.env.NEXT_RUNTIME === 'undefined' || process.env.NEXT_RUNTIME 
  * Properly serialize an Error object for logging
  * Extracts all properties including non-enumerable ones
  */
-const serializeError = (error: Error): Record<string, any> => {
-  const errorObj: Record<string, any> = {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-  };
-
-  // Extract all enumerable properties
-  for (const key of Object.keys(error)) {
-    errorObj[key] = (error as any)[key];
+const serializeError = (error: any): Record<string, any> | string => {
+  // If it's a string, return it as-is
+  if (typeof error === 'string') {
+    return error;
   }
 
-  // Extract common error properties that might be non-enumerable
-  // Only check for properties if error is an object
-  if (typeof error === 'object' && error !== null) {
+  // If it's not an object, convert to string
+  if (typeof error !== 'object' || error === null) {
+    return String(error);
+  }
+
+  // If it's an Error instance, extract error properties
+  if (error instanceof Error) {
+    const errorObj: Record<string, any> = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+
+    // Extract all enumerable properties (but filter out numeric keys)
+    for (const key of Object.keys(error)) {
+      if (!/^\d+$/.test(key)) {
+        // Skip numeric keys that might come from strings being treated as objects
+        errorObj[key] = (error as any)[key];
+      }
+    }
+
+    // Extract common error properties that might be non-enumerable
     if ('code' in error) errorObj.code = (error as any).code;
-    if ('cause' in error) errorObj.cause = (error as any).cause;
+    if ('cause' in error) {
+      errorObj.cause = serializeError((error as any).cause);
+    }
+
+    return errorObj;
   }
 
-  return errorObj;
+  // For non-Error objects, just return them as-is
+  return error;
 };
 
 // Create a logger interface that maintains compatibility with your existing code

@@ -15,6 +15,7 @@ module.exports = [
       'dist/**',
       'jest.config.js',
       'jest.setup.js',
+      'src/bootstrap.ts', // Has special import ordering requirements
     ],
   },
   js.configs.recommended,
