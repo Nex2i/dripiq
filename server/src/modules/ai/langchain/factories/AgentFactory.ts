@@ -11,7 +11,7 @@ import { SmartUrlFilterAgent } from '../agents/SmartUrlFilterAgent';
 export const siteAnalysisAgent = new SiteAnalysisAgent(defaultLangChainConfig);
 export const contactExtractionAgent = new ContactExtractionAgent(defaultLangChainConfig);
 export const contactStrategyAgent = new ContactStrategyAgent(defaultLangChainConfig);
-export const smartUrlFilterAgent = new SmartUrlFilterAgent(defaultLowIntelligenceLangchainConfig);
+export const smartUrlFilterAgent = new SmartUrlFilterAgent(defaultLangChainConfig);
 
 // Factory functions
 export const createSiteAnalysisAgent = (config = defaultLangChainConfig) => {
@@ -26,6 +26,6 @@ export const createContactStrategyAgent = (config = defaultLangChainConfig) => {
   return new ContactStrategyAgent(config);
 };
 
-export const createSmartUrlFilterAgent = (config = defaultLowIntelligenceLangchainConfig) => {
+export const createSmartUrlFilterAgent = (config = defaultLangChainConfig) => {
   return new SmartUrlFilterAgent(config);
 };
