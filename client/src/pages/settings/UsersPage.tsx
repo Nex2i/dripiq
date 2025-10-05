@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Edit3,
+  Loader2,
 } from 'lucide-react'
 import { InviteUserModal } from '../../components/InviteUserModal'
 import {
@@ -32,6 +33,8 @@ export default function UsersPage() {
     page: 1,
     limit: 25,
   })
+  const [resendingUserId, setResendingUserId] = useState<string | null>(null)
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null)
 
   // Fetch data using hooks
   const {
@@ -96,23 +99,29 @@ export default function UsersPage() {
   }
 
   const handleResendInvite = (userId: string) => {
+    setResendingUserId(userId)
     resendInviteMutation.mutate(userId, {
       onSuccess: () => {
         console.log('Invite resent successfully')
+        setResendingUserId(null)
       },
       onError: (err) => {
         console.error('Error resending invite:', err)
+        setResendingUserId(null)
       },
     })
   }
 
   const handleRemoveUser = (userId: string) => {
+    setRemovingUserId(userId)
     removeUserMutation.mutate(userId, {
       onSuccess: () => {
         console.log('User removed successfully')
+        setRemovingUserId(null)
       },
       onError: (err) => {
         console.error('Error removing user:', err)
+        setRemovingUserId(null)
       },
     })
   }
@@ -356,17 +365,27 @@ export default function UsersPage() {
                                     onClick={() =>
                                       handleResendInvite(userRow.id)
                                     }
-                                    className="text-green-600 hover:text-green-900 p-1"
+                                    disabled={resendingUserId === userRow.id}
+                                    className="text-green-600 hover:text-green-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Resend invite"
                                   >
-                                    <RefreshCw className="h-4 w-4" />
+                                    {resendingUserId === userRow.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4" />
+                                    )}
                                   </button>
                                   <button
                                     onClick={() => handleRemoveUser(userRow.id)}
-                                    className="text-red-600 hover:text-red-900 p-1"
+                                    disabled={removingUserId === userRow.id}
+                                    className="text-red-600 hover:text-red-900 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Remove user"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    {removingUserId === userRow.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
                                   </button>
                                 </>
                               )}
