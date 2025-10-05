@@ -41,11 +41,11 @@ export class UserRepository extends BaseRepository<typeof users, User, NewUser> 
       updatedAt: userRow.users.updatedAt,
     };
 
-    // Build unique tenants list (filter out null tenants)
+    // Build unique tenants list (filter out null tenants and deactivated user-tenant relationships)
     const tenantMap = new Map<string, { id: string; name: string; isSuperUser: boolean }>();
 
     for (const row of result) {
-      if (row.tenants) {
+      if (row.tenants && row.user_tenants?.status !== 'deactivated') {
         tenantMap.set(row.tenants.id, {
           id: row.tenants.id,
           name: row.tenants.name,

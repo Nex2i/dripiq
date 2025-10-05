@@ -236,14 +236,14 @@ export class InviteService {
   }
 
   /**
-   * Removes a user from a tenant by deleting their user-tenant relationship.
+   * Removes a user from a tenant by setting their user-tenant status to 'deactivated'.
    * @param userId - The ID of the user to remove.
    * @param tenantId - The ID of the tenant to remove the user from.
-   * @returns A promise that resolves when the user is removed.
+   * @returns A promise that resolves when the user is deactivated.
    * @throws Throws an error if the user is not found in the tenant.
    */
   static async removeUser(userId: string, tenantId: string): Promise<void> {
-    await userTenantRepository.deleteByIdForTenant(userId, tenantId);
+    await userTenantRepository.updateStatusForTenant(userId, tenantId, 'deactivated');
   }
 
   /**
