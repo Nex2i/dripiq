@@ -350,6 +350,7 @@ export const createContact = async (
     // Format phone number if provided
     const formattedContactData = {
       ...contactData,
+      sourceUrl: contactData.sourceUrl ? contactData.sourceUrl.cleanWebsiteUrl() : null,
       phone: contactData.phone ? formatPhoneForStorage(contactData.phone) : contactData.phone,
     };
 

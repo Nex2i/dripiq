@@ -84,6 +84,7 @@ export class LeadPointOfContactRepository extends BaseRepository<
     // Map contacts with unsubscribe status
     return contacts.map((contact) => ({
       ...contact,
+      sourceUrl: contact.sourceUrl ? contact.sourceUrl.cleanWebsiteUrl() : null,
       isUnsubscribed: contact.email
         ? unsubscribedEmails.has(contact.email.toLowerCase().trim())
         : false,
