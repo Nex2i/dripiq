@@ -5,7 +5,7 @@ import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 
-export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TInsert = any> {
+export abstract class BaseRepository<TTable extends PgTable<any>, TSelect = any, TInsert = any> {
   protected db: PostgresJsDatabase<typeof schema>;
   protected table: TTable;
 
@@ -41,7 +41,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TIns
   async findById(id: string): Promise<TSelect> {
     const results = await this.db
       .select()
-      .from(this.table)
+      .from(this.table as any)
       .where(eq((this.table as any).id, id))
       .limit(1);
 
@@ -59,7 +59,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TIns
     if (ids.length === 0) return [];
     return (await this.db
       .select()
-      .from(this.table)
+      .from(this.table as any)
       .where(inArray((this.table as any).id, ids))) as TSelect[];
   }
 
@@ -67,7 +67,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TIns
    * Find all records
    */
   async findAll(): Promise<TSelect[]> {
-    return (await this.db.select().from(this.table)) as TSelect[];
+    return (await this.db.select().from(this.table as any)) as TSelect[];
   }
 
   /**
@@ -116,7 +116,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect = any, TIns
    * Count all records
    */
   async count(): Promise<number> {
-    const result = await this.db.select().from(this.table);
+    const result = await this.db.select().from(this.table as any);
     return result.length;
   }
 }

@@ -4,7 +4,7 @@ import { logger } from '@/libs/logger';
 import { BaseRepository } from './BaseRepository';
 
 export abstract class TenantAwareRepository<
-  TTable extends PgTable,
+  TTable extends PgTable<any>,
   TSelect = any,
   TInsert = any,
 > extends BaseRepository<TTable, TSelect, TInsert> {
@@ -33,7 +33,7 @@ export abstract class TenantAwareRepository<
   async findByIdForTenant(id: string, tenantId: string): Promise<TSelect | undefined> {
     const results = await this.db
       .select()
-      .from(this.table)
+      .from(this.table as any)
       .where(and(eq((this.table as any).id, id), eq((this.table as any).tenantId, tenantId)))
       .limit(1);
     return results[0] as TSelect | undefined;
@@ -46,7 +46,7 @@ export abstract class TenantAwareRepository<
     if (ids.length === 0) return [];
     return (await this.db
       .select()
-      .from(this.table)
+      .from(this.table as any)
       .where(
         and(inArray((this.table as any).id, ids), eq((this.table as any).tenantId, tenantId))
       )) as TSelect[];
@@ -58,7 +58,7 @@ export abstract class TenantAwareRepository<
   async findAllForTenant(tenantId: string): Promise<TSelect[]> {
     return (await this.db
       .select()
-      .from(this.table)
+      .from(this.table as any)
       .where(eq((this.table as any).tenantId, tenantId))) as TSelect[];
   }
 
