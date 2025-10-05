@@ -163,7 +163,7 @@ export const userTenants = appSchema.table(
       .notNull()
       .references(() => roles.id, { onDelete: 'restrict' }),
     isSuperUser: boolean('is_super_user').notNull().default(false),
-    status: text('status').notNull().default('active'), // 'pending' (password not set) | 'active' (password set, can login)
+    status: text('status').notNull().default('active'), // 'pending' (password not set) | 'active' (password set, can login) | 'deactivated' (user removed from tenant)
     invitedAt: timestamp('invited_at'), // When the user was invited/added
     acceptedAt: timestamp('accepted_at'), // When they completed setup/login
     createdAt: timestamp('created_at').notNull().defaultNow(),

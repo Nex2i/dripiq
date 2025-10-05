@@ -142,7 +142,7 @@ export class UserTenantRepository extends TenantAwareRepository<
   async updateStatusForTenant(
     userId: string,
     tenantId: string,
-    status: 'pending' | 'active'
+    status: 'pending' | 'active' | 'deactivated'
   ): Promise<UserTenant | undefined> {
     return await this.updateByIdForTenant(userId, tenantId, { status });
   }
