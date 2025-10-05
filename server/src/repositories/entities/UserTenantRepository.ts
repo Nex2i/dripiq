@@ -144,7 +144,13 @@ export class UserTenantRepository extends TenantAwareRepository<
     tenantId: string,
     status: 'pending' | 'active' | 'deactivated'
   ): Promise<UserTenant | undefined> {
-    return await this.updateByIdForTenant(userId, tenantId, { status });
+    const [result] = await this.db
+      .update(this.table)
+      .set({ status })
+      .where(and(eq(this.table.userId, userId), eq(this.table.tenantId, tenantId)))
+      .returning();
+
+    return result as UserTenant;
   }
 
   /**

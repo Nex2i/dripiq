@@ -11,7 +11,12 @@ export interface LeadPointOfContact {
   id: string
   name: string
   email: string
-  emailVerificationResult?: 'valid' | 'invalid' | 'unknown' | 'ok_for_all' | 'inferred'
+  emailVerificationResult?:
+    | 'valid'
+    | 'invalid'
+    | 'unknown'
+    | 'ok_for_all'
+    | 'inferred'
   phone?: string
   title?: string
   company?: string
