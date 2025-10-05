@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { authService } from '../services/auth.service'
 import type { AuthUser } from '../services/auth.service'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -29,6 +30,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const queryClient = useQueryClient()
 
   const refreshUser = async () => {
     try {
@@ -78,6 +81,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true)
       await authService.logout()
+      queryClient.clear()
+      queryClient.invalidateQueries()
+      queryClient.cancelQueries()
       setUser(null)
       setSession(null)
     } catch (error) {
