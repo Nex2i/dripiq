@@ -1,4 +1,5 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { LangfuseSpanProcessor } from '@langfuse/otel';
 import { LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST, NODE_ENV } from '@/config';
 
@@ -15,6 +16,16 @@ const sdk = new NodeSDK({
       secretKey: LANGFUSE_SECRET_KEY!,
       baseUrl: LANGFUSE_HOST || 'https://cloud.langfuse.com',
       environment: NODE_ENV || 'development',
+    }),
+  ],
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      '@opentelemetry/instrumentation-http': {
+        enabled: false,
+      },
+      '@opentelemetry/instrumentation-net': {
+        enabled: false,
+      },
     }),
   ],
 });
