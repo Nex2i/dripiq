@@ -8,6 +8,7 @@ import {
   type CampaignCreationJobPayload,
 } from '@/modules/messages/campaignCreation.publisher.service';
 import type { LeadAnalysisJobPayload } from '@/modules/messages/leadAnalysis.publisher.service';
+import { EMAIL_VERIFICATION_RESULT } from '@/db/dbenum';
 
 export type LeadAnalysisJobResult = {
   success: boolean;
@@ -43,7 +44,12 @@ async function processLeadAnalysis(
 
     // Create campaign creation jobs for each contact found
     const campaignJobs: CampaignCreationJobPayload[] = analysisResult.contactsFound
-      .filter((contact) => !contact.email?.isNullOrEmpty())
+      .filter(
+        (contact) =>
+          !contact.email?.isNullOrEmpty() &&
+          contact.email?.isValidEmail() &&
+          contact.emailVerificationResult === EMAIL_VERIFICATION_RESULT.VERIFIED
+      )
       .map((contact) => ({
         tenantId,
         leadId,
