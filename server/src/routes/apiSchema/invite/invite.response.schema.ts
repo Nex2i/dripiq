@@ -9,3 +9,8 @@ export const ActivateInviteRequestSchema = Type.Object({
 export const ResendInviteParamsSchema = Type.Object({
   userId: Type.String({ description: 'ID of the user to resend invite to' }),
 });
+
+// Schema for remove user parameters
+export const RemoveUserParamsSchema = Type.Object({
+  userId: Type.String({ description: 'ID of the user to remove from tenant' }),
+});

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   Plus,
-  MoreVertical,
   Eye,
   RefreshCw,
   Trash2,
@@ -371,9 +370,6 @@ export default function UsersPage() {
                                   </button>
                                 </>
                               )}
-                              <button className="text-gray-400 hover:text-gray-600 p-1">
-                                <MoreVertical className="h-4 w-4" />
-                              </button>
                             </div>
                           </td>
                         )}

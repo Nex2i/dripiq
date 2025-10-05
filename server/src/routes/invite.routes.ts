@@ -13,6 +13,7 @@ import {
   UpdateUserRoleParamsSchema,
   ActivateInviteRequestSchema,
   ResendInviteParamsSchema,
+  RemoveUserParamsSchema,
 } from './apiSchema/invite';
 
 const basePath = '';
@@ -282,6 +283,49 @@ export default async function InviteRoutes(fastify: FastifyInstance, _opts: Rout
         } else {
           reply.status(500).send({
             message: 'Failed to update user role',
+            error: error.message,
+          });
+        }
+      }
+    },
+  });
+
+  // Remove user from tenant (Admin only)
+  fastify.route({
+    method: HttpMethods.DELETE,
+    url: `${basePath}/users/:userId`,
+    preHandler: [fastify.authPrehandler, fastify.requireAdmin()],
+    schema: {
+      params: RemoveUserParamsSchema,
+      tags: ['Invites'],
+      summary: 'Remove User',
+      description: 'Remove a user from the tenant. Admin only.',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Params: { userId: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { userId } = request.params;
+        const tenantId = (request as any).tenantId;
+
+        await InviteService.removeUser(userId, tenantId);
+
+        reply.send({
+          message: 'User removed successfully',
+        });
+      } catch (error: any) {
+        logger.error(`Error removing user: ${error.message}`);
+
+        if (error.message.includes('not found')) {
+          reply.status(404).send({
+            message: error.message,
+          });
+        } else {
+          reply.status(500).send({
+            message: 'Failed to remove user',
             error: error.message,
           });
         }
