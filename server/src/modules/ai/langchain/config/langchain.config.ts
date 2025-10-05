@@ -1,4 +1,5 @@
 import { ChatOpenAI, OpenAIClient } from '@langchain/openai';
+import { logger } from '@/libs/logger';
 
 export interface LangChainConfig {
   model: string;
@@ -28,6 +29,8 @@ export const defaultLowIntelligenceLangchainConfig: LangChainConfig = {
 
 export function createChatModel(config: Partial<LangChainConfig> = {}): ChatOpenAI {
   const finalConfig = { ...defaultLangChainConfig, ...config };
+
+  logger.info('Creating chat model with config:', finalConfig);
 
   return new ChatOpenAI({
     model: finalConfig.model,
