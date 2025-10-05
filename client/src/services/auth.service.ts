@@ -162,6 +162,7 @@ class AuthService {
             Authorization: `Bearer ${session.access_token}`,
           },
         })
+        await supabase.auth.signOut()
       } catch (error) {
         console.error('Error during backend logout:', error)
       }
