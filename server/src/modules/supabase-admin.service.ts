@@ -164,13 +164,11 @@ export class SupabaseAdminService {
 
   static async resendInvite(data: InviteUserData): Promise<any> {
     try {
-      const result = await supabase.auth.signInWithOtp({
-        email: data.email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: data.redirectTo,
-          data: data.data || {},
-        },
+      // Use inviteUserByEmail which sends the signup confirmation email
+      // Calling this on an existing user resends the invitation
+      const result = await supabase.auth.admin.inviteUserByEmail(data.email, {
+        redirectTo: data.redirectTo,
+        data: data.data || {},
       });
 
       if (result.error) {
