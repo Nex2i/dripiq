@@ -98,7 +98,7 @@ class EmailListVerifyClient {
   }
 }
 
-type EmailListVerifyResult =
+export type EmailListVerifyResult =
   | 'ok'
   | 'email_disabled'
   | 'dead_server'

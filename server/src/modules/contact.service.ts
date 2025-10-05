@@ -4,6 +4,7 @@ import { formatPhoneForStorage } from '@/libs/phoneFormatter';
 import { leadPointOfContactRepository, leadRepository } from '@/repositories';
 import { campaignPlanExecutionService } from '@/modules/campaign/campaignPlanExecution.service';
 import { unsubscribeService } from '@/modules/unsubscribe';
+import { emailListVerifyClient } from '@/libs/email/emailListVerify.client';
 import { CampaignCreationPublisher } from './messages';
 
 /**
@@ -44,7 +45,9 @@ export const updateContact = async (
   tenantId: string,
   leadId: string,
   contactId: string,
-  contactData: Partial<Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title'>>
+  contactData: Partial<
+    Pick<LeadPointOfContact, 'name' | 'email' | 'phone' | 'title' | 'emailVerificationResult'>
+  >
 ): Promise<LeadPointOfContact> => {
   try {
     // Verify the contact exists and belongs to the tenant/lead
@@ -73,6 +76,15 @@ export const updateContact = async (
       formattedContactData.phone = formatPhoneForStorage(contactData.phone);
     }
 
+    const wasEmailAdded = !existingContact.email && contactData.email;
+
+    if (formattedContactData.email) {
+      formattedContactData.emailVerificationResult =
+        emailListVerifyClient.mapResultToEmailVerificationResult(
+          (await emailListVerifyClient.verifyEmailDetailed(formattedContactData.email)).result
+        );
+    }
+
     // Update the contact
     const updatedContact = await leadPointOfContactRepository.updateById(
       contactId,
@@ -82,8 +94,6 @@ export const updateContact = async (
     if (!updatedContact) {
       throw new Error('Failed to update contact');
     }
-
-    const wasEmailAdded = !existingContact.email && contactData.email;
 
     if (wasEmailAdded) {
       // Trigger campaign creation for this contact
