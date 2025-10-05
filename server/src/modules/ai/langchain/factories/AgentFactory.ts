@@ -1,10 +1,7 @@
 import { SiteAnalysisAgent } from '../agents/SiteAnalysisAgent';
 import { ContactExtractionAgent } from '../agents/ContactExtractionAgent';
 import { ContactStrategyAgent } from '../agents/ContactStrategyAgent';
-import {
-  defaultLangChainConfig,
-  defaultLowIntelligenceLangchainConfig,
-} from '../config/langchain.config';
+import { defaultLangChainConfig } from '../config/langchain.config';
 import { SmartUrlFilterAgent } from '../agents/SmartUrlFilterAgent';
 
 // Create default agent instances
