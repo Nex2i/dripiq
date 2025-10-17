@@ -43,16 +43,20 @@ export default function Hero() {
             {/* Social proof */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start text-sm text-surface-600 space-y-2 sm:space-y-0 sm:space-x-6">
               <div className="flex items-center">
-                <span className="font-semibold text-surface-900">500+</span>
-                <span className="ml-1">sales teams</span>
+                <span className="font-semibold text-surface-900">
+                  AI-Powered
+                </span>
+                <span className="ml-1">Intelligence</span>
               </div>
               <div className="flex items-center">
-                <span className="font-semibold text-surface-900">2M+</span>
-                <span className="ml-1">leads generated</span>
+                <span className="font-semibold text-surface-900">
+                  Automated
+                </span>
+                <span className="ml-1">Discovery</span>
               </div>
               <div className="flex items-center">
-                <span className="font-semibold text-surface-900">35%</span>
-                <span className="ml-1">average conversion lift</span>
+                <span className="font-semibold text-surface-900">Smart</span>
+                <span className="ml-1">Optimization</span>
               </div>
             </div>
           </div>
