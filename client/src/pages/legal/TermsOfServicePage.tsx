@@ -85,10 +85,10 @@ const TermsOfServicePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <LegalPageHeader maxWidth="4xl" />
+      <LegalPageHeader maxWidth="6xl" />
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-lg shadow-sm border p-8 lg:p-12">
           <ReactMarkdown
             components={markdownComponents}
@@ -100,7 +100,7 @@ const TermsOfServicePage: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <LegalPageFooter maxWidth="4xl" />
+      <LegalPageFooter maxWidth="6xl" />
     </div>
   )
 }
