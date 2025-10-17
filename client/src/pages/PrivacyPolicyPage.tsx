@@ -4,6 +4,17 @@ import { AlertCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Logo from '../components/Logo'
+import { markdownComponents } from '../utils/markdownComponents'
+
+// Helper function to scroll to anchor (imported from markdownComponents for consistency)
+const scrollToAnchor = (hash: string) => {
+  if (hash) {
+    const element = document.getElementById(hash.substring(1)) // Remove the # symbol
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+}
 
 const PrivacyPolicyPage: React.FC = () => {
   const navigate = useNavigate()
@@ -33,94 +44,14 @@ const PrivacyPolicyPage: React.FC = () => {
     loadMarkdown()
   }, [])
 
-  // Custom components for react-markdown with Tailwind styling
-  const markdownComponents = {
-    h1: ({ children }: any) => (
-      <h1 className="text-3xl font-bold text-gray-900 mt-12 mb-8 first:mt-0">
-        {children}
-      </h1>
-    ),
-    h2: ({ children }: any) => (
-      <h2 className="text-2xl font-semibold text-gray-900 mt-10 mb-6">
-        {children}
-      </h2>
-    ),
-    h3: ({ children }: any) => (
-      <h3 className="text-xl font-semibold text-gray-900 mt-8 mb-4">
-        {children}
-      </h3>
-    ),
-    p: ({ children }: any) => (
-      <p className="mb-4 text-gray-700 leading-relaxed">{children}</p>
-    ),
-    ul: ({ children }: any) => (
-      <ul className="list-disc list-inside mb-4 space-y-1 ml-4">{children}</ul>
-    ),
-    ol: ({ children }: any) => (
-      <ol className="list-decimal list-inside mb-4 space-y-1 ml-4">
-        {children}
-      </ol>
-    ),
-    li: ({ children }: any) => (
-      <li className="mb-2 text-gray-700">{children}</li>
-    ),
-    strong: ({ children }: any) => (
-      <strong className="font-semibold text-gray-900">{children}</strong>
-    ),
-    em: ({ children }: any) => <em className="italic">{children}</em>,
-    a: ({ href, children }: any) => (
-      <a
-        href={href}
-        className="text-blue-600 hover:text-blue-800 underline"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
-    ),
-    blockquote: ({ children }: any) => (
-      <blockquote className="border-l-4 border-gray-300 pl-4 mb-4 italic text-gray-600">
-        {children}
-      </blockquote>
-    ),
-    code: ({ children }: any) => (
-      <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm font-mono">
-        {children}
-      </code>
-    ),
-    pre: ({ children }: any) => (
-      <pre className="bg-gray-100 p-4 rounded-lg mb-4 overflow-x-auto">
-        {children}
-      </pre>
-    ),
-    table: ({ children }: any) => (
-      <div className="overflow-x-auto mb-6 shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200 border border-gray-300 rounded-lg bg-white">
-          {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children }: any) => (
-      <thead className="bg-gray-50">{children}</thead>
-    ),
-    tbody: ({ children }: any) => (
-      <tbody className="bg-white divide-y divide-gray-200">{children}</tbody>
-    ),
-    tr: ({ children }: any) => <tr className="hover:bg-gray-50">{children}</tr>,
-    th: ({ children }: any) => (
-      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-        {children}
-      </th>
-    ),
-    td: ({ children }: any) => (
-      <td className="px-6 py-4 text-sm text-gray-900 border-b border-gray-200 align-top">
-        <div className="max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
-          {children}
-        </div>
-      </td>
-    ),
-    hr: () => <hr className="my-8 border-t border-gray-300" />,
-  }
+  // Scroll to anchor on page load
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash) {
+      // Use setTimeout to ensure DOM is fully rendered
+      setTimeout(() => scrollToAnchor(hash), 100)
+    }
+  }, [markdownContent])
 
   if (loading) {
     return (
