@@ -27,7 +27,7 @@ export const scrollToAnchorWithPadding = (hash: string) => {
     if (element) {
       const elementTop =
         element.getBoundingClientRect().top + window.pageYOffset
-      const offset = window.innerHeight * 0.02 // 2% of viewport height
+      const offset = window.innerHeight * 0.05 // 5% of viewport height
       const targetPosition = elementTop - offset
 
       window.scrollTo({
