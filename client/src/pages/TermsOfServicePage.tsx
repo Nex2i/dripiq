@@ -4,17 +4,10 @@ import { AlertCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import Logo from '../components/Logo'
-import { markdownComponents } from '../utils/markdownComponents'
-
-// Helper function to scroll to anchor (imported from markdownComponents for consistency)
-const scrollToAnchor = (hash: string) => {
-  if (hash) {
-    const element = document.getElementById(hash.substring(1)) // Remove the # symbol
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
-  }
-}
+import {
+  markdownComponents,
+  scrollToAnchorWithPadding,
+} from '../utils/markdownComponents'
 
 const TermsOfServicePage: React.FC = () => {
   const navigate = useNavigate()
@@ -51,7 +44,7 @@ const TermsOfServicePage: React.FC = () => {
     const hash = window.location.hash
     if (hash) {
       // Use setTimeout to ensure DOM is fully rendered
-      setTimeout(() => scrollToAnchor(hash), 100)
+      setTimeout(() => scrollToAnchorWithPadding(hash), 100)
     }
   }, [markdownContent])
 

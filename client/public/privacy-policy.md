@@ -138,7 +138,6 @@ If you no longer want to receive marketing-related emails from us, you may opt-o
 
 To exercise any of the privacy rights afforded to you under applicable data protection laws, please submit a request to us by one of the following methods:
 
-* 📞 **Phone:** [Contact phone number]
 * 📧 **Email:** [privacy@dripiq.com](mailto:privacy@dripiq.com)
 * 🌐 **Webform:** via our website
 
@@ -210,10 +209,6 @@ We use cookies in accordance with this Privacy Policy for the following purposes
 * **Third-Party Analytics:** Through third-party analytics, such as Google Analytics, in order to collect and analyze information about the use of the Services and report on activities and trends. This service may also collect information regarding the use of other websites, apps and online resources
 * **Session Replay:** We partner with third-party session replay vendors to capture how you use and interact with our Sites through behavioral metrics, heatmaps, and session replay to improve your website experience
 * **Chat Functionality:** We use a live chat feature powered by a third-party to enable live customer service and technical support via our Site
-
-### How to Opt-Out
-
-You can opt out of cookies through the cookies preference center in the bottom left-hand corner of our website or your web browser's settings, including to delete and disable cookies, with the exception of those cookies that are necessary to provide you with our Sites and Services. You can take a look at the help section of your web browser or follow the links below to understand your options. If you choose to disable cookies, some features of our Sites and Services may not operate as intended.
 
 We do not support Do Not Track functionality. Do Not Track is a preference you can set in your web browser to inform websites that you do not want to be tracked.
 

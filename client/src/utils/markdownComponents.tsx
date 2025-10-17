@@ -1,18 +1,46 @@
 // Shared markdown components for consistent formatting across pages
-import { Link } from 'lucide-react'
+import { useState } from 'react'
+import { Link, Check } from 'lucide-react'
 
 // Helper function to copy text to clipboard
-const copyToClipboard = async (text: string) => {
+const copyToClipboard = async (
+  text: string,
+  setCopied?: (copied: boolean) => void,
+) => {
   try {
     await navigator.clipboard.writeText(text)
-    // You could add a toast notification here if needed
+    // Show visual feedback
+    if (setCopied) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000) // Reset after 2 seconds
+    }
   } catch (err) {
     console.error('Failed to copy to clipboard:', err)
+    // Could show error feedback here if needed
+  }
+}
+
+// Helper function to scroll to anchor with padding (5% of viewport height)
+export const scrollToAnchorWithPadding = (hash: string) => {
+  if (hash) {
+    const element = document.getElementById(hash.substring(1)) // Remove the # symbol
+    if (element) {
+      const elementTop =
+        element.getBoundingClientRect().top + window.pageYOffset
+      const offset = window.innerHeight * 0.02 // 2% of viewport height
+      const targetPosition = elementTop - offset
+
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth',
+      })
+    }
   }
 }
 
 export const markdownComponents = {
   h1: ({ children }: any) => {
+    const [copied, setCopied] = useState(false)
     const id = children
       ?.toString()
       .toLowerCase()
@@ -28,17 +56,25 @@ export const markdownComponents = {
           onClick={() =>
             copyToClipboard(
               `${window.location.origin}${window.location.pathname}#${id}`,
+              setCopied,
             )
           }
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
-          title="Copy link to this section"
+          className={`opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 hover:bg-gray-100 rounded ${
+            copied ? 'bg-green-100 opacity-100' : ''
+          }`}
+          title={copied ? 'Copied!' : 'Copy link to this section'}
         >
-          <Link className="w-4 h-4 text-gray-500" />
+          {copied ? (
+            <Check className="w-4 h-4 text-green-600" />
+          ) : (
+            <Link className="w-4 h-4 text-gray-500" />
+          )}
         </button>
       </h1>
     )
   },
   h2: ({ children }: any) => {
+    const [copied, setCopied] = useState(false)
     const id = children
       ?.toString()
       .toLowerCase()
@@ -54,17 +90,25 @@ export const markdownComponents = {
           onClick={() =>
             copyToClipboard(
               `${window.location.origin}${window.location.pathname}#${id}`,
+              setCopied,
             )
           }
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
-          title="Copy link to this section"
+          className={`opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 hover:bg-gray-100 rounded ${
+            copied ? 'bg-green-100 opacity-100' : ''
+          }`}
+          title={copied ? 'Copied!' : 'Copy link to this section'}
         >
-          <Link className="w-4 h-4 text-gray-500" />
+          {copied ? (
+            <Check className="w-4 h-4 text-green-600" />
+          ) : (
+            <Link className="w-4 h-4 text-gray-500" />
+          )}
         </button>
       </h2>
     )
   },
   h3: ({ children }: any) => {
+    const [copied, setCopied] = useState(false)
     const id = children
       ?.toString()
       .toLowerCase()
@@ -80,12 +124,19 @@ export const markdownComponents = {
           onClick={() =>
             copyToClipboard(
               `${window.location.origin}${window.location.pathname}#${id}`,
+              setCopied,
             )
           }
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
-          title="Copy link to this section"
+          className={`opacity-0 group-hover:opacity-100 transition-all duration-200 p-1 hover:bg-gray-100 rounded ${
+            copied ? 'bg-green-100 opacity-100' : ''
+          }`}
+          title={copied ? 'Copied!' : 'Copy link to this section'}
         >
-          <Link className="w-4 h-4 text-gray-500" />
+          {copied ? (
+            <Check className="w-4 h-4 text-green-600" />
+          ) : (
+            <Link className="w-4 h-4 text-gray-500" />
+          )}
         </button>
       </h3>
     )
@@ -115,13 +166,9 @@ export const markdownComponents = {
           className="text-blue-600 hover:text-blue-800 underline"
           onClick={(e) => {
             e.preventDefault()
-            const targetId = href.substring(1) // Remove the # symbol
-            const element = document.getElementById(targetId)
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              // Update URL hash without triggering page reload
-              window.history.pushState(null, '', href)
-            }
+            scrollToAnchorWithPadding(href)
+            // Update URL hash without triggering page reload
+            window.history.pushState(null, '', href)
           }}
         >
           {children}
