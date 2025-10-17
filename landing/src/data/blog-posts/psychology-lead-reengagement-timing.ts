@@ -362,7 +362,6 @@ Transform your lead re-engagement with intelligent timing. [Start your free tria
   publishedAt: '2025-03-10',
   readTime: '12 min read',
   tags: ['Sales Psychology', 'Lead Re-engagement', 'Timing Strategy'],
-  ogImage: 'https://dripiq.ai/blog/psychology-lead-reengagement-timing.jpg',
   seo: {
     title:
       'Psychology of Lead Re-engagement: Why Timing Beats Message Every Time',

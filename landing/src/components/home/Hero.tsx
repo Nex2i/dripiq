@@ -1,4 +1,4 @@
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { APP_URLS } from '@/constants/app'
 
 export default function Hero() {
@@ -38,28 +38,25 @@ export default function Hero() {
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
-              <a
-                href="/contact"
-                className="inline-flex items-center justify-center px-6 py-3 border border-surface-300 text-base font-medium rounded-lg text-surface-700 bg-white hover:bg-surface-50 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
-              </a>
             </div>
 
             {/* Social proof */}
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start text-sm text-surface-600 space-y-2 sm:space-y-0 sm:space-x-6">
               <div className="flex items-center">
-                <span className="font-semibold text-surface-900">500+</span>
-                <span className="ml-1">sales teams</span>
+                <span className="font-semibold text-surface-900">
+                  AI-Powered
+                </span>
+                <span className="ml-1">Intelligence</span>
               </div>
               <div className="flex items-center">
-                <span className="font-semibold text-surface-900">2M+</span>
-                <span className="ml-1">leads generated</span>
+                <span className="font-semibold text-surface-900">
+                  Automated
+                </span>
+                <span className="ml-1">Discovery</span>
               </div>
               <div className="flex items-center">
-                <span className="font-semibold text-surface-900">35%</span>
-                <span className="ml-1">average conversion lift</span>
+                <span className="font-semibold text-surface-900">Smart</span>
+                <span className="ml-1">Optimization</span>
               </div>
             </div>
           </div>

@@ -85,7 +85,6 @@ Ready to transform your sales process with AI? [Start your free trial today](${A
   publishedAt: '2025-02-15',
   readTime: '8 min read',
   tags: ['AI', 'Sales Automation', 'Lead Generation'],
-  ogImage: 'https://dripiq.ai/blog/ai-sales-automation-guide.jpg',
   seo: {
     title: 'AI Sales Automation Guide 2024 | Complete Implementation Strategy',
     description:

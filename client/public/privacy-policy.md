@@ -6,17 +6,17 @@ DripIQ provides an AI-powered sales-enablement platform that helps revive dorman
 
 This Privacy Policy ("Policy") explains the types of personal data we collect from visitors of our sites:
 
-* [https://www.dripiq.com](https://www.dripiq.com)
-* [https://app.dripiq.com](https://app.dripiq.com)
+- [https://www.dripiq.com](https://www.dripiq.com)
+- [https://app.dripiq.com](https://app.dripiq.com)
 
 (collectively, the "Sites") and people with whom we communicate in the course of providing the Sites and Services.
 
 This Policy describes:
 
-* How we collect and use personal data
-* The purpose for sharing and recipients of personal data
-* Your rights and choices
-* How to contact us about our privacy practices
+- How we collect and use personal data
+- The purpose for sharing and recipients of personal data
+- Your rights and choices
+- How to contact us about our privacy practices
 
 This Policy applies to DripIQ's Sites and Services. It does **not** apply to personal data processed on behalf of our business customers. For such information, please refer to their respective privacy policies.
 
@@ -24,19 +24,19 @@ This Policy applies to DripIQ's Sites and Services. It does **not** apply to per
 
 ## Table of Contents
 
-* [Personal Data We Collect](#personal-data-we-collect)
-* [How We Use Personal Data](#how-we-use-personal-data)
-* [How We Disclose Personal Data](#how-we-disclose-personal-data)
-* [Your Rights and Choices](#your-rights-and-choices)
-* [Applicant Notice](#applicant-notice)
-* [Notice for California Residents](#notice-for-california-residents)
-* [Cookie Policy](#cookie-policy)
-* [Data Security and Retention](#data-security-and-retention)
-* [International Data Transfers / Legal Basis](#international-data-transfers--legal-basis)
-* [Use by Minors](#use-by-minors)
-* [Third-Party Links](#third-party-links)
-* [Updates to this Policy](#updates-to-this-policy)
-* [Contact Us](#contact-us)
+- [Personal Data We Collect](#personal-data-we-collect)
+- [How We Use Personal Data](#how-we-use-personal-data)
+- [How We Disclose Personal Data](#how-we-disclose-personal-data)
+- [Your Rights and Choices](#your-rights-and-choices)
+- [Applicant Notice](#applicant-notice)
+- [Notice for California Residents](#notice-for-california-residents)
+- [Cookie Policy](#cookie-policy)
+- [Data Security and Retention](#data-security-and-retention)
+- [International Data Transfers / Legal Basis](#international-data-transfers--legal-basis)
+- [Use by Minors](#use-by-minors)
+- [Third-Party Links](#third-party-links)
+- [Updates to this Policy](#updates-to-this-policy)
+- [Contact Us](#contact-us)
 
 ---
 
@@ -46,31 +46,31 @@ Personal data is any information that relates to an identified or identifiable i
 
 ### Personal Data You Provide
 
-* **Account Information:** When you register for a DripIQ account, we collect your full name, email address, phone number, organization name, and login credentials
-* **Profile Information:** You may choose to add information to your profile on the Services, which may be made public. Such information may include your username, biographical or professional details, and profile photo. Please do not upload any profile information you would not want to be made public
-* **Demographic Data:** You may include demographic information in your profile on the Services, such as your city, state, country of residence, postal code, and age
-* **Inquiry Information:** When you fill out our online form to contact our sales team, we ask for your name, contact information, country, and other information about your interest in our Services
-* **Billing, Payment and Transactional Information:** If you are a Subscriber, you will provide your contact information and financial information as part of your business relationship with us. This may also include information relating to or needed to complete your orders on or through the Services, including order numbers and transaction history
-* **Communications:** When you communicate with us or other End Users through the Sites and Services or otherwise communicate with us by email, text, chat features, or otherwise, we collect information about the communication and any other information you provide in your response
-* **Marketing Data:** When interacting with the Sites and Services, you may provide your preferences for receiving our marketing communications and details about your engagement with them
+- **Account Information:** When you register for a DripIQ account, we collect your full name, email address, phone number, organization name, and login credentials
+- **Profile Information:** You may choose to add information to your profile on the Services, which may be made public. Such information may include your username, biographical or professional details, and profile photo. Please do not upload any profile information you would not want to be made public
+- **Demographic Data:** You may include demographic information in your profile on the Services, such as your city, state, country of residence, postal code, and age
+- **Inquiry Information:** When you fill out our online form to contact our sales team, we ask for your name, contact information, country, and other information about your interest in our Services
+- **Billing, Payment and Transactional Information:** If you are a Subscriber, you will provide your contact information and financial information as part of your business relationship with us. This may also include information relating to or needed to complete your orders on or through the Services, including order numbers and transaction history
+- **Communications:** When you communicate with us or other End Users through the Sites and Services or otherwise communicate with us by email, text, chat features, or otherwise, we collect information about the communication and any other information you provide in your response
+- **Marketing Data:** When interacting with the Sites and Services, you may provide your preferences for receiving our marketing communications and details about your engagement with them
 
 ### Third-Party Sources
 
 We may combine personal data we receive from you with personal data falling within one of the categories identified above that we obtain from other sources, such as:
 
-* **Public sources:** Government agencies, public records, social media platforms, and other publicly available sources
-* **Data providers:** Information services and data licensors
-* **Partners:** Marketing partners and event co-sponsors
-* **Service providers:** Third parties that provide services on our behalf or help us operate the Service or our business
-* **Business transaction partners:** We may receive personal information in connection with an actual or prospective business transaction
-* **Third-party services:** Such as Google and Microsoft, that you use to log into, or otherwise link to, your Service account. This data may include your username, profile picture and other information associated with your account on that third-party service that is made available to us based on your account settings on that service
+- **Public sources:** Government agencies, public records, social media platforms, and other publicly available sources
+- **Data providers:** Information services and data licensors
+- **Partners:** Marketing partners and event co-sponsors
+- **Service providers:** Third parties that provide services on our behalf or help us operate the Service or our business
+- **Business transaction partners:** We may receive personal information in connection with an actual or prospective business transaction
+- **Third-party services:** Such as Google and Microsoft, that you use to log into, or otherwise link to, your Service account. This data may include your username, profile picture and other information associated with your account on that third-party service that is made available to us based on your account settings on that service
 
 ### Information Collected Automatically
 
 As you navigate through and interact with the Sites and Services, we may use cookies and similar tracking technologies that automatically collect certain information about you, including:
 
-* **Browser and device data:** IP address, device type, operating system and Internet browser type, operating system name and version, device manufacturer and model, language, plug-ins, add-ons and the language version of the Sites you are visiting
-* **Usage data:** Times spent on the Sites and Services, pages visited, links clicked, language preferences, and the pages that led or referred you to our Sites
+- **Browser and device data:** IP address, device type, operating system and Internet browser type, operating system name and version, device manufacturer and model, language, plug-ins, add-ons and the language version of the Sites you are visiting
+- **Usage data:** Times spent on the Sites and Services, pages visited, links clicked, language preferences, and the pages that led or referred you to our Sites
 
 To learn more about the cookies that may be served through our Sites and Services and how you can control our use of third-party cookies and analytics, please visit our [Cookie Policy](#cookie-policy) below.
 
@@ -80,19 +80,19 @@ To learn more about the cookies that may be served through our Sites and Service
 
 We use personal data to pursue our legitimate business interests, to enter into a business relationship with prospective Subscribers and perform contractual obligations that we have with them, and to comply with our legal obligations. We also use personal data with your consent. More specifically, we use personal data in the following ways:
 
-* **To provide the Sites and Services to you**
-* **To provide you with information about the Services,** at your request
-* **To help us improve and personalize the functionality** of the Sites and Services
-* **To help us understand your usage** of the Sites and Services in order to improve them
-* **To communicate with you** regarding customer service matters, questions, and other various comments or feedback you may send to us
-* **To provide you with notices** about your account
-* **To carry out our legal obligations,** such as protecting our and our users' safety, property, or rights, complying with legal requirements, and protecting against malicious, deceptive, fraudulent, or illegal activity
-* **To enforce our rights** arising from any agreement or contract entered into between you and us, including for billing and collections
-* **To notify you about changes** to our Sites and Services, our products or any other services we offer
-* **To inform you about products, services, offers and events** we offer or sponsor, and to provide news and other information that may be of interest to you
-* **To communicate various technical and administrative messages** regarding the Sites and Services, including notices of technology updates
-* **To offer you the opportunity** to participate in contests or surveys regarding the Sites and Services
-* **For any other purpose** that you consent to at the time the personal data is collected
+- **To provide the Sites and Services to you**
+- **To provide you with information about the Services,** at your request
+- **To help us improve and personalize the functionality** of the Sites and Services
+- **To help us understand your usage** of the Sites and Services in order to improve them
+- **To communicate with you** regarding customer service matters, questions, and other various comments or feedback you may send to us
+- **To provide you with notices** about your account
+- **To carry out our legal obligations,** such as protecting our and our users' safety, property, or rights, complying with legal requirements, and protecting against malicious, deceptive, fraudulent, or illegal activity
+- **To enforce our rights** arising from any agreement or contract entered into between you and us, including for billing and collections
+- **To notify you about changes** to our Sites and Services, our products or any other services we offer
+- **To inform you about products, services, offers and events** we offer or sponsor, and to provide news and other information that may be of interest to you
+- **To communicate various technical and administrative messages** regarding the Sites and Services, including notices of technology updates
+- **To offer you the opportunity** to participate in contests or surveys regarding the Sites and Services
+- **For any other purpose** that you consent to at the time the personal data is collected
 
 ---
 
@@ -100,12 +100,12 @@ We use personal data to pursue our legitimate business interests, to enter into 
 
 We may disclose your personal data as described below:
 
-* **Affiliates:** With other DripIQ affiliates in order to provide our Sites and Services and for our administrative purposes
-* **Service Providers:** To contractors, service providers, and other third parties we use to support our business, such as website hosting, data analysis, marketing service, customer service, email delivery and auditing services
-* **Business Partners:** With third-party business partners in connection with our Sites and Services to our Subscribers for business purposes
-* **Corporate Transactions:** In connection with an actual or proposed merger, reorganization, divestiture, or sale of some or all of DripIQ's assets or a financing or acquisition of all or a portion of our business by another company. In these circumstances, DripIQ will instruct the parties with whom personal data is shared to process personal data in accordance with this Privacy Policy
-* **Compliance and Harm Prevention:** To comply with any court order, law, or legal process, including to responding to any government or regulatory request; to enforce or apply our Terms of Service and other agreements, including for billing and collection purposes; if we believe disclosure is necessary or appropriate to protect our rights, property, or safety, our subscribers, or others
-* **Other:** With your consent or for any other purpose we disclose when you provide the information
+- **Affiliates:** With other DripIQ affiliates in order to provide our Sites and Services and for our administrative purposes
+- **Service Providers:** To contractors, service providers, and other third parties we use to support our business, such as website hosting, data analysis, marketing service, customer service, email delivery and auditing services
+- **Business Partners:** With third-party business partners in connection with our Sites and Services to our Subscribers for business purposes
+- **Corporate Transactions:** In connection with an actual or proposed merger, reorganization, divestiture, or sale of some or all of DripIQ's assets or a financing or acquisition of all or a portion of our business by another company. In these circumstances, DripIQ will instruct the parties with whom personal data is shared to process personal data in accordance with this Privacy Policy
+- **Compliance and Harm Prevention:** To comply with any court order, law, or legal process, including to responding to any government or regulatory request; to enforce or apply our Terms of Service and other agreements, including for billing and collection purposes; if we believe disclosure is necessary or appropriate to protect our rights, property, or safety, our subscribers, or others
+- **Other:** With your consent or for any other purpose we disclose when you provide the information
 
 > **Note:** All the above categories exclude text messaging originator opt-in data and consent; such data and consent will not be shared with any third parties.
 
@@ -119,14 +119,14 @@ Any personal data you add to your profile will be accessible by End Users and ot
 
 Depending on where you live, you may have the following rights with respect to your personal data under applicable data protection laws:
 
-* **Access** – You may have the right to know what personal data we have collected about you and to access such data
-* **Data portability** – You may have the right to receive a copy of your personal data in a portable and readily usable format
-* **Deletion** – You may have the right to delete your personal data that we have obtained, subject to certain exceptions
-* **Correction** – You may have the right to correct inaccuracies in your personal data
-* **Opt out of certain processing** – You may have the right to: (i) opt out of the processing of your personal data for purposes of targeted advertising, (ii) opt out of the sale or sharing of your personal data; (iii) limit the use of your sensitive personal data (if applicable), and (iv) opt out of the processing of your personal data for profiling in furtherance of decisions that produce legal or similarly significant effect concerning you
-* **Objection/restriction of processing** – you may have the right to object or restrict us from processing your personal data in certain circumstances
-* **Withdraw consent** – you may have the right to withdraw your consent where we are relying on your consent to process your personal data
-* **Lodge a complaint** – you may have the right to lodge a complaint with a supervisory authority or other regulatory agency if you believe we have violated any of the rights afforded to you under applicable data protection laws
+- **Access** – You may have the right to know what personal data we have collected about you and to access such data
+- **Data portability** – You may have the right to receive a copy of your personal data in a portable and readily usable format
+- **Deletion** – You may have the right to delete your personal data that we have obtained, subject to certain exceptions
+- **Correction** – You may have the right to correct inaccuracies in your personal data
+- **Opt out of certain processing** – You may have the right to: (i) opt out of the processing of your personal data for purposes of targeted advertising, (ii) opt out of the sale or sharing of your personal data; (iii) limit the use of your sensitive personal data (if applicable), and (iv) opt out of the processing of your personal data for profiling in furtherance of decisions that produce legal or similarly significant effect concerning you
+- **Objection/restriction of processing** – you may have the right to object or restrict us from processing your personal data in certain circumstances
+- **Withdraw consent** – you may have the right to withdraw your consent where we are relying on your consent to process your personal data
+- **Lodge a complaint** – you may have the right to lodge a complaint with a supervisory authority or other regulatory agency if you believe we have violated any of the rights afforded to you under applicable data protection laws
 
 We encourage you to first reach out to us so we have an opportunity to address your concerns directly before you do so. If you are a resident of the EEA, you may direct your questions or complaints to the supervisory authority of the country you are located in. If you are a resident of the UK, you may direct your questions or concerns to the UK Information Commissioner's Office.
 
@@ -138,8 +138,8 @@ If you no longer want to receive marketing-related emails from us, you may opt-o
 
 To exercise any of the privacy rights afforded to you under applicable data protection laws, please submit a request to us by one of the following methods:
 
-* 📧 **Email:** [privacy@dripiq.com](mailto:privacy@dripiq.com)
-* 🌐 **Webform:** via our website
+- 📧 **Email:** [privacy@dripiq.com](mailto:privacy@dripiq.com)
+- 🌐 **Webform:** via our website
 
 You may also initiate any opt outs by broadcasting an Opt-Out Preference Signal, such as the Global Privacy Control (GPC). We honor Opt-Out Preference Signals, including GPC. If you choose to use an Opt-Out Preference Signal, you will need to turn it on for each supported browser or browser extension you use.
 
@@ -177,14 +177,14 @@ We use Personal Information for the business and commercial purposes detailed in
 
 The categories of third parties to whom we disclose personal information for a business or commercial purpose or to whom we sell or share personal information are summarized in the chart below. We do not knowingly sell or share the personal information of minors under the age of 16.
 
-| **Categories of Personal Information** | **Category of Recipients to Whom We Disclose Personal Information for a Business or Commercial Purpose** | **Categories of Third Parties to Whom We Sell or Share Personal Information** |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Categories of Personal Information** | **Category of Recipients to Whom We Disclose Personal Information for a Business or Commercial Purpose**                                                                                                                         | **Categories of Third Parties to Whom We Sell or Share Personal Information**                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Identifiers                            | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | Third-party marketers, analytics providers, other third parties that set cookies and other online tracking technologies on our Site |
 | Customer Records                       | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | Third-party marketers, analytics providers, other third parties that set cookies and other online tracking technologies on our Site |
-| Commercial Info                        | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | *Not sold or shared* |
+| Commercial Info                        | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | _Not sold or shared_                                                                                                                |
 | Internet Activity                      | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | Third-party marketers, analytics providers, other third parties that set cookies and other online tracking technologies on our Site |
 | Geolocation                            | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | Third-party marketers, analytics providers, other third parties that set cookies and other online tracking technologies on our Site |
-| Employment Data                        | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | *Not sold or shared* |
+| Employment Data                        | Affiliates, service providers, business partners, third parties for legal, security, and safety purposes, third parties in connection with a corporate transaction, other entities to which you have consented to the disclosure | _Not sold or shared_                                                                                                                |
 
 ### California "Shine the Light" Law
 
@@ -200,15 +200,15 @@ Cookies are small text files that are stored in a computer's browser directory. 
 
 We use cookies in accordance with this Privacy Policy for the following purposes:
 
-* **Site Operations:** To enable features that are necessary for providing you the services on our Sites and Services and making it usable and secure by enabling basic functions
-* **Preferences:** To remember your preferences and recognize you when you return to our Sites and Services
-* **Analytics and Session Replay:** To allow us to understand how our Sites and Services are being used. We generally use analytics and session replay cookies in the following ways:
-  * **Site Features and Services:** To remember how you prefer to use our Sites and Services so that you don't have to reconfigure your settings each time you log into your account
-  * **To Analyze and Improve Our Services:** To help us understand how people reach our Sites and Services. They give us insights into improvements or enhancements we need to make to our Sites and Services so that they work better for you
-* **Similar Tracking Technologies:** Certain features of the Sites and Services may use tokens, pixel tags, web beacons, clear GIFs, or other trackers to track the actions of Users, measure the success of our marketing campaigns, or compile statistics about usage of the Services and response rates
-* **Third-Party Analytics:** Through third-party analytics, such as Google Analytics, in order to collect and analyze information about the use of the Services and report on activities and trends. This service may also collect information regarding the use of other websites, apps and online resources
-* **Session Replay:** We partner with third-party session replay vendors to capture how you use and interact with our Sites through behavioral metrics, heatmaps, and session replay to improve your website experience
-* **Chat Functionality:** We use a live chat feature powered by a third-party to enable live customer service and technical support via our Site
+- **Site Operations:** To enable features that are necessary for providing you the services on our Sites and Services and making it usable and secure by enabling basic functions
+- **Preferences:** To remember your preferences and recognize you when you return to our Sites and Services
+- **Analytics and Session Replay:** To allow us to understand how our Sites and Services are being used. We generally use analytics and session replay cookies in the following ways:
+  - **Site Features and Services:** To remember how you prefer to use our Sites and Services so that you don't have to reconfigure your settings each time you log into your account
+  - **To Analyze and Improve Our Services:** To help us understand how people reach our Sites and Services. They give us insights into improvements or enhancements we need to make to our Sites and Services so that they work better for you
+- **Similar Tracking Technologies:** Certain features of the Sites and Services may use tokens, pixel tags, web beacons, clear GIFs, or other trackers to track the actions of Users, measure the success of our marketing campaigns, or compile statistics about usage of the Services and response rates
+- **Third-Party Analytics:** Through third-party analytics, such as Google Analytics, in order to collect and analyze information about the use of the Services and report on activities and trends. This service may also collect information regarding the use of other websites, apps and online resources
+- **Session Replay:** We partner with third-party session replay vendors to capture how you use and interact with our Sites through behavioral metrics, heatmaps, and session replay to improve your website experience
+- **Chat Functionality:** We use a live chat feature powered by a third-party to enable live customer service and technical support via our Site
 
 We do not support Do Not Track functionality. Do Not Track is a preference you can set in your web browser to inform websites that you do not want to be tracked.
 
@@ -217,18 +217,20 @@ We do not support Do Not Track functionality. Do Not Track is a preference you c
 ## Data Security and Retention
 
 ### Security Measures
+
 We implement technical and organizational measures to protect data:
 
-* **Encryption:** Data encrypted in transit (TLS 1.2+) and at rest (AES-256)
-* **Access Controls:** Multi-factor authentication and role-based access
-* **Monitoring:** 24/7 infrastructure monitoring and regular security audits
-* **Tenant Isolation:** Data logically separated between customers
+- **Encryption:** Data encrypted in transit (TLS 1.2+) and at rest (AES-256)
+- **Access Controls:** Multi-factor authentication and role-based access
+- **Monitoring:** 24/7 infrastructure monitoring and regular security audits
+- **Tenant Isolation:** Data logically separated between customers
 
 ### Data Retention
-* **Customer Data:** Retained for the duration of your subscription
-* **Account Data:** Retained until account deletion or as required by law
-* **Analytics Data:** Aggregated data retained for platform improvement
-* **Deletion:** Data deleted within 30 days of request or account termination
+
+- **Customer Data:** Retained for the duration of your subscription
+- **Account Data:** Retained until account deletion or as required by law
+- **Analytics Data:** Aggregated data retained for platform improvement
+- **Deletion:** Data deleted within 30 days of request or account termination
 
 ---
 
@@ -265,4 +267,4 @@ When we update our Privacy Policy, we will take appropriate measures to inform y
 **DripIQ, LLC.**
 1621 Central Ave, Cheyenne, WY 82001-4531
 📧 [privacy@dripiq.com](mailto:privacy@dripiq.com)
-*Last updated: Oct 17, 2025*
+_Last updated: Oct 17, 2025_

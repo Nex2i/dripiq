@@ -584,7 +584,6 @@ dripIq makes CRM integration simple with pre-built connectors, intelligent autom
   publishedAt: '2025-04-05',
   readTime: '14 min read',
   tags: ['CRM Integration', 'Sales Stack', 'ROI Optimization'],
-  ogImage: 'https://dripiq.ai/blog/crm-integration-best-practices-roi.jpg',
   seo: {
     title: 'CRM Integration Best Practices 2024: Maximize Sales Stack ROI',
     description:

@@ -48,7 +48,6 @@ If you have questions about edge cases (multiple subsidiaries, holding companies
   publishedAt: '2025-09-17',
   readTime: '3 min read',
   tags: ['Pricing', 'Leads', 'Tokens'],
-  ogImage: 'https://dripiq.ai/blog/what-is-a-lead.jpg',
   seo: {
     title: 'What Is a Lead? 1 Token = 1 Lead | dripIq',
     description:
@@ -56,4 +55,3 @@ If you have questions about edge cases (multiple subsidiaries, holding companies
     keywords: ['what is a lead', 'token pricing', 'B2B lead definition'],
   },
 }
-

@@ -20,7 +20,7 @@ const BlogPage = () => {
           publisher: {
             '@type': 'Organization',
             name: 'dripIq',
-            logo: 'https://dripiq.ai/logo.png',
+            logo: 'https://dripiq.ai/android-chrome-512x512.png',
           },
         }}
       />

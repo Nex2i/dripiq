@@ -45,7 +45,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$1.50',
       leads: '500',
-      description: 'All features included. Better token price with more volume.',
+      description:
+        'All features included. Better token price with more volume.',
       features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
@@ -57,7 +58,8 @@ const PricingPage = () => {
       period: '/month',
       tokenPrice: '$1.00',
       leads: '1,000',
-      description: 'All features included. Best token price for highest volume.',
+      description:
+        'All features included. Best token price for highest volume.',
       features: sharedFeatures,
       cta: 'Get Started',
       href: APP_URLS.SIGNUP,
@@ -106,12 +108,12 @@ const PricingPage = () => {
             Token-Based <span className="gradient-text">Pricing</span>
           </h1>
           <p className="text-xl text-surface-600 max-w-3xl mx-auto mb-4">
-            Pay only for the leads you engage. 1 token = 1 lead.
-            Generate cold leads, find net new opportunities, and recover closed
-            lost deals.
+            Pay only for the leads you engage. 1 token = 1 lead. Generate cold
+            leads, find net new opportunities, and recover closed lost deals.
           </p>
           <p className="text-base text-surface-600 max-w-3xl mx-auto mb-6">
-            All tiers include the same feature set — token price decreases with higher monthly volume.
+            All tiers include the same feature set — token price decreases with
+            higher monthly volume.
           </p>
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 max-w-2xl mx-auto">
             <p className="text-lg font-semibold text-green-800 text-center">
@@ -126,7 +128,8 @@ const PricingPage = () => {
               Everything Included
             </h2>
             <p className="text-surface-600">
-              All plans include the same features. Only token price varies by volume.
+              All plans include the same features. Only token price varies by
+              volume.
             </p>
           </div>
           <ul className="grid md:grid-cols-2 gap-3 max-w-4xl mx-auto">
@@ -294,7 +297,13 @@ const PricingPage = () => {
                 • Success fee: $250 charged per sale closed brought in by DripIQ
               </p>
               <p>
-                Learn more: <a href="/blog/what-is-a-lead" className="text-primary-600 hover:text-primary-700 underline">What is a Lead? Understanding tokens and contacts</a>
+                Learn more:{' '}
+                <a
+                  href="/blog/what-is-a-lead"
+                  className="text-primary-600 hover:text-primary-700 underline"
+                >
+                  What is a Lead? Understanding tokens and contacts
+                </a>
               </p>
             </div>
           </div>
