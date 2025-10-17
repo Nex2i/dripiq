@@ -1,251 +1,121 @@
-**Terms of Service**
+# Terms of Service
 
-\*Last updated: **January 15, 2025\***
+**Last updated: January 15, 2025**
 
----
+Welcome to the End User Terms of Service (these "**Terms**") for the websites, www.dripiq.com, and any other web pages (the "**Website**") operated on behalf of DripIQ, Inc. ("**Company**", "**DripIQ**", "**we**" or "**us**"). The Website and any content, services, tools, features and functionality offered on or through our Website, including the DripIQ Services (as defined in the DripIQ Subscription Agreement) offered to a Subscriber, are collectively referred to as the "**Services**".
 
-### 1. Overview
+These Terms govern your access to and use of the Services. Please read these Terms carefully, as they include important information about your legal rights. By accessing and/or using the Services, you are agreeing to these Terms. If you do not understand or agree to these Terms, please do not use the Services.
 
-These Terms of Service ("**Terms**") govern your access to and use of DripIQ's AI-powered sales-enablement platform and related services (collectively, the "**Service**"). By accessing or using the Service, you agree to be bound by these Terms.
+For purposes of these Terms, "**you**" and "**your**" means you as the user of the Services. If you use the Services on behalf of a company or other entity then "you" includes you and that entity, and you represent and warrant that (a) you are an authorized representative of the entity with the authority to bind the entity to these Terms, and (b) you agree to these Terms on the entity's behalf.
 
-DripIQ ("**we**," "**our**," "**us**") is a Delaware corporation with its principal place of business at 1621 Central Ave, Cheyenne, WY 82001-4531.
+## 1. WHO MAY USE THE SERVICES
 
----
+You must be 18 years of age or older to use the Services. By using the Services, you represent and warrant that you meet these requirements.
 
-### 2. Acceptance of Terms
+If you have been authorized to use the Services by an organization or entity (such as your employer) that is a paying customer of the Services (a "**Subscriber**"), then that Subscriber has separately agreed to our Subscription Agreement or entered into a written agreement with us or our affiliate(s) (in either case, the "**Subscription Agreement**"). That Subscription Agreement has permitted Subscriber to authorize you and other users to use the Services as an authorized user of the Subscriber (an "**Authorized User**"). When an Authorized User (including you) submits content or information to the Services, such as messages or files ("**Subscriber Data**"), you acknowledge and agree that the Subscriber Data is owned by Subscriber. The Subscription Agreement provides Subscriber with many choices and control over Subscriber Data and your use of the Services as the Subscriber's Authorized User. For example, Subscriber may remove your access to the Services, enable or disable third party integrations, manage permissions, retention and export settings. These choices and instructions may result in your inability to access some or all of the Services and Subscriber Data as an Authorized User unless you procure the Services independently in your personal capacity.
 
-By creating an account, accessing, or using the Service, you ("**you**," "**your**," "**Customer**," or "**Tenant**") acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy & Data Usage Policy. If you are using the Service on behalf of an organization, you represent that you have the authority to bind that organization to these Terms.
+## 2. USER ACCOUNTS
 
-If you do not agree to these Terms, you may not access or use the Service.
+**Creating and Safeguarding your Account.** To use the Services, you need to create an account ("**Account**"). You agree to provide us with accurate, complete and updated information for your Account. You are solely responsible for any activity on your Account and for maintaining the confidentiality and security of your password. We are not liable for any acts or omissions by you in connection with your Account. You must immediately notify us at security@dripiq.com if you know or have any reason to suspect that your Account or password have been stolen, misappropriated or otherwise compromised, or in case of any actual or suspected unauthorized use of your Account. You agree not to create any Account if we have previously removed you, or we previously banned you from any of our Services, unless we provide written consent otherwise.
 
----
+## 3. LOCATION OF OUR PRIVACY POLICY AND OTHER APPLICABLE POLICIES
 
-### 3. Description of Service
+Our Privacy Policy describes how we handle the information you provide to us when you use the Services. For an explanation of our privacy practices, please visit our Privacy Policy located at https://www.dripiq.com/privacy-policy/.
 
-DripIQ provides an AI-powered platform that helps sales teams revive dormant deals through:
+## 4. RIGHTS WE GRANT YOU
 
-- **Lead Management & Enrichment** – Organize and enhance prospect data with AI-driven insights
-- **Automated Outreach** – Generate and send personalized emails, SMS, and voicemail scripts
-- **Campaign Analytics** – Track engagement metrics and performance dashboards
-- **Integration Services** – Connect with email providers (Gmail, Outlook) and calendar systems
-- **AI Content Generation** – Create micro-landing pages and sales materials
+**Right to Use Services.** We hereby permit you to use the Services for your personal use only or as otherwise permitted in any Subscription Agreement that applies to your use of the Services, provided that you comply with these Terms in connection with all such use. If any software, content or other materials owned or controlled by us are distributed to you as part of your use of the Services, we hereby grant you, a personal, non-assignable, non-sublicensable, non-transferrable, and non-exclusive right and license to access and display such software, content and materials provided to you as part of the Services, in each case for the sole purpose of enabling you to use the Services as permitted by these Terms. Your access and use of the Services may be interrupted from time to time for any of several reasons, including, without limitation, the malfunction of equipment, periodic updating, maintenance or repair of the Service or other actions that Company, in its sole discretion, may elect to take.
 
-The Service is designed for small-to-mid-market sales teams and business-to-business use cases.
+**Free Access Subscription.** This Section will apply to any Free Access Subscriptions (defined below) and supersedes any contrary provision in these Terms. Company may provide you with access to certain of the Company's Services for free or on a trial basis (each a "**Free Access Subscription**"). A Free Access Subscriptions is only intended for business use, personal use is prohibited. As such, you will be required to provide a valid business email in order to sign up for a Free Access Subscription. The Free Access Subscription will have a limited term length or will be contingent upon reaching certain usage limits as described on the web page where you signed up for the Free Access Subscription, after which the corresponding Services will terminate unless upgraded or purchased. Company may use good faith efforts in its discretion to assist you with the Free Access Subscriptions. Nevertheless, you agree to access and use the Free Access Subscription at your own discretion, and without limiting the other disclaimers and limitations in these Terms, **YOU AGREE THAT ANY FREE ACCESS SUBSCRIPTIONS ARE PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT ANY WARRANTY, SERVICE SUPPORT, MAINTENANCE, STORAGE, SECURITY OR INDEMNITY OBLIGATIONS OF ANY KIND**. You further acknowledge that the Free Access Subscription: (a) may not be fully supported and may be materially modified or discontinued at any time; (b) may not be as reliable or available as the paid Services; and (c) has not been subjected to the same security or compliance scrutiny as the paid Services. Company may terminate your right to use any Free Access Subscription at any time for any reason or no reason in Company's sole discretion, without liability. You further acknowledge and agree that if the Free Access Subscription includes access to the Company's artificial intelligence (AI) Services, use of such Services will be subject to, without limitation, the specific terms and conditions in Section 5.6 below.
 
----
+**Restrictions On Your Use of the Services.** You may not do any of the following in connection with your use of the Services, unless applicable laws or regulations prohibit these restrictions or you have our written permission to do so:
 
-### 4. Account Registration & Eligibility
+- download, modify, adapt, translate, copy, distribute, transfer, assign, pledge, rent, lease, loan, transmit, display, perform, reproduce, duplicate, publish, license, create derivative works from, or offer for sale or resale any information contained on, or obtained from or through, the Services, except for temporary files that are automatically cached by your web browser for display purposes, or as otherwise expressly permitted in these Terms;
+- duplicate, decompile, decipher, reverse engineer, disassemble or decode the Services (including any underlying idea or algorithm), or attempt to do any of the same;
+- use, reproduce or remove any copyright, trademark, service mark, trade name, slogan, logo, image, or other proprietary notation displayed on or through the Services;
+- use automation software (bots), hacks, modifications (mods) or any other unauthorized third-party software designed to modify the Services;
+- exploit the Services for any commercial purpose, including without limitation communicating or facilitating any commercial advertisement or solicitation;
+- gain, or attempt to gain unauthorized access to the Services or its related systems or networks;
+- access or use the Services in any manner that could disable, overburden, damage, disrupt or impair the Services or interfere with any other party's access to or use of the Services or use any device, software or routine that causes the same;
+- attempt to gain unauthorized access to, interfere with, damage or disrupt the Services, accounts registered to other users, or the computer systems or networks connected to the Services;
+- circumvent, remove, alter, deactivate, degrade or thwart any technological measure or content protections of the Services;
+- use any robot, spider, crawlers, scraper, or other automatic device, process, software or queries that intercepts, "mines," scrapes, extracts, or otherwise accesses the Services to monitor, extract, copy or collect information or data from or through the Services, or engage in any manual process to do the same;
+- introduce any viruses, trojan horses, worms, logic bombs or other materials that are malicious or technologically harmful into our systems;
+- submit, transmit, display, perform, post or store any content that is inaccurate, unlawful, defamatory, obscene, invasive of privacy or publicity rights, deceptive, or otherwise objectionable;
+- use or access the Services for any fraudulent purposes, or attempt to do the same;
+- use the Services if you are directly or indirectly a competitor of the Company;
+- violate, or attempt to violate, any applicable law or regulation in connection with your access to or use of the Services; or
+- access or use the Services in any way not expressly permitted by these Terms.
 
-**4.1 Eligibility**
-You must be at least 18 years old and have the legal capacity to enter into these Terms. The Service is intended for business use only.
+## 5. OWNERSHIP AND CONTENT
 
-**4.2 Account Information**
-You agree to provide accurate, current, and complete information during registration and to update such information to keep it accurate and current.
+**Ownership of the Services.** The Services, including their "look and feel" (e.g., text, graphics, images, logos), proprietary content, information and other materials, are protected under copyright, trademark and other intellectual property laws. You agree that the Company and/or its licensors own all right, title and interest in and to the Services (including any and all intellectual property rights therein) and you agree not to take any action(s) inconsistent with such ownership interests. We and our licensors reserve all rights in connection with the Services and its content (other than Your Content), including, without limitation, the exclusive right to create derivative works.
 
-**4.3 Account Security**
-You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account.
+**Ownership of Trademarks.** The Company's name, the Company's trademarks, the Company's logo and all related names, logos, product and service names, designs and slogans are trademarks of the Company or its affiliates or licensors. Other names, logos, product and service names, designs and slogans that appear on the Services are the property of their respective owners, who may or may not be affiliated with, connected to, or sponsored by us.
 
----
+**Ownership of Feedback.** We welcome feedback, comments and suggestions for improvements to the Services ("**Feedback**"). You acknowledge and expressly agree that any contribution of Feedback does not and will not give or grant you any right, title or interest in the Services or in any such Feedback. All Feedback becomes the sole and exclusive property of the Company, and the Company may use and disclose Feedback in any manner and for any purpose whatsoever without further notice or compensation to you and without retention by you of any proprietary or other right or claim. You hereby assign to the Company any and all right, title and interest (including, but not limited to, any patent, copyright, trade secret, trademark, show-how, know-how, moral rights and any and all other intellectual property right) that you may have in and to any and all Feedback.
 
-### 5. Acceptable Use Policy
+**Your Content License Grant.** In connection with your use of the Services, you may be able to post, upload, or submit content to be made available through the Services ("**Your Content**"). In order to operate the Service, we must obtain from you certain license rights in Your Content so that actions we take in operating the Service are not considered legal violations. Accordingly, by using the Service and uploading Your Content, you grant us a license to access, use, host, cache, store, reproduce, transmit, display, publish, distribute, and modify (for technical purposes, e.g., making sure content is viewable on smartphones as well as computers and other devices) Your Content but solely as required to be able to operate and provide the Services. You agree that these rights and licenses are royalty free, transferable, sub-licensable, worldwide and irrevocable (for so long as Your Content is stored with us), and include a right for us to make Your Content available to, and pass these rights along to, others with whom we have contractual relationships related to the provision of the Services, solely for the purpose of providing such Services, and to otherwise permit access to or disclose Your Content to third parties if we determine such access is necessary to comply with our legal obligations. As part of the foregoing license grant you agree that the other users of the Services shall have the right to comment on and/or tag Your Content and/or to use, publish, display, modify or include a copy of Your Content as part of their own use of the Services; except that the foregoing shall not apply to any of Your Content that you post privately for non-public display on the Services. To the fullest extent permitted by applicable law, the Company reserves the right, and has absolute discretion, to remove, screen, edit, or delete any of Your Content at any time, for any reason, and without notice. By posting or submitting Your Content through the Services, you represent and warrant that you have, or have obtained, all rights, licenses, consents, permissions, power and/or authority necessary to grant the rights granted herein for Your Content. You agree that Your Content will not contain material subject to copyright or other proprietary rights, unless you have the necessary permission or are otherwise legally entitled to post the material and to grant us the license described above.
 
-**5.1 Permitted Use**
-You may use the Service only for lawful business purposes and in accordance with these Terms.
+**Notice of Infringement – DMCA (Copyright) Policy.** If you believe that any text, graphics, photos, audio, videos or other materials or works uploaded, downloaded or appearing on the Services have been copied in a way that constitutes copyright infringement, you may submit a notification to our copyright agent in accordance with 17 USC 512(c) of the Digital Millennium Copyright Act (the "**DMCA**"), by providing the following information in writing:
 
-**5.2 Prohibited Activities**
-You agree not to:
+- identification of the copyrighted work that is claimed to be infringed;
+- identification of the allegedly infringing material that is requested to be removed, including a description of where it is located on the Service;
+- information for our copyright agent to contact you, such as an address, telephone number and e-mail address;
+- a statement that you have a good faith belief that the identified, allegedly infringing use is not authorized by the copyright owners, its agent or the law;
+- a statement that the information above is accurate, and under penalty of perjury, that you are the copyright owner or the authorized person to act on behalf of the copyright owner; and
+- the physical or electronic signature of a person authorized to act on behalf of the owner of the copyright or of an exclusive right that is allegedly infringed.
 
-- Use the Service for any unlawful purpose or in violation of any applicable laws or regulations
-- Send unsolicited communications (spam) or violate anti-spam laws (CAN-SPAM, GDPR, CASL, etc.)
-- Upload, transmit, or distribute malicious code, viruses, or harmful content
-- Attempt to gain unauthorized access to the Service or other users' accounts
-- Reverse engineer, decompile, or attempt to extract source code from the Service
-- Use automated means to access the Service except through our provided APIs
-- Impersonate any person or entity or misrepresent your affiliation
-- Collect or harvest personal information without proper consent
-- Use the Service to compete with or create a competing product
-- Violate any third-party rights, including intellectual property rights
+Notices of copyright infringement claims should be sent by mail to: DripIQ, Inc., 1621 Central Ave, Cheyenne, WY 82001-4531, Attn: Legal Department; or by e-mail to legal@dripiq.com. It is our policy, in appropriate circumstances and at our discretion, to disable or terminate the accounts of users who repeatedly infringe copyrights or intellectual property rights of others.
 
-**5.3 Content Standards**
-All content you submit through the Service must comply with applicable laws and must not contain:
+A user of the Services who has uploaded or posted materials identified as infringing as described above may supply a counter-notification pursuant to sections 512(g)(2) and (3) of the DMCA. When we receive a counter-notification, we may reinstate the posts or material in question, in our sole discretion. To file a counter-notification with us, you must provide a written communication (by fax or regular mail or by email) that sets forth all of the items required by sections 512(g)(2) and (3) of the DMCA. Please note that you will be liable for damages if you materially misrepresent that content or an activity is not infringing the copyrights of others.
 
-- Discriminatory, harassing, or offensive material
-- False, misleading, or deceptive information
-- Confidential information belonging to third parties without authorization
-- Content that violates privacy rights or data protection laws
+**DripIQ AI.** In order to provide DripIQ AI (as defined in the Company's Product Specifications), the Company may rely on AI technology provided by third-party artificial intelligence (AI) providers. By using DripIQ AI, you acknowledge that AI-generated information is made available solely for general information purposes. You should independently fact check AI-generated information. The Company does not warrant the accuracy, currency, completeness, or usefulness of AI-generated information. Any reliance you place on such information is strictly at your own risk. The Company disclaims all liability and responsibility arising from any reliance placed on such materials.
 
----
+You acknowledge and agree that artificial intelligence (AI) is an emerging technology and that no specific results or product milestones are guaranteed by the Company.
 
-### 6. Subscription Plans & Billing
+It is your responsibility to evaluate whether AI outputs are appropriate for your use case, including where human review is appropriate, before using or sharing such outputs. You acknowledge, and must notify all users in your organization, that factual assertions in AI outputs should not be relied upon without independently checking their accuracy, as they may be false, incomplete, misleading or not reflective of recent events or information. You further acknowledge that the AI outputs may contain content inconsistent with the Company's views.
 
-**6.1 Subscription Plans**
-The Service is offered through various subscription plans with different features and usage limits. Current plans and pricing are available on our website.
+**Third-Party Communication Integrations.** The Services may integrate with third-party communication services (e.g., Gmail, Outlook, calendar systems). Through these integrations, you may send emails, SMS, and other communications. Message frequency may vary. By using these integrations, you acknowledge and agree that such communications are a standard feature of the Services.
 
-**6.2 Payment Terms**
+Your receipt of communications through these integrations is entirely voluntary. By providing your information and opting to receive communications, you expressly consent to receive such communications in connection with your use of the Services. You acknowledge that you are not obligated to receive such communications and that you may revoke your consent at any time as described below.
 
-- Subscription fees are billed in advance on a monthly or annual basis
-- All fees are non-refundable except as expressly stated in these Terms
-- You authorize us to charge your payment method for all applicable fees
-- If payment fails, we may suspend or terminate your access to the Service
+Should you wish to discontinue receiving communications, you may opt-out at any time by following the unsubscribe instructions in the communications or contacting support. Upon receipt of your opt-out request, DripIQ will send a confirmation message to you acknowledging your opt-out. Thereafter, you will no longer receive such communications unless and until you re-enroll by providing your express consent in the manner initially provided. You agree and acknowledge that opting out of communications does not affect other forms of communication you may receive from DripIQ.
 
-**6.3 Price Changes**
-We may change our pricing with 30 days' written notice. Price changes will take effect at the start of your next billing cycle.
+DripIQ is not responsible for any delays or failures in the transmission of communications, including but not limited to, delays caused by telecommunications service providers, network congestion, or other factors beyond DripIQ's reasonable control. Additionally, you acknowledge that your service provider may impose message and data rates or fees in connection with your use of communications, and that DripIQ bears no responsibility for any such charges.
 
-**6.4 Taxes**
-You are responsible for all applicable taxes, duties, and governmental charges.
+All personal information and data submitted in connection with communications shall be handled in accordance with DripIQ's Privacy Policy.
 
----
+## 6. THIRD-PARTY SERVICES AND MATERIALS
 
-### 7. Data & Privacy
+**Use of Third-Party Materials in the Services.** Certain Services may display, include or make available content, data, information, applications or materials from third parties ("**Third-Party Materials**") or provide links to certain third party websites. By using the Services, you acknowledge and agree that the Company is not responsible for examining or evaluating the content, accuracy, completeness, availability, timeliness, validity, copyright compliance, legality, decency, quality or any other aspect of such Third Party Materials or websites. We do not warrant or endorse and do not assume and will not have any liability or responsibility to you or any other person for any third-party services, Third Party Materials or third-party websites, or for any other materials, products, or services of third parties. Third Party Materials and links to other websites are provided solely as a convenience to you.
 
-**7.1 Customer Data**
-You retain ownership of all data you provide to the Service ("**Customer Data**"). You grant us a limited license to use Customer Data solely to provide the Service as described in our Privacy & Data Usage Policy.
+## 7. DISCLAIMERS, LIMITATIONS OF LIABILITY AND INDEMNIFICATION
 
-**7.2 Data Protection**
-We implement appropriate technical and organizational measures to protect Customer Data as described in our Privacy & Data Usage Policy.
+**Disclaimers.** Your access to and use of the Services are at your own risk. You understand and agree that the Services are provided to you on an "**AS IS**" and "**AS AVAILABLE**" basis. Without limiting the foregoing, to the maximum extent permitted under applicable law, the Company, its parents, affiliates, related companies, officers, directors, employees, agents, representatives, partners, successors, assigns, consultants, suppliers and licensors (the "**Company Entities**") **DISCLAIM ALL WARRANTIES AND CONDITIONS, WHETHER EXPRESS OR IMPLIED, OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT**. The Company Entities make no warranty or representation and disclaim all responsibility and liability for: (a) the completeness, accuracy, availability, timeliness, security or reliability of the Services; (b) any harm to your computer system, loss of data, or other harm that results from your access to or use of the Services; (c) the operation or compatibility with any other application or any particular system or device; (d) whether the Services will meet your requirements or be available on an uninterrupted, secure or error-free basis; and (e) the deletion of, or the failure to store or transmit, Your Content and other communications maintained by the Services. No advice or information, whether oral or written, obtained from the Company Entities or through the Services, will create any warranty or representation not expressly made herein.
 
-**7.3 Data Processing Agreement**
-For customers subject to GDPR or similar data protection laws, our Data Processing Agreement is incorporated by reference and available upon request.
+**THE COMPANY ENTITIES TAKE NO RESPONSIBILITY AND ASSUME NO LIABILITY FOR ANY CONTENT THAT YOU, ANOTHER USER, OR A THIRD PARTY CREATES, UPLOADS, POSTS, SENDS, RECEIVES, OR STORES ON OR THROUGH OUR SERVICES.**
 
----
+**YOU UNDERSTAND AND AGREE THAT YOU MAY BE EXPOSED TO CONTENT THAT MIGHT BE OFFENSIVE, ILLEGAL, MISLEADING, OR OTHERWISE INAPPROPRIATE, NONE OF WHICH THE COMPANY ENTITIES WILL BE RESPONSIBLE FOR.**
 
-### 8. Intellectual Property
+**Use of API.** You acknowledge and agree that if the Company grants you access to any DripIQ API, you assume all responsibility for the actions of any person or entity with whom you share such API access.
 
-**8.1 Service IP**
-The Service, including all software, algorithms, designs, and content (excluding Customer Data), is owned by DripIQ and protected by intellectual property laws.
+**Limitations of Liability.** TO THE EXTENT NOT PROHIBITED BY LAW, YOU AGREE THAT IN NO EVENT WILL THE COMPANY ENTITIES BE LIABLE (A) FOR DAMAGES OF ANY KIND, INCLUDING INDIRECT, SPECIAL, EXEMPLARY, INCIDENTAL, CONSEQUENTIAL OR PUNITIVE DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, LOSS OF USE, DATA OR PROFITS, BUSINESS INTERRUPTION OR ANY OTHER DAMAGES OR LOSSES, ARISING OUT OF OR RELATED TO YOUR USE OR INABILITY TO USE THE SERVICES), HOWEVER CAUSED AND UNDER ANY THEORY OF LIABILITY, WHETHER UNDER THESE TERMS OR OTHERWISE ARISING IN ANY WAY IN CONNECTION WITH THE SERVICES OR THESE TERMS AND WHETHER IN CONTRACT, STRICT LIABILITY OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) EVEN IF THE COMPANY ENTITIES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE, OR (B) FOR ANY OTHER CLAIM, DEMAND OR DAMAGES WHATSOEVER RESULTING FROM OR ARISING OUT OF OR IN CONNECTION WITH THESE TERMS OR THE DELIVERY, USE OR PERFORMANCE OF THE SERVICES. SOME JURISDICTIONS (SUCH AS THE STATE OF NEW JERSEY) DO NOT ALLOW THE EXCLUSION OR LIMITATION OF INCIDENTAL OR CONSEQUENTIAL DAMAGES, SO THE ABOVE EXCLUSION OR LIMITATION MAY NOT APPLY TO YOU. **THE COMPANY ENTITIES' TOTAL LIABILITY TO YOU FOR ANY DAMAGES FINALLY AWARDED SHALL NOT EXCEED THE AMOUNT OF ONE HUNDRED DOLLARS ($100.00), OR THE AMOUNT YOU PAID THE COMPANY ENTITIES, IF ANY, IN THE PAST SIX (6) MONTHS FOR THE SERVICES (OR OFFERINGS PURCHASED ON THE SERVICES) GIVING RISE TO THE CLAIM.** THE FOREGOING LIMITATIONS WILL APPLY EVEN IF THE ABOVE STATED REMEDY FAILS OF ITS ESSENTIAL PURPOSE.
 
-**8.2 Limited License**
-We grant you a limited, non-exclusive, non-transferable license to access and use the Service during your subscription term, subject to these Terms.
+**Indemnification.** By entering into these Terms and accessing or using the Services, you agree that you shall defend, indemnify and hold the Company Entities harmless from and against any and all claims, costs, damages, losses, liabilities and expenses (including attorneys' fees and costs) incurred by the Company Entities arising out of or in connection with: (a) your violation or breach of any term of these Terms or any applicable law or regulation; (b) your violation of any rights of any third party; (c) your misuse of the Services; (d) Your Content, or (e) your negligence or willful misconduct. If you are obligated to indemnify any Company Entity hereunder, then you agree that Company (or, at its discretion, the applicable Company Entity) will have the right, in its sole discretion, to control any action or proceeding and to determine whether Company wishes to settle, and if so, on what terms, and you agree to fully cooperate with Company in the defense or settlement of such claim.
 
-**8.3 Feedback**
-Any feedback, suggestions, or ideas you provide about the Service may be used by us without restriction or compensation.
+## 8. ADDITIONAL PROVISIONS
 
----
+**Updating These Terms.** We may modify these Terms from time to time in which case we will update the "**Last Revised**" date at the top of these Terms. If we make changes that are material, we will use reasonable efforts to attempt to notify you, such as by e-mail and/or by placing a prominent notice on the first page of the Website. However, it is your sole responsibility to review these Terms from time to time to view any such changes. The updated Terms will be effective as of the time of posting, or such later date as may be specified in the updated Terms. Your continued access or use of the Services after the modifications have become effective will be deemed your acceptance of the modified Terms.
 
-### 9. Third-Party Integrations
+**Termination of License and Your Account.** If you breach any of the provisions of these Terms, all licenses granted by the Company will terminate automatically. Additionally, the Company may suspend, disable, or delete your Account and/or the Services (or any part of the foregoing) with or without notice, for any or no reason. If the Company deletes your Account for any suspected breach of these Terms by you, you are prohibited from re-registering for the Services under a different name. In the event of Account deletion for any reason, the Company may, but is not obligated to, delete any of Your Content. The Company shall not be responsible for the failure to delete or deletion of Your Content. All sections which by their nature should survive the termination of these Terms shall continue in full force and effect subsequent to and notwithstanding any termination of these Terms by the Company or you. Termination will not limit any of the Company's other rights or remedies at law or in equity.
 
-**9.1 Third-Party Services**
-The Service may integrate with third-party services (e.g., Gmail, Outlook, calendar systems). Your use of such integrations is subject to the third party's terms of service and privacy policies.
+**Injunctive Relief.** You agree that a breach of these Terms will cause irreparable injury to the Company for which monetary damages would not be an adequate remedy and the Company shall be entitled to equitable relief in addition to any remedies it may have hereunder or at law without a bond, other security or proof of damages.
 
-**9.2 API Usage**
-If you use our APIs, you must comply with our API documentation and usage guidelines. We may impose rate limits and usage restrictions.
+**California Residents.** If you are a California resident, in accordance with Cal. Civ. Code § 1789.3, you may report complaints to the Complaint Assistance Unit of the Division of Consumer Services of the California Department of Consumer Affairs by contacting them in writing at 1625 North Market Blvd., Suite N 112 Sacramento, CA 95834, or by telephone at (800) 952-5210.
 
-**9.3 No Warranty**
-We do not warrant the availability, functionality, or security of third-party integrations.
+**Miscellaneous.** If any provision of these Terms shall be unlawful, void or for any reason unenforceable, then that provision shall be deemed severable from these Terms and shall not affect the validity and enforceability of any remaining provisions. These Terms and the licenses granted hereunder may be assigned by the Company but may not be assigned by you without the prior express written consent of the Company. No waiver by either party of any breach or default hereunder shall be deemed to be a waiver of any preceding or subsequent breach or default. The section headings used herein are for reference only and shall not be read to have any legal effect. The Services are operated by us in the United States. Those who choose to access the Services from locations outside the United States do so at their own initiative and are responsible for compliance with applicable local laws. These Terms and all matters arising out of or relating to these Terms shall be governed by the internal laws of the State of Wyoming without giving effect to any choice of law rule. Except as set forth in this Section 8.3, each party hereby irrevocably consents to the mandatory and exclusive jurisdiction and venue of the state and federal courts located in Laramie County, Wyoming, with venue proper only in Laramie County, Wyoming. Except for: (i) the right of either party to apply to a court of competent jurisdiction for a temporary restraining order, a preliminary injunction, or other equitable relief to preserve the status quo or to prevent irreparable harm; or (ii) the right of DripIQ to enforce its right to collect amounts due under these Terms, any claim or controversy arising out of or relating to these Terms or to a breach of these Terms, shall be finally, and exclusively, settled by binding arbitration in Cheyenne, Wyoming. The arbitration shall be held before one arbitrator under the Commercial Arbitration rules of the American Arbitration Association ("**AAA**") in force at that time. The arbitrator shall be selected pursuant to the AAA rules. The arbitrator shall apply the substantive law of the State of Wyoming, except that the interpretation and enforcement of this arbitration provision shall be governed by the Federal Arbitration Act. To begin the arbitration process, a party must make a written demand therefor. The prevailing party shall be entitled to receive from the other party all attorneys' fees and costs incurred. Any judgment upon the award rendered by the arbitrators may be entered in any court of competent jurisdiction in Wyoming. The AAA Commercial Arbitration Rules can be found at www.adr.org/Rules. **THE PARTIES AGREE THAT, EXCEPT AS PROVIDED HEREIN, ANY AND ALL CLAIMS OR DISPUTES, OF ANY NATURE, INCLUDING TORT AND STATUTORY CLAIMS, IN ANY WAY RELATED TO OR CONCERNING THESE TERMS, PRIVACY OR DATA SECURITY PRACTICES, THE SERVICES, INCLUDING ANY BILLING DISPUTES, WILL BE RESOLVED BY BINDING ARBITRATION ON AN INDIVIDUAL BASIS. THERE IS NO JUDGE OR JURY IN ARBITRATION, AND COURT REVIEW OF AN ARBITRATION AWARD IS LIMITED. THIS AGREEMENT DOES NOT PERMIT CLASS ARBITRATION OR ANY CLAIMS BROUGHT AS A PLAINTIFF OR CLASS MEMBER IN ANY CLASS OR REPRESENTATIVE ARBITRATION PROCEEDING. THE ARBITRATOR MAY NOT CONSOLIDATE MORE THAN ONE PERSON'S CLAIMS AND MAY NOT OTHERWISE PRESIDE OVER ANY FORM OF A REPRESENTATIVE OR CLASS PROCEEDING. THE ARBITRATOR MUST FOLLOW THESE TERMS AND CAN AWARD, ON AN INDIVIDUAL BASIS, THE SAME DAMAGES AND RELIEF AS A COURT (INCLUDING ATTORNEYS' FEES).**
 
----
-
-### 10. Service Availability & Support
-
-**10.1 Service Availability**
-We strive to maintain high availability but do not guarantee uninterrupted access to the Service. We may perform maintenance that temporarily affects availability.
-
-**10.2 Support**
-Support is provided according to your subscription plan. We aim to respond to support requests within reasonable timeframes during business hours.
-
-**10.3 Service Modifications**
-We may modify, update, or discontinue features of the Service with reasonable notice. Material changes that substantially reduce functionality will be communicated at least 30 days in advance.
-
----
-
-### 11. Warranties & Disclaimers
-
-**11.1 Limited Warranty**
-We warrant that the Service will perform substantially in accordance with our published documentation under normal use.
-
-**11.2 Disclaimer**
-EXCEPT AS EXPRESSLY SET FORTH HEREIN, THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
-
-**11.3 AI-Generated Content**
-AI-generated content may contain errors or inaccuracies. You are responsible for reviewing and verifying all AI-generated content before use.
-
----
-
-### 12. Limitation of Liability
-
-**12.1 Limitation**
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, DRIPIQ'S TOTAL LIABILITY ARISING OUT OF OR RELATING TO THESE TERMS OR THE SERVICE SHALL NOT EXCEED THE AMOUNT PAID BY YOU FOR THE SERVICE DURING THE 12 MONTHS PRECEDING THE CLAIM.
-
-**12.2 Exclusion of Damages**
-IN NO EVENT SHALL DRIPIQ BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, OR BUSINESS OPPORTUNITIES.
-
-**12.3 Exceptions**
-The limitations in this section do not apply to: (a) your breach of confidentiality obligations, (b) your violation of our intellectual property rights, or (c) gross negligence or willful misconduct.
-
----
-
-### 13. Indemnification
-
-You agree to indemnify, defend, and hold harmless DripIQ and its officers, directors, employees, and agents from any claims, damages, losses, or expenses arising from: (a) your use of the Service, (b) your violation of these Terms, (c) your violation of any applicable laws, or (d) any content you submit through the Service.
-
----
-
-### 14. Termination
-
-**14.1 Termination by You**
-You may terminate your account at any time by canceling your subscription through your account settings or contacting support.
-
-**14.2 Termination by Us**
-We may suspend or terminate your access to the Service immediately if you violate these Terms or for any other reason with 30 days' written notice.
-
-**14.3 Effect of Termination**
-Upon termination:
-
-- Your access to the Service will cease
-- You remain liable for all charges incurred through the termination date
-- We will delete or return your Customer Data as described in our Privacy Policy
-- Provisions that by their nature should survive will continue after termination
-
----
-
-### 15. Dispute Resolution
-
-**15.1 Governing Law**
-These Terms are governed by the laws of the State of Delaware, without regard to conflict of law principles.
-
-**15.2 Arbitration**
-Any dispute arising out of or relating to these Terms or the Service shall be resolved through binding arbitration administered by the American Arbitration Association under its Commercial Arbitration Rules. The arbitration will be conducted in Wilmington, Delaware.
-
-**15.3 Class Action Waiver**
-You agree that any arbitration or legal proceeding shall be conducted only on an individual basis and not as part of a class or representative action.
-
-**15.4 Exception**
-Either party may seek injunctive relief in court to protect intellectual property rights or confidential information.
-
----
-
-### 16. General Provisions
-
-**16.1 Entire Agreement**
-These Terms, together with our Privacy Policy and any other policies referenced herein, constitute the entire agreement between you and DripIQ regarding the Service.
-
-**16.2 Amendments**
-We may modify these Terms at any time by posting the updated Terms on our website. Material changes will be communicated via email or in-app notice at least 30 days before taking effect.
-
-**16.3 Severability**
-If any provision of these Terms is found to be unenforceable, the remaining provisions will remain in full force and effect.
-
-**16.4 Waiver**
-No waiver of any provision of these Terms shall be deemed a further or continuing waiver of such provision or any other provision.
-
-**16.5 Assignment**
-You may not assign these Terms without our prior written consent. We may assign these Terms without restriction.
-
-**16.6 Force Majeure**
-Neither party shall be liable for any delay or failure to perform due to causes beyond their reasonable control.
-
----
-
-### 17. Contact Information
-
-For questions about these Terms or the Service, please contact:
-
-**DripIQ, Inc.**
-Attn: Legal Department
-1621 Central Ave, Cheyenne, WY 82001-4531
-📧 [legal@dripiq.com](mailto:legal@dripiq.com)
-📞 Support: Available through your account dashboard
-
----
+**How to Contact Us.** You may contact us regarding the Services or these Terms at: 1621 Central Ave, Cheyenne, WY 82001-4531, by phone at support available through your account dashboard or by e-mail at legal@dripiq.com.
 
 **Effective Date:** January 15, 2025

@@ -3,11 +3,12 @@ import { useNavigate } from '@tanstack/react-router'
 import { AlertCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import Logo from '../components/Logo'
+import LegalPageHeader from '../../components/legal/LegalPageHeader'
+import LegalPageFooter from '../../components/legal/LegalPageFooter'
 import {
   markdownComponents,
   scrollToAnchorWithPadding,
-} from '../utils/markdownComponents'
+} from '../../utils/markdownComponents'
 
 const PrivacyPolicyPage: React.FC = () => {
   const navigate = useNavigate()
@@ -82,21 +83,7 @@ const PrivacyPolicyPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Logo size="sm" showText={true} />
-            </div>
-            <button
-              onClick={() => navigate({ to: '/' })}
-              className="text-sm text-gray-500 hover:text-gray-700 underline bg-transparent border-none cursor-pointer inline-flex items-center"
-            >
-              ← Back to Home
-            </button>
-          </div>
-        </div>
-      </div>
+      <LegalPageHeader maxWidth="6xl" />
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -111,16 +98,7 @@ const PrivacyPolicyPage: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="bg-gray-900 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Logo size="sm" showText={true} />
-          </div>
-          <p className="text-center text-gray-400">
-            © 2025 dripIq. Built with ❤️ for sales teams.
-          </p>
-        </div>
-      </div>
+      <LegalPageFooter maxWidth="4xl" />
     </div>
   )
 }
