@@ -1,5 +1,4 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { Mail, MessageCircle, Calendar } from 'lucide-react'
 import SEOHead from '@/components/shared/SEOHead'
 import { APP_URLS } from '@/constants/app'
 

@@ -1,4 +1,4 @@
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { APP_URLS } from '@/constants/app'
 
 export default function Hero() {
