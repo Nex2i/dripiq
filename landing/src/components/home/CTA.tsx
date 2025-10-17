@@ -55,25 +55,6 @@ export default function CTA() {
             Talk to Sales
           </a>
         </div>
-
-        {/* Trust indicators */}
-        <div className="text-center">
-          <p className="text-surface-400 text-sm mb-4">
-            Trusted by sales teams at companies like:
-          </p>
-          <div className="flex flex-wrap justify-center items-center space-x-8 opacity-60">
-            {/* Placeholder for customer logos */}
-            <div className="text-surface-500 font-semibold text-lg">
-              TechCorp
-            </div>
-            <div className="text-surface-500 font-semibold text-lg">
-              Growth Co
-            </div>
-            <div className="text-surface-500 font-semibold text-lg">
-              Scale Inc
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )

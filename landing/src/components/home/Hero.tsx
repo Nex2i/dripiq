@@ -38,13 +38,6 @@ export default function Hero() {
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
-              <a
-                href="/contact"
-                className="inline-flex items-center justify-center px-6 py-3 border border-surface-300 text-base font-medium rounded-lg text-surface-700 bg-white hover:bg-surface-50 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
-              </a>
             </div>
 
             {/* Social proof */}

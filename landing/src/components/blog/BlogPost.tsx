@@ -25,7 +25,7 @@ export default function BlogPost({ post }: BlogPostProps) {
       {/* Back to blog link */}
       <div className="mb-8">
         <Link
-          to="/blog"
+          to="/blog/"
           className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium group"
         >
           <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
@@ -192,7 +192,7 @@ export default function BlogPost({ post }: BlogPostProps) {
         </h3>
         <div className="text-center">
           <Link
-            to="/blog"
+            to="/blog/"
             className="inline-flex items-center justify-center px-6 py-3 border border-surface-300 text-base font-medium rounded-lg text-surface-700 hover:bg-surface-50 transition-colors"
           >
             View All Articles

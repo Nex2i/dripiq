@@ -22,7 +22,7 @@ const ContactPage = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        {/* <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="text-center p-8 bg-white rounded-2xl shadow-lg border border-surface-200">
             <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Calendar className="h-8 w-8 text-primary-600" />
@@ -35,9 +35,7 @@ const ContactPage = () => {
               sales process.
             </p>
             <a
-              href="https://calendly.com/dripiq-demo"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:hello@dripiq.ai?subject=Demo Request"
               className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors"
             >
               Book Demo
@@ -81,7 +79,7 @@ const ContactPage = () => {
               Send Email
             </a>
           </div>
-        </div>
+        </div> */}
 
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>

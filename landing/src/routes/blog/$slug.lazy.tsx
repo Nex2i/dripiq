@@ -30,11 +30,11 @@ const BlogPostPage = () => {
           publisher: {
             '@type': 'Organization',
             name: 'dripIq',
-            logo: 'https://dripiq.ai/logo.png',
+            logo: 'https://dripiq.ai/android-chrome-512x512.png',
           },
           datePublished: post.publishedAt,
           dateModified: post.publishedAt,
-          image: post.ogImage || 'https://dripiq.ai/blog-default.jpg',
+          image: post.ogImage || 'https://dripiq.ai/android-chrome-512x512.png',
           url: `https://dripiq.ai/blog/${post.slug}`,
           mainEntityOfPage: {
             '@type': 'WebPage',

@@ -244,7 +244,6 @@ For even better results, consider using an AI-powered platform like dripIq to au
   publishedAt: '2025-01-15',
   readTime: '15 min read',
   tags: ['Cold Leads', 'Conversion Tactics', 'Sales Strategy'],
-  ogImage: 'https://dripiq.ai/blog/cold-leads-conversion.jpg',
   seo: {
     title: 'Cold Lead Conversion: 5 Tactics That Increase Response Rates 300%',
     description:
