@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../logger';
 
 export interface MicrosoftTokenResponse {
   access_token: string;
@@ -52,6 +53,10 @@ export class MicrosoftOAuth2Client {
   }
 
   async getToken(code: string): Promise<MicrosoftTokenResponse> {
+    if (!code) {
+      throw new Error('Code is required');
+    }
+
     const tokenUrl = `https://login.microsoftonline.com/${this.tenant}/oauth2/v2.0/token`;
 
     const data = new URLSearchParams({
@@ -62,23 +67,33 @@ export class MicrosoftOAuth2Client {
       grant_type: 'authorization_code',
     });
 
-    const response = await axios.post(tokenUrl, data, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+    try {
+      const response = await axios.post(tokenUrl, data, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      logger.error('Error getting Microsoft token:', error);
+      throw error;
+    }
   }
 
   async getUserInfo(accessToken: string): Promise<MicrosoftUserInfo> {
-    const response = await axios.get('https://graph.microsoft.com/v1.0/me', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    try {
+      const response = await axios.get('https://graph.microsoft.com/v1.0/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-    return response.data;
+      return response.data;
+    } catch (error) {
+      logger.error('Error getting Microsoft user info:', error);
+      throw error;
+    }
   }
 
   async refreshToken(refreshToken: string): Promise<MicrosoftTokenResponse> {
@@ -106,12 +121,12 @@ export const getMicrosoftOAuth2Client = () => {
 };
 
 export const microsoftScopes = [
-  'https://graph.microsoft.com/email',
-  'https://graph.microsoft.com/Mail.Read',
-  'https://graph.microsoft.com/Mail.Send',
-  'https://graph.microsoft.com/User.Read',
-  'https://graph.microsoft.com/Calendars.ReadWrite',
-  'https://graph.microsoft.com/profile',
+  'email',
+  'Mail.Read',
+  'Mail.Send',
+  'User.Read',
+  'Calendars.ReadWrite',
+  'profile',
   'offline_access',
   'openid',
 ];

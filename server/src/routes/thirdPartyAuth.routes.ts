@@ -142,22 +142,22 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         const { tenantId, user } = request as AuthenticatedRequest;
 
         const oauth2Client = getMicrosoftOAuth2Client();
-        const state = await thirdPartyAuthStateCache.createAndSet({
+        const stateId = await thirdPartyAuthStateCache.createAndSet({
           tenantId,
           userId: user.id,
           isNewMailAccount: true,
         });
 
-        const authUrl = oauth2Client.generateAuthUrl(microsoftScopes, state);
+        const authUrl = oauth2Client.generateAuthUrl(microsoftScopes, stateId);
 
         logger.info('Generated Microsoft OAuth authorization URL', {
-          state,
+          state: stateId,
           microsoftScopes,
         });
 
         return reply.status(200).send({
           authUrl,
-          state,
+          state: stateId,
         });
       } catch (error) {
         logger.error('Error generating Microsoft OAuth URL:', error);
@@ -192,9 +192,9 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
       reply: FastifyReply
     ) => {
       try {
-        const { code, state } = request.query;
+        const { code, state: stateId } = request.query;
 
-        const stateData = await thirdPartyAuthStateCache.state(state);
+        const stateData = await thirdPartyAuthStateCache.state(stateId);
 
         if (!stateData) {
           throw new Error('Invalid state');
@@ -206,7 +206,7 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           await newMicrosoftProviderService.setupNewAccount(tenantId, userId, code);
         }
 
-        await thirdPartyAuthStateCache.clear(state);
+        await thirdPartyAuthStateCache.clear(stateId);
 
         // redirect to the frontend
         return reply.redirect(
