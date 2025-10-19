@@ -6,9 +6,11 @@ interface TestEmailComponentProps {
   tenantName?: string
 }
 
-const generateDefaultEmailContent = (tenantName: string) => `Hi [First Name],
+const generateDefaultEmailContent = (
+  tenantName: string,
+) => `I hope this email finds you well and not buried under a mountain of digital correspondence. We're reaching out to share some exciting updates about our services and how they might benefit your organization.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Imagine your workflow as a well-oiled machine - except instead of oil, it's powered by productivity-enhancing solutions. We're here to help you turn those squeaky wheels into smooth operators.
 
 P.S. - This is a test email from ${tenantName}. In a real campaign, this would be personalized with actual contact and sender information.`
 
@@ -16,7 +18,7 @@ export default function TestEmailComponent({
   tenantName = 'Your Organization',
 }: TestEmailComponentProps) {
   const [recipientEmail, setRecipientEmail] = useState('')
-  const [subject, setSubject] = useState(`Test Email from ${tenantName}`)
+  const [subject, setSubject] = useState(`Hey! ${tenantName}`)
   const [body, setBody] = useState(generateDefaultEmailContent(tenantName))
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState<{
