@@ -2,7 +2,11 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { authService } from '../services/auth.service'
-import type { AuthUser } from '../services/auth.service'
+import type {
+  AuthUser,
+  SsoBootstrapResult,
+  SsoRegisterResult,
+} from '../services/auth.service'
 import { useQueryClient } from '@tanstack/react-query'
 
 interface AuthContextType {
@@ -10,12 +14,19 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
+  startSsoLogin: (options: { email?: string; domain?: string }) => Promise<void>
+  bootstrapSsoSession: () => Promise<SsoBootstrapResult>
   register: (data: {
     email: string
     password: string
     name: string
     tenantName: string
+    enableSsoDomainMapping?: boolean
   }) => Promise<void>
+  completeSsoRegistration: (data: {
+    name: string
+    tenantName: string
+  }) => Promise<SsoRegisterResult>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -55,11 +66,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  const startSsoLogin = async (options: { email?: string; domain?: string }) => {
+    await authService.startSsoLogin(options)
+  }
+
+  const bootstrapSsoSession = async () => {
+    setLoading(true)
+    try {
+      const result = await authService.bootstrapSsoSession()
+      if (result.status === 'provisioned' || result.status === 'already_provisioned') {
+        const currentUser = await authService.getCurrentUser()
+        setUser(currentUser)
+      }
+
+      return result
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const register = async (data: {
     email: string
     password: string
     name: string
     tenantName: string
+    enableSsoDomainMapping?: boolean
   }) => {
     try {
       setLoading(true)
@@ -72,6 +103,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Registration failed:', error)
       throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const completeSsoRegistration = async (data: {
+    name: string
+    tenantName: string
+  }) => {
+    setLoading(true)
+    try {
+      const result = await authService.completeSsoRegistration(data)
+      const currentUser = await authService.getCurrentUser()
+      setUser(currentUser)
+      return result
     } finally {
       setLoading(false)
     }
@@ -106,8 +152,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setSession(sessionChange)
 
-      if (sessionChange && event === 'SIGNED_IN') {
-        // User signed in, fetch user data from backend
+      if (sessionChange) {
         try {
           const currentUser = await authService.getCurrentUser(sessionChange)
           if (isMounted) {
@@ -142,7 +187,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session,
     loading,
     login,
+    startSsoLogin,
+    bootstrapSsoSession,
     register,
+    completeSsoRegistration,
     logout,
     refreshUser,
   }

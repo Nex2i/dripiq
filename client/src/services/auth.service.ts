@@ -46,6 +46,7 @@ export interface RegisterData {
   password: string
   name: string
   tenantName: string
+  enableSsoDomainMapping?: boolean
 }
 
 export interface LoginData {
@@ -53,8 +54,85 @@ export interface LoginData {
   password: string
 }
 
+export interface StartSsoLoginOptions {
+  email?: string
+  domain?: string
+}
+
+export interface SsoBootstrapProvisioned {
+  status: 'provisioned' | 'already_provisioned'
+  user: {
+    id: string
+    email: string
+    name: string | null
+  }
+  tenant: {
+    id: string
+    name: string
+  }
+}
+
+export interface SsoBootstrapRequiresRegistration {
+  status: 'requires_registration'
+  email: string
+  domain: string
+}
+
+export interface SsoBootstrapLinkingRequired {
+  status: 'linking_required'
+  message: string
+  email: string
+}
+
+export type SsoBootstrapResult =
+  | SsoBootstrapProvisioned
+  | SsoBootstrapRequiresRegistration
+  | SsoBootstrapLinkingRequired
+
+export interface SsoRegisterResult {
+  status: 'registered'
+  message: string
+  user: {
+    id: string
+    email: string
+    name: string | null
+  }
+  tenant: {
+    id: string
+    name: string
+  }
+}
+
 class AuthService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
+  private redirectTo(url: string) {
+    window.location.assign(url)
+  }
+
+  private createAuthError(message: string, metadata?: Record<string, unknown>) {
+    const error = new Error(message) as Error & Record<string, unknown>
+    if (metadata) {
+      Object.assign(error, metadata)
+    }
+    return error
+  }
+
+  private resolveSsoDomain(options?: StartSsoLoginOptions) {
+    const providedDomain = options?.domain?.trim().toLowerCase()
+    if (providedDomain) {
+      return providedDomain
+    }
+
+    const emailDomain = options?.email?.split('@')?.[1]?.trim().toLowerCase()
+    if (emailDomain) {
+      return emailDomain
+    }
+
+    throw this.createAuthError(
+      'Enter your work email to discover your company SSO provider.',
+      { code: 'sso_domain_required' },
+    )
+  }
 
   // Get current Supabase session
   async getCurrentSession(): Promise<Session | null> {
@@ -86,6 +164,32 @@ class AuthService {
     return authData
   }
 
+  async startSsoLogin(options?: StartSsoLoginOptions) {
+    const resolvedDomain = this.resolveSsoDomain(options)
+
+    const redirectTo = `${window.location.origin}/auth/sso/callback`
+    const { data, error } = await supabase.auth.signInWithSSO({
+      domain: resolvedDomain,
+      options: { redirectTo },
+    })
+
+    if (error) {
+      throw this.createAuthError(error.message, {
+        code: (error as any).code,
+        status: (error as any).status,
+      })
+    }
+
+    if (data?.url) {
+      this.redirectTo(data.url)
+      return
+    }
+
+    throw this.createAuthError('Unable to initialize SSO login redirect', {
+      code: 'sso_unavailable',
+    })
+  }
+
   // Register with backend (handles both Supabase and backend user creation)
   async register(data: RegisterData) {
     const response = await fetch(`${this.baseUrl}/auth/register`, {
@@ -109,6 +213,66 @@ class AuthService {
       if (error) {
         console.error('Error setting session after registration:', error)
       }
+    }
+
+    return result
+  }
+
+  async bootstrapSsoSession(session?: Session | null): Promise<SsoBootstrapResult> {
+    if (!session) {
+      session = await this.getCurrentSession()
+    }
+
+    if (!session?.access_token) {
+      throw new Error('No active SSO session found')
+    }
+
+    const response = await fetch(`${this.baseUrl}/auth/sso/bootstrap`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    const result = await response.json()
+
+    if (response.status === 409 && result?.status === 'linking_required') {
+      return result
+    }
+
+    if (!response.ok) {
+      throw new Error(result?.message || 'Failed to bootstrap SSO session')
+    }
+
+    return result
+  }
+
+  async completeSsoRegistration(
+    data: { name: string; tenantName: string },
+    session?: Session | null,
+  ): Promise<SsoRegisterResult> {
+    if (!session) {
+      session = await this.getCurrentSession()
+    }
+
+    if (!session?.access_token) {
+      throw new Error('No active SSO session found')
+    }
+
+    const response = await fetch(`${this.baseUrl}/auth/sso/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result?.message || 'Failed to complete SSO registration')
     }
 
     return result

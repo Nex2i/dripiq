@@ -1,5 +1,6 @@
 import { User, NewUser } from '@/db';
 import { userRepository } from '@/repositories';
+import { NotFoundError } from '@/exceptions/error';
 
 export interface CreateUserData {
   supabaseId: string;
@@ -58,6 +59,18 @@ export class UserService {
    */
   static async getUserById(id: string): Promise<User> {
     return await userRepository.findById(id);
+  }
+
+  static async findUserByEmail(email: string): Promise<User | null> {
+    try {
+      return await userRepository.findByEmail(email);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   /**

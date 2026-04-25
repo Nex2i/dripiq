@@ -172,6 +172,26 @@ export const userTenants = appSchema.table(
   (table) => [unique('user_tenant_unique').on(table.userId, table.tenantId)]
 );
 
+export const tenantDomainMappings = appSchema.table(
+  'tenant_domain_mappings',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    domain: text('domain').notNull(),
+    isVerified: boolean('is_verified').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('tenant_domain_mapping_domain_unique').on(table.domain),
+    index('tenant_domain_mapping_tenant_idx').on(table.tenantId),
+  ]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   tenants: many(userTenants),
@@ -182,6 +202,7 @@ export const tenantsRelations = relations(tenants, ({ many, one }) => ({
   users: many(userTenants),
   leads: many(leads),
   products: many(products),
+  domainMappings: many(tenantDomainMappings),
   mailAccounts: many(mailAccounts),
   siteEmbeddingDomain: one(siteEmbeddingDomains, {
     fields: [tenants.siteEmbeddingDomainId],
@@ -221,6 +242,13 @@ export const userTenantsRelations = relations(userTenants, ({ one }) => ({
   role: one(roles, {
     fields: [userTenants.roleId],
     references: [roles.id],
+  }),
+}));
+
+export const tenantDomainMappingsRelations = relations(tenantDomainMappings, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantDomainMappings.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -1157,6 +1185,8 @@ export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type UserTenant = typeof userTenants.$inferSelect;
 export type NewUserTenant = typeof userTenants.$inferInsert;
+export type TenantDomainMapping = typeof tenantDomainMappings.$inferSelect;
+export type NewTenantDomainMapping = typeof tenantDomainMappings.$inferInsert;
 export type Role = typeof roles.$inferSelect;
 export type NewRole = typeof roles.$inferInsert;
 export type Permission = typeof permissions.$inferSelect;

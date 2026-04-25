@@ -1,0 +1,9 @@
+
+Name	Value
+EntityID	https://wflzjydlmlvvluzjjohw.supabase.co/auth/v1/sso/saml/metadata
+Metadata URL	https://wflzjydlmlvvluzjjohw.supabase.co/auth/v1/sso/saml/metadata
+Metadata URL
+(download)	https://wflzjydlmlvvluzjjohw.supabase.co/auth/v1/sso/saml/metadata?download=true
+ACS URL	https://wflzjydlmlvvluzjjohw.supabase.co/auth/v1/sso/saml/acs
+SLO URL	https://wflzjydlmlvvluzjjohw.supabase.co/auth/v1/sso/slo
+NameID	Required emailAddress or persistent

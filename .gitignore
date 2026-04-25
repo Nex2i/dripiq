@@ -140,3 +140,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 landing/.vite/**
+
+# Local Supabase full-stack runtime data
+server/docker/supabase/.env
+server/docker/supabase/volumes/db/data/
+server/docker/supabase/volumes/storage/
+server/docker/supabase/volumes/snippets/
+server/docker/supabase/volumes/functions/

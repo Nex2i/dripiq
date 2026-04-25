@@ -4,3 +4,5 @@ export * from './createUser.schema';
 export * from './auth.response.schema';
 export * from './session.schema';
 export * from './verifyOtp.schema';
+export * from './ssoBootstrap.schema';
+export * from './ssoRegister.schema';
