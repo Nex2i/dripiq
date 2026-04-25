@@ -1,14 +1,22 @@
 import React, { useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
+import { useRouter, useSearch } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import Logo from '../../components/Logo'
 
 export default function Register() {
   const router = useRouter()
-  const { register, loading } = useAuth()
+  const search = useSearch({ strict: false }) as {
+    sso?: string
+    email?: string
+    domain?: string
+  }
+  const { register, completeSsoRegistration, loading } = useAuth()
+  const isSsoRegistration = search?.sso === 'true'
+  const ssoEmail = search?.email?.trim().toLowerCase() || ''
+  const ssoDomain = search?.domain?.trim().toLowerCase() || ''
   const [formData, setFormData] = useState({
-    email: '',
+    email: ssoEmail,
     password: '',
     confirmPassword: '',
     name: '',
@@ -30,19 +38,20 @@ export default function Register() {
   const validateForm = () => {
     if (
       !formData.email ||
-      !formData.password ||
       !formData.name ||
       !formData.tenantName
     ) {
       return 'Please fill in all fields'
     }
 
-    if (formData.password.length < 8) {
-      return 'Password must be at least 8 characters long'
-    }
+    if (!isSsoRegistration) {
+      if (formData.password.length < 8) {
+        return 'Password must be at least 8 characters long'
+      }
 
-    if (formData.password !== formData.confirmPassword) {
-      return 'Passwords do not match'
+      if (formData.password !== formData.confirmPassword) {
+        return 'Passwords do not match'
+      }
     }
 
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -65,18 +74,31 @@ export default function Register() {
       setIsSubmitting(true)
       setError('')
 
-      const result = await register({
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        tenantName: formData.tenantName,
-      })
+      let result: unknown
+
+      if (isSsoRegistration) {
+        result = await completeSsoRegistration({
+          name: formData.name,
+          tenantName: formData.tenantName,
+        })
+      } else {
+        result = await register({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          tenantName: formData.tenantName,
+        })
+      }
 
       // Registration was successful
       console.log('Registration successful:', result)
 
-      // Navigate to login page with confirmation flag
-      router.navigate({ to: '/auth/login', search: { registered: 'true' } })
+      if (isSsoRegistration) {
+        router.navigate({ to: '/' })
+      } else {
+        // Navigate to login page with confirmation flag
+        router.navigate({ to: '/auth/login', search: { registered: 'true' } })
+      }
     } catch (err: any) {
       console.error('Registration error:', err)
       setError(err.message || 'An error occurred during registration')
@@ -109,17 +131,24 @@ export default function Register() {
             </button>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Start your free trial
+            {isSsoRegistration ? 'Complete your SSO setup' : 'Start your free trial'}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <button
-              onClick={() => router.navigate({ to: '/auth/login' } as any)}
-              className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-500)] underline bg-transparent border-none cursor-pointer"
-            >
-              Sign in here
-            </button>
-          </p>
+          {isSsoRegistration ? (
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Your organization domain <span className="font-semibold">{ssoDomain || 'unknown'}</span>{' '}
+              is not mapped yet. Finish registration to create your organization and domain mapping.
+            </p>
+          ) : (
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <button
+                onClick={() => router.navigate({ to: '/auth/login' } as any)}
+                className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-500)] underline bg-transparent border-none cursor-pointer"
+              >
+                Sign in here
+              </button>
+            </p>
+          )}
         </div>
 
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-white/20">
@@ -142,7 +171,7 @@ export default function Register() {
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isSsoRegistration}
                 />
               </div>
 
@@ -187,47 +216,51 @@ export default function Register() {
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your password (min 8 characters)"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              </div>
+              {!isSsoRegistration && (
+                <>
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
+                      placeholder="Enter your password (min 8 characters)"
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                    />
+                  </div>
 
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Confirm password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
-                  placeholder="Re-enter your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              </div>
+                  <div>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Confirm password
+                    </label>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
+                      placeholder="Re-enter your password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {error && (
@@ -244,10 +277,10 @@ export default function Register() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" />
-                  Creating account...
+                  {isSsoRegistration ? 'Completing setup...' : 'Creating account...'}
                 </>
               ) : (
-                'Start Free Trial'
+                isSsoRegistration ? 'Complete SSO Setup' : 'Start Free Trial'
               )}
             </button>
           </form>

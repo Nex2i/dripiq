@@ -13,6 +13,7 @@ import Header from './components/Header'
 import { AuthGuard, PublicOnlyGuard } from './components/AuthGuard'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import SsoCallback from './pages/auth/SsoCallback'
 import SetupPassword from './pages/auth/SetupPassword'
 import ConfirmationPage from './pages/auth/ConfirmationPage'
 import LeadsPage from './pages/LeadsPage'
@@ -147,6 +148,12 @@ const authRegisterRoute = createRoute({
   component: () => <Register />,
 })
 
+const authSsoCallbackRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: '/sso/callback',
+  component: () => <SsoCallback />,
+})
+
 const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: LEADS_URL,
@@ -248,7 +255,11 @@ const protectedRouteTree = protectedRoute.addChildren([
   settingsRouteTree,
 ])
 
-const authRouteTree = authRoute.addChildren([authLoginRoute, authRegisterRoute])
+const authRouteTree = authRoute.addChildren([
+  authLoginRoute,
+  authRegisterRoute,
+  authSsoCallbackRoute,
+])
 
 // Build the route tree
 const routeTree = rootRoute.addChildren([

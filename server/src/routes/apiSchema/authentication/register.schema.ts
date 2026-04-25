@@ -6,6 +6,7 @@ export const registerBodySchema = Type.Object({
   password: Type.String({ minLength: 8 }),
   name: Type.String(),
   tenantName: Type.String(),
+  enableSsoDomainMapping: Type.Optional(Type.Boolean()),
 });
 
 // Response schema for successful registration

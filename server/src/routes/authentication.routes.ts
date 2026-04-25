@@ -1,13 +1,16 @@
 import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from 'fastify';
 import { Type } from '@sinclair/typebox';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
+import { TenantDomainMappingService } from '@/modules/tenant-domain-mapping.service';
 import { RoleService } from '@/modules/role.service';
 import { authCache } from '@/cache/AuthCacheRedis';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
+import { ConflictError, NotFoundError } from '@/exceptions/error';
 
 // Import all authentication schemas from organized schema files
 import isFakeMail from '@/libs/isFakeMail.client';
@@ -23,11 +26,38 @@ import {
   sessionInfoResponseSchema,
   verifyOtpBodySchema,
   verifyOtpResponseSchema,
+  ssoBootstrapSuccessResponseSchema,
+  ssoBootstrapRequiresRegistrationResponseSchema,
+  ssoBootstrapConflictResponseSchema,
+  ssoRegisterBodySchema,
+  ssoRegisterSuccessResponseSchema,
+  ssoRegisterConflictResponseSchema,
 } from './apiSchema/authentication';
 
 const basePath = '/auth';
 
 export default async function Authentication(fastify: FastifyInstance, _opts: RouteOptions) {
+  const resolveSupabaseUser = async (
+    authHeader?: string
+  ): Promise<{ token: string; supabaseUser: SupabaseUser } | null> => {
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring('Bearer '.length) : null;
+
+    if (!token) {
+      return null;
+    }
+
+    const {
+      data: { user: supabaseUser },
+      error: getUserError,
+    } = await supabase.auth.getUser(token);
+
+    if (getUserError || !supabaseUser) {
+      return null;
+    }
+
+    return { token, supabaseUser };
+  };
+
   // Registration route - Complete onboarding flow
   fastify.route({
     method: HttpMethods.POST,
@@ -37,6 +67,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
       response: {
         201: registerSuccessResponseSchema,
         400: errorResponseSchema,
+        409: errorResponseSchema,
         500: errorResponseSchema,
       },
       tags: ['Authentication'],
@@ -51,12 +82,13 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           password: string;
           name: string;
           tenantName: string;
+          enableSsoDomainMapping?: boolean;
         };
       }>,
       reply: FastifyReply
     ) => {
       try {
-        const { email, password, name, tenantName } = request.body;
+        const { email, password, name, tenantName, enableSsoDomainMapping } = request.body;
 
         const isRealEmail = await isFakeMail(email);
 
@@ -113,6 +145,15 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         // Step 5: Link user to tenant as admin with super user privileges
         await TenantService.addUserToTenant(user.id, tenant.id, adminRole.id, true);
 
+        if (enableSsoDomainMapping) {
+          const domain = TenantDomainMappingService.getDomainFromEmail(email);
+          await TenantDomainMappingService.ensureMappingForTenant({
+            tenantId: tenant.id,
+            domain,
+            isVerified: true,
+          });
+        }
+
         // Step 6: Sign in the user to get session token
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -151,6 +192,14 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
           session: signInData.session,
         });
       } catch (error: any) {
+        if (error instanceof ConflictError) {
+          reply.status(409).send({
+            message: error.message,
+            error: 'domain_conflict',
+          });
+          return;
+        }
+
         logger.error(`Registration error: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to complete registration',
@@ -193,6 +242,304 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
         logger.error(`Error creating user: ${error.message}`);
         reply.status(500).send({
           message: 'Failed to create user',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/sso/bootstrap`,
+    schema: {
+      response: {
+        200: Type.Union([
+          ssoBootstrapSuccessResponseSchema,
+          ssoBootstrapRequiresRegistrationResponseSchema,
+        ]),
+        400: errorResponseSchema,
+        401: errorResponseSchema,
+        409: ssoBootstrapConflictResponseSchema,
+        500: errorResponseSchema,
+      },
+      tags: ['Authentication'],
+      summary: 'Bootstrap SSO Session',
+      description:
+        'Provision app user and tenant membership after Supabase SSO login, or instruct client to register.',
+    },
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const authSession = await resolveSupabaseUser(request.headers.authorization);
+        if (!authSession) {
+          reply.status(401).send({
+            message: 'Invalid SSO session',
+            error: 'Unable to resolve authenticated user',
+          });
+          return;
+        }
+        const { supabaseUser } = authSession;
+
+        const email = supabaseUser.email?.trim().toLowerCase();
+        if (!email) {
+          reply
+            .status(400)
+            .send({ message: 'Authenticated SSO user does not have an email address' });
+          return;
+        }
+
+        const domain = TenantDomainMappingService.getDomainFromEmail(email);
+        const mapping = await TenantDomainMappingService.findMappingByDomain(domain);
+
+        let existingUserWithTenants: Awaited<
+          ReturnType<typeof UserService.getUserWithTenantsForAuth>
+        > | null = null;
+
+        try {
+          existingUserWithTenants = await UserService.getUserWithTenantsForAuth(supabaseUser.id);
+        } catch (error) {
+          if (!(error instanceof NotFoundError)) {
+            throw error;
+          }
+        }
+
+        if (existingUserWithTenants && existingUserWithTenants.userTenants.length > 0) {
+          return reply.send({
+            status: 'already_provisioned',
+            user: {
+              id: existingUserWithTenants.user.id,
+              email: existingUserWithTenants.user.email,
+              name: existingUserWithTenants.user.name,
+            },
+            tenant: {
+              id: existingUserWithTenants.userTenants[0]!.id,
+              name: existingUserWithTenants.userTenants[0]!.name,
+            },
+          });
+        }
+
+        if (!mapping) {
+          reply.send({
+            status: 'requires_registration',
+            email,
+            domain,
+          });
+          return;
+        }
+
+        const existingUserByEmail = await UserService.findUserByEmail(email);
+
+        if (existingUserByEmail && existingUserByEmail.supabaseId !== supabaseUser.id) {
+          reply.status(409).send({
+            status: 'linking_required',
+            message:
+              'An account with this email already exists. Contact support to link SSO access.',
+            email,
+          });
+          return;
+        }
+
+        const displayName =
+          supabaseUser.user_metadata?.full_name ||
+          supabaseUser.user_metadata?.name ||
+          supabaseUser.user_metadata?.display_name ||
+          null;
+
+        const dbUser =
+          existingUserByEmail ||
+          (await UserService.createUser({
+            supabaseId: supabaseUser.id,
+            email,
+            name: displayName || undefined,
+          }));
+
+        const defaultSsoRole =
+          (await RoleService.getRoleByName('Sales')) || (await RoleService.getRoleByName('Admin'));
+
+        if (!defaultSsoRole) {
+          reply.status(500).send({ message: 'No default role configured for SSO provisioning' });
+          return;
+        }
+
+        await TenantService.addUserToTenant(dbUser.id, mapping.tenantId, defaultSsoRole.id, false);
+        await authCache.clear(supabaseUser.id);
+
+        const provisioned = await UserService.getUserWithTenantsForAuth(supabaseUser.id);
+        if (!provisioned || provisioned.userTenants.length === 0) {
+          reply.status(500).send({ message: 'Failed to complete SSO provisioning' });
+          return;
+        }
+
+        const provisionedTenant =
+          provisioned.userTenants.find((tenant) => tenant.id === mapping.tenantId) ||
+          provisioned.userTenants[0]!;
+
+        reply.send({
+          status: 'provisioned',
+          user: {
+            id: provisioned.user.id,
+            email: provisioned.user.email,
+            name: provisioned.user.name,
+          },
+          tenant: {
+            id: provisionedTenant.id,
+            name: provisionedTenant.name,
+          },
+        });
+      } catch (error: any) {
+        logger.error(`SSO bootstrap error: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to bootstrap SSO session',
+          error: error.message,
+        });
+      }
+    },
+  });
+
+  fastify.route({
+    method: HttpMethods.POST,
+    url: `${basePath}/sso/register`,
+    schema: {
+      body: ssoRegisterBodySchema,
+      response: {
+        200: ssoRegisterSuccessResponseSchema,
+        400: errorResponseSchema,
+        401: errorResponseSchema,
+        409: ssoRegisterConflictResponseSchema,
+        500: errorResponseSchema,
+      },
+      tags: ['Authentication'],
+      summary: 'Complete SSO Registration',
+      description:
+        'Creates tenant ownership and domain mapping for first-time SSO users when no mapping exists.',
+    },
+    handler: async (
+      request: FastifyRequest<{
+        Body: {
+          name: string;
+          tenantName: string;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      let authenticatedEmail = '';
+      try {
+        const authSession = await resolveSupabaseUser(request.headers.authorization);
+        if (!authSession) {
+          reply.status(401).send({ message: 'Invalid SSO session' });
+          return;
+        }
+
+        const { supabaseUser } = authSession;
+        const email = supabaseUser.email?.trim().toLowerCase();
+        if (!email) {
+          reply
+            .status(400)
+            .send({ message: 'Authenticated SSO user does not have an email address' });
+          return;
+        }
+        authenticatedEmail = email;
+
+        const domain = TenantDomainMappingService.getDomainFromEmail(email);
+        const existingMapping = await TenantDomainMappingService.findMappingByDomain(domain);
+        if (existingMapping) {
+          reply.status(409).send({
+            status: 'domain_conflict',
+            message: 'This domain is already mapped. Please continue through SSO login.',
+            email,
+          });
+          return;
+        }
+
+        let existingUserWithTenants: Awaited<
+          ReturnType<typeof UserService.getUserWithTenantsForAuth>
+        > | null = null;
+        try {
+          existingUserWithTenants = await UserService.getUserWithTenantsForAuth(supabaseUser.id);
+        } catch (error) {
+          if (!(error instanceof NotFoundError)) {
+            throw error;
+          }
+        }
+
+        if (existingUserWithTenants && existingUserWithTenants.userTenants.length > 0) {
+          reply.send({
+            status: 'registered',
+            message: 'SSO registration already completed',
+            user: {
+              id: existingUserWithTenants.user.id,
+              email: existingUserWithTenants.user.email,
+              name: existingUserWithTenants.user.name,
+            },
+            tenant: {
+              id: existingUserWithTenants.userTenants[0]!.id,
+              name: existingUserWithTenants.userTenants[0]!.name,
+            },
+          });
+          return;
+        }
+
+        const existingUserByEmail = await UserService.findUserByEmail(email);
+        if (existingUserByEmail && existingUserByEmail.supabaseId !== supabaseUser.id) {
+          reply.status(409).send({
+            status: 'linking_required',
+            message:
+              'An account with this email already exists. Contact support to link SSO access.',
+            email,
+          });
+          return;
+        }
+
+        const tenant = await TenantService.createTenant({ name: request.body.tenantName });
+        const adminRole = await RoleService.getRoleByName('Admin');
+        if (!adminRole) {
+          reply.status(500).send({
+            message: 'Admin role not found. Please ensure roles are seeded.',
+          });
+          return;
+        }
+
+        const dbUser =
+          existingUserByEmail ||
+          (await UserService.createUser({
+            supabaseId: supabaseUser.id,
+            email,
+            name: request.body.name || supabaseUser.user_metadata?.full_name || undefined,
+          }));
+
+        await TenantService.addUserToTenant(dbUser.id, tenant.id, adminRole.id, true);
+        await TenantDomainMappingService.ensureMappingForTenant({
+          tenantId: tenant.id,
+          domain,
+          isVerified: true,
+        });
+        await authCache.clear(supabaseUser.id);
+
+        reply.send({
+          status: 'registered',
+          message: 'SSO registration completed successfully',
+          user: {
+            id: dbUser.id,
+            email: dbUser.email,
+            name: dbUser.name,
+          },
+          tenant: {
+            id: tenant.id,
+            name: tenant.name,
+          },
+        });
+      } catch (error: any) {
+        if (error instanceof ConflictError) {
+          reply.status(409).send({
+            status: 'domain_conflict',
+            message: error.message,
+            email: authenticatedEmail,
+          });
+          return;
+        }
+
+        logger.error(`SSO register error: ${error.message}`);
+        reply.status(500).send({
+          message: 'Failed to complete SSO registration',
           error: error.message,
         });
       }

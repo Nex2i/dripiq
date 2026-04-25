@@ -46,11 +46,56 @@ export interface RegisterData {
   password: string
   name: string
   tenantName: string
+  enableSsoDomainMapping?: boolean
 }
 
 export interface LoginData {
   email: string
   password: string
+}
+
+export interface SsoBootstrapProvisioned {
+  status: 'provisioned' | 'already_provisioned'
+  user: {
+    id: string
+    email: string
+    name: string | null
+  }
+  tenant: {
+    id: string
+    name: string
+  }
+}
+
+export interface SsoBootstrapRequiresRegistration {
+  status: 'requires_registration'
+  email: string
+  domain: string
+}
+
+export interface SsoBootstrapLinkingRequired {
+  status: 'linking_required'
+  message: string
+  email: string
+}
+
+export type SsoBootstrapResult =
+  | SsoBootstrapProvisioned
+  | SsoBootstrapRequiresRegistration
+  | SsoBootstrapLinkingRequired
+
+export interface SsoRegisterResult {
+  status: 'registered'
+  message: string
+  user: {
+    id: string
+    email: string
+    name: string | null
+  }
+  tenant: {
+    id: string
+    name: string
+  }
 }
 
 class AuthService {
@@ -86,6 +131,28 @@ class AuthService {
     return authData
   }
 
+  async startSsoLogin() {
+    const providerId = import.meta.env.VITE_SUPABASE_SSO_PROVIDER_ID
+
+    if (!providerId) {
+      throw new Error('SSO is not configured for this environment')
+    }
+
+    const redirectTo = `${window.location.origin}/auth/sso/callback`
+    const { data, error } = await supabase.auth.signInWithSSO({
+      providerId,
+      options: { redirectTo },
+    })
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    if (data?.url) {
+      window.location.assign(data.url)
+    }
+  }
+
   // Register with backend (handles both Supabase and backend user creation)
   async register(data: RegisterData) {
     const response = await fetch(`${this.baseUrl}/auth/register`, {
@@ -109,6 +176,66 @@ class AuthService {
       if (error) {
         console.error('Error setting session after registration:', error)
       }
+    }
+
+    return result
+  }
+
+  async bootstrapSsoSession(session?: Session | null): Promise<SsoBootstrapResult> {
+    if (!session) {
+      session = await this.getCurrentSession()
+    }
+
+    if (!session?.access_token) {
+      throw new Error('No active SSO session found')
+    }
+
+    const response = await fetch(`${this.baseUrl}/auth/sso/bootstrap`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    const result = await response.json()
+
+    if (response.status === 409 && result?.status === 'linking_required') {
+      return result
+    }
+
+    if (!response.ok) {
+      throw new Error(result?.message || 'Failed to bootstrap SSO session')
+    }
+
+    return result
+  }
+
+  async completeSsoRegistration(
+    data: { name: string; tenantName: string },
+    session?: Session | null,
+  ): Promise<SsoRegisterResult> {
+    if (!session) {
+      session = await this.getCurrentSession()
+    }
+
+    if (!session?.access_token) {
+      throw new Error('No active SSO session found')
+    }
+
+    const response = await fetch(`${this.baseUrl}/auth/sso/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(data),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      throw new Error(result?.message || 'Failed to complete SSO registration')
     }
 
     return result

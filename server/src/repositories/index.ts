@@ -32,6 +32,7 @@ import { TenantSetupTransactionRepository } from './transactions/TenantSetupTran
 import { CalendarLinkClickRepository } from './entities/CalendarLinkClickRepository';
 import { MailAccountRepository } from './entities/MailAccountRepository';
 import { OauthTokenRepository } from './entities/OauthTokenRepository';
+import { TenantDomainMappingRepository } from './entities/TenantDomainMappingRepository';
 
 // Base repositories
 export { BaseRepository } from './base/BaseRepository';
@@ -68,6 +69,7 @@ export { ContactUnsubscribeRepository } from './entities/ContactUnsubscribeRepos
 export { CalendarLinkClickRepository } from './entities/CalendarLinkClickRepository';
 export { MailAccountRepository } from './entities/MailAccountRepository';
 export { OauthTokenRepository } from './entities/OauthTokenRepository';
+export { TenantDomainMappingRepository } from './entities/TenantDomainMappingRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -140,6 +142,7 @@ const contactUnsubscribeRepository = new ContactUnsubscribeRepository();
 const calendarLinkClickRepository = new CalendarLinkClickRepository();
 const mailAccountRepository = new MailAccountRepository();
 const oauthTokenRepository = new OauthTokenRepository();
+const tenantDomainMappingRepository = new TenantDomainMappingRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -179,6 +182,7 @@ export const repositories = {
   calendarLinkClick: calendarLinkClickRepository,
   mailAccount: mailAccountRepository,
   oauthToken: oauthTokenRepository,
+  tenantDomainMapping: tenantDomainMappingRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -218,6 +222,7 @@ export {
   calendarLinkClickRepository,
   mailAccountRepository,
   oauthTokenRepository,
+  tenantDomainMappingRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,

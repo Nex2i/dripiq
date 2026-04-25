@@ -7,7 +7,7 @@ import Logo from '../../components/Logo'
 export default function Login() {
   const router = useRouter()
   const search = useSearch({ strict: false }) as any
-  const { login, loading } = useAuth()
+  const { login, startSsoLogin, loading } = useAuth()
   const showRegistrationSuccess = search?.registered === 'true'
   const [formData, setFormData] = useState({
     email: '',
@@ -15,6 +15,7 @@ export default function Login() {
   })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSsoSubmitting, setIsSsoSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -51,6 +52,18 @@ export default function Login() {
       }
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleSsoLogin = async () => {
+    try {
+      setIsSsoSubmitting(true)
+      setError('')
+      await startSsoLogin()
+    } catch (ssoError: any) {
+      setError(ssoError?.message || 'Unable to start SSO login')
+    } finally {
+      setIsSsoSubmitting(false)
     }
   }
 
@@ -173,6 +186,31 @@ export default function Login() {
                 </>
               ) : (
                 'Sign in to dripIq'
+              )}
+            </button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">or</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSsoLogin}
+              disabled={isSsoSubmitting}
+              className="w-full border border-gray-300 bg-white text-gray-800 py-3 px-4 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSsoSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 inline" />
+                  Redirecting to SSO...
+                </>
+              ) : (
+                'Continue with company SSO'
               )}
             </button>
           </form>
