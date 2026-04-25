@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { authService } from './auth.service'
 
 const mocks = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   getUserMock: vi.fn(),
   signInWithSsoMock: vi.fn(),
+  signOutMock: vi.fn(),
 }))
 
 vi.mock('../lib/supabaseClient', () => ({
@@ -14,13 +16,11 @@ vi.mock('../lib/supabaseClient', () => ({
       signInWithSSO: mocks.signInWithSsoMock,
       signInWithPassword: vi.fn(),
       setSession: vi.fn(),
-      signOut: vi.fn(),
+      signOut: mocks.signOutMock,
       onAuthStateChange: vi.fn(),
     },
   },
 }))
-
-import { authService } from './auth.service'
 
 describe('authService SSO flows', () => {
   beforeEach(() => {
@@ -52,6 +52,7 @@ describe('authService SSO flows', () => {
     const result = await authService.bootstrapSsoSession()
 
     expect(result.status).toBe('requires_registration')
+    expect(mocks.signOutMock).toHaveBeenCalledTimes(1)
     const [url, options] = (global.fetch as any).mock.calls[0]
     expect(url).toContain('/api/auth/sso/bootstrap')
     expect(options).toEqual({

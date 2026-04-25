@@ -73,6 +73,16 @@ export class UserService {
     }
   }
 
+  static async updateUserSupabaseId(userId: string, supabaseId: string): Promise<User> {
+    const updatedUser = await userRepository.updateById(userId, { supabaseId });
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
+  }
+
   /**
    * Updates a user's data based on their Supabase ID.
    * @param supabaseId - The Supabase ID of the user to update.

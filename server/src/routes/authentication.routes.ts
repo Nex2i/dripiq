@@ -328,29 +328,34 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
 
         const existingUserByEmail = await UserService.findUserByEmail(email);
 
-        if (existingUserByEmail && existingUserByEmail.supabaseId !== supabaseUser.id) {
-          reply.status(409).send({
-            status: 'linking_required',
-            message:
-              'An account with this email already exists. Contact support to link SSO access.',
-            email,
-          });
-          return;
-        }
-
         const displayName =
           supabaseUser.user_metadata?.full_name ||
           supabaseUser.user_metadata?.name ||
           supabaseUser.user_metadata?.display_name ||
           null;
 
-        const dbUser =
-          existingUserByEmail ||
-          (await UserService.createUser({
+        let dbUser = existingUserWithTenants?.user || null;
+        let previousSupabaseId: string | null = null;
+
+        if (!dbUser && existingUserByEmail) {
+          if (existingUserByEmail.supabaseId !== supabaseUser.id) {
+            previousSupabaseId = existingUserByEmail.supabaseId;
+            dbUser = await UserService.updateUserSupabaseId(
+              existingUserByEmail.id,
+              supabaseUser.id
+            );
+          } else {
+            dbUser = existingUserByEmail;
+          }
+        }
+
+        if (!dbUser) {
+          dbUser = await UserService.createUser({
             supabaseId: supabaseUser.id,
             email,
             name: displayName || undefined,
-          }));
+          });
+        }
 
         const defaultSsoRole =
           (await RoleService.getRoleByName('Sales')) || (await RoleService.getRoleByName('Admin'));
@@ -362,6 +367,9 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
 
         await TenantService.addUserToTenant(dbUser.id, mapping.tenantId, defaultSsoRole.id, false);
         await authCache.clear(supabaseUser.id);
+        if (previousSupabaseId && previousSupabaseId !== supabaseUser.id) {
+          await authCache.clear(previousSupabaseId);
+        }
 
         const provisioned = await UserService.getUserWithTenantsForAuth(supabaseUser.id);
         if (!provisioned || provisioned.userTenants.length === 0) {
