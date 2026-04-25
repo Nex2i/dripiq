@@ -241,6 +241,12 @@ class AuthService {
       return result
     }
 
+    if (response.ok && result?.status === 'requires_registration') {
+      // Clear active SSO session before entering tenant registration flow.
+      await supabase.auth.signOut()
+      return result
+    }
+
     if (!response.ok) {
       throw new Error(result?.message || 'Failed to bootstrap SSO session')
     }
