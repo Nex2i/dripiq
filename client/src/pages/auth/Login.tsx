@@ -88,6 +88,11 @@ export default function Login() {
         }
       }
 
+      if (!formData.password) {
+        setError('Please enter your password')
+        return
+      }
+
       await login(formData.email, formData.password)
       // Redirect will happen automatically via auth state change
       router.navigate({ to: '/' })
