@@ -54,6 +54,11 @@ export interface LoginData {
   password: string
 }
 
+export interface StartSsoLoginOptions {
+  email?: string
+  domain?: string
+}
+
 export interface SsoBootstrapProvisioned {
   status: 'provisioned' | 'already_provisioned'
   user: {
@@ -100,6 +105,34 @@ export interface SsoRegisterResult {
 
 class AuthService {
   private baseUrl = import.meta.env.VITE_API_BASE_URL + '/api'
+  private redirectTo(url: string) {
+    window.location.assign(url)
+  }
+
+  private createAuthError(message: string, metadata?: Record<string, unknown>) {
+    const error = new Error(message) as Error & Record<string, unknown>
+    if (metadata) {
+      Object.assign(error, metadata)
+    }
+    return error
+  }
+
+  private resolveSsoDomain(options?: StartSsoLoginOptions) {
+    const providedDomain = options?.domain?.trim().toLowerCase()
+    if (providedDomain) {
+      return providedDomain
+    }
+
+    const emailDomain = options?.email?.split('@')?.[1]?.trim().toLowerCase()
+    if (emailDomain) {
+      return emailDomain
+    }
+
+    throw this.createAuthError(
+      'Enter your work email to discover your company SSO provider.',
+      { code: 'sso_domain_required' },
+    )
+  }
 
   // Get current Supabase session
   async getCurrentSession(): Promise<Session | null> {
@@ -131,26 +164,30 @@ class AuthService {
     return authData
   }
 
-  async startSsoLogin() {
-    const providerId = import.meta.env.VITE_SUPABASE_SSO_PROVIDER_ID
-
-    if (!providerId) {
-      throw new Error('SSO is not configured for this environment')
-    }
+  async startSsoLogin(options?: StartSsoLoginOptions) {
+    const resolvedDomain = this.resolveSsoDomain(options)
 
     const redirectTo = `${window.location.origin}/auth/sso/callback`
     const { data, error } = await supabase.auth.signInWithSSO({
-      providerId,
+      domain: resolvedDomain,
       options: { redirectTo },
     })
 
     if (error) {
-      throw new Error(error.message)
+      throw this.createAuthError(error.message, {
+        code: (error as any).code,
+        status: (error as any).status,
+      })
     }
 
     if (data?.url) {
-      window.location.assign(data.url)
+      this.redirectTo(data.url)
+      return
     }
+
+    throw this.createAuthError('Unable to initialize SSO login redirect', {
+      code: 'sso_unavailable',
+    })
   }
 
   // Register with backend (handles both Supabase and backend user creation)

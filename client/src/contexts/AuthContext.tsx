@@ -14,7 +14,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  startSsoLogin: () => Promise<void>
+  startSsoLogin: (options: { email?: string; domain?: string }) => Promise<void>
   bootstrapSsoSession: () => Promise<SsoBootstrapResult>
   register: (data: {
     email: string
@@ -66,13 +66,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const startSsoLogin = async () => {
-    setLoading(true)
-    try {
-      await authService.startSsoLogin()
-    } finally {
-      setLoading(false)
-    }
+  const startSsoLogin = async (options: { email?: string; domain?: string }) => {
+    await authService.startSsoLogin(options)
   }
 
   const bootstrapSsoSession = async () => {

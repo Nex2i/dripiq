@@ -15,14 +15,45 @@ export default function Login() {
   })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSsoSubmitting, setIsSsoSubmitting] = useState(false)
+  const [showPasswordField, setShowPasswordField] = useState(false)
+
+  const shouldFallbackToPassword = (ssoError: any) => {
+    const status = Number(ssoError?.status)
+    const code = String(ssoError?.code || '').toLowerCase()
+    const message = String(ssoError?.message || '').toLowerCase()
+
+    if (
+      status === 404 ||
+      code === 'sso_unavailable' ||
+      code === 'sso_not_found' ||
+      code === 'sso_provider_not_found'
+    ) {
+      return true
+    }
+
+    return (
+      message.includes('not configured') ||
+      message.includes('unable to initialize sso login redirect') ||
+      message.includes('identity provider') ||
+      message.includes('provider not found') ||
+      message.includes('no sso provider assigned for this domain') ||
+      message.includes('sso is not configured')
+    )
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    const isEmailChange = name === 'email'
+    if (isEmailChange && showPasswordField) {
+      setShowPasswordField(false)
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+      ...(isEmailChange && showPasswordField ? { password: '' } : {}),
     }))
+
     // Clear error when user starts typing
     if (error) setError('')
   }
@@ -30,14 +61,33 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields')
+    if (!formData.email) {
+      setError('Please enter your email')
+      return
+    }
+
+    if (showPasswordField && !formData.password) {
+      setError('Please enter your password')
       return
     }
 
     try {
       setIsSubmitting(true)
       setError('')
+
+      if (!showPasswordField) {
+        try {
+          await startSsoLogin({ email: formData.email })
+          return
+        } catch (ssoError: any) {
+          if (shouldFallbackToPassword(ssoError)) {
+            setShowPasswordField(true)
+            return
+          }
+          throw ssoError
+        }
+      }
+
       await login(formData.email, formData.password)
       // Redirect will happen automatically via auth state change
       router.navigate({ to: '/' })
@@ -52,18 +102,6 @@ export default function Login() {
       }
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  const handleSsoLogin = async () => {
-    try {
-      setIsSsoSubmitting(true)
-      setError('')
-      await startSsoLogin()
-    } catch (ssoError: any) {
-      setError(ssoError?.message || 'Unable to start SSO login')
-    } finally {
-      setIsSsoSubmitting(false)
     }
   }
 
@@ -146,26 +184,28 @@ export default function Login() {
                   disabled={isSubmitting}
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  disabled={isSubmitting}
-                />
-              </div>
+              {showPasswordField && (
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)] focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              )}
             </div>
 
             {error && (
@@ -182,35 +222,10 @@ export default function Login() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" />
-                  Signing in...
+                  {showPasswordField ? 'Signing in...' : 'Checking sign-in options...'}
                 </>
               ) : (
-                'Sign in to dripIq'
-              )}
-            </button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">or</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSsoLogin}
-              disabled={isSsoSubmitting}
-              className="w-full border border-gray-300 bg-white text-gray-800 py-3 px-4 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSsoSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 inline" />
-                  Redirecting to SSO...
-                </>
-              ) : (
-                'Continue with company SSO'
+                showPasswordField ? 'Sign in to dripIq' : 'Continue'
               )}
             </button>
           </form>

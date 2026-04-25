@@ -118,4 +118,47 @@ describe('authService SSO flows', () => {
       }),
     })
   })
+
+  it('starts SSO using explicit domain', async () => {
+    mocks.signInWithSsoMock.mockResolvedValue({
+      data: { url: 'https://sso.example.com/start' },
+      error: null,
+    })
+
+    const redirectSpy = vi
+      .spyOn(authService as any, 'redirectTo')
+      .mockImplementation(() => {})
+    await authService.startSsoLogin({ domain: 'company.com' })
+
+    expect(mocks.signInWithSsoMock).toHaveBeenCalledWith({
+      domain: 'company.com',
+      options: { redirectTo: 'http://localhost:3000/auth/sso/callback' },
+    })
+    expect(redirectSpy).toHaveBeenCalledWith('https://sso.example.com/start')
+  })
+
+  it('starts SSO using email-derived domain', async () => {
+    mocks.signInWithSsoMock.mockResolvedValue({
+      data: { url: 'https://sso.example.com/domain' },
+      error: null,
+    })
+
+    const redirectSpy = vi
+      .spyOn(authService as any, 'redirectTo')
+      .mockImplementation(() => {})
+    await authService.startSsoLogin({ email: 'owner@company.com' })
+
+    expect(mocks.signInWithSsoMock).toHaveBeenCalledWith({
+      domain: 'company.com',
+      options: { redirectTo: 'http://localhost:3000/auth/sso/callback' },
+    })
+    expect(redirectSpy).toHaveBeenCalledWith('https://sso.example.com/domain')
+  })
+
+  it('throws when no domain can be resolved', async () => {
+    await expect(authService.startSsoLogin({})).rejects.toMatchObject({
+      message: 'Enter your work email to discover your company SSO provider.',
+      code: 'sso_domain_required',
+    })
+  })
 })
