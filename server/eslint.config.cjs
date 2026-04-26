@@ -125,6 +125,16 @@ module.exports = [
     },
   },
 
+  // Supabase Edge Functions run on Deno instead of Node.
+  {
+    files: ['docker/supabase/volumes/functions/**/*.ts'],
+    languageOptions: {
+      globals: {
+        Deno: 'readonly',
+      },
+    },
+  },
+
   // Jest test files configuration
   {
     files: [

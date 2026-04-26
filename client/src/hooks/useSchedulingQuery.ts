@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   schedulingQueryKeys,
   schedulingService,
-  type SchedulingSettingsUpdate,
 } from '../services/scheduling.service'
+import type { SchedulingSettingsUpdate } from '../services/scheduling.service'
 
 export function useSchedulingSettings(enabled = true) {
   return useQuery({

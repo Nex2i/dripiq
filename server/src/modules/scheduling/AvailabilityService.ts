@@ -1,3 +1,4 @@
+import { ServiceUnavailableError } from '@/exceptions/error';
 import { calendarConnectionService } from './calendar/CalendarConnectionService';
 import { calendarProviderFactory } from './calendar/CalendarProviderFactory';
 import { bookingTokenService } from './BookingTokenService';
@@ -6,7 +7,6 @@ import {
   WorkingHours,
   schedulingSettingsService,
 } from './SchedulingSettingsService';
-import { ServiceUnavailableError } from '@/exceptions/error';
 
 export interface TimeInterval {
   start: Date;
