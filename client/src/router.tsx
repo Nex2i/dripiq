@@ -31,6 +31,7 @@ import TermsOfServicePage from './pages/legal/TermsOfServicePage'
 import NotFoundPage from './pages/NotFoundPage'
 import UserEditPage from './pages/users/UserEditPage'
 import UnsubscribePage from './pages/UnsubscribePage'
+import ScheduleBookingPage from './pages/ScheduleBookingPage'
 
 // Import layout components
 import TanStackQueryLayout from './integrations/tanstack-query/layout'
@@ -113,6 +114,12 @@ const unsubscribeSuccessRoute = createRoute({
   validateSearch: (search: Record<string, unknown>) => ({
     email: search.email as string | undefined,
   }),
+})
+
+const scheduleBookingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/schedule/$token',
+  component: () => <ScheduleBookingPage />,
 })
 
 // Protected index route - redirect to dashboard
@@ -268,6 +275,7 @@ const routeTree = rootRoute.addChildren([
   privacyPolicyRoute,
   termsOfServiceRoute,
   unsubscribeSuccessRoute,
+  scheduleBookingRoute,
   protectedRouteTree,
   authRouteTree,
   notFoundRoute,

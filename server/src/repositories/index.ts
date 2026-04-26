@@ -33,6 +33,10 @@ import { CalendarLinkClickRepository } from './entities/CalendarLinkClickReposit
 import { MailAccountRepository } from './entities/MailAccountRepository';
 import { OauthTokenRepository } from './entities/OauthTokenRepository';
 import { TenantDomainMappingRepository } from './entities/TenantDomainMappingRepository';
+import { UserScheduleSettingsRepository } from './entities/UserScheduleSettingsRepository';
+import { ScheduleBookingTokenRepository } from './entities/ScheduleBookingTokenRepository';
+import { CalendarConnectionRepository } from './entities/CalendarConnectionRepository';
+import { ScheduledMeetingRepository } from './entities/ScheduledMeetingRepository';
 
 // Base repositories
 export { BaseRepository } from './base/BaseRepository';
@@ -70,6 +74,10 @@ export { CalendarLinkClickRepository } from './entities/CalendarLinkClickReposit
 export { MailAccountRepository } from './entities/MailAccountRepository';
 export { OauthTokenRepository } from './entities/OauthTokenRepository';
 export { TenantDomainMappingRepository } from './entities/TenantDomainMappingRepository';
+export { UserScheduleSettingsRepository } from './entities/UserScheduleSettingsRepository';
+export { ScheduleBookingTokenRepository } from './entities/ScheduleBookingTokenRepository';
+export { CalendarConnectionRepository } from './entities/CalendarConnectionRepository';
+export { ScheduledMeetingRepository } from './entities/ScheduledMeetingRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -143,6 +151,10 @@ const calendarLinkClickRepository = new CalendarLinkClickRepository();
 const mailAccountRepository = new MailAccountRepository();
 const oauthTokenRepository = new OauthTokenRepository();
 const tenantDomainMappingRepository = new TenantDomainMappingRepository();
+const userScheduleSettingsRepository = new UserScheduleSettingsRepository();
+const scheduleBookingTokenRepository = new ScheduleBookingTokenRepository();
+const calendarConnectionRepository = new CalendarConnectionRepository();
+const scheduledMeetingRepository = new ScheduledMeetingRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -183,6 +195,10 @@ export const repositories = {
   mailAccount: mailAccountRepository,
   oauthToken: oauthTokenRepository,
   tenantDomainMapping: tenantDomainMappingRepository,
+  userScheduleSettings: userScheduleSettingsRepository,
+  scheduleBookingToken: scheduleBookingTokenRepository,
+  calendarConnection: calendarConnectionRepository,
+  scheduledMeeting: scheduledMeetingRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -223,6 +239,10 @@ export {
   mailAccountRepository,
   oauthTokenRepository,
   tenantDomainMappingRepository,
+  userScheduleSettingsRepository,
+  scheduleBookingTokenRepository,
+  calendarConnectionRepository,
+  scheduledMeetingRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,

@@ -4,6 +4,7 @@ export interface ThirdPartyAuthState {
   tenantId: string;
   userId: string;
   isNewMailAccount: boolean;
+  purpose?: 'mail' | 'calendar';
 }
 
 class ThirdPartyAuthStateCache {

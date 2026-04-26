@@ -1,6 +1,7 @@
 import { createId } from '@paralleldrive/cuid2';
 import { logger } from '@/libs/logger';
 import { calendarUrlWrapper } from '@/libs/calendar/calendarUrlWrapper';
+import { bookingTokenService } from '@/modules/scheduling/BookingTokenService';
 import {
   formatEmailBodyForHtml,
   formatEmailBodyForText,
@@ -108,7 +109,7 @@ export class EmailProcessor {
 
       if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
         try {
-          const trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
+          let trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
             tenantId,
             leadId: calendarInfo.leadId,
             contactId,
@@ -116,6 +117,19 @@ export class EmailProcessor {
             nodeId,
             outboundMessageId,
           });
+
+          if (!skipMessageRecord) {
+            const { rawToken } = await bookingTokenService.issue({
+              tenantId,
+              leadId: calendarInfo.leadId,
+              contactId,
+              userId,
+              campaignId,
+              nodeId,
+              outboundMessageId,
+            });
+            trackedCalendarUrl = bookingTokenService.buildBookingUrl(rawToken);
+          }
 
           const calendarMessage = calendarUrlWrapper.createCalendarMessage(
             calendarInfo.calendarTieIn,

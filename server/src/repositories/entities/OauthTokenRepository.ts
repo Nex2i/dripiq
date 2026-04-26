@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { oauthTokens, OauthToken, NewOauthToken } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { encrypt, decrypt } from '@/utils/crypto';
@@ -51,6 +51,7 @@ export class OauthTokenRepository extends BaseRepository<
       .select()
       .from(this.table)
       .where(and(eq(this.table.mailAccountId, mailAccountId)))
+      .orderBy(desc(this.table.addedAt))
       .limit(1);
 
     if (!result || !result[0]) {
