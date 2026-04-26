@@ -4,7 +4,7 @@ import { mailAccountRepository, oauthTokenRepository } from '@/repositories';
 import { CreateOauthTokenPayload } from '@/repositories/entities/OauthTokenRepository';
 
 class NewMicrosoftProviderService {
-  async setupNewAccount(tenantId: string, userId: string, code: string): Promise<void> {
+  async setupNewAccount(tenantId: string, userId: string, code: string): Promise<MailAccount> {
     const oauth2Client = getMicrosoftOAuth2Client();
 
     // Exchange authorization code for tokens
@@ -24,6 +24,7 @@ class NewMicrosoftProviderService {
       tokenResponse.scope
     );
     await this.createOAuthToken(mailAccount.id, tokenResponse.refresh_token);
+    return mailAccount;
   }
 
   private async createOAuthToken(mailAccountId: string, refreshToken: string): Promise<void> {
@@ -47,6 +48,19 @@ class NewMicrosoftProviderService {
 
     // Use mail if available, otherwise fall back to userPrincipalName
     const primaryEmail = mail || userPrincipalName;
+
+    const existingMailAccount = await mailAccountRepository.findByProviderIdentity('microsoft', id);
+    if (existingMailAccount) {
+      if (existingMailAccount.tenantId !== tenantId || existingMailAccount.userId !== userId) {
+        throw new Error('Microsoft account is already connected to another user');
+      }
+
+      return await mailAccountRepository.reconnectProvider(userId, existingMailAccount.id, {
+        primaryEmail,
+        displayName: displayName || existingMailAccount.displayName,
+        scopes: scopes?.split(' ') || existingMailAccount.scopes,
+      });
+    }
 
     const mailAccount: NewMailAccount = {
       userId: userId,

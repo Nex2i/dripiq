@@ -8,6 +8,7 @@ import {
   mailAccountRepository,
   leadRepository,
   leadPointOfContactRepository,
+  calendarConnectionRepository,
 } from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
@@ -21,6 +22,8 @@ import {
   TestEmailRequestSchema,
   TestEmailResponseSchema,
   GetEmailProvidersResponseSchema,
+  EmailProviderParamsSchema,
+  DisconnectProviderResponseSchema,
   SwitchPrimaryProviderRequestSchema,
   SwitchPrimaryProviderResponseSchema,
 } from './apiSchema/users';
@@ -269,6 +272,57 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
       }
     },
   });
+
+  fastify.delete<{ Params: { providerId: string } }>(
+    `${basePath}/me/email-providers/:providerId`,
+    {
+      preHandler: [fastify.authPrehandler],
+      schema: {
+        params: EmailProviderParamsSchema,
+        response: {
+          200: DisconnectProviderResponseSchema,
+        },
+        tags: ['Users'],
+        summary: 'Disconnect email provider',
+        description: 'Disconnect a connected email provider for the authenticated user.',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { providerId } = request.params;
+        const userId = ((request as any).user as IUser).id as string;
+
+        const existingAccount = await mailAccountRepository.findById(providerId);
+        if (!existingAccount || existingAccount.userId !== userId) {
+          return reply.status(404).send({ message: 'Mail account not found' });
+        }
+
+        await calendarConnectionRepository.disconnectByMailAccountId(providerId);
+        const disconnectedAccount = await mailAccountRepository.disconnectProvider(
+          userId,
+          providerId
+        );
+
+        reply.send({
+          message: 'Email provider disconnected successfully',
+          provider: {
+            id: disconnectedAccount.id,
+            provider: disconnectedAccount.provider,
+            primaryEmail: disconnectedAccount.primaryEmail,
+            displayName: disconnectedAccount.displayName || '',
+            isPrimary: false,
+            isConnected: false,
+            connectedAt: disconnectedAccount.connectedAt.toISOString(),
+          },
+        });
+      } catch (error: any) {
+        logger.error(`Error disconnecting email provider: ${error.message}`);
+        reply
+          .status(error.statusCode || 500)
+          .send({ message: error.message || 'Failed to disconnect email provider' });
+      }
+    }
+  );
 
   // Send test email
   fastify.route({

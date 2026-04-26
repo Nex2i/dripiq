@@ -61,4 +61,12 @@ export class OauthTokenRepository extends BaseRepository<
     const { refreshTokenEnc } = result[0];
     return decrypt(refreshTokenEnc);
   }
+
+  async revokeByMailAccountId(mailAccountId: string): Promise<OauthToken[]> {
+    return await this.db
+      .update(this.table)
+      .set({ status: 'revoked', updatedAt: new Date() })
+      .where(eq(this.table.mailAccountId, mailAccountId))
+      .returning();
+  }
 }

@@ -10,6 +10,32 @@ import { CalendarConnection, MailAccount, NewMailAccount } from '@/db/schema';
 import { CreateOauthTokenPayload } from '@/repositories/entities/OauthTokenRepository';
 
 export class CalendarConnectionService {
+  async connectMailAccountCalendar(params: {
+    tenantId: string;
+    userId: string;
+    mailAccountId: string;
+    provider: 'google' | 'microsoft';
+    primaryEmail?: string;
+    displayName?: string | null;
+    scopes?: string[];
+  }): Promise<CalendarConnection | undefined> {
+    if (!this.hasCalendarScopes(params.provider, params.scopes ?? [])) {
+      return undefined;
+    }
+
+    return await calendarConnectionRepository.upsertActiveForUser(params.tenantId, params.userId, {
+      mailAccountId: params.mailAccountId,
+      provider: params.provider,
+      providerCalendarId: 'primary',
+      displayName: params.displayName ?? undefined,
+      primaryEmail: params.primaryEmail,
+      scopes: params.scopes ?? [],
+      metadata: {},
+      connectedAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
   async setupGoogleConnection(
     tenantId: string,
     userId: string,
@@ -147,6 +173,15 @@ export class CalendarConnectionService {
     };
 
     await oauthTokenRepository.createOAuth(newOauthToken);
+  }
+
+  private hasCalendarScopes(provider: 'google' | 'microsoft', scopes: string[]): boolean {
+    const normalizedScopes = scopes.map((scope) => scope.toLowerCase());
+    if (provider === 'google') {
+      return normalizedScopes.includes('https://www.googleapis.com/auth/calendar.events');
+    }
+
+    return normalizedScopes.includes('calendars.readwrite');
   }
 }
 

@@ -6,8 +6,10 @@ interface ProviderCardProps {
   connectedProvider: EmailProvider | null
   children: React.ReactNode // The provider-specific button component
   onPrimaryChange?: (providerId: string) => void
+  onDisconnect?: (providerId: string) => void
   allProviders?: EmailProvider[]
   isChangingPrimary?: boolean
+  isDisconnecting?: boolean
 }
 
 export default function ProviderCard({
@@ -16,8 +18,10 @@ export default function ProviderCard({
   connectedProvider,
   children,
   onPrimaryChange,
+  onDisconnect,
   allProviders: _allProviders = [],
   isChangingPrimary = false,
+  isDisconnecting = false,
 }: ProviderCardProps) {
   const isConnected = connectedProvider?.isConnected || false
   const isPrimary = connectedProvider?.isPrimary || false
@@ -25,6 +29,12 @@ export default function ProviderCard({
   const handlePrimaryChange = () => {
     if (isConnected && connectedProvider && onPrimaryChange) {
       onPrimaryChange(connectedProvider.id)
+    }
+  }
+
+  const handleDisconnect = () => {
+    if (isConnected && connectedProvider && onDisconnect) {
+      onDisconnect(connectedProvider.id)
     }
   }
 
@@ -79,6 +89,17 @@ export default function ProviderCard({
           )}
 
           {children}
+
+          {isConnected && onDisconnect && (
+            <button
+              type="button"
+              onClick={handleDisconnect}
+              disabled={isDisconnecting}
+              className="inline-flex items-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              {isDisconnecting ? 'Unlinking...' : 'Unlink'}
+            </button>
+          )}
         </div>
       </div>
     </div>

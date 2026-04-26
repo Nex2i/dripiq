@@ -70,4 +70,17 @@ export class CalendarConnectionRepository extends TenantAwareRepository<
 
     return result;
   }
+
+  async disconnectByMailAccountId(mailAccountId: string): Promise<CalendarConnection[]> {
+    return await this.db
+      .update(this.table)
+      .set({
+        isActive: false,
+        disconnectedAt: new Date(),
+        reauthRequired: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(this.table.mailAccountId, mailAccountId))
+      .returning();
+  }
 }

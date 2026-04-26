@@ -65,10 +65,9 @@ export class AvailabilityService {
       throw new ServiceUnavailableError('No scheduling calendar connected');
     }
 
-    const provider = calendarProviderFactory.create(connection);
     const rangeStart = this.zonedTimeToUtc(request.startDate, '00:00', settings.timezone);
     const rangeEnd = this.zonedTimeToUtc(request.endDate, '23:59', settings.timezone);
-    const events = await provider.listEvents({
+    const events = await calendarProviderFactory.create(connection).listEvents({
       calendarId: connection.providerCalendarId,
       timeMin: rangeStart,
       timeMax: rangeEnd,

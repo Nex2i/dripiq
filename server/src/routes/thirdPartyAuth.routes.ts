@@ -8,7 +8,11 @@ import {
   googleCalendarScopes,
   googleScopes,
 } from '@/libs/thirdPartyAuth/GoogleAuth';
-import { getMicrosoftOAuth2Client, microsoftScopes } from '@/libs/thirdPartyAuth/MicrosoftAuth';
+import {
+  getMicrosoftOAuth2Client,
+  microsoftCalendarScopes,
+  microsoftScopes,
+} from '@/libs/thirdPartyAuth/MicrosoftAuth';
 import { newGoogleProviderService } from '@/modules/newGoogleProvider.service';
 import { newMicrosoftProviderService } from '@/modules/newMicrosoftProvider.service';
 import { calendarConnectionService } from '@/modules/scheduling/calendar/CalendarConnectionService';
@@ -156,7 +160,16 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         if (purpose === 'calendar') {
           await calendarConnectionService.setupGoogleConnection(tenantId, userId, code);
         } else if (isNewMailAccount) {
-          await newGoogleProviderService.setupNewAccount(tenantId, userId, code);
+          const mailAccount = await newGoogleProviderService.setupNewAccount(tenantId, userId, code);
+          await calendarConnectionService.connectMailAccountCalendar({
+            tenantId,
+            userId,
+            mailAccountId: mailAccount.id,
+            provider: 'google',
+            primaryEmail: mailAccount.primaryEmail,
+            displayName: mailAccount.displayName,
+            scopes: mailAccount.scopes,
+          });
         }
 
         await thirdPartyAuthStateCache.clear(state);
@@ -252,7 +265,7 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           purpose: 'calendar',
         });
 
-        const authUrl = oauth2Client.generateAuthUrl(microsoftScopes, stateId);
+        const authUrl = oauth2Client.generateAuthUrl(microsoftCalendarScopes, stateId);
 
         return reply.status(200).send({
           authUrl,
@@ -304,7 +317,20 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         if (purpose === 'calendar') {
           await calendarConnectionService.setupMicrosoftConnection(tenantId, userId, code);
         } else if (isNewMailAccount) {
-          await newMicrosoftProviderService.setupNewAccount(tenantId, userId, code);
+          const mailAccount = await newMicrosoftProviderService.setupNewAccount(
+            tenantId,
+            userId,
+            code
+          );
+          await calendarConnectionService.connectMailAccountCalendar({
+            tenantId,
+            userId,
+            mailAccountId: mailAccount.id,
+            provider: 'microsoft',
+            primaryEmail: mailAccount.primaryEmail,
+            displayName: mailAccount.displayName,
+            scopes: mailAccount.scopes,
+          });
         }
 
         await thirdPartyAuthStateCache.clear(stateId);

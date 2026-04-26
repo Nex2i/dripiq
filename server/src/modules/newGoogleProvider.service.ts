@@ -5,7 +5,7 @@ import { mailAccountRepository, oauthTokenRepository } from '@/repositories';
 import { CreateOauthTokenPayload } from '@/repositories/entities/OauthTokenRepository';
 
 class NewGoogleProviderService {
-  async setupNewAccount(tenantId: string, userId: string, code: string): Promise<void> {
+  async setupNewAccount(tenantId: string, userId: string, code: string): Promise<MailAccount> {
     const oauth2Client = getGoogleOAuth2Client();
 
     // Exchange authorization code for tokens
@@ -24,12 +24,17 @@ class NewGoogleProviderService {
       throw new Error('Failed to get user payload from ID token');
     }
 
+    if (!payload.sub) {
+      throw new Error('Google account identity missing from ID token');
+    }
+
     if (!tokens.refresh_token) {
       throw new Error('Failed to get refresh token');
     }
 
     const mailAccount = await this.createMailAccount(tenantId, userId, payload, tokens.scope);
     await this.createOAuthToken(mailAccount.id, tokens.refresh_token);
+    return mailAccount;
   }
 
   private async createOAuthToken(mailAccountId: string, refreshToken: string): Promise<void> {
@@ -49,6 +54,23 @@ class NewGoogleProviderService {
     scopes?: string
   ): Promise<MailAccount> {
     const { sub, email, name } = tokenPayload;
+
+    if (!sub) {
+      throw new Error('Google account identity missing from ID token');
+    }
+
+    const existingMailAccount = await mailAccountRepository.findByProviderIdentity('google', sub);
+    if (existingMailAccount) {
+      if (existingMailAccount.tenantId !== tenantId || existingMailAccount.userId !== userId) {
+        throw new Error('Google account is already connected to another user');
+      }
+
+      return await mailAccountRepository.reconnectProvider(userId, existingMailAccount.id, {
+        primaryEmail: email || existingMailAccount.primaryEmail,
+        displayName: name || existingMailAccount.displayName,
+        scopes: scopes?.split(' ') || existingMailAccount.scopes,
+      });
+    }
 
     const mailAccount: NewMailAccount = {
       userId: userId,

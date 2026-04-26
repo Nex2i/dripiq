@@ -50,8 +50,24 @@ export const SwitchPrimaryProviderResponseSchema = Type.Object({
   provider: EmailProviderSchema,
 });
 
+export const EmailProviderParamsSchema = Type.Object({
+  providerId: Type.String({
+    description: 'ID of the mail account',
+    minLength: 1,
+  }),
+});
+
+export const DisconnectProviderResponseSchema = Type.Object({
+  message: Type.String({
+    description: 'Success message',
+  }),
+  provider: EmailProviderSchema,
+});
+
 // TypeScript types
 export type EmailProvider = typeof EmailProviderSchema.static;
 export type GetEmailProvidersResponse = typeof GetEmailProvidersResponseSchema.static;
 export type SwitchPrimaryProviderRequest = typeof SwitchPrimaryProviderRequestSchema.static;
 export type SwitchPrimaryProviderResponse = typeof SwitchPrimaryProviderResponseSchema.static;
+export type EmailProviderParams = typeof EmailProviderParamsSchema.static;
+export type DisconnectProviderResponse = typeof DisconnectProviderResponseSchema.static;
