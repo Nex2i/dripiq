@@ -9,6 +9,7 @@ import { TenantService } from '@/modules/tenant.service';
 import { TenantDomainMappingService } from '@/modules/tenant-domain-mapping.service';
 import { RoleService } from '@/modules/role.service';
 import { authCache } from '@/cache/AuthCacheRedis';
+import { SsoProvisioningService } from '@/modules/sso-provisioning.service';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { ConflictError, NotFoundError } from '@/exceptions/error';
 
@@ -269,128 +270,51 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const authSession = await resolveSupabaseUser(request.headers.authorization);
-        if (!authSession) {
+        const token = SsoProvisioningService.getTokenFromAuthHeader(request.headers.authorization);
+        if (!token) {
           reply.status(401).send({
             message: 'Invalid SSO session',
             error: 'Unable to resolve authenticated user',
           });
           return;
         }
-        const { supabaseUser } = authSession;
+        const ssoProvisioningResult = await SsoProvisioningService.resolveFromToken(token);
 
-        const email = supabaseUser.email?.trim().toLowerCase();
-        if (!email) {
-          reply
-            .status(400)
-            .send({ message: 'Authenticated SSO user does not have an email address' });
+        if (ssoProvisioningResult.status === 'invalid_session') {
+          reply.status(401).send({
+            message: 'Invalid SSO session',
+            error: ssoProvisioningResult.message,
+          });
           return;
         }
 
-        const domain = TenantDomainMappingService.getDomainFromEmail(email);
-        const mapping = await TenantDomainMappingService.findMappingByDomain(domain);
-
-        let existingUserWithTenants: Awaited<
-          ReturnType<typeof UserService.getUserWithTenantsForAuth>
-        > | null = null;
-
-        try {
-          existingUserWithTenants = await UserService.getUserWithTenantsForAuth(supabaseUser.id);
-        } catch (error) {
-          if (!(error instanceof NotFoundError)) {
-            throw error;
-          }
+        if (ssoProvisioningResult.status === 'missing_email') {
+          reply.status(400).send({ message: ssoProvisioningResult.message });
+          return;
         }
 
-        if (existingUserWithTenants && existingUserWithTenants.userTenants.length > 0) {
-          return reply.send({
-            status: 'already_provisioned',
-            user: {
-              id: existingUserWithTenants.user.id,
-              email: existingUserWithTenants.user.email,
-              name: existingUserWithTenants.user.name,
-            },
-            tenant: {
-              id: existingUserWithTenants.userTenants[0]!.id,
-              name: existingUserWithTenants.userTenants[0]!.name,
-            },
-          });
-        }
-
-        if (!mapping) {
+        if (ssoProvisioningResult.status === 'requires_registration') {
           reply.send({
             status: 'requires_registration',
-            email,
-            domain,
+            email: ssoProvisioningResult.email,
+            domain: ssoProvisioningResult.domain,
           });
           return;
         }
-
-        const existingUserByEmail = await UserService.findUserByEmail(email);
-
-        const displayName =
-          supabaseUser.user_metadata?.full_name ||
-          supabaseUser.user_metadata?.name ||
-          supabaseUser.user_metadata?.display_name ||
-          null;
-
-        let dbUser = existingUserWithTenants?.user || null;
-        let previousSupabaseId: string | null = null;
-
-        if (!dbUser && existingUserByEmail) {
-          if (existingUserByEmail.supabaseId !== supabaseUser.id) {
-            previousSupabaseId = existingUserByEmail.supabaseId;
-            dbUser = await UserService.updateUserSupabaseId(
-              existingUserByEmail.id,
-              supabaseUser.id
-            );
-          } else {
-            dbUser = existingUserByEmail;
-          }
-        }
-
-        if (!dbUser) {
-          dbUser = await UserService.createUser({
-            supabaseId: supabaseUser.id,
-            email,
-            name: displayName || undefined,
-          });
-        }
-
-        const defaultSsoRole =
-          (await RoleService.getRoleByName('Sales')) || (await RoleService.getRoleByName('Admin'));
-
-        if (!defaultSsoRole) {
-          reply.status(500).send({ message: 'No default role configured for SSO provisioning' });
-          return;
-        }
-
-        await TenantService.addUserToTenant(dbUser.id, mapping.tenantId, defaultSsoRole.id, false);
-        await authCache.clear(supabaseUser.id);
-        if (previousSupabaseId && previousSupabaseId !== supabaseUser.id) {
-          await authCache.clear(previousSupabaseId);
-        }
-
-        const provisioned = await UserService.getUserWithTenantsForAuth(supabaseUser.id);
-        if (!provisioned || provisioned.userTenants.length === 0) {
-          reply.status(500).send({ message: 'Failed to complete SSO provisioning' });
-          return;
-        }
-
-        const provisionedTenant =
-          provisioned.userTenants.find((tenant) => tenant.id === mapping.tenantId) ||
-          provisioned.userTenants[0]!;
 
         reply.send({
-          status: 'provisioned',
+          status: ssoProvisioningResult.status,
           user: {
-            id: provisioned.user.id,
-            email: provisioned.user.email,
-            name: provisioned.user.name,
+            id: ssoProvisioningResult.userWithTenants.user.id,
+            email: ssoProvisioningResult.userWithTenants.user.email,
+            name: ssoProvisioningResult.userWithTenants.user.name,
           },
           tenant: {
-            id: provisionedTenant.id,
-            name: provisionedTenant.name,
+            id: ssoProvisioningResult.tenantId,
+            name:
+              ssoProvisioningResult.userWithTenants.userTenants.find(
+                (tenant) => tenant.id === ssoProvisioningResult.tenantId
+              )?.name || ssoProvisioningResult.userWithTenants.userTenants[0]!.name,
           },
         });
       } catch (error: any) {

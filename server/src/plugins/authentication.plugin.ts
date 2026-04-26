@@ -4,10 +4,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { ForbiddenError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
-import { UserService } from '@/modules/user.service';
-import { RoleService } from '@/modules/role.service';
-import { TenantService } from '@/modules/tenant.service';
-import { TenantDomainMappingService } from '@/modules/tenant-domain-mapping.service';
+import { SsoProvisioningService } from '@/modules/sso-provisioning.service';
 import { getDecodedJwt, isTokenExpired } from '@/libs/jwt';
 import { authCache } from '@/cache/AuthCacheRedis';
 
@@ -48,80 +45,6 @@ export default fastifyPlugin(
         supabaseUser,
         supabaseUserId: supabaseUser.id,
       };
-    };
-
-    const resolveDbUserWithTenants = async (
-      token: string,
-      initialSupabaseUserId: string,
-      initialSupabaseUser: SupabaseUser | null
-    ) => {
-      let dbResult = await UserService.getUserWithTenantsForAuth(initialSupabaseUserId).catch(
-        () => null
-      );
-      if (dbResult) {
-        return dbResult;
-      }
-
-      const resolvedSupabase =
-        initialSupabaseUser && initialSupabaseUser.id === initialSupabaseUserId
-          ? { supabaseUser: initialSupabaseUser, supabaseUserId: initialSupabaseUserId }
-          : await resolveSupabaseUser(token);
-
-      const { supabaseUser, supabaseUserId } = resolvedSupabase;
-      const email = supabaseUser.email?.trim().toLowerCase();
-      if (!email) {
-        throw new ForbiddenError('Authenticated SSO user does not have an email address');
-      }
-
-      const domain = TenantDomainMappingService.getDomainFromEmail(email);
-      const mapping = await TenantDomainMappingService.findMappingByDomain(domain);
-      if (!mapping) {
-        throw new ForbiddenError(
-          'SSO domain is not mapped to a tenant. Complete registration first.'
-        );
-      }
-
-      const existingUserByEmail = await UserService.findUserByEmail(email);
-      let dbUser = existingUserByEmail;
-      let previousSupabaseId: string | null = null;
-
-      if (dbUser && dbUser.supabaseId !== supabaseUserId) {
-        previousSupabaseId = dbUser.supabaseId;
-        dbUser = await UserService.updateUserSupabaseId(dbUser.id, supabaseUserId);
-      }
-
-      if (!dbUser) {
-        const displayName =
-          supabaseUser.user_metadata?.full_name ||
-          supabaseUser.user_metadata?.name ||
-          supabaseUser.user_metadata?.display_name ||
-          undefined;
-
-        dbUser = await UserService.createUser({
-          supabaseId: supabaseUserId,
-          email,
-          name: displayName || undefined,
-        });
-      }
-
-      const defaultSsoRole =
-        (await RoleService.getRoleByName('Sales')) || (await RoleService.getRoleByName('Admin'));
-      if (!defaultSsoRole) {
-        throw new ForbiddenError('No default role configured for SSO provisioning');
-      }
-
-      await TenantService.addUserToTenant(dbUser.id, mapping.tenantId, defaultSsoRole.id, false);
-      await authCache.clear(supabaseUserId);
-      if (previousSupabaseId && previousSupabaseId !== supabaseUserId) {
-        await authCache.clear(previousSupabaseId);
-      }
-
-      dbResult = await UserService.getUserWithTenantsForAuth(supabaseUserId).catch(() => null);
-      if (!dbResult) {
-        throw new ForbiddenError('User not found in database');
-      }
-
-      return dbResult;
     };
 
     /**
@@ -175,8 +98,24 @@ export default fastifyPlugin(
 
         if (!userData) {
           const dbResultStart = process.hrtime();
-          // Cache miss - fetch from database with single optimized query
-          const dbResult = await resolveDbUserWithTenants(token, supabaseUserId, supabaseUser);
+          // Cache miss - resolve and provision SSO user if needed.
+          const ssoProvisioningResult = await SsoProvisioningService.resolveFromToken(
+            token,
+            supabaseUser
+          );
+          if (
+            ssoProvisioningResult.status === 'invalid_session' ||
+            ssoProvisioningResult.status === 'missing_email' ||
+            ssoProvisioningResult.status === 'requires_registration'
+          ) {
+            const errorMessage =
+              ssoProvisioningResult.status === 'requires_registration'
+                ? 'SSO user is not provisioned'
+                : ssoProvisioningResult.message;
+            throw new ForbiddenError(errorMessage);
+          }
+
+          const dbResult = ssoProvisioningResult.userWithTenants;
           const dbResultEnd = process.hrtime(dbResultStart);
           const dbResultDurationMicroSeconds = dbResultEnd[0] * 1e6 + dbResultEnd[1] / 1e3;
           logger.info(`dbResult took ${dbResultDurationMicroSeconds}μs`, {
