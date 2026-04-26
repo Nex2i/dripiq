@@ -53,8 +53,6 @@ export function useHoldSlot() {
 }
 
 export function useConfirmBooking() {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: (input: {
       token: string
@@ -62,13 +60,5 @@ export function useConfirmBooking() {
       slot: string
       contactDetails: { name: string; email: string; phone?: string }
     }) => schedulingService.confirmBooking(input),
-    onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: schedulingQueryKeys.all,
-      })
-      queryClient.invalidateQueries({
-        queryKey: schedulingQueryKeys.publicContext(variables.token),
-      })
-    },
   })
 }

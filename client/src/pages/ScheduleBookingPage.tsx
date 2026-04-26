@@ -8,7 +8,11 @@ import {
 } from '../hooks/useSchedulingQuery'
 
 function toDateString(date: Date) {
-  return date.toISOString().slice(0, 10)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
 }
 
 function addDays(date: Date, days: number) {
@@ -68,6 +72,22 @@ export default function ScheduleBookingPage() {
     [],
   )
 
+  if (bookingComplete) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+          <h1 className="text-xl font-semibold text-gray-900">
+            Booking confirmed
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            You&apos;re confirmed. A calendar invitation and confirmation email
+            are on the way.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
   if (contextQuery.isLoading) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -113,20 +133,6 @@ export default function ScheduleBookingPage() {
       setSubmitError(error?.message || 'Unable to book this slot. Please try another time.')
       availabilityQuery.refetch()
     }
-  }
-
-  if (bookingComplete) {
-    return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="max-w-md rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900">Demo booked</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            You&apos;re confirmed. A calendar invitation and confirmation email
-            are on the way.
-          </p>
-        </div>
-      </main>
-    )
   }
 
   return (
@@ -211,21 +217,44 @@ export default function ScheduleBookingPage() {
           <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
             <h3 className="text-sm font-medium text-gray-900">Your details</h3>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <input
-                value={contactName}
-                onChange={(event) => setContactName(event.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
-              />
-              <input
-                value={contactEmail}
-                onChange={(event) => setContactEmail(event.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
-              />
-              <input
-                value={contactPhone}
-                onChange={(event) => setContactPhone(event.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 sm:col-span-2"
-              />
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-gray-700">
+                  Name
+                </span>
+                <input
+                  value={contactName}
+                  onChange={(event) => setContactName(event.target.value)}
+                  placeholder="Jane Smith"
+                  autoComplete="name"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-gray-700">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  placeholder="jane@example.com"
+                  autoComplete="email"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-sm font-medium text-gray-700">
+                  Phone
+                </span>
+                <input
+                  type="tel"
+                  value={contactPhone}
+                  onChange={(event) => setContactPhone(event.target.value)}
+                  placeholder="(555) 123-4567"
+                  autoComplete="tel"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+                />
+              </label>
             </div>
           </div>
 
