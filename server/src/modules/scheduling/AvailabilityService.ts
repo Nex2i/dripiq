@@ -23,6 +23,7 @@ export interface AvailabilityRequest {
 
 export interface AvailabilityResponse {
   availableSlots: string[];
+  busyBlocks: Array<{ start: string; end: string }>;
   timezone: string;
 }
 
@@ -100,11 +101,16 @@ export class AvailabilityService {
     const availableIntervals = workingIntervals.flatMap((interval) =>
       this.subtractIntervals(interval, blockers)
     );
+    const busyBlocks = this.busyBlocksFromWorkingIntervals(workingIntervals, blockers);
 
     const slots = this.slotsFromIntervals(availableIntervals, settings.meetingDurationMinutes);
 
     return {
       availableSlots: slots.map((slot) => slot.toISOString()),
+      busyBlocks: busyBlocks.map((block) => ({
+        start: block.start.toISOString(),
+        end: block.end.toISOString(),
+      })),
       timezone: settings.timezone,
     };
   }
@@ -187,6 +193,19 @@ export class AvailabilityService {
     }
 
     return slots;
+  }
+
+  busyBlocksFromWorkingIntervals(workingIntervals: TimeInterval[], blockers: TimeInterval[]): TimeInterval[] {
+    const busyBlocks = workingIntervals.flatMap((workingInterval) =>
+      blockers.flatMap((blocker) => {
+        const start = new Date(Math.max(workingInterval.start.getTime(), blocker.start.getTime()));
+        const end = new Date(Math.min(workingInterval.end.getTime(), blocker.end.getTime()));
+
+        return start < end ? [{ start, end }] : [];
+      })
+    );
+
+    return this.mergeIntervals(busyBlocks);
   }
 
   addMinutes(date: Date, minutes: number): Date {

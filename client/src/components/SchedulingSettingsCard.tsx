@@ -30,31 +30,22 @@ const DAY_LABELS: Record<keyof WorkingHours, string> = {
 
 const DEFAULT_TIMEZONE = 'America/Chicago'
 
-const NORTH_AMERICAN_TIMEZONES = [
-  { value: 'America/St_Johns', label: 'Newfoundland Time (America/St_Johns)' },
-  { value: 'America/Halifax', label: 'Atlantic Time (America/Halifax)' },
+const US_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (America/New_York)' },
   { value: 'America/Chicago', label: 'Central Time (America/Chicago)' },
-  { value: 'America/Regina', label: 'Central Time - Saskatchewan (America/Regina)' },
   { value: 'America/Denver', label: 'Mountain Time (America/Denver)' },
   { value: 'America/Phoenix', label: 'Mountain Time - Arizona (America/Phoenix)' },
   { value: 'America/Los_Angeles', label: 'Pacific Time (America/Los_Angeles)' },
   { value: 'America/Anchorage', label: 'Alaska Time (America/Anchorage)' },
   { value: 'Pacific/Honolulu', label: 'Hawaii Time (Pacific/Honolulu)' },
-  { value: 'America/Cancun', label: 'Mexico Eastern Time (America/Cancun)' },
-  { value: 'America/Mexico_City', label: 'Mexico Central Time (America/Mexico_City)' },
-  { value: 'America/Mazatlan', label: 'Mexico Pacific Time (America/Mazatlan)' },
-  { value: 'America/Tijuana', label: 'Mexico Northwest Time (America/Tijuana)' },
 ]
 
-const NORTH_AMERICAN_TIMEZONE_VALUES = new Set(
-  NORTH_AMERICAN_TIMEZONES.map((timezone) => timezone.value),
+const US_TIMEZONE_VALUES = new Set(
+  US_TIMEZONES.map((timezone) => timezone.value),
 )
 
 function getSupportedTimezone(timezone: string) {
-  return NORTH_AMERICAN_TIMEZONE_VALUES.has(timezone)
-    ? timezone
-    : DEFAULT_TIMEZONE
+  return US_TIMEZONE_VALUES.has(timezone) ? timezone : DEFAULT_TIMEZONE
 }
 
 export default function SchedulingSettingsCard() {
@@ -163,17 +154,20 @@ export default function SchedulingSettingsCard() {
             }
             className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
           >
-            {NORTH_AMERICAN_TIMEZONES.map((timezone) => (
+            {US_TIMEZONES.map((timezone) => (
               <option key={timezone.value} value={timezone.value}>
                 {timezone.label}
               </option>
             ))}
           </select>
+          <span className="mt-1 block text-xs text-gray-500">
+            Booking links use this timezone when showing available times.
+          </span>
         </label>
 
         <label className="block">
           <span className="block text-sm font-medium text-gray-700 mb-1">
-            Meeting Duration
+            Meeting duration
           </span>
           <select
             value={form.meetingDurationMinutes}
@@ -188,61 +182,96 @@ export default function SchedulingSettingsCard() {
               </option>
             ))}
           </select>
+          <span className="mt-1 block text-xs text-gray-500">
+            How long each booked meeting lasts.
+          </span>
         </label>
 
         <label className="block">
           <span className="block text-sm font-medium text-gray-700 mb-1">
-            Buffer Before
+            Buffer before meeting
           </span>
-          <input
-            type="number"
-            min={0}
-            max={240}
-            value={form.bufferBeforeMinutes}
-            onChange={(event) => setNumber('bufferBeforeMinutes', event.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-          />
+          <div className="flex rounded-lg shadow-sm">
+            <input
+              type="number"
+              min={0}
+              max={240}
+              value={form.bufferBeforeMinutes}
+              onChange={(event) => setNumber('bufferBeforeMinutes', event.target.value)}
+              className="block w-full rounded-l-lg border border-r-0 border-gray-300 bg-white px-3 py-2 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+            />
+            <span className="inline-flex items-center rounded-r-lg border border-gray-300 bg-gray-50 px-3 text-sm text-gray-600">
+              minutes
+            </span>
+          </div>
+          <span className="mt-1 block text-xs text-gray-500">
+            Prep time blocked before each available slot.
+          </span>
         </label>
 
         <label className="block">
           <span className="block text-sm font-medium text-gray-700 mb-1">
-            Buffer After
+            Buffer after meeting
           </span>
-          <input
-            type="number"
-            min={0}
-            max={240}
-            value={form.bufferAfterMinutes}
-            onChange={(event) => setNumber('bufferAfterMinutes', event.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-          />
+          <div className="flex rounded-lg shadow-sm">
+            <input
+              type="number"
+              min={0}
+              max={240}
+              value={form.bufferAfterMinutes}
+              onChange={(event) => setNumber('bufferAfterMinutes', event.target.value)}
+              className="block w-full rounded-l-lg border border-r-0 border-gray-300 bg-white px-3 py-2 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+            />
+            <span className="inline-flex items-center rounded-r-lg border border-gray-300 bg-gray-50 px-3 text-sm text-gray-600">
+              minutes
+            </span>
+          </div>
+          <span className="mt-1 block text-xs text-gray-500">
+            Recovery or follow-up time blocked after each meeting.
+          </span>
         </label>
 
         <label className="block">
           <span className="block text-sm font-medium text-gray-700 mb-1">
-            Minimum Notice
+            Minimum notice
           </span>
-          <input
-            type="number"
-            min={0}
-            value={form.minNoticeMinutes}
-            onChange={(event) => setNumber('minNoticeMinutes', event.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-          />
+          <div className="flex rounded-lg shadow-sm">
+            <input
+              type="number"
+              min={0}
+              value={form.minNoticeMinutes}
+              onChange={(event) => setNumber('minNoticeMinutes', event.target.value)}
+              className="block w-full rounded-l-lg border border-r-0 border-gray-300 bg-white px-3 py-2 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+            />
+            <span className="inline-flex items-center rounded-r-lg border border-gray-300 bg-gray-50 px-3 text-sm text-gray-600">
+              minutes
+            </span>
+          </div>
+          <span className="mt-1 block text-xs text-gray-500">
+            Earliest a new meeting can be booked from now.
+          </span>
         </label>
 
         <label className="block">
           <span className="block text-sm font-medium text-gray-700 mb-1">
-            Booking Horizon
+            Booking window
           </span>
-          <input
-            type="number"
-            min={1}
-            max={365}
-            value={form.bookingHorizonDays}
-            onChange={(event) => setNumber('bookingHorizonDays', event.target.value)}
-            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-          />
+          <div className="flex rounded-lg shadow-sm">
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={form.bookingHorizonDays}
+              onChange={(event) => setNumber('bookingHorizonDays', event.target.value)}
+              className="block w-full rounded-l-lg border border-r-0 border-gray-300 bg-white px-3 py-2 focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
+            />
+            <span className="inline-flex items-center rounded-r-lg border border-gray-300 bg-gray-50 px-3 text-sm text-gray-600">
+              days
+            </span>
+          </div>
+          <span className="mt-1 block text-xs text-gray-500">
+            How far into the future booking links show availability.
+          </span>
         </label>
       </div>
 

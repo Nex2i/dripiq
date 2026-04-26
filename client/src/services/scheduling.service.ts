@@ -55,6 +55,7 @@ export interface PublicBookingContext {
 
 export interface AvailabilityResponse {
   availableSlots: string[]
+  busyBlocks: Array<{ start: string; end: string }>
   timezone: string
 }
 

@@ -70,6 +70,12 @@ export const AvailabilityQuerySchema = Type.Object({
 
 export const AvailabilityResponseSchema = Type.Object({
   availableSlots: Type.Array(Type.String()),
+  busyBlocks: Type.Array(
+    Type.Object({
+      start: Type.String(),
+      end: Type.String(),
+    })
+  ),
   timezone: Type.String(),
 });
 
