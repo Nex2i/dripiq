@@ -183,12 +183,15 @@ class UsersService {
     providerId: string,
   ): Promise<{ message: string; provider: EmailProvider }> {
     const authHeaders = await authService.getAuthHeaders()
-    const res = await fetch(`${this.baseUrl}/me/email-providers/${providerId}`, {
-      method: 'DELETE',
-      headers: {
-        ...authHeaders,
+    const res = await fetch(
+      `${this.baseUrl}/me/email-providers/${providerId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          ...authHeaders,
+        },
       },
-    })
+    )
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.message || 'Failed to disconnect email provider')

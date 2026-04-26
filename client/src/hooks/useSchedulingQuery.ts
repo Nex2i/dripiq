@@ -22,7 +22,9 @@ export function useUpdateSchedulingSettings() {
       schedulingService.updateSettings(data),
     onSuccess: (settings) => {
       queryClient.setQueryData(schedulingQueryKeys.settings(), settings)
-      queryClient.invalidateQueries({ queryKey: schedulingQueryKeys.settings() })
+      queryClient.invalidateQueries({
+        queryKey: schedulingQueryKeys.settings(),
+      })
     },
   })
 }
@@ -36,7 +38,11 @@ export function usePublicBookingContext(token: string) {
   })
 }
 
-export function useAvailability(token: string, startDate: string, endDate: string) {
+export function useAvailability(
+  token: string,
+  startDate: string,
+  endDate: string,
+) {
   return useQuery({
     queryKey: schedulingQueryKeys.availability(token, startDate, endDate),
     queryFn: () => schedulingService.getAvailability(token, startDate, endDate),

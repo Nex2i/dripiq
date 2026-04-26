@@ -195,7 +195,10 @@ export class AvailabilityService {
     return slots;
   }
 
-  busyBlocksFromWorkingIntervals(workingIntervals: TimeInterval[], blockers: TimeInterval[]): TimeInterval[] {
+  busyBlocksFromWorkingIntervals(
+    workingIntervals: TimeInterval[],
+    blockers: TimeInterval[]
+  ): TimeInterval[] {
     const busyBlocks = workingIntervals.flatMap((workingInterval) =>
       blockers.flatMap((blocker) => {
         const start = new Date(Math.max(workingInterval.start.getTime(), blocker.start.getTime()));

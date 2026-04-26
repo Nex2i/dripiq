@@ -36,11 +36,7 @@ export default function Register() {
   }
 
   const validateForm = () => {
-    if (
-      !formData.email ||
-      !formData.name ||
-      !formData.tenantName
-    ) {
+    if (!formData.email || !formData.name || !formData.tenantName) {
       return 'Please fill in all fields'
     }
 
@@ -131,12 +127,16 @@ export default function Register() {
             </button>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isSsoRegistration ? 'Complete your SSO setup' : 'Start your free trial'}
+            {isSsoRegistration
+              ? 'Complete your SSO setup'
+              : 'Start your free trial'}
           </h2>
           {isSsoRegistration ? (
             <p className="mt-2 text-center text-sm text-gray-600">
-              Your organization domain <span className="font-semibold">{ssoDomain || 'unknown'}</span>{' '}
-              is not mapped yet. Finish registration to create your organization and domain mapping.
+              Your organization domain{' '}
+              <span className="font-semibold">{ssoDomain || 'unknown'}</span> is
+              not mapped yet. Finish registration to create your organization
+              and domain mapping.
             </p>
           ) : (
             <p className="mt-2 text-center text-sm text-gray-600">
@@ -277,10 +277,14 @@ export default function Register() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" />
-                  {isSsoRegistration ? 'Completing setup...' : 'Creating account...'}
+                  {isSsoRegistration
+                    ? 'Completing setup...'
+                    : 'Creating account...'}
                 </>
+              ) : isSsoRegistration ? (
+                'Complete SSO Setup'
               ) : (
-                isSsoRegistration ? 'Complete SSO Setup' : 'Start Free Trial'
+                'Start Free Trial'
               )}
             </button>
           </form>

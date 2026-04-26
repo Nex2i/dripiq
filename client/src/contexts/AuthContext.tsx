@@ -66,7 +66,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const startSsoLogin = async (options: { email?: string; domain?: string }) => {
+  const startSsoLogin = async (options: {
+    email?: string
+    domain?: string
+  }) => {
     await authService.startSsoLogin(options)
   }
 
@@ -74,7 +77,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(true)
     try {
       const result = await authService.bootstrapSsoSession()
-      if (result.status === 'provisioned' || result.status === 'already_provisioned') {
+      if (
+        result.status === 'provisioned' ||
+        result.status === 'already_provisioned'
+      ) {
         const currentUser = await authService.getCurrentUser()
         setUser(currentUser)
       }

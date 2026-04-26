@@ -121,9 +121,7 @@ class SchedulingService {
     return settings
   }
 
-  async getPublicBookingContext(
-    token: string,
-  ): Promise<PublicBookingContext> {
+  async getPublicBookingContext(token: string): Promise<PublicBookingContext> {
     const response = await fetch(
       `${this.baseUrl}/schedule/public/${encodeURIComponent(token)}`,
       {

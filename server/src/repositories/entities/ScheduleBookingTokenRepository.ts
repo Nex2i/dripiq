@@ -1,9 +1,5 @@
 import { and, eq, gt, isNull, lt } from 'drizzle-orm';
-import {
-  scheduleBookingTokens,
-  ScheduleBookingToken,
-  NewScheduleBookingToken,
-} from '@/db/schema';
+import { scheduleBookingTokens, ScheduleBookingToken, NewScheduleBookingToken } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class ScheduleBookingTokenRepository extends TenantAwareRepository<

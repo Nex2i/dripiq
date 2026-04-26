@@ -54,25 +54,31 @@ export default function ScheduleBookingPage() {
 
   const scheduleItems = useMemo(() => {
     const timezone = availabilityQuery.data?.timezone
-    const availableSlots = (availabilityQuery.data?.availableSlots ?? []).map((slot) => ({
-      type: 'available' as const,
-      value: slot,
-      sortTime: new Date(slot).getTime(),
-      label: formatTime(new Date(slot), timezone),
-    }))
-    const busyBlocks = (availabilityQuery.data?.busyBlocks ?? []).map((block) => {
-      const start = new Date(block.start)
-      const end = new Date(block.end)
+    const availableSlots = (availabilityQuery.data?.availableSlots ?? []).map(
+      (slot) => ({
+        type: 'available' as const,
+        value: slot,
+        sortTime: new Date(slot).getTime(),
+        label: formatTime(new Date(slot), timezone),
+      }),
+    )
+    const busyBlocks = (availabilityQuery.data?.busyBlocks ?? []).map(
+      (block) => {
+        const start = new Date(block.start)
+        const end = new Date(block.end)
 
-      return {
-        type: 'busy' as const,
-        value: `${block.start}-${block.end}`,
-        sortTime: start.getTime(),
-        label: `${formatTime(start, timezone)} - ${formatTime(end, timezone)}`,
-      }
-    })
+        return {
+          type: 'busy' as const,
+          value: `${block.start}-${block.end}`,
+          sortTime: start.getTime(),
+          label: `${formatTime(start, timezone)} - ${formatTime(end, timezone)}`,
+        }
+      },
+    )
 
-    return [...availableSlots, ...busyBlocks].sort((a, b) => a.sortTime - b.sortTime)
+    return [...availableSlots, ...busyBlocks].sort(
+      (a, b) => a.sortTime - b.sortTime,
+    )
   }, [availabilityQuery.data])
 
   const dateOptions = useMemo(
@@ -149,7 +155,9 @@ export default function ScheduleBookingPage() {
       })
       setBookingComplete(true)
     } catch (error: any) {
-      setSubmitError(error?.message || 'Unable to book this slot. Please try another time.')
+      setSubmitError(
+        error?.message || 'Unable to book this slot. Please try another time.',
+      )
       availabilityQuery.refetch()
     }
   }
@@ -202,11 +210,11 @@ export default function ScheduleBookingPage() {
             ))}
           </div>
 
-          <h2 className="mt-8 text-lg font-semibold text-gray-900">
-            Times
-          </h2>
+          <h2 className="mt-8 text-lg font-semibold text-gray-900">Times</h2>
           {availabilityQuery.isLoading ? (
-            <p className="mt-4 text-sm text-gray-600">Checking availability...</p>
+            <p className="mt-4 text-sm text-gray-600">
+              Checking availability...
+            </p>
           ) : availabilityQuery.error ? (
             <p className="mt-4 text-sm text-red-600">
               Unable to load availability. Please try again.

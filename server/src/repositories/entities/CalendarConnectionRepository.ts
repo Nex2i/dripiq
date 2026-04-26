@@ -11,7 +11,10 @@ export class CalendarConnectionRepository extends TenantAwareRepository<
     super(calendarConnections);
   }
 
-  async findActiveForUser(tenantId: string, userId: string): Promise<CalendarConnection | undefined> {
+  async findActiveForUser(
+    tenantId: string,
+    userId: string
+  ): Promise<CalendarConnection | undefined> {
     const [result] = await this.db
       .select()
       .from(this.table)
