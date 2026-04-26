@@ -130,3 +130,12 @@ export const microsoftScopes = [
   'offline_access',
   'openid',
 ];
+
+export const microsoftCalendarScopes = [
+  'email',
+  'User.Read',
+  'Calendars.ReadWrite',
+  'profile',
+  'offline_access',
+  'openid',
+];

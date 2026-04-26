@@ -3,10 +3,19 @@ import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { thirdPartyAuthStateCache } from '@/cache/ThirdPartyAuthStateCache';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
-import { getGoogleOAuth2Client, googleScopes } from '@/libs/thirdPartyAuth/GoogleAuth';
-import { getMicrosoftOAuth2Client, microsoftScopes } from '@/libs/thirdPartyAuth/MicrosoftAuth';
+import {
+  getGoogleOAuth2Client,
+  googleCalendarScopes,
+  googleScopes,
+} from '@/libs/thirdPartyAuth/GoogleAuth';
+import {
+  getMicrosoftOAuth2Client,
+  microsoftCalendarScopes,
+  microsoftScopes,
+} from '@/libs/thirdPartyAuth/MicrosoftAuth';
 import { newGoogleProviderService } from '@/modules/newGoogleProvider.service';
 import { newMicrosoftProviderService } from '@/modules/newMicrosoftProvider.service';
+import { calendarConnectionService } from '@/modules/scheduling/calendar/CalendarConnectionService';
 import {
   googleAuthUrlResponseSchema,
   googleCallbackResponseSchema,
@@ -41,6 +50,7 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           tenantId,
           userId: user.id,
           isNewMailAccount: true,
+          purpose: 'mail',
         });
 
         const authUrl = oauth2Client.generateAuthUrl({
@@ -61,6 +71,52 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         });
       } catch (error) {
         logger.error('Error generating Google OAuth URL:', error);
+        return reply.status(500).send({
+          message: 'Failed to generate authorization URL',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    },
+  });
+
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/google/calendar/authorize`,
+    schema: {
+      response: {
+        200: googleAuthUrlResponseSchema,
+        500: errorResponseSchema,
+      },
+      tags: ['Third Party Authentication'],
+      summary: 'Initiate Google Calendar OAuth Flow',
+      description: 'Generate Google OAuth authorization URL for scheduling calendar access',
+    },
+    preHandler: [fastify.authPrehandler],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { tenantId, user } = request as AuthenticatedRequest;
+
+        const oauth2Client = getGoogleOAuth2Client();
+        const state = await thirdPartyAuthStateCache.createAndSet({
+          tenantId,
+          userId: user.id,
+          isNewMailAccount: false,
+          purpose: 'calendar',
+        });
+
+        const authUrl = oauth2Client.generateAuthUrl({
+          access_type: 'offline',
+          scope: googleCalendarScopes,
+          state,
+          prompt: 'consent',
+        });
+
+        return reply.status(200).send({
+          authUrl,
+          state,
+        });
+      } catch (error) {
+        logger.error('Error generating Google Calendar OAuth URL:', error);
         return reply.status(500).send({
           message: 'Failed to generate authorization URL',
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -99,17 +155,31 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           throw new Error('Invalid state');
         }
 
-        const { tenantId, userId, isNewMailAccount } = stateData;
+        const { tenantId, userId, isNewMailAccount, purpose } = stateData;
 
-        if (isNewMailAccount) {
-          await newGoogleProviderService.setupNewAccount(tenantId, userId, code);
+        if (purpose === 'calendar') {
+          await calendarConnectionService.setupGoogleConnection(tenantId, userId, code);
+        } else if (isNewMailAccount) {
+          const mailAccount = await newGoogleProviderService.setupNewAccount(tenantId, userId, code);
+          await calendarConnectionService.connectMailAccountCalendar({
+            tenantId,
+            userId,
+            mailAccountId: mailAccount.id,
+            provider: 'google',
+            primaryEmail: mailAccount.primaryEmail,
+            displayName: mailAccount.displayName,
+            scopes: mailAccount.scopes,
+          });
         }
 
         await thirdPartyAuthStateCache.clear(state);
 
         // redirect to the frontend
         return reply.redirect(
-          process.env.FRONTEND_ORIGIN + '/profile?google-auth-success=true',
+          process.env.FRONTEND_ORIGIN +
+            (purpose === 'calendar'
+              ? '/profile?google-calendar-auth-success=true'
+              : '/profile?google-auth-success=true'),
           301
         );
       } catch (error) {
@@ -146,6 +216,7 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           tenantId,
           userId: user.id,
           isNewMailAccount: true,
+          purpose: 'mail',
         });
 
         const authUrl = oauth2Client.generateAuthUrl(microsoftScopes, stateId);
@@ -161,6 +232,47 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         });
       } catch (error) {
         logger.error('Error generating Microsoft OAuth URL:', error);
+        return reply.status(500).send({
+          message: 'Failed to generate authorization URL',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    },
+  });
+
+  fastify.route({
+    method: HttpMethods.GET,
+    url: `${basePath}/microsoft/calendar/authorize`,
+    schema: {
+      response: {
+        200: microsoftAuthUrlResponseSchema,
+        500: errorResponseSchema,
+      },
+      tags: ['Third Party Authentication'],
+      summary: 'Initiate Microsoft Calendar OAuth Flow',
+      description: 'Generate Microsoft OAuth authorization URL for scheduling calendar access',
+    },
+    preHandler: [fastify.authPrehandler],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { tenantId, user } = request as AuthenticatedRequest;
+
+        const oauth2Client = getMicrosoftOAuth2Client();
+        const stateId = await thirdPartyAuthStateCache.createAndSet({
+          tenantId,
+          userId: user.id,
+          isNewMailAccount: false,
+          purpose: 'calendar',
+        });
+
+        const authUrl = oauth2Client.generateAuthUrl(microsoftCalendarScopes, stateId);
+
+        return reply.status(200).send({
+          authUrl,
+          state: stateId,
+        });
+      } catch (error) {
+        logger.error('Error generating Microsoft Calendar OAuth URL:', error);
         return reply.status(500).send({
           message: 'Failed to generate authorization URL',
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -200,17 +312,35 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
           throw new Error('Invalid state');
         }
 
-        const { tenantId, userId, isNewMailAccount } = stateData;
+        const { tenantId, userId, isNewMailAccount, purpose } = stateData;
 
-        if (isNewMailAccount) {
-          await newMicrosoftProviderService.setupNewAccount(tenantId, userId, code);
+        if (purpose === 'calendar') {
+          await calendarConnectionService.setupMicrosoftConnection(tenantId, userId, code);
+        } else if (isNewMailAccount) {
+          const mailAccount = await newMicrosoftProviderService.setupNewAccount(
+            tenantId,
+            userId,
+            code
+          );
+          await calendarConnectionService.connectMailAccountCalendar({
+            tenantId,
+            userId,
+            mailAccountId: mailAccount.id,
+            provider: 'microsoft',
+            primaryEmail: mailAccount.primaryEmail,
+            displayName: mailAccount.displayName,
+            scopes: mailAccount.scopes,
+          });
         }
 
         await thirdPartyAuthStateCache.clear(stateId);
 
         // redirect to the frontend
         return reply.redirect(
-          process.env.FRONTEND_ORIGIN + '/profile?microsoft-auth-success=true',
+          process.env.FRONTEND_ORIGIN +
+            (purpose === 'calendar'
+              ? '/profile?microsoft-calendar-auth-success=true'
+              : '/profile?microsoft-auth-success=true'),
           301
         );
       } catch (error) {

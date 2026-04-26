@@ -3,11 +3,18 @@ import { createId } from '@paralleldrive/cuid2';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { UserService } from '@/modules/user.service';
-import { userTenantRepository, mailAccountRepository } from '@/repositories';
+import {
+  userTenantRepository,
+  mailAccountRepository,
+  leadRepository,
+  leadPointOfContactRepository,
+  calendarConnectionRepository,
+} from '@/repositories';
 import { unsubscribeService } from '@/modules/unsubscribe';
 import { DEFAULT_CALENDAR_TIE_IN } from '@/constants';
 import { EmailProcessor, type CampaignEmailData } from '@/modules/email';
 import { SenderIdentityResolverService } from '@/modules/email/senderIdentityResolver.service';
+import { bookingTokenService } from '@/modules/scheduling/BookingTokenService';
 import type { IUser } from '@/plugins/authentication.plugin';
 import {
   UpdateProfileRequestSchema,
@@ -15,6 +22,8 @@ import {
   TestEmailRequestSchema,
   TestEmailResponseSchema,
   GetEmailProvidersResponseSchema,
+  EmailProviderParamsSchema,
+  DisconnectProviderResponseSchema,
   SwitchPrimaryProviderRequestSchema,
   SwitchPrimaryProviderResponseSchema,
 } from './apiSchema/users';
@@ -264,6 +273,57 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
     },
   });
 
+  fastify.delete<{ Params: { providerId: string } }>(
+    `${basePath}/me/email-providers/:providerId`,
+    {
+      preHandler: [fastify.authPrehandler],
+      schema: {
+        params: EmailProviderParamsSchema,
+        response: {
+          200: DisconnectProviderResponseSchema,
+        },
+        tags: ['Users'],
+        summary: 'Disconnect email provider',
+        description: 'Disconnect a connected email provider for the authenticated user.',
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { providerId } = request.params;
+        const userId = ((request as any).user as IUser).id as string;
+
+        const existingAccount = await mailAccountRepository.findById(providerId);
+        if (!existingAccount || existingAccount.userId !== userId) {
+          return reply.status(404).send({ message: 'Mail account not found' });
+        }
+
+        await calendarConnectionRepository.disconnectByMailAccountId(providerId);
+        const disconnectedAccount = await mailAccountRepository.disconnectProvider(
+          userId,
+          providerId
+        );
+
+        reply.send({
+          message: 'Email provider disconnected successfully',
+          provider: {
+            id: disconnectedAccount.id,
+            provider: disconnectedAccount.provider,
+            primaryEmail: disconnectedAccount.primaryEmail,
+            displayName: disconnectedAccount.displayName || '',
+            isPrimary: false,
+            isConnected: false,
+            connectedAt: disconnectedAccount.connectedAt.toISOString(),
+          },
+        });
+      } catch (error: any) {
+        logger.error(`Error disconnecting email provider: ${error.message}`);
+        reply
+          .status(error.statusCode || 500)
+          .send({ message: error.message || 'Failed to disconnect email provider' });
+      }
+    }
+  );
+
   // Send test email
   fastify.route({
     method: HttpMethods.POST,
@@ -362,16 +422,47 @@ export default async function UserRoutes(fastify: FastifyInstance, _opts: RouteO
         const testNodeId = 'test-email-node';
         const testLeadId = createId();
 
-        // Fetch calendar information if available (same as campaigns)
         let calendarInfo: CampaignEmailData['calendarInfo'];
         try {
-          if (user.calendarLink && user.calendarTieIn) {
-            calendarInfo = {
-              calendarLink: user.calendarLink,
-              calendarTieIn: user.calendarTieIn,
-              leadId: testLeadId,
-            };
-          }
+          const testLead = await leadRepository.createForTenant(tenantId, {
+            id: testLeadId,
+            name: `Test Email - ${recipientEmail}`,
+            url: 'https://dripiq.ai/test-email',
+            status: 'test',
+            ownerId: userId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          const testContact = await leadPointOfContactRepository.createForLeadAndTenant(
+            testLead.id,
+            tenantId,
+            {
+              id: testContactId,
+              name: 'Test Contact',
+              email: recipientEmail,
+              sourceUrl: 'https://dripiq.ai/test-email',
+              company: 'Test Email',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+          );
+          const { rawToken } = await bookingTokenService.issue({
+            tenantId,
+            leadId: testLead.id,
+            contactId: testContact.id,
+            userId,
+            nodeId: testNodeId,
+            metadata: {
+              source: 'profile_test_email',
+              recipientEmail,
+            },
+          });
+
+          calendarInfo = {
+            calendarLink: bookingTokenService.buildBookingUrl(rawToken),
+            calendarTieIn: user.calendarTieIn?.trim() || DEFAULT_CALENDAR_TIE_IN,
+            leadId: testLead.id,
+          };
         } catch (calendarError) {
           logger.error('Failed to fetch calendar information for test email', {
             userId,

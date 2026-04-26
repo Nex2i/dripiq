@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { oauthTokens, OauthToken, NewOauthToken } from '@/db/schema';
 import { NotFoundError } from '@/exceptions/error';
 import { encrypt, decrypt } from '@/utils/crypto';
@@ -51,6 +51,7 @@ export class OauthTokenRepository extends BaseRepository<
       .select()
       .from(this.table)
       .where(and(eq(this.table.mailAccountId, mailAccountId)))
+      .orderBy(desc(this.table.addedAt))
       .limit(1);
 
     if (!result || !result[0]) {
@@ -59,5 +60,13 @@ export class OauthTokenRepository extends BaseRepository<
 
     const { refreshTokenEnc } = result[0];
     return decrypt(refreshTokenEnc);
+  }
+
+  async revokeByMailAccountId(mailAccountId: string): Promise<OauthToken[]> {
+    return await this.db
+      .update(this.table)
+      .set({ status: 'revoked', updatedAt: new Date() })
+      .where(eq(this.table.mailAccountId, mailAccountId))
+      .returning();
   }
 }

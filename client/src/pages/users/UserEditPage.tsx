@@ -7,6 +7,7 @@ import { UrlValidator } from '../../utils/urlValidation'
 import { DEFAULT_CALENDAR_TIE_IN } from '../../constants/user.constants'
 import TestEmailComponent from '../../components/TestEmailComponent'
 import EmailProvider from '../../components/EmailProvider'
+import SchedulingSettingsCard from '../../components/SchedulingSettingsCard'
 
 export default function UserEditPage() {
   const params = useParams({ strict: false }) as { userId?: string }
@@ -243,6 +244,8 @@ export default function UserEditPage() {
 
         {/* Email Provider Card */}
         <EmailProvider onError={(error) => setError(error)} />
+
+        {!isAdminMode && <SchedulingSettingsCard />}
 
         {/* Test Email Card - only show for non-admin mode */}
         {!isAdminMode && (

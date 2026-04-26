@@ -64,6 +64,42 @@ export default function EmailProvider({
     },
   })
 
+  const disconnectProviderMutation = useMutation({
+    mutationFn: (providerId: string) =>
+      getUsersService().disconnectEmailProvider(providerId),
+    onSuccess: (_data, providerId) => {
+      const currentData = queryClient.getQueryData(
+        userQueryKeys.emailProviders(),
+      ) as { providers: EmailProvider[] } | undefined
+
+      if (currentData?.providers) {
+        queryClient.setQueryData(userQueryKeys.emailProviders(), {
+          providers: currentData.providers.map((provider) =>
+            provider.id === providerId
+              ? { ...provider, isConnected: false, isPrimary: false }
+              : provider,
+          ),
+        })
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: userQueryKeys.emailProviders(),
+      })
+    },
+    onError: (error) => {
+      if (onError) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to unlink email provider'
+        onError(errorMessage)
+      }
+      queryClient.invalidateQueries({
+        queryKey: userQueryKeys.emailProviders(),
+      })
+    },
+  })
+
   const getProviderStatus = (providerName: string): EmailProvider | null => {
     return (
       providersData?.providers.find((p) => p.provider === providerName) || null
@@ -76,6 +112,17 @@ export default function EmailProvider({
       return
     }
     switchPrimaryMutation.mutate(providerId)
+  }
+
+  const handleDisconnect = (providerId: string) => {
+    if (disconnectProviderMutation.isPending) return
+
+    const confirmed = window.confirm(
+      'Unlink this email provider? DripIQ will stop using it for sending email and scheduling until you reconnect.',
+    )
+    if (!confirmed) return
+
+    disconnectProviderMutation.mutate(providerId)
   }
 
   if (isLoading) {
@@ -139,8 +186,10 @@ export default function EmailProvider({
           icon={<GoogleIcon />}
           connectedProvider={googleProvider}
           onPrimaryChange={handlePrimaryChange}
+          onDisconnect={handleDisconnect}
           allProviders={providersData?.providers || []}
           isChangingPrimary={switchPrimaryMutation.isPending}
+          isDisconnecting={disconnectProviderMutation.isPending}
         >
           <GoogleProviderButton
             isConnected={googleProvider?.isConnected || false}
@@ -153,8 +202,10 @@ export default function EmailProvider({
           icon={<MicrosoftIcon />}
           connectedProvider={microsoftProvider}
           onPrimaryChange={handlePrimaryChange}
+          onDisconnect={handleDisconnect}
           allProviders={providersData?.providers || []}
           isChangingPrimary={switchPrimaryMutation.isPending}
+          isDisconnecting={disconnectProviderMutation.isPending}
         >
           <MicrosoftProviderButton
             isConnected={microsoftProvider?.isConnected || false}

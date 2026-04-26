@@ -881,6 +881,160 @@ export const calendarLinkClicks = appSchema.table(
   ]
 );
 
+export const userScheduleSettings = appSchema.table(
+  'user_schedule_settings',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    timezone: text('timezone').notNull().default('America/Chicago'),
+    workingHours: jsonb('working_hours')
+      .notNull()
+      .default(
+        sql`'{"monday":[{"start":"09:00","end":"17:00"}],"tuesday":[{"start":"09:00","end":"17:00"}],"wednesday":[{"start":"09:00","end":"17:00"}],"thursday":[{"start":"09:00","end":"17:00"}],"friday":[{"start":"09:00","end":"17:00"}],"saturday":[],"sunday":[]}'::jsonb`
+      ),
+    meetingDurationMinutes: integer('meeting_duration_minutes').notNull().default(30),
+    bufferBeforeMinutes: integer('buffer_before_minutes').notNull().default(0),
+    bufferAfterMinutes: integer('buffer_after_minutes').notNull().default(0),
+    minNoticeMinutes: integer('min_notice_minutes').notNull().default(120),
+    bookingHorizonDays: integer('booking_horizon_days').notNull().default(14),
+    respectFreeBusy: boolean('respect_free_busy').notNull().default(true),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('user_schedule_settings_tenant_user_uq').on(table.tenantId, table.userId),
+    index('user_schedule_settings_tenant_idx').on(table.tenantId),
+    index('user_schedule_settings_user_idx').on(table.userId),
+  ]
+);
+
+export const scheduleBookingTokens = appSchema.table(
+  'schedule_booking_tokens',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    contactId: text('contact_id')
+      .notNull()
+      .references(() => leadPointOfContacts.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'set null' }),
+    nodeId: text('node_id'),
+    outboundMessageId: text('outbound_message_id').references(() => outboundMessages.id, {
+      onDelete: 'set null',
+    }),
+    expiresAt: timestamp('expires_at').notNull(),
+    usedAt: timestamp('used_at'),
+    revokedAt: timestamp('revoked_at'),
+    metadata: jsonb('metadata').notNull().default({}),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    unique('schedule_booking_tokens_hash_uq').on(table.tokenHash),
+    index('schedule_booking_tokens_tenant_user_idx').on(table.tenantId, table.userId),
+    index('schedule_booking_tokens_contact_idx').on(table.tenantId, table.contactId),
+    index('schedule_booking_tokens_expires_at_idx').on(table.expiresAt),
+  ]
+);
+
+export const calendarConnections = appSchema.table(
+  'calendar_connections',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    mailAccountId: text('mail_account_id').references(() => mailAccounts.id, {
+      onDelete: 'set null',
+    }),
+    provider: text('provider').notNull(),
+    providerCalendarId: text('provider_calendar_id').notNull().default('primary'),
+    displayName: text('display_name'),
+    primaryEmail: text('primary_email'),
+    scopes: text('scopes').array().notNull().default([]),
+    isActive: boolean('is_active').notNull().default(true),
+    reauthRequired: boolean('reauth_required').notNull().default(false),
+    connectedAt: timestamp('connected_at').notNull().defaultNow(),
+    disconnectedAt: timestamp('disconnected_at'),
+    metadata: jsonb('metadata').notNull().default({}),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('calendar_connections_tenant_user_idx').on(table.tenantId, table.userId),
+    uniqueIndex('calendar_connections_active_user_uq')
+      .on(table.tenantId, table.userId)
+      .where(sql`${table.isActive} = true`),
+  ]
+);
+
+export const scheduledMeetings = appSchema.table(
+  'scheduled_meetings',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    leadId: text('lead_id').references(() => leads.id, { onDelete: 'set null' }),
+    contactId: text('contact_id').references(() => leadPointOfContacts.id, {
+      onDelete: 'set null',
+    }),
+    bookingTokenId: text('booking_token_id').references(() => scheduleBookingTokens.id, {
+      onDelete: 'set null',
+    }),
+    campaignId: text('campaign_id').references(() => contactCampaigns.id, { onDelete: 'set null' }),
+    calendarConnectionId: text('calendar_connection_id').references(() => calendarConnections.id, {
+      onDelete: 'set null',
+    }),
+    startTime: timestamp('start_time').notNull(),
+    endTime: timestamp('end_time').notNull(),
+    calendarEventId: text('calendar_event_id'),
+    provider: text('provider').notNull(),
+    status: text('status').notNull().default('confirmed'),
+    contactDetails: jsonb('contact_details').notNull().default({}),
+    metadata: jsonb('metadata').notNull().default({}),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('scheduled_meetings_tenant_user_start_idx').on(
+      table.tenantId,
+      table.userId,
+      table.startTime
+    ),
+    index('scheduled_meetings_contact_idx').on(table.tenantId, table.contactId),
+    index('scheduled_meetings_status_idx').on(table.tenantId, table.status),
+    unique('scheduled_meetings_provider_event_uq').on(table.provider, table.calendarEventId),
+  ]
+);
+
 // ---- Email Provider Connection Enums
 export const providerEnum = appSchema.enum('provider', ['google', 'microsoft']);
 export const tokenStatusEnum = appSchema.enum('token_status', ['active', 'revoked']);
@@ -1156,6 +1310,92 @@ export const calendarLinkClicksRelations = relations(calendarLinkClicks, ({ one 
   }),
 }));
 
+export const userScheduleSettingsRelations = relations(userScheduleSettings, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [userScheduleSettings.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [userScheduleSettings.userId],
+    references: [users.id],
+  }),
+}));
+
+export const scheduleBookingTokensRelations = relations(scheduleBookingTokens, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [scheduleBookingTokens.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [scheduleBookingTokens.userId],
+    references: [users.id],
+  }),
+  lead: one(leads, {
+    fields: [scheduleBookingTokens.leadId],
+    references: [leads.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [scheduleBookingTokens.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [scheduleBookingTokens.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  outboundMessage: one(outboundMessages, {
+    fields: [scheduleBookingTokens.outboundMessageId],
+    references: [outboundMessages.id],
+  }),
+  scheduledMeetings: many(scheduledMeetings),
+}));
+
+export const calendarConnectionsRelations = relations(calendarConnections, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [calendarConnections.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [calendarConnections.userId],
+    references: [users.id],
+  }),
+  mailAccount: one(mailAccounts, {
+    fields: [calendarConnections.mailAccountId],
+    references: [mailAccounts.id],
+  }),
+  scheduledMeetings: many(scheduledMeetings),
+}));
+
+export const scheduledMeetingsRelations = relations(scheduledMeetings, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [scheduledMeetings.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [scheduledMeetings.userId],
+    references: [users.id],
+  }),
+  lead: one(leads, {
+    fields: [scheduledMeetings.leadId],
+    references: [leads.id],
+  }),
+  contact: one(leadPointOfContacts, {
+    fields: [scheduledMeetings.contactId],
+    references: [leadPointOfContacts.id],
+  }),
+  bookingToken: one(scheduleBookingTokens, {
+    fields: [scheduledMeetings.bookingTokenId],
+    references: [scheduleBookingTokens.id],
+  }),
+  campaign: one(contactCampaigns, {
+    fields: [scheduledMeetings.campaignId],
+    references: [contactCampaigns.id],
+  }),
+  calendarConnection: one(calendarConnections, {
+    fields: [scheduledMeetings.calendarConnectionId],
+    references: [calendarConnections.id],
+  }),
+}));
+
 // Email Provider Connection Relations
 export const mailAccountsRelations = relations(mailAccounts, ({ one, many }) => ({
   user: one(users, {
@@ -1235,6 +1475,14 @@ export type DomainValidation = typeof domainValidation.$inferSelect;
 export type NewDomainValidation = typeof domainValidation.$inferInsert;
 export type CalendarLinkClick = typeof calendarLinkClicks.$inferSelect;
 export type NewCalendarLinkClick = typeof calendarLinkClicks.$inferInsert;
+export type UserScheduleSetting = typeof userScheduleSettings.$inferSelect;
+export type NewUserScheduleSetting = typeof userScheduleSettings.$inferInsert;
+export type ScheduleBookingToken = typeof scheduleBookingTokens.$inferSelect;
+export type NewScheduleBookingToken = typeof scheduleBookingTokens.$inferInsert;
+export type CalendarConnection = typeof calendarConnections.$inferSelect;
+export type NewCalendarConnection = typeof calendarConnections.$inferInsert;
+export type ScheduledMeeting = typeof scheduledMeetings.$inferSelect;
+export type NewScheduledMeeting = typeof scheduledMeetings.$inferInsert;
 export type MailAccount = typeof mailAccounts.$inferSelect;
 export type NewMailAccount = typeof mailAccounts.$inferInsert;
 export type OauthToken = typeof oauthTokens.$inferSelect;

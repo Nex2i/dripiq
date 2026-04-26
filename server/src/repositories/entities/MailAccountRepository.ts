@@ -68,6 +68,51 @@ export class MailAccountRepository extends TenantAwareRepository<
     return results;
   }
 
+  async findByProviderIdentity(
+    provider: MailAccount['provider'],
+    providerUserId: string
+  ): Promise<MailAccount | undefined> {
+    const [result] = await this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.provider, provider), eq(this.table.providerUserId, providerUserId)))
+      .limit(1);
+
+    return result;
+  }
+
+  async reconnectProvider(
+    userId: string,
+    providerId: string,
+    data: Pick<NewMailAccount, 'primaryEmail' | 'displayName' | 'scopes'>
+  ): Promise<MailAccount> {
+    const existingAccounts = await this.findAccountsByUserId(userId);
+    const hasPrimaryAccount = existingAccounts.some(
+      (account) => account.id !== providerId && account.isPrimary
+    );
+
+    const [updatedAccount] = await this.db
+      .update(this.table)
+      .set({
+        ...data,
+        isPrimary: !hasPrimaryAccount,
+        disconnectedAt: null,
+        reauthRequired: false,
+        connectedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(this.table.userId, userId), eq(this.table.id, providerId)))
+      .returning();
+
+    if (!updatedAccount) {
+      throw new NotFoundError(
+        `Mail account not found with id: ${providerId} for user: ${userId}`
+      );
+    }
+
+    return updatedAccount as MailAccount;
+  }
+
   /**
    * Switch primary provider for a user
    * Sets the specified provider as primary and all others as non-primary
@@ -107,5 +152,43 @@ export class MailAccountRepository extends TenantAwareRepository<
       });
       throw error;
     }
+  }
+
+  async disconnectProvider(userId: string, providerId: string): Promise<MailAccount> {
+    return await this.db.transaction(async (tx) => {
+      const [account] = await tx
+        .select()
+        .from(this.table)
+        .where(and(eq(this.table.userId, userId), eq(this.table.id, providerId)))
+        .limit(1);
+
+      if (!account) {
+        throw new NotFoundError(
+          `Mail account not found with id: ${providerId} for user: ${userId}`
+        );
+      }
+
+      const [deletedAccount] = await tx
+        .delete(this.table)
+        .where(and(eq(this.table.userId, userId), eq(this.table.id, providerId)))
+        .returning();
+
+      if (account.isPrimary) {
+        const [nextPrimary] = await tx
+          .select()
+          .from(this.table)
+          .where(and(eq(this.table.userId, userId), eq(this.table.reauthRequired, false)))
+          .limit(1);
+
+        if (nextPrimary) {
+          await tx
+            .update(this.table)
+            .set({ isPrimary: true, updatedAt: new Date() })
+            .where(eq(this.table.id, nextPrimary.id));
+        }
+      }
+
+      return deletedAccount as MailAccount;
+    });
   }
 }

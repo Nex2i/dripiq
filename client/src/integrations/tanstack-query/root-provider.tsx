@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createLeadsService } from '../../services/leads.service'
 import { createUsersService } from '../../services/users.service'
+import { createSchedulingService } from '../../services/scheduling.service'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ const queryClient = new QueryClient({
 // Initialize the leads and users services with the query client
 createLeadsService(queryClient)
 createUsersService(queryClient)
+createSchedulingService(queryClient)
 
 export function getContext() {
   return {
