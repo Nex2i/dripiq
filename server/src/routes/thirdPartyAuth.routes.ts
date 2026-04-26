@@ -160,7 +160,11 @@ export default async function ThirdPartyAuth(fastify: FastifyInstance, _opts: Ro
         if (purpose === 'calendar') {
           await calendarConnectionService.setupGoogleConnection(tenantId, userId, code);
         } else if (isNewMailAccount) {
-          const mailAccount = await newGoogleProviderService.setupNewAccount(tenantId, userId, code);
+          const mailAccount = await newGoogleProviderService.setupNewAccount(
+            tenantId,
+            userId,
+            code
+          );
           await calendarConnectionService.connectMailAccountCalendar({
             tenantId,
             userId,

@@ -39,7 +39,9 @@ export interface BookingTokenContext {
 const DEFAULT_TOKEN_TTL_DAYS = 90;
 
 export class BookingTokenService {
-  async issue(input: IssueBookingTokenInput): Promise<{ rawToken: string; record: ScheduleBookingToken }> {
+  async issue(
+    input: IssueBookingTokenInput
+  ): Promise<{ rawToken: string; record: ScheduleBookingToken }> {
     const lead = await leadRepository.findByIdForTenant(input.leadId, input.tenantId);
     if (!lead) {
       throw new NotFoundError('Lead not found');
@@ -80,7 +82,9 @@ export class BookingTokenService {
   }
 
   async resolve(rawToken: string): Promise<BookingTokenContext> {
-    const token = await scheduleBookingTokenRepository.findActiveByTokenHash(this.hashToken(rawToken));
+    const token = await scheduleBookingTokenRepository.findActiveByTokenHash(
+      this.hashToken(rawToken)
+    );
     if (!token) {
       throw new NotFoundError('Booking link not found or expired');
     }

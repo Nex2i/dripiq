@@ -131,9 +131,7 @@ export class EmailProcessor {
                 contactId,
                 nodeId,
                 error:
-                  bookingTokenError instanceof Error
-                    ? bookingTokenError.message
-                    : 'Unknown error',
+                  bookingTokenError instanceof Error ? bookingTokenError.message : 'Unknown error',
               });
             }
           }

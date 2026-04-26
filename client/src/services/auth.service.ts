@@ -218,7 +218,9 @@ class AuthService {
     return result
   }
 
-  async bootstrapSsoSession(session?: Session | null): Promise<SsoBootstrapResult> {
+  async bootstrapSsoSession(
+    session?: Session | null,
+  ): Promise<SsoBootstrapResult> {
     if (!session) {
       session = await this.getCurrentSession()
     }

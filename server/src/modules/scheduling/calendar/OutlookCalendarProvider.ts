@@ -32,7 +32,9 @@ export class OutlookCalendarProvider implements CalendarProvider {
   }): Promise<CalendarEventInterval[]> {
     const accessToken = await this.getAccessToken();
     const calendarPath =
-      input.calendarId === 'primary' ? 'me/calendarView' : `me/calendars/${input.calendarId}/calendarView`;
+      input.calendarId === 'primary'
+        ? 'me/calendarView'
+        : `me/calendars/${input.calendarId}/calendarView`;
     const response = await axios.get<{ value: OutlookEvent[] }>(
       `https://graph.microsoft.com/v1.0/${calendarPath}`,
       {
@@ -40,7 +42,7 @@ export class OutlookCalendarProvider implements CalendarProvider {
         params: {
           startDateTime: input.timeMin.toISOString(),
           endDateTime: input.timeMax.toISOString(),
-          '$orderby': 'start/dateTime',
+          $orderby: 'start/dateTime',
         },
       }
     );
@@ -91,7 +93,9 @@ export class OutlookCalendarProvider implements CalendarProvider {
   }
 
   private async getAccessToken(): Promise<string> {
-    const refreshToken = await oauthTokenRepository.getRefreshTokenByMailAccountId(this.mailAccountId);
+    const refreshToken = await oauthTokenRepository.getRefreshTokenByMailAccountId(
+      this.mailAccountId
+    );
     const tokenResponse = await getMicrosoftOAuth2Client().refreshToken(refreshToken);
     return tokenResponse.access_token;
   }

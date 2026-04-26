@@ -130,7 +130,9 @@ export default function ScheduleBookingPage() {
       })
       setBookingComplete(true)
     } catch (error: any) {
-      setSubmitError(error?.message || 'Unable to book this slot. Please try another time.')
+      setSubmitError(
+        error?.message || 'Unable to book this slot. Please try another time.',
+      )
       availabilityQuery.refetch()
     }
   }
@@ -187,7 +189,9 @@ export default function ScheduleBookingPage() {
             Available times
           </h2>
           {availabilityQuery.isLoading ? (
-            <p className="mt-4 text-sm text-gray-600">Checking availability...</p>
+            <p className="mt-4 text-sm text-gray-600">
+              Checking availability...
+            </p>
           ) : availabilityQuery.error ? (
             <p className="mt-4 text-sm text-red-600">
               Unable to load availability. Please try again.

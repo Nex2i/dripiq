@@ -1,10 +1,4 @@
 import { createId } from '@paralleldrive/cuid2';
-import { calendarConnectionService } from './calendar/CalendarConnectionService';
-import { calendarProviderFactory } from './calendar/CalendarProviderFactory';
-import { availabilityService } from './AvailabilityService';
-import { bookingTokenService } from './BookingTokenService';
-import { lockService } from './LockService';
-import { schedulingSettingsService } from './SchedulingSettingsService';
 import {
   contactCampaignRepository,
   scheduleBookingTokenRepository,
@@ -15,6 +9,12 @@ import { ConflictError, ServiceUnavailableError } from '@/exceptions/error';
 import { ScheduledMeeting } from '@/db/schema';
 import { logger } from '@/libs/logger';
 import { emailOrchestrator } from '@/libs/email/email.orchestrator';
+import { calendarConnectionService } from './calendar/CalendarConnectionService';
+import { calendarProviderFactory } from './calendar/CalendarProviderFactory';
+import { availabilityService } from './AvailabilityService';
+import { bookingTokenService } from './BookingTokenService';
+import { lockService } from './LockService';
+import { schedulingSettingsService } from './SchedulingSettingsService';
 
 export interface ConfirmBookingInput {
   token: string;

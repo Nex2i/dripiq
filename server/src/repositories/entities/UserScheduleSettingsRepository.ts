@@ -1,9 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import {
-  userScheduleSettings,
-  UserScheduleSetting,
-  NewUserScheduleSetting,
-} from '@/db/schema';
+import { userScheduleSettings, UserScheduleSetting, NewUserScheduleSetting } from '@/db/schema';
 import { TenantAwareRepository } from '../base/TenantAwareRepository';
 
 export class UserScheduleSettingsRepository extends TenantAwareRepository<
