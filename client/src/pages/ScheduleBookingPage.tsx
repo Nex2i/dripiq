@@ -21,6 +21,14 @@ function addDays(date: Date, days: number) {
   return next
 }
 
+function formatTime(date: Date, timezone?: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
+}
+
 export default function ScheduleBookingPage() {
   const { token } = useParams({ strict: false }) as { token: string }
   const [selectedDate, setSelectedDate] = useState(toDateString(new Date()))
@@ -44,16 +52,33 @@ export default function ScheduleBookingPage() {
     setContactPhone((current) => current || context.contact.phone || '')
   }, [contextQuery.data])
 
-  const slots = useMemo(() => {
+  const scheduleItems = useMemo(() => {
     const timezone = availabilityQuery.data?.timezone
-    return (availabilityQuery.data?.availableSlots ?? []).map((slot) => ({
-      value: slot,
-      label: new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        hour: 'numeric',
-        minute: '2-digit',
-      }).format(new Date(slot)),
-    }))
+    const availableSlots = (availabilityQuery.data?.availableSlots ?? []).map(
+      (slot) => ({
+        type: 'available' as const,
+        value: slot,
+        sortTime: new Date(slot).getTime(),
+        label: formatTime(new Date(slot), timezone),
+      }),
+    )
+    const busyBlocks = (availabilityQuery.data?.busyBlocks ?? []).map(
+      (block) => {
+        const start = new Date(block.start)
+        const end = new Date(block.end)
+
+        return {
+          type: 'busy' as const,
+          value: `${block.start}-${block.end}`,
+          sortTime: start.getTime(),
+          label: `${formatTime(start, timezone)} - ${formatTime(end, timezone)}`,
+        }
+      },
+    )
+
+    return [...availableSlots, ...busyBlocks].sort(
+      (a, b) => a.sortTime - b.sortTime,
+    )
   }, [availabilityQuery.data])
 
   const dateOptions = useMemo(
@@ -185,9 +210,7 @@ export default function ScheduleBookingPage() {
             ))}
           </div>
 
-          <h2 className="mt-8 text-lg font-semibold text-gray-900">
-            Available times
-          </h2>
+          <h2 className="mt-8 text-lg font-semibold text-gray-900">Times</h2>
           {availabilityQuery.isLoading ? (
             <p className="mt-4 text-sm text-gray-600">
               Checking availability...
@@ -196,25 +219,37 @@ export default function ScheduleBookingPage() {
             <p className="mt-4 text-sm text-red-600">
               Unable to load availability. Please try again.
             </p>
-          ) : slots.length === 0 ? (
+          ) : scheduleItems.length === 0 ? (
             <p className="mt-4 text-sm text-gray-600">
               No slots are available for this date.
             </p>
           ) : (
             <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
-              {slots.map((slot) => (
-                <button
-                  key={slot.value}
-                  onClick={() => setSelectedSlot(slot.value)}
-                  className={`rounded-lg border px-4 py-3 text-sm font-medium ${
-                    selectedSlot === slot.value
-                      ? 'border-[var(--color-primary-600)] bg-[var(--color-primary-600)] text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {slot.label}
-                </button>
-              ))}
+              {scheduleItems.map((item) =>
+                item.type === 'busy' ? (
+                  <div
+                    key={item.value}
+                    className="rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-sm font-medium text-gray-500"
+                  >
+                    <span className="block">{item.label}</span>
+                    <span className="mt-1 block text-xs uppercase tracking-wide text-gray-400">
+                      Busy
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    key={item.value}
+                    onClick={() => setSelectedSlot(item.value)}
+                    className={`rounded-lg border px-4 py-3 text-sm font-medium ${
+                      selectedSlot === item.value
+                        ? 'border-[var(--color-primary-600)] bg-[var(--color-primary-600)] text-white'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ),
+              )}
             </div>
           )}
 

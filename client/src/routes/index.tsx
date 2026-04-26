@@ -2,7 +2,6 @@ import { createRoute } from '@tanstack/react-router'
 
 import AddressForm from '../pages/demo/demo.form.address'
 import SimpleForm from '../pages/demo/demo.form.simple'
-import DemoStore from '../pages/demo/demo.store'
 import TableDemo from '../pages/demo/demo.table'
 import TanStackQueryDemo from '../pages/demo/demo.tanstack-query'
 
@@ -21,12 +20,6 @@ export const createDemoRoutes = (parentRoute: RootRoute) => {
     getParentRoute: () => parentRoute,
   })
 
-  const demoStoreRoute = createRoute({
-    path: '/demo/store',
-    component: DemoStore,
-    getParentRoute: () => parentRoute,
-  })
-
   const tableRoute = createRoute({
     path: '/demo/table',
     component: TableDemo,
@@ -42,7 +35,6 @@ export const createDemoRoutes = (parentRoute: RootRoute) => {
   return {
     addressFormRoute,
     simpleFormRoute,
-    demoStoreRoute,
     tableRoute,
     tanStackQueryRoute,
   }
