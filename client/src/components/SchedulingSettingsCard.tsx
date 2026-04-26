@@ -28,6 +28,35 @@ const DAY_LABELS: Record<keyof WorkingHours, string> = {
   sunday: 'Sunday',
 }
 
+const DEFAULT_TIMEZONE = 'America/Chicago'
+
+const NORTH_AMERICAN_TIMEZONES = [
+  { value: 'America/St_Johns', label: 'Newfoundland Time (America/St_Johns)' },
+  { value: 'America/Halifax', label: 'Atlantic Time (America/Halifax)' },
+  { value: 'America/New_York', label: 'Eastern Time (America/New_York)' },
+  { value: 'America/Chicago', label: 'Central Time (America/Chicago)' },
+  { value: 'America/Regina', label: 'Central Time - Saskatchewan (America/Regina)' },
+  { value: 'America/Denver', label: 'Mountain Time (America/Denver)' },
+  { value: 'America/Phoenix', label: 'Mountain Time - Arizona (America/Phoenix)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (America/Los_Angeles)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (America/Anchorage)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (Pacific/Honolulu)' },
+  { value: 'America/Cancun', label: 'Mexico Eastern Time (America/Cancun)' },
+  { value: 'America/Mexico_City', label: 'Mexico Central Time (America/Mexico_City)' },
+  { value: 'America/Mazatlan', label: 'Mexico Pacific Time (America/Mazatlan)' },
+  { value: 'America/Tijuana', label: 'Mexico Northwest Time (America/Tijuana)' },
+]
+
+const NORTH_AMERICAN_TIMEZONE_VALUES = new Set(
+  NORTH_AMERICAN_TIMEZONES.map((timezone) => timezone.value),
+)
+
+function getSupportedTimezone(timezone: string) {
+  return NORTH_AMERICAN_TIMEZONE_VALUES.has(timezone)
+    ? timezone
+    : DEFAULT_TIMEZONE
+}
+
 export default function SchedulingSettingsCard() {
   const { data, isLoading, error } = useSchedulingSettings()
   const updateSettings = useUpdateSchedulingSettings()
@@ -37,7 +66,7 @@ export default function SchedulingSettingsCard() {
   useEffect(() => {
     if (data) {
       setForm({
-        timezone: data.timezone,
+        timezone: getSupportedTimezone(data.timezone),
         workingHours: data.workingHours,
         meetingDurationMinutes: data.meetingDurationMinutes,
         bufferBeforeMinutes: data.bufferBeforeMinutes,
@@ -124,8 +153,8 @@ export default function SchedulingSettingsCard() {
           <span className="block text-sm font-medium text-gray-700 mb-1">
             Timezone
           </span>
-          <input
-            value={form.timezone || ''}
+          <select
+            value={form.timezone || DEFAULT_TIMEZONE}
             onChange={(event) =>
               setForm((current) => ({
                 ...current!,
@@ -133,8 +162,13 @@ export default function SchedulingSettingsCard() {
               }))
             }
             className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
-            placeholder="America/Chicago"
-          />
+          >
+            {NORTH_AMERICAN_TIMEZONES.map((timezone) => (
+              <option key={timezone.value} value={timezone.value}>
+                {timezone.label}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="block">
