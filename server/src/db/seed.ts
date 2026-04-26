@@ -100,11 +100,7 @@ async function createSeedUser() {
       },
     });
 
-  const [seedUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.supabaseId, supabaseId))
-    .limit(1);
+  const [seedUser] = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
 
   if (!seedUser) {
     logger.error('❌ Failed to resolve seed user', { supabaseId });
