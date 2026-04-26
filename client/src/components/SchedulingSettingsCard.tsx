@@ -76,7 +76,10 @@ export default function SchedulingSettingsCard() {
   ) => {
     setForm((current) => {
       const workingHours = { ...current!.workingHours! }
-      const firstRange = workingHours[day][0] ?? { start: '09:00', end: '17:00' }
+      const firstRange = workingHours[day][0] ?? {
+        start: '09:00',
+        end: '17:00',
+      }
 
       if (field === 'enabled') {
         workingHours[day] = value ? [firstRange] : []
@@ -100,7 +103,9 @@ export default function SchedulingSettingsCard() {
   return (
     <div className="bg-white rounded-xl shadow-sm ring-1 ring-gray-200/60 p-6">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Smart Scheduling</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Smart Scheduling
+        </h2>
         <p className="text-sm text-gray-500 mt-1">
           Configure the availability DripIQ uses for authenticated booking
           links.
@@ -165,7 +170,9 @@ export default function SchedulingSettingsCard() {
             min={0}
             max={240}
             value={form.bufferBeforeMinutes}
-            onChange={(event) => setNumber('bufferBeforeMinutes', event.target.value)}
+            onChange={(event) =>
+              setNumber('bufferBeforeMinutes', event.target.value)
+            }
             className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
           />
         </label>
@@ -179,7 +186,9 @@ export default function SchedulingSettingsCard() {
             min={0}
             max={240}
             value={form.bufferAfterMinutes}
-            onChange={(event) => setNumber('bufferAfterMinutes', event.target.value)}
+            onChange={(event) =>
+              setNumber('bufferAfterMinutes', event.target.value)
+            }
             className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
           />
         </label>
@@ -192,7 +201,9 @@ export default function SchedulingSettingsCard() {
             type="number"
             min={0}
             value={form.minNoticeMinutes}
-            onChange={(event) => setNumber('minNoticeMinutes', event.target.value)}
+            onChange={(event) =>
+              setNumber('minNoticeMinutes', event.target.value)
+            }
             className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
           />
         </label>
@@ -206,14 +217,18 @@ export default function SchedulingSettingsCard() {
             min={1}
             max={365}
             value={form.bookingHorizonDays}
-            onChange={(event) => setNumber('bookingHorizonDays', event.target.value)}
+            onChange={(event) =>
+              setNumber('bookingHorizonDays', event.target.value)
+            }
             className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-[var(--color-primary-500)] focus:ring-2 focus:ring-[var(--color-primary-200)]"
           />
         </label>
       </div>
 
       <div className="mt-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Working Hours</h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">
+          Working Hours
+        </h3>
         <div className="space-y-3">
           {DAYS.map((day) => {
             const range = form.workingHours?.[day]?.[0]
@@ -239,14 +254,18 @@ export default function SchedulingSettingsCard() {
                   type="time"
                   value={range?.start || '09:00'}
                   disabled={!enabled}
-                  onChange={(event) => setWorkingDay(day, 'start', event.target.value)}
+                  onChange={(event) =>
+                    setWorkingDay(day, 'start', event.target.value)
+                  }
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm disabled:bg-gray-50 disabled:text-gray-400"
                 />
                 <input
                   type="time"
                   value={range?.end || '17:00'}
                   disabled={!enabled}
-                  onChange={(event) => setWorkingDay(day, 'end', event.target.value)}
+                  onChange={(event) =>
+                    setWorkingDay(day, 'end', event.target.value)
+                  }
                   className="rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm disabled:bg-gray-50 disabled:text-gray-400"
                 />
               </div>

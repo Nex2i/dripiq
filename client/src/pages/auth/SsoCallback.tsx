@@ -51,7 +51,9 @@ export default function SsoCallback() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <h1 className="text-lg font-semibold text-red-900">SSO sign-in could not be completed</h1>
+          <h1 className="text-lg font-semibold text-red-900">
+            SSO sign-in could not be completed
+          </h1>
           <p className="mt-2 text-sm text-red-700">{error}</p>
           <button
             type="button"
