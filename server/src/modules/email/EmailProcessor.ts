@@ -107,29 +107,48 @@ export class EmailProcessor {
       // Prepare email body and calendar information
       let emailBody = body;
 
-      if (calendarInfo?.calendarLink && calendarInfo?.calendarTieIn) {
+      if (calendarInfo?.calendarTieIn) {
         try {
-          let trackedCalendarUrl = calendarUrlWrapper.generateTrackedCalendarUrl({
-            tenantId,
-            leadId: calendarInfo.leadId,
-            contactId,
-            campaignId,
-            nodeId,
-            outboundMessageId,
-          });
+          const configuredCalendarLink = calendarInfo.calendarLink?.trim();
+          let trackedCalendarUrl: string | undefined;
 
           if (!skipMessageRecord) {
-            const { rawToken } = await bookingTokenService.issue({
+            try {
+              const { rawToken } = await bookingTokenService.issue({
+                tenantId,
+                leadId: calendarInfo.leadId,
+                contactId,
+                userId,
+                campaignId,
+                nodeId,
+                outboundMessageId,
+              });
+              trackedCalendarUrl = bookingTokenService.buildBookingUrl(rawToken);
+            } catch (bookingTokenError) {
+              logger.error('[EmailProcessor] Failed to create Smart Scheduling link', {
+                tenantId,
+                campaignId,
+                contactId,
+                nodeId,
+                error:
+                  bookingTokenError instanceof Error
+                    ? bookingTokenError.message
+                    : 'Unknown error',
+              });
+            }
+          }
+
+          trackedCalendarUrl =
+            trackedCalendarUrl ||
+            configuredCalendarLink ||
+            calendarUrlWrapper.generateTrackedCalendarUrl({
               tenantId,
               leadId: calendarInfo.leadId,
               contactId,
-              userId,
               campaignId,
               nodeId,
               outboundMessageId,
             });
-            trackedCalendarUrl = bookingTokenService.buildBookingUrl(rawToken);
-          }
 
           const calendarMessage = calendarUrlWrapper.createCalendarMessage(
             calendarInfo.calendarTieIn,

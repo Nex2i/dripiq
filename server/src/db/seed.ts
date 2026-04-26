@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { TenantService } from '@/modules/tenant.service';
 import { RoleService } from '@/modules/role.service';
 import { logger } from '@/libs/logger';
@@ -64,49 +64,54 @@ async function seed() {
 }
 
 async function createSeedUser() {
-  // Check if seed user already exists
+  const localSeedEmail = 'ryanzhutch+local@gmail.com';
+  const localSupabaseId = await resolveLocalSeedSupabaseId(localSeedEmail);
   const supabaseId =
     process.env.NODE_ENV === 'production'
       ? 'fee55c3d-5077-41ba-8e42-a2f97c64cd92'
-      : '91d39f85-07b7-4ae7-8da9-b4e4e675ce55';
-  const existingSeedUser = await db
+      : localSupabaseId;
+
+  const seedUserData = [
+    {
+      supabaseId: 'fee55c3d-5077-41ba-8e42-a2f97c64cd92',
+      email: `ryanzhutch+production@gmail.com`,
+      name: 'Ryan Prod',
+      createdAt: new Date('2025-06-30T03:46:22.185Z'),
+      updatedAt: new Date('2025-06-30T16:58:18.567Z'),
+    },
+    {
+      supabaseId: localSupabaseId,
+      email: localSeedEmail,
+      name: 'Ryan Local',
+      createdAt: new Date('2025-06-30T03:46:22.185Z'),
+      updatedAt: new Date('2025-06-30T16:58:18.567Z'),
+    },
+  ];
+
+  await db
+    .insert(users)
+    .values(seedUserData)
+    .onConflictDoUpdate({
+      target: users.email,
+      set: {
+        supabaseId: sql`excluded.supabase_id`,
+        name: sql`excluded.name`,
+        updatedAt: sql`excluded.updated_at`,
+      },
+    });
+
+  const [seedUser] = await db
     .select()
     .from(users)
     .where(eq(users.supabaseId, supabaseId))
     .limit(1);
 
-  if (existingSeedUser.length > 0) {
-    logger.debug('ℹ️  Seed user already exists, skipping creation');
-    return;
-  }
-
-  // Create the seed user
-  const [seedUser] = await db
-    .insert(users)
-    .values([
-      {
-        supabaseId: 'fee55c3d-5077-41ba-8e42-a2f97c64cd92',
-        email: `ryanzhutch+production@gmail.com`,
-        name: 'Ryan Prod',
-        createdAt: new Date('2025-06-30T03:46:22.185Z'),
-        updatedAt: new Date('2025-06-30T16:58:18.567Z'),
-      },
-      {
-        supabaseId: '91d39f85-07b7-4ae7-8da9-b4e4e675ce55',
-        email: `ryanzhutch+local@gmail.com`,
-        name: 'Ryan Local',
-        createdAt: new Date('2025-06-30T03:46:22.185Z'),
-        updatedAt: new Date('2025-06-30T16:58:18.567Z'),
-      },
-    ])
-    .returning();
-
   if (!seedUser) {
-    logger.error('❌ Failed to create seed user');
+    logger.error('❌ Failed to resolve seed user', { supabaseId });
     return;
   }
 
-  logger.debug('✅ Seed user created', { email: seedUser.email });
+  logger.debug('✅ Seed user resolved', { email: seedUser.email });
 
   // Get the first tenant to assign the user to
   const firstTenant = await db.select().from(tenants).limit(1);
@@ -132,6 +137,17 @@ async function createSeedUser() {
     return;
   }
 
+  const existingUserTenant = await db
+    .select()
+    .from(userTenants)
+    .where(and(eq(userTenants.userId, seedUser.id), eq(userTenants.tenantId, tenant.id)))
+    .limit(1);
+
+  if (existingUserTenant.length > 0) {
+    logger.debug('ℹ️  Seed user tenant assignment already exists, skipping creation');
+    return;
+  }
+
   await db.insert(userTenants).values({
     userId: seedUser.id,
     tenantId: tenant.id,
@@ -142,6 +158,17 @@ async function createSeedUser() {
   logger.debug(
     `✅ Assigned seed user to tenant "${tenant.name}" as Admin with super user privileges`
   );
+}
+
+async function resolveLocalSeedSupabaseId(email: string) {
+  const authUsers = await db.execute<{ id: string }>(sql`
+    select id::text as id
+    from auth.users
+    where lower(email) = lower(${email})
+    limit 1
+  `);
+
+  return authUsers[0]?.id || '91d39f85-07b7-4ae7-8da9-b4e4e675ce55';
 }
 
 // Export for external use and auto-execute
