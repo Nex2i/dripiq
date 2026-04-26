@@ -4,6 +4,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
+import { IS_LOCAL } from '@/config';
 import { UserService, CreateUserData } from '@/modules/user.service';
 import { TenantService } from '@/modules/tenant.service';
 import { TenantDomainMappingService } from '@/modules/tenant-domain-mapping.service';
@@ -91,7 +92,7 @@ export default async function Authentication(fastify: FastifyInstance, _opts: Ro
       try {
         const { email, password, name, tenantName, enableSsoDomainMapping } = request.body;
 
-        const isRealEmail = await isFakeMail(email);
+        const isRealEmail = IS_LOCAL || (await isFakeMail(email));
 
         if (!isRealEmail) {
           reply.status(400).send({

@@ -5,7 +5,7 @@ const isFakeMailClient = axios.create({
 });
 
 async function isFakeMail(email: string): Promise<boolean> {
-  const response = await isFakeMailClient.get(`/check?url=${email}&mx=true`);
+  const response = await isFakeMailClient.get(`/check?url=${encodeURIComponent(email)}&mx=true`);
 
   const { isDisposable, isPublicProvider, mx } = response.data;
 
