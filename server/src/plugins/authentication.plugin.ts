@@ -1,9 +1,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fastifyPlugin from 'fastify-plugin';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { ForbiddenError } from '@/exceptions/error';
 import { logger } from '@/libs/logger';
 import { supabase } from '@/libs/supabase.client';
-import { UserService } from '@/modules/user.service';
+import { SsoProvisioningService } from '@/modules/sso-provisioning.service';
 import { getDecodedJwt, isTokenExpired } from '@/libs/jwt';
 import { authCache } from '@/cache/AuthCacheRedis';
 
@@ -28,6 +29,24 @@ export interface AuthenticatedRequest extends FastifyRequest {
 
 export default fastifyPlugin(
   async (fastify: FastifyInstance) => {
+    const resolveSupabaseUser = async (
+      token: string
+    ): Promise<{ supabaseUser: SupabaseUser; supabaseUserId: string }> => {
+      const {
+        data: { user: supabaseUser },
+        error,
+      } = await supabase.auth.getUser(token);
+      if (error || !supabaseUser) {
+        logger.warn(`Supabase auth.getUser error: ${error?.message}`);
+        throw new ForbiddenError(`Invalid Token: ${error?.message || 'User not found'}`);
+      }
+
+      return {
+        supabaseUser,
+        supabaseUserId: supabaseUser.id,
+      };
+    };
+
     /**
      * Enhanced authentication prehandler - validates JWT, attaches user, and determines tenant context
      * Optimized with caching and single database query
@@ -51,6 +70,7 @@ export default fastifyPlugin(
         let cachedToken = await authCache.getToken(token);
 
         let supabaseUserId: string | null = null;
+        let supabaseUser: SupabaseUser | null = null;
 
         if (!cachedToken || isTokenExpired(token)) {
           await authCache.clearToken(token);
@@ -58,17 +78,9 @@ export default fastifyPlugin(
 
           const supabaseGetUserStart = process.hrtime();
           // Validate JWT with Supabase
-          const {
-            data: { user: supabaseUser },
-            error,
-          } = await supabase.auth.getUser(token);
-          if (error || !supabaseUser) {
-            logger.warn(`Supabase auth.getUser error: ${error?.message}`, {
-              requestUrl: request.url,
-            });
-            throw new ForbiddenError(`Invalid Token: ${error?.message || 'User not found'}`);
-          }
-          supabaseUserId = supabaseUser.id;
+          const resolvedSupabase = await resolveSupabaseUser(token);
+          supabaseUser = resolvedSupabase.supabaseUser;
+          supabaseUserId = resolvedSupabase.supabaseUserId;
 
           const supabaseGetUserEnd = process.hrtime(supabaseGetUserStart);
           const supabaseGetUserDurationMicroSeconds =
@@ -86,8 +98,24 @@ export default fastifyPlugin(
 
         if (!userData) {
           const dbResultStart = process.hrtime();
-          // Cache miss - fetch from database with single optimized query
-          const dbResult = await UserService.getUserWithTenantsForAuth(supabaseUserId);
+          // Cache miss - resolve and provision SSO user if needed.
+          const ssoProvisioningResult = await SsoProvisioningService.resolveFromToken(
+            token,
+            supabaseUser
+          );
+          if (
+            ssoProvisioningResult.status === 'invalid_session' ||
+            ssoProvisioningResult.status === 'missing_email' ||
+            ssoProvisioningResult.status === 'requires_registration'
+          ) {
+            const errorMessage =
+              ssoProvisioningResult.status === 'requires_registration'
+                ? 'SSO user is not provisioned'
+                : ssoProvisioningResult.message;
+            throw new ForbiddenError(errorMessage);
+          }
+
+          const dbResult = ssoProvisioningResult.userWithTenants;
           const dbResultEnd = process.hrtime(dbResultStart);
           const dbResultDurationMicroSeconds = dbResultEnd[0] * 1e6 + dbResultEnd[1] / 1e3;
           logger.info(`dbResult took ${dbResultDurationMicroSeconds}μs`, {
@@ -95,10 +123,6 @@ export default fastifyPlugin(
             dbResultEnd: dbResultEnd[0] * 1e6 + dbResultEnd[1] / 1e3,
             dbResultDurationMicroSeconds,
           });
-
-          if (!dbResult) {
-            throw new ForbiddenError('User not found in database');
-          }
 
           if (dbResult.userTenants.length === 0) {
             throw new ForbiddenError('User is not associated with any tenant');
