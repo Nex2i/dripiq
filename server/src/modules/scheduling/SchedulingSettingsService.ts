@@ -138,12 +138,7 @@ export class SchedulingSettingsService {
     }
   }
 
-  private validatePositiveInteger(
-    value: number,
-    field: string,
-    min: number,
-    max: number
-  ): number {
+  private validatePositiveInteger(value: number, field: string, min: number, max: number): number {
     if (!Number.isInteger(value) || value < min || value > max) {
       throw new BadRequestError(`${field} must be an integer between ${min} and ${max}`);
     }

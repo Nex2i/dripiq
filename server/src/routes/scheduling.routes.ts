@@ -60,7 +60,11 @@ export default async function SchedulingRoutes(fastify: FastifyInstance, _opts: 
       reply: FastifyReply
     ) => {
       const { tenantId, user } = request as AuthenticatedRequest;
-      const settings = await schedulingSettingsService.upsertForUser(tenantId, user.id, request.body);
+      const settings = await schedulingSettingsService.upsertForUser(
+        tenantId,
+        user.id,
+        request.body
+      );
       return reply.send(settings);
     },
   });

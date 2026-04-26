@@ -105,9 +105,7 @@ export class MailAccountRepository extends TenantAwareRepository<
       .returning();
 
     if (!updatedAccount) {
-      throw new NotFoundError(
-        `Mail account not found with id: ${providerId} for user: ${userId}`
-      );
+      throw new NotFoundError(`Mail account not found with id: ${providerId} for user: ${userId}`);
     }
 
     return updatedAccount as MailAccount;

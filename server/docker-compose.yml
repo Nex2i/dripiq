@@ -7,8 +7,8 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "node -e \"fetch('http://localhost:3000/api/platform/profile').then((r) => {if (r.status !== 200) throw new Error(r.status)})\""
+          'CMD-SHELL',
+          'node -e "fetch(''http://localhost:3000/api/platform/profile'').then((r) => {if (r.status !== 200) throw new Error(r.status)})"',
         ]
       timeout: 10s
       interval: 5s
@@ -17,7 +17,7 @@ services:
       analytics:
         condition: service_healthy
     environment:
-      HOSTNAME: "0.0.0.0"
+      HOSTNAME: '0.0.0.0'
       STUDIO_PG_META_URL: http://meta:8080
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
@@ -38,7 +38,7 @@ services:
       LOGFLARE_PUBLIC_ACCESS_TOKEN: ${LOGFLARE_PUBLIC_ACCESS_TOKEN:-your-super-secret-and-long-logflare-key-public}
       LOGFLARE_PRIVATE_ACCESS_TOKEN: ${LOGFLARE_PRIVATE_ACCESS_TOKEN:-your-super-secret-and-long-logflare-key-private}
       LOGFLARE_URL: http://analytics:4000
-      NEXT_PUBLIC_ENABLE_LOGS: "true"
+      NEXT_PUBLIC_ENABLE_LOGS: 'true'
       NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
       SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
       EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
@@ -54,7 +54,7 @@ services:
         aliases:
           - api-gw
     healthcheck:
-      test: ["CMD", "kong", "health"]
+      test: ['CMD', 'kong', 'health']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -68,7 +68,7 @@ services:
       - ./docker/supabase/volumes/api/kong.yml:/home/kong/temp.yml:ro
       - ./docker/supabase/volumes/api/kong-entrypoint.sh:/home/kong/kong-entrypoint.sh:ro
     environment:
-      KONG_DATABASE: "off"
+      KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_DNS_NOT_FOUND_TTL: 1
@@ -90,7 +90,7 @@ services:
     image: supabase/gotrue:v2.186.0
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:9999/health']
       timeout: 5s
       interval: 5s
       retries: 3
@@ -140,7 +140,7 @@ services:
       PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:-public}
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
-      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_DB_USE_LEGACY_GUCS: 'false'
       PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
 
@@ -153,8 +153,8 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "curl -sSfL --head -o /dev/null -H \"Authorization: Bearer ${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhYmUtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE}\" http://localhost:4000/api/tenants/realtime-dev/health"
+          'CMD-SHELL',
+          'curl -sSfL --head -o /dev/null -H "Authorization: Bearer ${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhYmUtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE}" http://localhost:4000/api/tenants/realtime-dev/health',
         ]
       timeout: 5s
       interval: 30s
@@ -167,18 +167,18 @@ services:
       DB_USER: supabase_admin
       DB_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}
       DB_NAME: ${POSTGRES_DB:-postgres}
-      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
       DB_ENC_KEY: supabaserealtime
       API_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq}
       METRICS_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
       ERL_AFLAGS: -proto_dist inet_tcp
       DNS_NODES: "''"
-      RLIMIT_NOFILE: "10000"
+      RLIMIT_NOFILE: '10000'
       APP_NAME: realtime
-      SEED_SELF_HOST: "true"
-      RUN_JANITOR: "true"
-      DISABLE_HEALTHCHECK_LOGGING: "true"
+      SEED_SELF_HOST: 'true'
+      RUN_JANITOR: 'true'
+      DISABLE_HEALTHCHECK_LOGGING: 'true'
 
   storage:
     image: supabase/storage-api:v1.48.26
@@ -191,7 +191,7 @@ services:
       imgproxy:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://storage:5000/status"]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://storage:5000/status']
       timeout: 5s
       interval: 5s
       retries: 3
@@ -203,14 +203,14 @@ services:
       AUTH_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
       DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgres}
       STORAGE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
-      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      REQUEST_ALLOW_X_FORWARDED_PATH: 'true'
       FILE_SIZE_LIMIT: 52428800
       STORAGE_BACKEND: file
       GLOBAL_S3_BUCKET: ${GLOBAL_S3_BUCKET:-stub}
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: ${STORAGE_TENANT_ID:-stub}
       REGION: ${REGION:-stub}
-      ENABLE_IMAGE_TRANSFORMATION: "true"
+      ENABLE_IMAGE_TRANSFORMATION: 'true'
       IMGPROXY_URL: http://imgproxy:5001
       S3_PROTOCOL_ACCESS_KEY_ID: ${S3_PROTOCOL_ACCESS_KEY_ID:-625729a08b95bf1b7ff351a663f3a23c}
       S3_PROTOCOL_ACCESS_KEY_SECRET: ${S3_PROTOCOL_ACCESS_KEY_SECRET:-850181e4652dd023b7a98c58ae0d2d34bd487ee0cc3254aed6eda37307425907}
@@ -223,14 +223,14 @@ services:
     volumes:
       - ./docker/supabase/volumes/storage:/var/lib/storage
     healthcheck:
-      test: ["CMD", "imgproxy", "health"]
+      test: ['CMD', 'imgproxy', 'health']
       timeout: 5s
       interval: 5s
       retries: 3
     environment:
-      IMGPROXY_BIND: ":5001"
+      IMGPROXY_BIND: ':5001'
       IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
-      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_USE_ETAG: 'true'
       IMGPROXY_AUTO_WEBP: ${IMGPROXY_AUTO_WEBP:-true}
       IMGPROXY_MAX_SRC_RESOLUTION: 16.8
 
@@ -264,17 +264,17 @@ services:
       SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
       SUPABASE_ANON_KEY: ${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhYmUtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE}
       SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q}
-      SUPABASE_PUBLISHABLE_KEYS: "{\"default\":\"${SUPABASE_PUBLISHABLE_KEY:-}\"}"
-      SUPABASE_SECRET_KEYS: "{\"default\":\"${SUPABASE_SECRET_KEY:-}\"}"
+      SUPABASE_PUBLISHABLE_KEYS: '{"default":"${SUPABASE_PUBLISHABLE_KEY:-}"}'
+      SUPABASE_SECRET_KEYS: '{"default":"${SUPABASE_SECRET_KEY:-}"}'
       SUPABASE_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgres}
-      VERIFY_JWT: "${FUNCTIONS_VERIFY_JWT:-false}"
-    command: ["start", "--main-service", "/home/deno/functions/main"]
+      VERIFY_JWT: '${FUNCTIONS_VERIFY_JWT:-false}'
+    command: ['start', '--main-service', '/home/deno/functions/main']
 
   analytics:
     image: supabase/logflare:1.36.1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "http://localhost:4000/health"]
+      test: ['CMD', 'curl', 'http://localhost:4000/health']
       timeout: 5s
       interval: 5s
       retries: 10
@@ -291,8 +291,8 @@ services:
       DB_SCHEMA: _analytics
       LOGFLARE_PUBLIC_ACCESS_TOKEN: ${LOGFLARE_PUBLIC_ACCESS_TOKEN:-your-super-secret-and-long-logflare-key-public}
       LOGFLARE_PRIVATE_ACCESS_TOKEN: ${LOGFLARE_PRIVATE_ACCESS_TOKEN:-your-super-secret-and-long-logflare-key-private}
-      LOGFLARE_SINGLE_TENANT: "true"
-      LOGFLARE_SUPABASE_MODE: "true"
+      LOGFLARE_SINGLE_TENANT: 'true'
+      LOGFLARE_SUPABASE_MODE: 'true'
       POSTGRES_BACKEND_URL: postgresql://supabase_admin:${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/_supabase
       POSTGRES_BACKEND_SCHEMA: _analytics
       LOGFLARE_FEATURE_FLAG_OVERRIDE: multibackend=true
@@ -311,7 +311,7 @@ services:
       - ./docker/supabase/volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:ro
       - db-config:/etc/postgresql-custom
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      test: ['CMD', 'pg_isready', '-U', 'postgres', '-h', 'localhost']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -327,11 +327,11 @@ services:
       JWT_EXP: ${JWT_EXPIRY:-3600}
     command:
       [
-        "postgres",
-        "-c",
-        "config_file=/etc/postgresql/postgresql.conf",
-        "-c",
-        "log_min_messages=fatal"
+        'postgres',
+        '-c',
+        'config_file=/etc/postgresql/postgresql.conf',
+        '-c',
+        'log_min_messages=fatal',
       ]
 
   vector:
@@ -341,13 +341,13 @@ services:
       - ./docker/supabase/volumes/logs/vector.yml:/etc/vector/vector.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://vector:9001/health"]
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://vector:9001/health']
       timeout: 5s
       interval: 5s
       retries: 3
     environment:
       LOGFLARE_PUBLIC_ACCESS_TOKEN: ${LOGFLARE_PUBLIC_ACCESS_TOKEN:-your-super-secret-and-long-logflare-key-public}
-    command: ["--config", "/etc/vector/vector.yml"]
+    command: ['--config', '/etc/vector/vector.yml']
 
   supavisor:
     image: supabase/supavisor:2.7.4
@@ -358,7 +358,8 @@ services:
     volumes:
       - ./docker/supabase/volumes/pooler/pooler.exs:/etc/pooler/pooler.exs:ro
     healthcheck:
-      test: ["CMD", "curl", "-sSfL", "--head", "-o", "/dev/null", "http://127.0.0.1:4000/api/health"]
+      test:
+        ['CMD', 'curl', '-sSfL', '--head', '-o', '/dev/null', 'http://127.0.0.1:4000/api/health']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -372,7 +373,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}
       DATABASE_URL: ecto://supabase_admin:${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/_supabase
-      CLUSTER_POSTGRES: "true"
+      CLUSTER_POSTGRES: 'true'
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq}
       VAULT_ENC_KEY: ${VAULT_ENC_KEY:-your-32-character-encryption-key}
       API_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
@@ -386,21 +387,21 @@ services:
       DB_POOL_SIZE: ${POOLER_DB_POOL_SIZE:-5}
     command:
       [
-        "/bin/sh",
-        "-c",
-        "/app/bin/migrate && /app/bin/supavisor eval \"$$(cat /etc/pooler/pooler.exs)\" && /app/bin/server"
+        '/bin/sh',
+        '-c',
+        '/app/bin/migrate && /app/bin/supavisor eval "$$(cat /etc/pooler/pooler.exs)" && /app/bin/server',
       ]
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
+      - '6379:6379'
+    command: ['redis-server', '--appendonly', 'yes']
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 3s
       retries: 10

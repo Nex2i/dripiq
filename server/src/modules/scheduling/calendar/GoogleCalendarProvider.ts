@@ -68,7 +68,9 @@ export class GoogleCalendarProvider implements CalendarProvider {
   }
 
   private async getAuthedClient(): Promise<OAuth2Client> {
-    const refreshToken = await oauthTokenRepository.getRefreshTokenByMailAccountId(this.mailAccountId);
+    const refreshToken = await oauthTokenRepository.getRefreshTokenByMailAccountId(
+      this.mailAccountId
+    );
     const oauth2Client = getGoogleOAuth2Client();
     oauth2Client.setCredentials({ refresh_token: refreshToken });
     return oauth2Client;

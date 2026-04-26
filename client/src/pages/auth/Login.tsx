@@ -227,10 +227,14 @@ export default function Login() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" />
-                  {showPasswordField ? 'Signing in...' : 'Checking sign-in options...'}
+                  {showPasswordField
+                    ? 'Signing in...'
+                    : 'Checking sign-in options...'}
                 </>
+              ) : showPasswordField ? (
+                'Sign in to dripIq'
               ) : (
-                showPasswordField ? 'Sign in to dripIq' : 'Continue'
+                'Continue'
               )}
             </button>
           </form>

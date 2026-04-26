@@ -78,7 +78,10 @@ export class CalendarConnectionService {
     });
   }
 
-  async getActiveConnection(tenantId: string, userId: string): Promise<CalendarConnection | undefined> {
+  async getActiveConnection(
+    tenantId: string,
+    userId: string
+  ): Promise<CalendarConnection | undefined> {
     return await calendarConnectionRepository.findActiveForUser(tenantId, userId);
   }
 
