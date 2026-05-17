@@ -38,7 +38,7 @@ export class ContactExtractionAgent {
     const startTime = Date.now();
     try {
       logger.info('Fetching webData contacts for extraction', { domain });
-      const webDataSummary = await fetchWebDataContacts(domain);
+      const webDataSummary = await fetchWebDataContacts(domain, tenantId);
       logger.info('WebData contacts fetched', { domain, webDataSummary });
       const webDataContactsText = formatWebDataContactsForPrompt(webDataSummary);
 

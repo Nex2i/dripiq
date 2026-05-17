@@ -192,6 +192,23 @@ export const tenantDomainMappings = appSchema.table(
   ]
 );
 
+export const tenantZoominfoCredentials = appSchema.table(
+  'tenant_zoominfo_credentials',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    clientSecretEnc: text('client_secret_enc').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [unique('tenant_zoominfo_credentials_tenant_unique').on(table.tenantId)]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   tenants: many(userTenants),
@@ -208,7 +225,21 @@ export const tenantsRelations = relations(tenants, ({ many, one }) => ({
     fields: [tenants.siteEmbeddingDomainId],
     references: [siteEmbeddingDomains.id],
   }),
+  zoominfoCredentials: one(tenantZoominfoCredentials, {
+    fields: [tenants.id],
+    references: [tenantZoominfoCredentials.tenantId],
+  }),
 }));
+
+export const tenantZoominfoCredentialsRelations = relations(
+  tenantZoominfoCredentials,
+  ({ one }) => ({
+    tenant: one(tenants, {
+      fields: [tenantZoominfoCredentials.tenantId],
+      references: [tenants.id],
+    }),
+  })
+);
 
 export const rolesRelations = relations(roles, ({ many }) => ({
   permissions: many(rolePermissions),
@@ -1487,3 +1518,5 @@ export type MailAccount = typeof mailAccounts.$inferSelect;
 export type NewMailAccount = typeof mailAccounts.$inferInsert;
 export type OauthToken = typeof oauthTokens.$inferSelect;
 export type NewOauthToken = typeof oauthTokens.$inferInsert;
+export type TenantZoominfoCredential = typeof tenantZoominfoCredentials.$inferSelect;
+export type NewTenantZoominfoCredential = typeof tenantZoominfoCredentials.$inferInsert;
