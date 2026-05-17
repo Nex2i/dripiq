@@ -1,7 +1,23 @@
 import { Outlet, Link, useLocation } from '@tanstack/react-router'
-import { Users, Shield, CreditCard, Building, Package } from 'lucide-react'
+import {
+  Users,
+  Shield,
+  CreditCard,
+  Building,
+  Package,
+  Plug,
+} from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 
-const navigation = [
+type NavItem = {
+  name: string
+  path: string
+  icon: typeof Building
+  description: string
+  adminOnly?: boolean
+}
+
+const allNavigation: NavItem[] = [
   {
     name: 'Organization',
     path: '/settings/organization',
@@ -21,6 +37,13 @@ const navigation = [
     description: 'Manage team members and permissions',
   },
   {
+    name: 'Integrations',
+    path: '/settings/integrations',
+    icon: Plug,
+    description: 'External data providers (admin)',
+    adminOnly: true,
+  },
+  {
     name: 'Security',
     path: '/settings/security',
     icon: Shield,
@@ -36,6 +59,9 @@ const navigation = [
 
 export default function SettingsLayout() {
   const location = useLocation()
+  const { user } = useAuth()
+  const isAdmin = user?.tenants?.[0]?.role?.name === 'Admin'
+  const navigation = allNavigation.filter((item) => !item.adminOnly || isAdmin)
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -2,12 +2,14 @@
  * WebData Service
  *
  * Unified interface for employee and company data retrieval from multiple providers.
- * Currently supports CoreSignal with the ability to easily swap providers.
+ * Supports CoreSignal (fallback) and ZoomInfo when configured per tenant.
  */
 
 // Create and export singleton instances
+import { tenantZoominfoCredentialsRepository } from '@/repositories';
 import { WebDataService } from './webData.service';
 import { CoreSignalClient } from './coresignal.client';
+import { ZoomInfoWebDataProvider } from './providers/zoominfo.provider';
 
 // Export the main service interface and types
 export { WebDataService } from './webData.service';
@@ -15,6 +17,7 @@ export * from './interfaces/webData.interface';
 
 // Export specific providers for advanced usage
 export { CoreSignalWebDataProvider } from './providers/coresignal.provider';
+export { ZoomInfoWebDataProvider } from './providers/zoominfo.provider';
 export { CoreSignalClient } from './coresignal.client';
 export * from './types';
 
@@ -30,6 +33,17 @@ export function getWebDataService(): WebDataService {
     webDataServiceInstance = new WebDataService('coresignal');
   }
   return webDataServiceInstance;
+}
+
+/**
+ * Resolves CoreSignal or ZoomInfo for the tenant when ZoomInfo credentials exist.
+ */
+export async function getWebDataServiceForTenant(tenantId: string): Promise<WebDataService> {
+  const configured = await tenantZoominfoCredentialsRepository.findByTenantId(tenantId);
+  if (configured) {
+    return new WebDataService('custom', new ZoomInfoWebDataProvider(tenantId));
+  }
+  return getWebDataService();
 }
 
 /**

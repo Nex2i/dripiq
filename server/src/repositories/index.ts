@@ -37,6 +37,7 @@ import { UserScheduleSettingsRepository } from './entities/UserScheduleSettingsR
 import { ScheduleBookingTokenRepository } from './entities/ScheduleBookingTokenRepository';
 import { CalendarConnectionRepository } from './entities/CalendarConnectionRepository';
 import { ScheduledMeetingRepository } from './entities/ScheduledMeetingRepository';
+import { TenantZoominfoCredentialsRepository } from './entities/TenantZoominfoCredentialsRepository';
 
 // Base repositories
 export { BaseRepository } from './base/BaseRepository';
@@ -78,6 +79,7 @@ export { UserScheduleSettingsRepository } from './entities/UserScheduleSettingsR
 export { ScheduleBookingTokenRepository } from './entities/ScheduleBookingTokenRepository';
 export { CalendarConnectionRepository } from './entities/CalendarConnectionRepository';
 export { ScheduledMeetingRepository } from './entities/ScheduledMeetingRepository';
+export { TenantZoominfoCredentialsRepository } from './entities/TenantZoominfoCredentialsRepository';
 
 // Transaction repositories
 export { LeadTransactionRepository } from './transactions/LeadTransactionRepository';
@@ -155,6 +157,7 @@ const userScheduleSettingsRepository = new UserScheduleSettingsRepository();
 const scheduleBookingTokenRepository = new ScheduleBookingTokenRepository();
 const calendarConnectionRepository = new CalendarConnectionRepository();
 const scheduledMeetingRepository = new ScheduledMeetingRepository();
+const tenantZoominfoCredentialsRepository = new TenantZoominfoCredentialsRepository();
 
 // Transaction repository instances
 const leadTransactionRepository = new LeadTransactionRepository();
@@ -199,6 +202,7 @@ export const repositories = {
   scheduleBookingToken: scheduleBookingTokenRepository,
   calendarConnection: calendarConnectionRepository,
   scheduledMeeting: scheduledMeetingRepository,
+  tenantZoominfoCredentials: tenantZoominfoCredentialsRepository,
 
   // Transaction repositories
   leadTransaction: leadTransactionRepository,
@@ -243,6 +247,7 @@ export {
   scheduleBookingTokenRepository,
   calendarConnectionRepository,
   scheduledMeetingRepository,
+  tenantZoominfoCredentialsRepository,
   leadTransactionRepository,
   userInvitationTransactionRepository,
   tenantSetupTransactionRepository,

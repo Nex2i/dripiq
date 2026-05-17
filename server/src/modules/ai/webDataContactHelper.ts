@@ -1,5 +1,5 @@
 import { compareTwoStrings } from 'string-similarity';
-import { getWebDataService } from '@/libs/webData';
+import { getWebDataServiceForTenant } from '@/libs/webData';
 import {
   WebDataEmployee,
   WebDataCompanyEmployeesResult,
@@ -30,11 +30,14 @@ const DEFAULT_WEBDATA_LIMIT = 15;
  * Fetch and format webData contacts for prompt injection
  * Creates a smaller, optimized payload to reduce token usage
  */
-export async function fetchWebDataContacts(domain: string): Promise<WebDataContactSummary> {
+export async function fetchWebDataContacts(
+  domain: string,
+  tenantId: string
+): Promise<WebDataContactSummary> {
   try {
-    logger.info('Fetching webData contacts for domain', { domain });
+    logger.info('Fetching webData contacts for domain', { domain, tenantId });
 
-    const webDataService = getWebDataService();
+    const webDataService = await getWebDataServiceForTenant(tenantId);
     const webDataResult: WebDataCompanyEmployeesResult =
       await webDataService.getEmployeesByCompanyDomain(domain, { limit: DEFAULT_WEBDATA_LIMIT });
 

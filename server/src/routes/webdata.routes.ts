@@ -1,19 +1,21 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { logger } from '@/libs/logger';
-import { getWebDataService } from '@/libs/webData';
+import { getWebDataServiceForTenant } from '@/libs/webData';
 import '@/extensions/string.extensions';
 import { fetchWebDataContacts } from '@/modules/ai/webDataContactHelper';
+import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
 
 const basePath = '/webdata';
 
 export default async function webdataRoutes(fastify: FastifyInstance) {
-  // Get employees by company domain
   fastify.route({
     method: HttpMethods.POST,
     url: `${basePath}/employees`,
+    preHandler: [fastify.authPrehandler],
     schema: {
-      description: 'Get employees by company domain using CoreSignal multi-source data',
+      description:
+        'Get employees by company domain using WebData (ZoomInfo when configured, otherwise CoreSignal)',
       tags: ['WebData'],
     },
     handler: async (
@@ -27,15 +29,16 @@ export default async function webdataRoutes(fastify: FastifyInstance) {
       reply: FastifyReply
     ) => {
       try {
+        const { tenantId } = request as AuthenticatedRequest;
         const { domainUrl, isDecisionMaker = true, aiFormat = true } = request.body;
 
         logger.info('WebData employees request', {
           domainUrl,
           isDecisionMaker,
+          tenantId,
           requestId: request.id,
         });
 
-        // Clean the domain URL
         const cleanDomain = domainUrl.getFullDomain();
 
         if (!cleanDomain) {
@@ -46,7 +49,7 @@ export default async function webdataRoutes(fastify: FastifyInstance) {
         }
 
         if (aiFormat) {
-          const webDataAiResult = await fetchWebDataContacts(domainUrl);
+          const webDataAiResult = await fetchWebDataContacts(domainUrl, tenantId);
           return reply.status(200).send({
             success: true,
             data: {
@@ -57,20 +60,19 @@ export default async function webdataRoutes(fastify: FastifyInstance) {
           });
         }
 
-        // Get the webData service
-        const webDataService = getWebDataService();
+        const webDataService = await getWebDataServiceForTenant(tenantId);
 
-        // Search for employees by domain
         const result = await webDataService.getEmployeesByCompanyDomain(cleanDomain, {
           isDecisionMaker,
           useCache: true,
-          cacheTtl: 3600, // 1 hour cache
+          cacheTtl: 3600,
         });
 
         logger.info('WebData employees response', {
           cleanDomain,
           employeeCount: result.employees.current.length,
           totalCurrent: result.employees.total_current,
+          provider: result.provider,
           requestId: request.id,
         });
 

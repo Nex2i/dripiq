@@ -26,6 +26,7 @@ import SecurityPage from './pages/settings/SecurityPage'
 import BillingPage from './pages/settings/BillingPage'
 import OrganizationPage from './pages/settings/OrganizationPage'
 import ProductsPage from './pages/settings/ProductsPage'
+import IntegrationsPage from './pages/settings/IntegrationsPage'
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage'
 import TermsOfServicePage from './pages/legal/TermsOfServicePage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -234,6 +235,12 @@ const settingsProductsRoute = createRoute({
   component: () => <ProductsPage />,
 })
 
+const settingsIntegrationsRoute = createRoute({
+  getParentRoute: () => settingsRoute,
+  path: '/integrations',
+  component: () => <IntegrationsPage />,
+})
+
 // Catch-all 404 route
 const notFoundRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -250,6 +257,7 @@ const settingsRouteTree = settingsRoute.addChildren([
   settingsBillingRoute,
   settingsOrganizationRoute,
   settingsProductsRoute,
+  settingsIntegrationsRoute,
 ])
 
 const protectedRouteTree = protectedRoute.addChildren([
