@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { ZOOMINFO_API_BASE } from '@/libs/webData/zoominfo.constants';
 import type {
-  ZoomInfoCompanyResource,
   ZoomInfoCompanySearchResponse,
   ZoomInfoContactSearchResponse,
   ZoomInfoJsonApiError,
@@ -9,7 +8,6 @@ import type {
 import { ZoomInfoApiError } from '@/exceptions/zoominfo.errors';
 import {
   buildCompanySearchWebsiteFilter,
-  hostFromZoomInfoWebsite,
   normalizeWebsiteHost,
 } from '@/libs/webData/zoominfo.domain';
 import {
@@ -21,44 +19,6 @@ function summarizeError(status: number, data: unknown): string {
   const d = data as ZoomInfoJsonApiError | undefined;
   const first = d?.errors?.[0]?.detail || d?.detail || d?.title;
   return first ? String(first) : `HTTP ${status}`;
-}
-
-function scoreCompanyMatch(zoomWebsite: string | undefined, targetHost: string): number {
-  const host = hostFromZoomInfoWebsite(zoomWebsite);
-  if (!host) {
-    return 0;
-  }
-  if (host === targetHost) {
-    return 100;
-  }
-  if (host.endsWith(`.${targetHost}`)) {
-    return 70;
-  }
-  if (host.includes(targetHost)) {
-    return 40;
-  }
-  return 0;
-}
-
-export function pickBestCompanyForDomain(
-  companies: ZoomInfoCompanyResource[],
-  domainOrUrl: string
-): ZoomInfoCompanyResource | null {
-  if (!companies.length) {
-    return null;
-  }
-  const targetHost = normalizeWebsiteHost(domainOrUrl);
-  let best: ZoomInfoCompanyResource | null = null;
-  let bestScore = -1;
-  for (const c of companies) {
-    const w = c.attributes?.website;
-    const s = scoreCompanyMatch(w, targetHost);
-    if (s > bestScore) {
-      bestScore = s;
-      best = c;
-    }
-  }
-  return bestScore > 0 ? best : (companies[0] ?? null);
 }
 
 export class ZoomInfoClient {
@@ -114,3 +74,5 @@ export class ZoomInfoClient {
     );
   }
 }
+
+export { pickBestCompanyForDomain } from '@/libs/webData/zoominfo.company.pick';

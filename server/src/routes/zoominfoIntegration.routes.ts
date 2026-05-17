@@ -1,17 +1,14 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { HttpMethods } from '@/utils/HttpMethods';
 import { AuthenticatedRequest } from '@/plugins/authentication.plugin';
-import { tenantZoominfoCredentialsRepository } from '@/repositories';
-import { getZoomInfoOAuthService } from '@/libs/webData/zoominfo.oauth.service';
+import {
+  getZoominfoAdminIntegrationStatus,
+  removeZoominfoAdminIntegration,
+  saveZoominfoAdminCredentials,
+  testZoominfoAdminCredentials,
+} from '@/modules/zoominfoIntegrationAdmin.service';
 
 const basePath = '/integrations/zoominfo';
-
-function maskClientId(clientId: string): string {
-  if (clientId.length <= 8) {
-    return '••••••••';
-  }
-  return `${clientId.slice(0, 4)}…${clientId.slice(-2)}`;
-}
 
 export default async function zoominfoIntegrationRoutes(fastify: FastifyInstance) {
   fastify.route({
@@ -26,17 +23,8 @@ export default async function zoominfoIntegrationRoutes(fastify: FastifyInstance
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const { tenantId } = request as AuthenticatedRequest;
-      const row = await tenantZoominfoCredentialsRepository.findByTenantId(tenantId);
-      if (!row) {
-        return reply.send({
-          configured: false,
-          clientIdMasked: null as string | null,
-        });
-      }
-      return reply.send({
-        configured: true,
-        clientIdMasked: maskClientId(row.clientId),
-      });
+      const body = await getZoominfoAdminIntegrationStatus(tenantId);
+      return reply.send(body);
     },
   });
 
@@ -64,20 +52,16 @@ export default async function zoominfoIntegrationRoutes(fastify: FastifyInstance
         return reply.status(400).send({ message: 'clientId and clientSecret are required' });
       }
 
-      const oauth = getZoomInfoOAuthService();
-      await oauth.validateConnectionCredentials(clientId.trim(), clientSecret.trim());
-
-      await tenantZoominfoCredentialsRepository.upsertCredentials({
+      const result = await saveZoominfoAdminCredentials({
         tenantId,
         clientId: clientId.trim(),
         clientSecret: clientSecret.trim(),
       });
-      await oauth.invalidateTokenCache(tenantId);
 
       return reply.send({
-        message: 'ZoomInfo credentials saved',
+        message: result.message,
         configured: true,
-        clientIdMasked: maskClientId(clientId.trim()),
+        clientIdMasked: result.clientIdMasked,
       });
     },
   });
@@ -105,10 +89,7 @@ export default async function zoominfoIntegrationRoutes(fastify: FastifyInstance
         return reply.status(400).send({ message: 'clientId and clientSecret are required' });
       }
 
-      await getZoomInfoOAuthService().validateConnectionCredentials(
-        clientId.trim(),
-        clientSecret.trim()
-      );
+      await testZoominfoAdminCredentials(clientId.trim(), clientSecret.trim());
 
       return reply.send({ ok: true, message: 'ZoomInfo connection succeeded' });
     },
@@ -125,8 +106,7 @@ export default async function zoominfoIntegrationRoutes(fastify: FastifyInstance
     },
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const { tenantId } = request as AuthenticatedRequest;
-      await tenantZoominfoCredentialsRepository.deleteByTenantId(tenantId);
-      await getZoomInfoOAuthService().invalidateTokenCache(tenantId);
+      await removeZoominfoAdminIntegration(tenantId);
       return reply.send({ message: 'ZoomInfo integration removed', configured: false });
     },
   });

@@ -3,14 +3,14 @@ import { ZoomInfoApiError } from '@/exceptions/zoominfo.errors';
 import {
   IWebDataProviderWithDomainSearch,
   WebDataSearchOptions,
-  WebDataEmployee,
   WebDataCompany,
   WebDataCompanyEmployeesResult,
   WebDataError,
 } from '../interfaces/webData.interface';
 import { ZoomInfoClient, pickBestCompanyForDomain } from '../zoominfo.client';
 import { hostFromZoomInfoWebsite, normalizeWebsiteHost } from '../zoominfo.domain';
-import type { ZoomInfoContactResource } from '../zoominfo.types';
+import { filterZoomInfoDecisionMakerContacts } from '../zoominfo.contacts.decision-maker';
+import { mapZoomInfoContactToWebDataEmployee } from '../zoominfo.webdata-mapping';
 import { getZoomInfoOAuthService } from '../zoominfo.oauth.service';
 
 export class ZoomInfoWebDataProvider implements IWebDataProviderWithDomainSearch {
@@ -40,25 +40,6 @@ export class ZoomInfoWebDataProvider implements IWebDataProviderWithDomainSearch
       code: 'ZOOMINFO_ERROR',
       statusCode: 500,
       provider: this.providerName,
-    };
-  }
-
-  private mapContact(resource: ZoomInfoContactResource): WebDataEmployee {
-    const a = resource.attributes;
-    const parts = [a?.firstName, a?.middleName, a?.lastName].filter(Boolean);
-    const fullName = parts.length ? parts.join(' ') : undefined;
-
-    return {
-      id: resource.id,
-      first_name: a?.firstName,
-      last_name: a?.lastName,
-      full_name: fullName,
-      job_title: a?.jobTitle,
-      job_level: a?.managementLevel,
-      company_id: a?.company?.id != null ? String(a.company.id) : undefined,
-      company_name: a?.company?.name,
-      updated_at: a?.lastUpdatedDate,
-      created_at: a?.validDate,
     };
   }
 
@@ -99,35 +80,7 @@ export class ZoomInfoWebDataProvider implements IWebDataProviderWithDomainSearch
       let contacts = contactsResp.data ?? [];
 
       if (options?.isDecisionMaker) {
-        const titleHints = [
-          'chief',
-          'ceo',
-          'cfo',
-          'coo',
-          'cto',
-          'cio',
-          'cmo',
-          'president',
-          'founder',
-          'owner',
-          'vp ',
-          'vice president',
-          'director',
-          'head of',
-        ];
-        contacts = contacts.filter((c) => {
-          const t = (c.attributes?.jobTitle ?? '').toLowerCase();
-          const m = (c.attributes?.managementLevel ?? '').toLowerCase();
-          if (!t && !m) {
-            return false;
-          }
-          return (
-            titleHints.some((h) => t.includes(h)) ||
-            m.includes('c-level') ||
-            m.includes('director') ||
-            m.includes('vp')
-          );
-        });
+        contacts = filterZoomInfoDecisionMakerContacts(contacts);
       }
 
       const websiteAttr = best.attributes?.website;
@@ -147,7 +100,7 @@ export class ZoomInfoWebDataProvider implements IWebDataProviderWithDomainSearch
               : undefined,
       };
 
-      const adapted = contacts.map((c) => this.mapContact(c));
+      const adapted = contacts.map((c) => mapZoomInfoContactToWebDataEmployee(c));
 
       return {
         company,

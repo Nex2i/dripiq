@@ -1,4 +1,4 @@
-import { pickBestCompanyForDomain } from '../zoominfo.client';
+import { pickBestCompanyForDomain } from '../zoominfo.company.pick';
 import type { ZoomInfoCompanyResource } from '../zoominfo.types';
 
 describe('pickBestCompanyForDomain', () => {
